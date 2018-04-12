@@ -1,0 +1,15 @@
+# Project: Monochrome
+# Company: Broken Dinosaur Studios
+# Author: Joshua Suskalo
+# Copyright: April 2018
+
+# Binary resources
+build/
+lib/
+
+# Art assets
+resource/
+!resource/shader/
+
+# Editor specific files
+.dir-locals.el
