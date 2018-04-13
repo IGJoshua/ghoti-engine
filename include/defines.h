@@ -14,7 +14,7 @@ typedef unsigned int uint32;
 typedef unsigned short uint16;
 typedef unsigned char uint8;
 
-typedef double float64;
-typedef float float32;
+typedef double real64;
+typedef float real32;
 
 #define VSYNC 0

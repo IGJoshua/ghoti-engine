@@ -1,5 +1,5 @@
 #include "defines.h"
-#include "window.h"
+#include "core/window.h"
 
 #include <GLFW/glfw3.h>
 
@@ -35,12 +35,12 @@ int main()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// total accumulated fixed timestep
-	double t = 0.0;
+	real64 t = 0.0;
 	// Fixed timesetep
-	double dt = 0.01;
+	real64 dt = 0.01;
 
-	double currentTime = glfwGetTime();
-	double accumulator = 0.0;
+	real64 currentTime = glfwGetTime();
+	real64 accumulator = 0.0;
 
 	// State previous
 	// State next
@@ -50,8 +50,8 @@ int main()
 	while(!glfwWindowShouldClose(window))
 	{
 		// Start timestep
-		double newTime = glfwGetTime();
-		double frameTime = newTime - currentTime;
+		real64 newTime = glfwGetTime();
+		real64 frameTime = newTime - currentTime;
 		if (frameTime > 0.25)
 		{
 			frameTime = 0.25;
@@ -70,13 +70,13 @@ int main()
 			accumulator -= dt;
 		}
 
-		const double alpha = accumulator / dt;
+		const real64 alpha = accumulator / dt;
 
 		// Lerp state between previous and next
 
-		char title[32];
+		char title[128];
 		sprintf(title, "Monochrome FPS: %f MS/F: %f", 1 / frameTime, frameTime * 1000);
-		if (fmodf((float)currentTime, 1.0f) < 0.001)
+		if (fmodf((real32)currentTime, 1.0f) < 0.001)
 		{
 			glfwSetWindowTitle(window, title);
 		}
@@ -84,11 +84,11 @@ int main()
 		// Render
 		// TODO: Real render code
 		int32 width, height;
-		float32 aspect;
+		real32 aspect;
 
 		glfwGetFramebufferSize(window, &width, &height);
 
-		aspect = (float32)width / (float32)height;
+		aspect = (real32)width / (real32)height;
 
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
