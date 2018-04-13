@@ -1,5 +1,6 @@
 #include "core/window.h"
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 
@@ -25,6 +26,8 @@ GLFWwindow *initWindow(
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, GLFW_VERSION_MAJOR);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GLFW_VERSION_MINOR);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 	GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
 
 	if (!window)
@@ -32,6 +35,16 @@ GLFWwindow *initWindow(
 		glfwTerminate();
 
 		return 0;
+	}
+
+	glfwMakeContextCurrent(window);
+
+	glewExperimental = GL_TRUE;
+	GLenum err = glewInit();
+
+	if (GLEW_OK != err)
+	{
+		printf("Error: %s\n", glewGetErrorString(err));
 	}
 
 	return window;

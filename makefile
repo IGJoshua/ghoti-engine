@@ -7,9 +7,10 @@ OBJDIR = build/obj
 LIBDIRS = -Llib
 
 CC = clang
-CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
+CCDB = lldb
+CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR)) -g -D_DEBUG
 
-_LIBS = glfw GL m
+_LIBS = GLEW glfw GL m assimp
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 CORE_DEPS = defines.h core/window.h
@@ -29,14 +30,21 @@ build : $(OBJ)
 .PHONY: clean
 
 clean:
-	rm -f $(OBJDIR)/*
-	rm -f $(OBJDIR)/core/*
-	rm -f $(BUILDDIR)/$(PROJ)*
+	rm -r $(BUILDDIR)/*
+	mkdir $(OBJDIR)
+	mkdir $(OBJDIR)/core
+	mkdir $(OBJDIR)/renderer
+	mkdir $(OBJDIR)/asset_management
 
 .PHONY: run
 
 run : build
 	$(BUILDDIR)/$(PROJ)
+
+.PHONY: debug
+
+debug : build
+	$(CCDB) $(BUILDDIR)/$(PROJ)
 
 .PHONY: rebuild
 
@@ -44,7 +52,7 @@ rebuild : clean build
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL
-_WINLIBS = glfw3dll opengl32
+_WINLIBS = glew glfw3dll opengl32 assimp
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 _WINOBJ = $(foreach O,$(_OBJ),$(O).obj)

@@ -1,6 +1,9 @@
 #include "defines.h"
 #include "core/window.h"
 
+#include "renderer/renderer_types.h"
+#include "renderer/mesh.h"
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -45,7 +48,9 @@ int main()
 	// State previous
 	// State next
 
-	unsigned int count = 0;
+	// TODO: Remove stupid stuff that's just for testing
+	Mesh *m;
+	loadMesh(&m, "resource/mesh/teapot.dae", 0);
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -99,6 +104,7 @@ int main()
 		glfwPollEvents();
 	}
 
+	freeMesh(&m);
 	freeWindow(window);
 
     return 0;
