@@ -9,7 +9,7 @@ LIBDIRS = -Llib
 CC = clang
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 
-_LIBS = glfw GL
+_LIBS = glfw GL m
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 _DEPS = defines.h window.h

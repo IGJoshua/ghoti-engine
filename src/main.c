@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
+#include <math.h>
 
 void keyCallback(
 	GLFWwindow *window,
@@ -44,6 +45,8 @@ int main()
 	// State previous
 	// State next
 
+	unsigned int count = 0;
+
 	while(!glfwWindowShouldClose(window))
 	{
 		// Start timestep
@@ -70,6 +73,13 @@ int main()
 		const double alpha = accumulator / dt;
 
 		// Lerp state between previous and next
+
+		char title[32];
+		sprintf(title, "Monochrome FPS: %f MS/F: %f", 1 / frameTime, frameTime * 1000);
+		if (fmodf((float)currentTime, 1.0f) < 0.001)
+		{
+			glfwSetWindowTitle(window, title);
+		}
 
 		// Render
 		// TODO: Real render code
