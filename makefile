@@ -12,10 +12,10 @@ CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 _LIBS = glfw GL
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
-_DEPS = defines.h
+_DEPS = defines.h window.h
 DEPS = $(patsubst %,$(IDIRS)/%,$(_DEPS))
 
-_OBJ = main
+_OBJ = main window
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
