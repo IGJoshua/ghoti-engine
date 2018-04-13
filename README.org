@@ -1,0 +1,9 @@
+#+TITLE: Project Monochrome
+#+DATE: Friday, April 13th, 2018
+#+AUTHOR: Joshua Suskalo
+#+AUTHOR: Pranav Sahani
+
+* Rendering Engine
+* Scene Representation
+* LUA Integration
+* Entity Component System
