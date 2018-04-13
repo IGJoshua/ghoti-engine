@@ -16,3 +16,5 @@ typedef unsigned char uint8;
 
 typedef double float64;
 typedef float float32;
+
+#define VSYNC 0
