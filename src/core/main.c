@@ -107,5 +107,5 @@ int main()
 	freeMesh(&m);
 	freeWindow(window);
 
-    return 0;
+	return 0;
 }
