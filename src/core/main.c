@@ -50,7 +50,7 @@ int main()
 
 	// TODO: Remove stupid stuff that's just for testing
 	Mesh *m;
-	loadMesh(&m, "resource/mesh/teapot.dae", 0);
+	loadMesh(&m, "resources/meshes/teapot.dae", 0);
 
 	while(!glfwWindowShouldClose(window))
 	{

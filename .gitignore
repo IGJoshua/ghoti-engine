@@ -8,8 +8,8 @@ build/
 lib/
 
 # Art assets
-resource/
-!resource/shader/
+resources/
+!resources/shaders/
 
 # Editor specific files
 .dir-locals.el
