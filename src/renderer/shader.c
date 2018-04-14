@@ -133,7 +133,7 @@ Uniform getUniform(ShaderPipeline pipeline, char *name, UniformType type)
 	uniform.type = type;
 	uniform.name = name;
 
-	glGetUniformLocation(pipeline.object, name);
+	uniform.location = glGetUniformLocation(pipeline.object, name);
 
 	return uniform;
 }

@@ -40,6 +40,8 @@ int main()
 	glfwSwapInterval(VSYNC);
 	glfwSetKeyCallback(window, &keyCallback);
 
+	glEnable(GL_DEPTH_TEST);
+
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
 	// total accumulated fixed timestep
@@ -81,10 +83,10 @@ int main()
 	printf("Value of the location for world uniform: %d\n", worldUniform.location);
 	printf("Get model uniform: %s\n", gluErrorString(glGetError()));
 	Uniform viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
-	printf("Value of the location for view uniform: %d\n", worldUniform.location);
+	printf("Value of the location for view uniform: %d\n", viewUniform.location);
 	printf("Get view uniform: %s\n", gluErrorString(glGetError()));
 	Uniform projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
-	printf("Value of the location for projection uniform: %d\n", worldUniform.location);
+	printf("Value of the location for projection uniform: %d\n", projectionUniform.location);
 	printf("Get projection uniform: %s\n", gluErrorString(glGetError()));
 
 	while(!glfwWindowShouldClose(window))
@@ -137,11 +139,11 @@ int main()
 		bindShaderPipeline(pipeline);
 
 		kmMat4 projection;
-		kmMat4PerspectiveProjection(&projection, kmDegreesToRadians(90), 4.0f / 3.0f, 0.1f, 1000.0f);
+		kmMat4PerspectiveProjection(&projection, 90, 4.0f / 3.0f, 0.1f, 1000.0f);
 		kmMat4 world;
-		kmMat4Identity(&world);
+		kmMat4RotationX(&world, kmDegreesToRadians(-90));
 		kmMat4 view;
-		kmMat4Translation(&view, 0, 0, 15);
+		kmMat4Translation(&view, 0, 0, 150);
 		kmMat4Inverse(&view, &view);
 
 		setUniform(worldUniform, &world);
