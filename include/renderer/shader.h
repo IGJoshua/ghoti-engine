@@ -11,3 +11,7 @@ void freeShader(Shader shader);
 void freeShaderPipeline(ShaderPipeline shader);
 
 void bindShaderPipeline(ShaderPipeline pipeline);
+
+Uniform getUniform(ShaderPipeline pipeline, char *name, UniformType type);
+
+void setUniform(Uniform uniform, void *data);

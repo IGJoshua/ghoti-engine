@@ -5,10 +5,14 @@
 #include "renderer/mesh.h"
 #include "renderer/shader.h"
 
+#include <GL/glu.h>
 #include <GLFW/glfw3.h>
+
+#include <kazmath/mat4.h>
 
 #include <stdio.h>
 #include <math.h>
+#include <malloc.h>
 
 void keyCallback(
 	GLFWwindow *window,
@@ -36,7 +40,7 @@ int main()
 	glfwSwapInterval(VSYNC);
 	glfwSetKeyCallback(window, &keyCallback);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
@@ -54,7 +58,9 @@ int main()
 	loadMesh(&m, "resources/meshes/teapot.dae", 0);
 
 	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
+	printf("Value of the vert shader location: %d\n", vertShader.object);
 	Shader fragShader = compileShaderFromFile("resources/shaders/color.frag", SHADER_FRAGMENT);
+	printf("Value of the frag shader location: %d\n", fragShader.object);
 
 	ShaderPipeline pipeline;
 	{
@@ -64,9 +70,22 @@ int main()
 
 		pipeline = composeShaderPipeline(program, 2);
 	}
+	printf("Value of the shader pipeline location: %d\n", pipeline.object);
 
 	freeShader(vertShader);
 	freeShader(fragShader);
+	free(pipeline.shaders);
+	pipeline.shaderCount = 0;
+
+	Uniform worldUniform = getUniform(pipeline, "model", UNIFORM_MAT4);
+	printf("Value of the location for world uniform: %d\n", worldUniform.location);
+	printf("Get model uniform: %s\n", gluErrorString(glGetError()));
+	Uniform viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
+	printf("Value of the location for view uniform: %d\n", worldUniform.location);
+	printf("Get view uniform: %s\n", gluErrorString(glGetError()));
+	Uniform projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
+	printf("Value of the location for projection uniform: %d\n", worldUniform.location);
+	printf("Get projection uniform: %s\n", gluErrorString(glGetError()));
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -116,7 +135,22 @@ int main()
 		// Render
 		// TODO: Real render code
 		bindShaderPipeline(pipeline);
+
+		kmMat4 projection;
+		kmMat4PerspectiveProjection(&projection, kmDegreesToRadians(90), 4.0f / 3.0f, 0.1f, 1000.0f);
+		kmMat4 world;
+		kmMat4Identity(&world);
+		kmMat4 view;
+		kmMat4Translation(&view, 0, 0, 15);
+		kmMat4Inverse(&view, &view);
+
+		setUniform(worldUniform, &world);
+		setUniform(viewUniform, &view);
+		setUniform(projectionUniform, &projection);
+
 		renderMesh(m);
+
+		glUseProgram(0);
 
 		glfwSwapBuffers(window);
 

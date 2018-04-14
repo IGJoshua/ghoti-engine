@@ -85,3 +85,16 @@ typedef struct shader_pipeline_t
 	uint32 shaderCount;
 	Shader **shaders;
 } ShaderPipeline;
+
+typedef enum uniform_type_e
+{
+	UNIFORM_MAT4,
+	UNIFORM_COUNT
+} UniformType;
+
+typedef struct uniform_t
+{
+	GLuint location;
+	UniformType type;
+	char *name;
+} Uniform;

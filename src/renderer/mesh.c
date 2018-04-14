@@ -28,6 +28,8 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	//uint32 rootMeshIndex = scene->mRootNode->mMeshes[0];
 	const struct aiMesh * mesh = scene->mMeshes[1];
 
+	// TODO: Change this to use the stride and offset
+	// to allow the entire thing to be stored in one array
 	uint32 numVertices = mesh->mNumVertices;
 	kmVec4 *colors = malloc(numVertices * sizeof(kmVec4));
 	kmVec3 *positions = malloc(numVertices * sizeof(kmVec3));
@@ -99,7 +101,7 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 
 	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec4) * numVertices, normals, GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
 	GLuint uvBuffer;
 	glGenBuffers(1, &uvBuffer);
