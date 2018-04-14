@@ -51,15 +51,15 @@ debug : build
 rebuild : clean build
 
 WINCC = x86_64-w64-mingw32-clang
-WINFLAGS = -DGLFW_DLL
-_WINLIBS = glew glfw3dll opengl32 assimp
+WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 _WINOBJ = $(foreach O,$(_OBJ),$(O).obj)
 WINOBJ = $(patsubst %,$(OBJDIR)/%,$(_WINOBJ))
 
 $(OBJDIR)/%.obj : $(SRCDIR)/%.c $(DEPS)
-	$(WINCC) $(CFLAGS) -c -o $@ $<
+	$(WINCC) $(CFLAGS) $(WINFLAGS) -c -o $@ $<
 
 .PHONY: windows
 
