@@ -1,6 +1,9 @@
 #include "defines.h"
 #include "core/window.h"
 
+#include "renderer/renderer_types.h"
+#include "renderer/mesh.h"
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -44,8 +47,6 @@ int main()
 
 	// State previous
 	// State next
-
-	unsigned int count = 0;
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -101,5 +102,5 @@ int main()
 
 	freeWindow(window);
 
-    return 0;
+	return 0;
 }
