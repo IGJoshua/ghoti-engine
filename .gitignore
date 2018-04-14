@@ -13,3 +13,7 @@ resource/
 
 # Editor specific files
 .dir-locals.el
+.clang_complete
+GTAGS
+GRTAGS
+GPATH
