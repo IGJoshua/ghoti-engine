@@ -8,7 +8,7 @@ build/
 lib/
 
 # Art assets
-resources/
+resources/*
 !resources/shaders/
 
 # Editor specific files
