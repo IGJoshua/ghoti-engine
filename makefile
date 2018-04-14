@@ -29,7 +29,8 @@ build : $(OBJ)
 .PHONY: clean
 
 clean:
-	rm -r $(BUILDDIR)/*
+	rm -f -r $(BUILDDIR)
+	mkdir $(BUILDDIR)
 	mkdir $(OBJDIR)
 	mkdir $(OBJDIR)/core
 	mkdir $(OBJDIR)/renderer
@@ -51,7 +52,7 @@ rebuild : clean build
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL
-_WINLIBS = glew glfw3dll opengl32
+_WINLIBS = glew32 glfw3dll opengl32
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 _WINOBJ = $(foreach O,$(_OBJ),$(O).obj)

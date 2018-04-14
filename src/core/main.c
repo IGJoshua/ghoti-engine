@@ -1,9 +1,6 @@
 #include "defines.h"
 #include "core/window.h"
 
-#include "renderer/renderer_types.h"
-#include "renderer/mesh.h"
-
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
