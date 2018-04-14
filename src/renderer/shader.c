@@ -126,6 +126,11 @@ void bindShaderPipeline(ShaderPipeline pipeline)
 	glUseProgram(pipeline.object);
 }
 
+void unbindShaderPipeline()
+{
+	glUseProgram(0);
+}
+
 Uniform getUniform(ShaderPipeline pipeline, char *name, UniformType type)
 {
 	Uniform uniform = {};
