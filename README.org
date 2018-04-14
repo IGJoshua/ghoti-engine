@@ -3,6 +3,16 @@
 #+AUTHOR: Joshua Suskalo
 #+AUTHOR: Pranav Sahani
 
+* Dependencies
+#+BEGIN_SRC
+clang
+glfw
+glew
+kazmath
+mingw-w64-clang
+mingw-w64-glfw
+mingw-w64-glew
+#+END_SRC
 * Rendering Engine
 * Scene Representation
 * LUA Integration
