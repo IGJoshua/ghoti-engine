@@ -3,6 +3,7 @@
 
 #include "renderer/renderer_types.h"
 #include "renderer/mesh.h"
+#include "renderer/shader.h"
 
 #include <GLFW/glfw3.h>
 
@@ -52,6 +53,21 @@ int main()
 	Mesh *m;
 	loadMesh(&m, "resources/meshes/teapot.dae", 0);
 
+	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
+	Shader fragShader = compileShaderFromFile("resources/shaders/color.frag", SHADER_FRAGMENT);
+
+	ShaderPipeline pipeline;
+	{
+		Shader *program[2];
+		program[0] = &vertShader;
+		program[1] = &fragShader;
+
+		pipeline = composeShaderPipeline(program, 2);
+	}
+
+	freeShader(vertShader);
+	freeShader(fragShader);
+
 	while(!glfwWindowShouldClose(window))
 	{
 		// Start timestep
@@ -86,8 +102,6 @@ int main()
 			glfwSetWindowTitle(window, title);
 		}
 
-		// Render
-		// TODO: Real render code
 		int32 width, height;
 		real32 aspect;
 
@@ -98,6 +112,11 @@ int main()
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
+
+		// Render
+		// TODO: Real render code
+		bindShaderPipeline(pipeline);
+		renderMesh(m);
 
 		glfwSwapBuffers(window);
 

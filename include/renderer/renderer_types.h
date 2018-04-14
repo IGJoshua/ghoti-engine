@@ -59,3 +59,29 @@ typedef struct model_t
 	Mesh *mesh;
 	Material *material;
 } Model;
+
+typedef enum shader_type_e
+{
+	SHADER_VERTEX = 0,
+	SHADER_GEOMETRY,
+	SHADER_CONTROL,
+	SHADER_EVALUATION,
+	SHADER_FRAGMENT,
+	SHADER_COMPUTE,
+	SHADER_INVALID,
+	SHADER_TYPE_COUNT
+} ShaderType;
+
+typedef struct shader_t
+{
+	GLuint object;
+	ShaderType type;
+	char *source;
+} Shader;
+
+typedef struct shader_pipeline_t
+{
+	GLuint object;
+	uint32 shaderCount;
+	Shader **shaders;
+} ShaderPipeline;
