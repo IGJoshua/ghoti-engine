@@ -3,12 +3,15 @@ PROJ = monochrome
 IDIRS = include
 SRCDIR = src
 BUILDDIR = build
+RELDIR = build/release
 OBJDIR = build/obj
+RELOBJDIR = build/release/obj
 LIBDIRS = -Llib
 
 CC = clang
 CCDB = lldb
-CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR)) -g -D_DEBUG
+CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
+DBFLAGS = -g -D_DEBUG
 
 _LIBS = GLEW glfw GL m assimp kazmath GLU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
@@ -21,25 +24,49 @@ DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(RENDERER_
 _OBJ = core/main core/window renderer/mesh renderer/shader
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
+RELOBJ = $(patsubst %,$(RELOBJDIR)/%.o,$(_OBJ))
+
 $(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(DBFLAGS) -c -o $@ $<
+
+.PHONY: build
 
 build : $(OBJ)
-	$(CC) $(CFLAGS) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
+	$(CC) $(CFLAGS) $(DBFLAGS) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
+
+$(RELOBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+.PHONY: release
+
+release : $(RELOBJ)
+	$(CC) $(CFLAGS) $(LIBDIRS) -o $(RELDIR)/$(PROJ) $^ $(LIBS)
 
 .PHONY: clean
 
 clean:
-	rm -r $(BUILDDIR)/*
+	rm -f -r $(BUILDDIR)
+	rm -f -r $(RELDIR)
+	mkdir $(BUILDDIR)
 	mkdir $(OBJDIR)
 	mkdir $(OBJDIR)/core
 	mkdir $(OBJDIR)/renderer
 	mkdir $(OBJDIR)/asset_management
+	mkdir $(RELDIR)
+	mkdir $(RELOBJDIR)
+	mkdir $(RELOBJDIR)/core
+	mkdir $(RELOBJDIR)/renderer
+	mkdir $(RELOBJDIR)/asset_management
 
 .PHONY: run
 
 run : build
 	$(BUILDDIR)/$(PROJ)
+
+.PHONY: relrun
+
+relrun : release
+	$(RELDIR)/$(PROJ)
 
 .PHONY: debug
 
