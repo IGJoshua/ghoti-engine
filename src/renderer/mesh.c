@@ -21,7 +21,7 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	memset(*m, 0, sizeof(Mesh));
 #endif
 
-	const struct aiScene *scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes & ~aiProcess_Triangulate);
+	const struct aiScene *scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
 
 	uint32 meshCount = scene->mNumMeshes;
 	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
@@ -67,6 +67,8 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 			indices[i * 3 + j] = mesh->mFaces[i].mIndices[j];
 		}
 	}
+
+	aiReleaseImport(scene);
 
 	// Upload to the gpu
 	GLuint vao;
