@@ -139,7 +139,7 @@ int main()
 		bindShaderPipeline(pipeline);
 
 		kmMat4 projection;
-		kmMat4PerspectiveProjection(&projection, 90, 4.0f / 3.0f, 0.1f, 1000.0f);
+		kmMat4PerspectiveProjection(&projection, 90, aspect, 0.1f, 1000.0f);
 		kmMat4 world;
 		kmMat4RotationX(&world, kmDegreesToRadians(-90));
 		kmMat4 view;
