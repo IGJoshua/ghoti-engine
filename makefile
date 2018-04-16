@@ -7,6 +7,7 @@ RELDIR = build/release
 OBJDIR = build/obj
 RELOBJDIR = build/release/obj
 LIBDIRS = -Llib
+WINLIBDIRS = -Lwinlib
 
 CC = clang
 CCDB = lldb
@@ -91,7 +92,7 @@ $(OBJDIR)/%.obj : $(SRCDIR)/%.c $(DEPS)
 .PHONY: windows
 
 windows : $(WINOBJ)
-	$(WINCC) $(CFLAGS) $(WINFLAGS) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
+	$(WINCC) $(CFLAGS) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 
 .PHONY: wine
 

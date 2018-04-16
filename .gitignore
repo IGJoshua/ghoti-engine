@@ -5,7 +5,6 @@
 
 # Binary resources
 build/
-lib/
 
 # Art assets
 resources/*
