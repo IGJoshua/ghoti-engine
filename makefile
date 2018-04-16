@@ -93,6 +93,8 @@ $(OBJDIR)/%.obj : $(SRCDIR)/%.c $(DEPS)
 
 windows : $(WINOBJ)
 	$(WINCC) $(CFLAGS) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
+	cp winlib/* $(BUILDDIR)/
+	cp $(BUILDDIR)/libassimp.dll $(BUILDDIR)/assimp.dll
 
 .PHONY: wine
 
