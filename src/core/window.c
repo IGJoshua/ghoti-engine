@@ -2,6 +2,10 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <IL/il.h>
+#include <IL/ilu.h>
+
 #include <stdio.h>
 
 internal
@@ -46,6 +50,9 @@ GLFWwindow *initWindow(
 	{
 		printf("Error: %s\n", glewGetErrorString(err));
 	}
+
+	ilInit();
+	iluInit();
 
 	return window;
 }

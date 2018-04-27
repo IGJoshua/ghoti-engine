@@ -12,6 +12,9 @@
 #include <assimp/material.h>
 #include <assimp/postprocess.h>
 
+#include <IL/il.h>
+#include <IL/ilu.h>
+
 #include <malloc.h>
 #include <string.h>
 
@@ -26,7 +29,6 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 
 	uint32 meshCount = scene->mNumMeshes;
 	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
-	//uint32 rootMeshIndex = scene->mRootNode->mMeshes[0];
 	const struct aiMesh * mesh = scene->mMeshes[1];
 
 	const struct aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
@@ -41,8 +43,52 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	} else {
 		printf("Error Getting Texture Name\n");
 	}
-	
 
+	ILuint devilID;
+	ilGenImages(1, &devilID);
+	ilBindImage(devilID);
+	 
+	char texturePath[128] = "resources/meshes/";
+	strcat(texturePath, textureName.data);
+	printf("Texture Path: %s\n", texturePath);
+	ilLoadImage(texturePath);
+
+	printf("IL Load Image: %s\n", iluErrorString(ilGetError()));
+
+	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+	printf("IL Convert Image: %s\n", iluErrorString(ilGetError()));
+
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+
+	printf("Value of the location of the texture: %d\n", textureID);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
+	GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
+	const GLvoid *textureData = ilGetData();
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA8,
+		textureWidth,
+		textureHeight,
+		0,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		textureData
+	);
+		
+	printf("Create GL Texture2D: %s\n", gluErrorString(glGetError()));
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	printf("Generate Mipmaps: %s\n", gluErrorString(glGetError()));
+	
 	// TODO: Change this to use the stride and offset
 	// to allow the entire thing to be stored in one array
 	uint32 numVertices = mesh->mNumVertices;
@@ -153,6 +199,8 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	free(indices);
 	indices = 0;
 
+	ilDeleteImages(1, &devilID);
+
 	return 0;
 }
 
@@ -168,6 +216,8 @@ void freeMesh(Mesh **m)
 
 	glBindVertexArray(0);
 	glDeleteVertexArrays(1, &(*m)->vertexArray);
+
+	//glDeleteTextures(1, &textureID);
 
 	free(*m);
 	*m = 0;

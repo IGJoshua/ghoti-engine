@@ -14,7 +14,7 @@ CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 DBFLAGS = -g -D_DEBUG
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU
+_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 CORE_DEPS = defines.h core/window.h

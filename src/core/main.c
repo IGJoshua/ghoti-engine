@@ -79,8 +79,8 @@ int main()
 	free(pipeline.shaders);
 	pipeline.shaderCount = 0;
 
-	Uniform worldUniform = getUniform(pipeline, "model", UNIFORM_MAT4);
-	printf("Value of the location for world uniform: %d\n", worldUniform.location);
+	Uniform modelUniform = getUniform(pipeline, "model", UNIFORM_MAT4);
+	printf("Value of the location for model uniform: %d\n", modelUniform.location);
 	printf("Get model uniform: %s\n", gluErrorString(glGetError()));
 	Uniform viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
 	printf("Value of the location for view uniform: %d\n", viewUniform.location);
@@ -88,6 +88,11 @@ int main()
 	Uniform projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
 	printf("Value of the location for projection uniform: %d\n", projectionUniform.location);
 	printf("Get projection uniform: %s\n", gluErrorString(glGetError()));
+
+	Uniform textureUniform = getUniform(pipeline, "diffuseTexture", UNIFORM_TEXTURE_2D);
+	printf("Value of the location for texture uniform: %d\n", textureUniform.location);
+	printf("Get texture uniform: %s\n", gluErrorString(glGetError()));
+	GLint textureIndex = 0;
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -146,9 +151,10 @@ int main()
 		kmMat4Translation(&view, 0, 0, 150);
 		kmMat4Inverse(&view, &view);
 
-		setUniform(worldUniform, &world);
+		setUniform(modelUniform, &world);
 		setUniform(viewUniform, &view);
 		setUniform(projectionUniform, &projection);
+		setUniform(textureUniform, &textureIndex);
 
 		renderMesh(m);
 

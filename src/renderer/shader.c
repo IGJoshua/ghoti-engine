@@ -151,6 +151,10 @@ void setUniform(Uniform uniform, void *data)
 	{
 		glUniformMatrix4fv(uniform.location, 1, GL_FALSE, data);
 	} break;
+	case UNIFORM_TEXTURE_2D:
+	{
+		glUniform1i(uniform.location, *(GLint*)data);
+	} break;
 	default:
 	{
 
