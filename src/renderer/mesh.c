@@ -9,6 +9,7 @@
 
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
+#include <assimp/material.h>
 #include <assimp/postprocess.h>
 
 #include <malloc.h>
@@ -17,9 +18,9 @@
 int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 {
 	*m = malloc(sizeof(Mesh));
-#ifdef _DEBUG
-	memset(*m, 0, sizeof(Mesh));
-#endif
+	#ifdef _DEBUG
+		memset(*m, 0, sizeof(Mesh));
+	#endif
 
 	const struct aiScene *scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
 
@@ -27,6 +28,20 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
 	//uint32 rootMeshIndex = scene->mRootNode->mMeshes[0];
 	const struct aiMesh * mesh = scene->mMeshes[1];
+
+	const struct aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+	
+	struct aiString textureName;
+	if (aiGetMaterialString(
+		material,
+		AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0),
+		&textureName) == AI_SUCCESS)
+	{
+		printf("Texture Name: %s\n", textureName.data);
+	} else {
+		printf("Error Getting Texture Name\n");
+	}
+	
 
 	// TODO: Change this to use the stride and offset
 	// to allow the entire thing to be stored in one array
@@ -51,8 +66,8 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 		normals[i].y = mesh->mNormals[i].y;
 		normals[i].z = mesh->mNormals[i].z;
 
-		uvs[i].y = 0.0f;//mesh->mTextureCoords[i]->x;
-		uvs[i].y = 0.0f;//mesh->mTextureCoords[i]->y;
+		uvs[i].x = mesh->mTextureCoords[0][i].x;
+		uvs[i].y = mesh->mTextureCoords[0][i].y;
 	}
 
 	uint32 numIndices = mesh->mNumFaces * 3;
