@@ -29,10 +29,10 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 
 	uint32 meshCount = scene->mNumMeshes;
 	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
-	const struct aiMesh * mesh = scene->mMeshes[1];
+	const struct aiMesh * mesh = scene->mMeshes[0];
 
 	const struct aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-	
+
 	struct aiString textureName;
 	if (aiGetMaterialString(
 		material,
@@ -40,14 +40,16 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 		&textureName) == AI_SUCCESS)
 	{
 		printf("Texture Name: %s\n", textureName.data);
-	} else {
+	}
+	else
+	{
 		printf("Error Getting Texture Name\n");
 	}
 
 	ILuint devilID;
 	ilGenImages(1, &devilID);
 	ilBindImage(devilID);
-	 
+
 	char texturePath[128] = "resources/meshes/";
 	strcat(texturePath, textureName.data);
 	printf("Texture Path: %s\n", texturePath);
@@ -80,7 +82,7 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 		GL_UNSIGNED_BYTE,
 		textureData
 	);
-		
+
 	printf("Create GL Texture2D: %s\n", gluErrorString(glGetError()));
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -88,7 +90,7 @@ int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	printf("Generate Mipmaps: %s\n", gluErrorString(glGetError()));
-	
+
 	// TODO: Change this to use the stride and offset
 	// to allow the entire thing to be stored in one array
 	uint32 numVertices = mesh->mNumVertices;
