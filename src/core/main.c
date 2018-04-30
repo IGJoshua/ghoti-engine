@@ -57,7 +57,7 @@ int main()
 
 	// TODO: Remove stupid stuff that's just for testing
 	Mesh *m;
-	loadMesh(&m, "resources/meshes/teapot.dae", 0);
+	loadMesh(&m, "resources/meshes/teapot.dae");
 
 	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
 	printf("Value of the vert shader location: %d\n", vertShader.object);

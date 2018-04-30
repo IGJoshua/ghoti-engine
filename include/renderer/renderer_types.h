@@ -28,29 +28,34 @@ typedef struct mesh_t
 	uint32 numVertices;
 } Mesh;
 
-enum material_type_e
+typedef enum material_type_e
 {
 	MATERIAL_TYPE_DEBUG,
 	MATERIAL_TYPE_PBR,
 	MATERIAL_TYPE_COUNT
-};
+} MaterialType;
 
-// Material requirements
+// Material requirements:
+// Material Type
 // Diffuse texture
 // Specular texture
 // Normal map
 // Emissive map
-// Static values for each
 typedef struct material_t
 {
+	MaterialType type;
 	char *diffuseTexture;
 	char *specularTexture;
 	char *normalMap;
 	char *emissiveMap;
-	kmVec4 diffuseValue;
-	kmVec4 specularValue;
-	kmVec4 emissiveValue;
+	kmVec3 diffuseValue;
+	kmVec3 specularValue;
+	kmVec3 ambientValue;
+	kmVec3 emissiveValue;
+	kmVec3 transparentValue;
 	real32 specularPower;
+	real32 specularScale;
+	real32 opacity;
 } Material;
 
 typedef struct model_t
