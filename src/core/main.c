@@ -8,6 +8,9 @@
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
+#include <assimp/cimport.h>
+#include <assimp/postprocess.h>
+
 #include <kazmath/mat4.h>
 
 #include <stdio.h>
@@ -55,9 +58,11 @@ int main()
 	// State previous
 	// State next
 
+	const struct aiScene *scene = aiImportFile("resources/meshes/teapot.dae", aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
+
 	// TODO: Remove stupid stuff that's just for testing
 	Mesh *m;
-	loadMesh(&m, "resources/meshes/teapot.dae", 0);
+	loadMesh(scene, &m, 0, 0);
 
 	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
 	printf("Value of the vert shader location: %d\n", vertShader.object);

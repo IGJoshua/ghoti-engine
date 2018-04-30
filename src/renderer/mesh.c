@@ -10,7 +10,6 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/material.h>
-#include <assimp/postprocess.h>
 
 #include <IL/il.h>
 #include <IL/ilu.h>
@@ -18,18 +17,35 @@
 #include <malloc.h>
 #include <string.h>
 
-int32 loadMesh(Mesh **m, const char *filename, const char *meshName)
+int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, const struct aiMesh **out)
 {
 	*m = malloc(sizeof(Mesh));
 	#ifdef _DEBUG
 		memset(*m, 0, sizeof(Mesh));
 	#endif
 
-	const struct aiScene *scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
-
 	uint32 meshCount = scene->mNumMeshes;
-	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
-	const struct aiMesh * mesh = scene->mMeshes[0];
+
+	const struct aiMesh * mesh;
+	if (!meshName)
+	{
+		mesh = scene->mMeshes[0];
+	}
+	else
+	{
+		for (uint32 i = 0; i < meshCount; ++i)
+		{
+			if (scene->mMeshes[i]->mName.data == meshName)
+			{
+				mesh = scene->mMeshes[i];
+			}
+		}
+	}
+
+	if (out)
+	{
+		*out = mesh;
+	}
 
 	const struct aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
