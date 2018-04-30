@@ -86,8 +86,8 @@ debug : build
 rebuild : clean build
 
 WINCC = x86_64-w64-mingw32-clang
-WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32
+WINFLAGS = -DGLFW_DLL -I./vendor -I/usr/local/include -Wl,-subsystem,windows
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 _WINOBJ = $(foreach O,$(_OBJ),$(O).obj)
