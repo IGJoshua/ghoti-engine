@@ -64,6 +64,13 @@ clean:
 run : build
 	$(BUILDDIR)/$(PROJ)
 
+SUPPRESSIONS = monochrome.supp
+
+.PHONY: leakcheck
+
+leakcheck : build
+	valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+
 .PHONY: relrun
 
 relrun : release
