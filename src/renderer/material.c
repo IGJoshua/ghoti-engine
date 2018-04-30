@@ -10,6 +10,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/material.h>
+#include <assimp/postprocess.h>
 
 #include <IL/il.h>
 #include <IL/ilu.h>
@@ -17,38 +18,46 @@
 #include <malloc.h>
 #include <string.h>
 
-int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, const struct aiMesh **out)
+int32 loadMaterials(Material **m, uint32 *numMaterials, const char *filename)
 {
-	*m = malloc(sizeof(Mesh));
-	#ifdef _DEBUG
-		memset(*m, 0, sizeof(Mesh));
-	#endif
+	const struct aiScene *scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
 
-	uint32 meshCount = scene->mNumMeshes;
+	uint32 _numMaterials = *numMaterials;
+	uint32 _arraySize = _numMaterials * sizeof(Material);
+	*numMaterials += scene->mNumMaterials;
+	uint32 arraySize = sizeof(Material) * (*numMaterials);
 
-	const struct aiMesh * mesh;
-	if (!meshName)
+	if (_numMaterials == 0)
 	{
-		mesh = scene->mMeshes[0];
+		*m = malloc(arraySize);
+
+		#ifdef _DEBUG
+			memset(*m, 0, arraySize);
+		#endif
 	}
 	else
 	{
-		for (uint32 i = 0; i < meshCount; ++i)
-		{
-			if (scene->mMeshes[i]->mName.data == meshName)
-			{
-				mesh = scene->mMeshes[i];
-			}
-		}
+		realloc(*m, arraySize);
+
+		#ifdef _DEBUG
+			memset(
+				*m + _arraySize,
+				0,
+				arraySize - _arraySize
+			);
+		#endif
 	}
 
-	if (out)
-	{
-		*out = mesh;
-	}
+
+
+
+
+	uint32 meshCount = scene->mNumMeshes;
+	uint32 rootMeshCount = scene->mRootNode->mNumMeshes;
+	const struct aiMesh * mesh = scene->mMeshes[1];
 
 	const struct aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-
+	
 	struct aiString textureName;
 	if (aiGetMaterialString(
 		material,
@@ -65,8 +74,8 @@ int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, cons
 	ILuint devilID;
 	ilGenImages(1, &devilID);
 	ilBindImage(devilID);
-
-	char texturePath[128] = "resources/textures/";
+	 
+	char texturePath[128] = "resources/meshes/";
 	strcat(texturePath, textureName.data);
 	printf("Texture Path: %s\n", texturePath);
 	ilLoadImage(texturePath);
@@ -98,7 +107,7 @@ int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, cons
 		GL_UNSIGNED_BYTE,
 		textureData
 	);
-
+		
 	printf("Create GL Texture2D: %s\n", gluErrorString(glGetError()));
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -106,7 +115,7 @@ int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, cons
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	printf("Generate Mipmaps: %s\n", gluErrorString(glGetError()));
-
+	
 	// TODO: Change this to use the stride and offset
 	// to allow the entire thing to be stored in one array
 	uint32 numVertices = mesh->mNumVertices;
@@ -222,38 +231,15 @@ int32 loadMesh(const struct aiScene *scene, Mesh **m, const char *meshName, cons
 	return 0;
 }
 
-void freeMesh(Mesh **m)
+void freeMaterial(Material **m)
 {
-	glBindVertexArray((*m)->vertexArray);
-
-	glDeleteBuffers(1, &(*m)->colorBuffer);
-	glDeleteBuffers(1, &(*m)->positionBuffer);
-	glDeleteBuffers(1, &(*m)->normalBuffer);
-	glDeleteBuffers(1, &(*m)->uvBuffer);
-	glDeleteBuffers(1, &(*m)->indexBuffer);
-
-	glBindVertexArray(0);
-	glDeleteVertexArrays(1, &(*m)->vertexArray);
+	free((*m)->diffuseTexture);
+	free((*m)->specularTexture);
+	free((*m)->normalMap);
+	free((*m)->emissiveMap);
 
 	//glDeleteTextures(1, &textureID);
 
 	free(*m);
 	*m = 0;
-}
-
-void renderMesh(Mesh *m)
-{
-	glBindVertexArray(m->vertexArray);
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexBuffer);
-	glDrawElements(GL_TRIANGLES, m->numIndices, GL_UNSIGNED_INT, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
-	glDisableVertexAttribArray(3);
-	glBindVertexArray(0);
 }
