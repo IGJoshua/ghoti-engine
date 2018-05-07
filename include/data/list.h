@@ -3,17 +3,20 @@
 
 #include "data_types.h"
 
+#define LIST_ITERATOR_GET_ELEMENT(type, itr) ((type *)(*(itr))->data)
+
 List createList(uint32 dataSize);
 
-void pushFront(List *l, void *data);
-void pushBack(List *l, void *data);
+void listPushFront(List *l, void *data);
+void listPushBack(List *l, void *data);
 
-void popFront(List *l);
+void listPopFront(List *l);
 
-void clearList(List *l);
+void listClear(List *l);
 
-ListNode **getListIterator(List *l);
-void moveListIterator(ListNode ***itr);
+ListNode **listGetIterator(List *l);
+void listMoveIterator(ListNode ***itr);
+int32 listIteratorAtEnd(ListNode **itr);
 
-void removeListItem(List *l, ListNode **itr);
-void insertListItem(List *l, ListNode **itr, void *data);
+void listRemove(List *l, ListNode **itr);
+void listInsert(List *l, ListNode **itr, void *data);

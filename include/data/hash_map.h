@@ -3,10 +3,12 @@
 
 #include "data_types.h"
 
-HashMap *createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison);
+HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison);
+void deleteHashMap(HashMap *map);
 
-void pushKeyValue(HashMap *map, void *key, void *value);
-void insertKeyValue(HashMap *map, void *key, void *value);
-void *getKey(HashMap *map, void *key);
-void popKey(HashMap *map, void *key);
-void deleteKey(HashMap *map, void *key);
+void hashMapPush(HashMap map, void *key, void *value);
+void hashMapInsert(HashMap map, void *key, void *value);
+void *hashMapGetKey(HashMap map, void *key);
+void hashMapPopKey(HashMap map, void *key);
+void hashMapDeleteKey(HashMap map, void *key);
+void hashMapClear(HashMap map);

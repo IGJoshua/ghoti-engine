@@ -16,7 +16,7 @@ List createList(uint32 dataSize)
 	return ret;
 }
 
-void pushFront(List *l, void *data)
+void listPushFront(List *l, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
 	memcpy(node->data, data, l->dataSize);
@@ -28,21 +28,27 @@ void pushFront(List *l, void *data)
 		l->back = node;
 }
 
-void pushBack(List *l, void *data)
+void listPushBack(List *l, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
 	memcpy(node->data, data, l->dataSize);
 
 	node->next = 0;
 
-	l->back->next = node;
-	l->back = node;
-	if (!l->front)
+	if (l->back)
+	{
+		l->back->next = node;
+		l->back = node;
+	}
+	else
+	{
 		l->front = node;
+		l->back = node;
+	}
 }
 
 inline
-void popFront(List *l)
+void listPopFront(List *l)
 {
 	ListNode *node = l->front;
 
@@ -55,27 +61,33 @@ void popFront(List *l)
 }
 
 inline
-void clearList(List *l)
+void listClear(List *l)
 {
 	while (l->front)
 	{
-		popFront(l);
+		listPopFront(l);
 	}
 }
 
 inline
-ListNode **getListIterator(List *l)
+ListNode **listGetIterator(List *l)
 {
 	return &l->front;
 }
 
 inline
-void moveListIterator(ListNode ***itr)
+void listMoveIterator(ListNode ***itr)
 {
 	*itr = &(**itr)->next;
 }
 
-void removeListItem(List *l, ListNode **itr)
+inline
+int32 listIteratorAtEnd(ListNode **itr)
+{
+	return (*itr) == 0;
+}
+
+void listRemove(List *l, ListNode **itr)
 {
 	// Save node to delete after
 	ListNode *temp = *itr;
@@ -95,7 +107,7 @@ void removeListItem(List *l, ListNode **itr)
 }
 
 inline
-void insertListItem(List *l, ListNode **itr, void *data)
+void listInsert(List *l, ListNode **itr, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
 	memcpy(node->data, data, l->dataSize);

@@ -36,6 +36,6 @@ typedef struct hash_map_t
 	uint32 keySizeBytes;
 	uint32 valueSizeBytes;
 	uint32 bucketCount;
-	int32 (*comparison)(void *key1, void *key2);
+	ComparisonOp comparison;
 	HashMapBucket buckets[];
-} HashMap;
+} *HashMap;

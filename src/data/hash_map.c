@@ -12,9 +12,10 @@ typedef struct hash_map_storage_t
 	uint8 data[];
 } HashMapStorage;
 
-HashMap *createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison)
+HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison)
 {
-	HashMap *map = malloc(sizeof(HashMap) + sizeof(HashMapBucket) * bucketCount);
+	uint32 mapSize = sizeof(struct hash_map_t) + (sizeof(HashMapBucket) * bucketCount);
+	HashMap map = malloc(mapSize);
 
 	map->keySizeBytes = keySize;
 	map->valueSizeBytes = valueSize;
@@ -27,6 +28,13 @@ HashMap *createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, Com
 	}
 
 	return map;
+}
+
+void deleteHashMap(HashMap *map)
+{
+	hashMapClear(*map);
+	free(*map);
+	*map = 0;
 }
 
 internal
@@ -44,7 +52,7 @@ uint64 hash(void *bytes, uint32 numBytes)
 	return hash;
 }
 
-void pushKeyValue(HashMap *map, void *key, void *value)
+void hashMapPush(HashMap map, void *key, void *value)
 {
 	uint64 keyHash = hash(key, map->keySizeBytes);
 	uint32 bucketIndex = keyHash % map->bucketCount;
@@ -54,25 +62,25 @@ void pushKeyValue(HashMap *map, void *key, void *value)
 	memcpy(storage->data, key, map->keySizeBytes);
 	memcpy(storage->data + map->keySizeBytes, value, map->valueSizeBytes);
 
-	pushFront(&map->buckets[bucketIndex], storage);
+	listPushFront(&map->buckets[bucketIndex], storage);
 
 	free(storage);
 }
 
-void insertKeyValue(HashMap *map, void *key, void *value)
+void hashMapInsert(HashMap map, void *key, void *value)
 {
-	deleteKey(map, key);
-	pushKeyValue(map, key, value);
+	hashMapDeleteKey(map, key);
+	hashMapPush(map, key, value);
 }
 
-void *getKey(HashMap *map, void *key)
+void *hashMapGetKey(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key, map->keySizeBytes);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = getListIterator(&map->buckets[bucketIndex]);
-		 itr != 0;
-		 moveListIterator(&itr))
+	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		if (map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
 		{
@@ -83,38 +91,46 @@ void *getKey(HashMap *map, void *key)
 	return 0;
 }
 
-void popKey(HashMap *map, void *key)
+void hashMapPopKey(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key, map->keySizeBytes);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = getListIterator(&map->buckets[bucketIndex]);
-		 itr != 0;
-		 moveListIterator(&itr))
+	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		if (map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
 		{
-			removeListItem(&map->buckets[bucketIndex], itr);
+			listRemove(&map->buckets[bucketIndex], itr);
 			break;
 		}
 	}
 }
 
-void deleteKey(HashMap *map, void *key)
+void hashMapDeleteKey(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key, map->keySizeBytes);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = getListIterator(&map->buckets[bucketIndex]);
-		 itr != 0;)
+	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+		 !listIteratorAtEnd(itr);)
 	{
 		if (map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
 		{
-			removeListItem(&map->buckets[bucketIndex], itr);
+			listRemove(&map->buckets[bucketIndex], itr);
 		}
 		else
 		{
-			moveListIterator(&itr);
+			listMoveIterator(&itr);
 		}
+	}
+}
+
+void hashMapClear(HashMap map)
+{
+	for (uint32 i = 0; i < map->bucketCount; ++i)
+	{
+		listClear(&map->buckets[i]);
 	}
 }
