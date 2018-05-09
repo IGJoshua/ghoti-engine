@@ -1,15 +1,13 @@
 #include "defines.h"
 #include "core/window.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "renderer/renderer_types.h"
-#include "renderer/mesh.h"
 #include "renderer/shader.h"
 
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
-
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
 
 #include <kazmath/mat4.h>
 
@@ -38,7 +36,7 @@ int main()
 	{
 		return -1;
 	}
-
+	
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
 	glfwSetKeyCallback(window, &keyCallback);
@@ -58,11 +56,19 @@ int main()
 	// State previous
 	// State next
 
-	const struct aiScene *scene = aiImportFile("resources/meshes/teapot.dae", aiProcessPreset_TargetRealtime_Quality & ~aiProcess_SplitLargeMeshes);
-
-	// TODO: Remove stupid stuff that's just for testing
-	Mesh *m;
-	loadMesh(scene, &m, 0, 0);
+	Model *models;
+	uint32 numModels = 0;
+	Texture *textures;
+	uint32 numTextures = 0;
+	Scene *scene;
+	loadScene(
+		"scene_1",
+		models,
+		&numModels,
+		textures,
+		&numTextures,
+		&scene
+	);
 
 	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
 	printf("Value of the vert shader location: %d\n", vertShader.object);
@@ -161,7 +167,7 @@ int main()
 		setUniform(projectionUniform, &projection);
 		setUniform(textureUniform, &textureIndex);
 
-		renderMesh(m);
+		// renderScene(&scene);
 
 		glUseProgram(0);
 
@@ -170,7 +176,8 @@ int main()
 		glfwPollEvents();
 	}
 
-	freeMesh(&m);
+	// TODO
+	// unloadScene(&scene);
 	freeWindow(window);
 
 	return 0;

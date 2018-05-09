@@ -17,4 +17,6 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
+typedef enum { false, true } bool;
+
 #define VSYNC 0
