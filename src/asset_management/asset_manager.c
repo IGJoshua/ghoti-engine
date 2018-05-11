@@ -21,13 +21,12 @@
 #include <malloc.h>
 #include <string.h>
 
-int32 loadScene(
-	const char *name,
-	Model *models,
-	uint32 *numModels,
-	Texture *textures,
-	uint32 *numTextures,
-	Scene **scene)
+Model *models;
+uint32 numModels = 0;
+Texture *textures;
+uint32 numTextures = 0;
+
+int32 loadScene(const char *name, Scene *scene)
 {
 	// TODO Get number of models in the scene from JSON file,
 	// check for only models that haven't already been loaded
@@ -44,15 +43,16 @@ int32 loadScene(
 
 	if (scene)
 	{
-		*scene = malloc(sizeof(Scene));
+		scene = malloc(sizeof(Scene));
 #ifdef _DEBUG
-		memset(*scene, 0, sizeof(Scene));
+		memset(scene, 0, sizeof(Scene));
 #endif
-		(*scene)->models = modelNames;
+		scene->models = modelNames;
+		scene->numModels = numSceneModels;
 	}
 
-	uint32 previousBufferSize = *numModels * sizeof(Model);
-	uint32 newBufferSize = (*numModels + numSceneModels) * sizeof(Model);
+	uint32 previousBufferSize = numModels * sizeof(Model);
+	uint32 newBufferSize = (numModels + numSceneModels) * sizeof(Model);
 	
 	if (previousBufferSize == 0)
 	{
@@ -76,7 +76,7 @@ int32 loadScene(
 	
 	for (uint32 i = 0; i < numSceneModels; i++)
 	{
-		loadModel(modelNames[i], textures, numTextures, &models[(*numModels)++]);
+		loadModel(modelNames[i], &models[numModels++]);
 		
 		if (!scene)
 		{
@@ -92,11 +92,7 @@ int32 loadScene(
 	return 0;
 }
 
-int32 loadModel(
-	char *name,
-	Texture *textures,
-	uint32 *numTextures,
-	Model *model)
+int32 loadModel(char *name, Model *model)
 {
 	model->name = name;
 	
@@ -115,8 +111,8 @@ int32 loadModel(
 	// reallocate to a smaller size if some textures were unique
 	
 	// If texture is not unique, increase texture refcount
-	uint32 previousBufferSize = *numTextures * sizeof(Texture);
-	uint32 newBufferSize = (*numTextures + scene->mNumTextures) * sizeof(Texture);
+	uint32 previousBufferSize = numTextures * sizeof(Texture);
+	uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
 	
 	if (previousBufferSize == 0)
 	{
@@ -168,8 +164,6 @@ int32 loadModel(
 			scene,
 			scene->mMeshes[i],
 			&meshData,
-			textures,
-			numTextures,
 			&model->materials[i]
 		);
 	}
@@ -272,9 +266,7 @@ int32 loadModel(
 	return 0;
 }
 
-int32 loadMesh(
-	const struct aiMesh *mesh,
-	MeshData *meshData)
+int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData)
 {
 	// TODO: Change this to use the stride and offset
 	// to allow the entire thing to be stored in one array
@@ -324,8 +316,6 @@ int32 loadMaterial(
 	const struct aiScene *scene,
 	const struct aiMesh *mesh,
 	const MeshData *meshData,
-	Texture *textures,
-	uint32 *numTextures,
 	Material *material)
 {
 	material->type = MATERIAL_TYPE_DEBUG;
@@ -342,7 +332,7 @@ int32 loadMaterial(
 		&textureName) == AI_SUCCESS)
 	{
 		material->diffuseTexture = textureName.data;
-		loadTexture(textureName.data, TEXTURE_TYPE_DIFFUSE, &textures[(*numTextures)++]);
+		loadTexture(textureName.data, TEXTURE_TYPE_DIFFUSE, &textures[numTextures++]);
 	}
 
 	if (aiGetMaterialString(
@@ -351,7 +341,7 @@ int32 loadMaterial(
 		&textureName) == AI_SUCCESS)
 	{
 		material->specularTexture = textureName.data;
-		loadTexture(textureName.data, TEXTURE_TYPE_SPECULAR, &textures[(*numTextures)++]);
+		loadTexture(textureName.data, TEXTURE_TYPE_SPECULAR, &textures[numTextures++]);
 	}
 
 	if (aiGetMaterialString(
@@ -360,7 +350,7 @@ int32 loadMaterial(
 		&textureName) == AI_SUCCESS)
 	{
 		material->normalMap = textureName.data;
-		loadTexture(textureName.data, TEXTURE_TYPE_NORMAL, &textures[(*numTextures)++]);
+		loadTexture(textureName.data, TEXTURE_TYPE_NORMAL, &textures[numTextures++]);
 	}
 
 	if (aiGetMaterialString(
@@ -369,7 +359,7 @@ int32 loadMaterial(
 		&textureName) == AI_SUCCESS)
 	{
 		material->emissiveMap = textureName.data;
-		loadTexture(textureName.data, TEXTURE_TYPE_EMISSIVE, &textures[(*numTextures)++]);
+		loadTexture(textureName.data, TEXTURE_TYPE_EMISSIVE, &textures[numTextures++]);
 	}
 
 	struct aiColor4D materialValue;
@@ -458,10 +448,7 @@ int32 loadMaterial(
 	return 0;
 }
 
-int32 loadTexture(
-	char *name,
-	TextureType type,
-	Texture *texture)
+int32 loadTexture(char *name, TextureType type, Texture *texture)
 {
 	texture->name = name;
 	texture->type = type;
@@ -511,44 +498,35 @@ int32 loadTexture(
 	return 0;
 }
 
-bool isUniqueModel(
-	const char *name,
-	Model *models,
-	uint32 *numModels)
+Model* getModel(const char *name)
 {
-	for (uint32 i = 0; i < *numModels; i++)
+	for (uint32 i = 0; i < numModels; i++)
 	{
 		if (strcmp(models[i].name, name) == 0)
 		{
-			return false;
+			return &models[i];
 		}
 	}
 
-	return true;
+	return NULL;
 }
 
-bool isUniqueTexture(
-	const char *name,
-	Texture *textures,
-	uint32 *numTextures)
+Texture* getTexture(const char *name)
 {
-	for (uint32 i = 0; i < *numTextures; i++)
+	for (uint32 i = 0; i < numTextures; i++)
 	{
 		if (strcmp(textures[i].name, name) == 0)
 		{
-			return false;
+			return &textures[i];
 		}
 	}
 
-	return true;
+	return NULL;
 }
 
-int32 freeModel(
-	const char *name,
-	Model *models,
-	uint32 *numModels)
+int32 freeModel(const char *name)
 {
-	for (uint32 i = 0; i < *numModels; i++)
+	for (uint32 i = 0; i < numModels; i++)
 	{
 		Model *model = &models[i];
 
@@ -558,38 +536,24 @@ int32 freeModel(
 			{
 				free(model->name);
 
-				glBindVertexArray(model->mesh.vertexArray);
-
-				glDeleteBuffers(1, &model->mesh.colorBuffer);
-				glDeleteBuffers(1, &model->mesh.positionBuffer);
-				glDeleteBuffers(1, &model->mesh.normalBuffer);
-				glDeleteBuffers(1, &model->mesh.tangentBuffer);
-				glDeleteBuffers(1, &model->mesh.bitangentBuffer);
-				glDeleteBuffers(1, &model->mesh.uvBuffer);
-				glDeleteBuffers(1, &model->mesh.indexBuffer);
-
-				glBindVertexArray(0);
-				glDeleteVertexArrays(1, &model->mesh.vertexArray);
+				freeMesh(&model->mesh);
 
 				for (uint32 j = 0; j < model->numMaterials; j++)
 				{
-					free(model->materials[i].diffuseTexture);
-					free(model->materials[i].specularTexture);
-					free(model->materials[i].normalMap);
-					free(model->materials[i].emissiveMap);
+					freeMaterial(&model->materials[i]);
 				}
 
 				free(model->materials);
 
-				Model *resizedModels = malloc(--(*numModels) * sizeof(Model));
+				Model *resizedModels = malloc(--numModels * sizeof(Model));
 				memcpy(resizedModels, models, i * sizeof(Model));
 
-				if (i < *numModels)
+				if (i < numModels)
 				{
 					memcpy(
 						resizedModels + i * sizeof(Model),
 						model + sizeof(Model),
-						(*numModels - i) * sizeof(Model)
+						(numModels - i) * sizeof(Model)
 					);
 				}
 
@@ -604,12 +568,40 @@ int32 freeModel(
 	return 0;
 }
 
-int32 freeTexture(
-	const char *name,
-	Texture *textures,
-	uint32 *numTextures) 
+int32 freeMesh(Mesh *mesh)
 {
-	for (uint32 i = 0; i < *numTextures; i++)
+	glBindVertexArray(mesh->vertexArray);
+
+	glDeleteBuffers(1, &mesh->colorBuffer);
+	glDeleteBuffers(1, &mesh->positionBuffer);
+	glDeleteBuffers(1, &mesh->normalBuffer);
+	glDeleteBuffers(1, &mesh->tangentBuffer);
+	glDeleteBuffers(1, &mesh->bitangentBuffer);
+	glDeleteBuffers(1, &mesh->uvBuffer);
+	glDeleteBuffers(1, &mesh->indexBuffer);
+
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &mesh->vertexArray);
+	
+	return 0;
+}
+
+int32 freeMaterial(Material *material)
+{
+	freeTexture(material->diffuseTexture);
+	free(material->diffuseTexture);
+	freeTexture(material->specularTexture);
+	free(material->specularTexture);
+	freeTexture(material->normalMap);
+	free(material->normalMap);
+	freeTexture(material->emissiveMap);
+	free(material->emissiveMap);
+	return 0;
+}
+
+int32 freeTexture(const char *name)
+{
+	for (uint32 i = 0; i < numTextures; i++)
 	{
 		Texture *texture = &textures[i];
 
@@ -621,15 +613,15 @@ int32 freeTexture(
 
 				glDeleteTextures(1, &texture->id);
 
-				Texture *resizedTextures = malloc(--(*numTextures) * sizeof(Texture));
+				Texture *resizedTextures = malloc(--numTextures * sizeof(Texture));
 				memcpy(resizedTextures, textures, i * sizeof(Texture));
 
-				if (i < *numTextures)
+				if (i < numTextures)
 				{
 					memcpy(
 						resizedTextures + i * sizeof(Texture),
 						texture + sizeof(Texture),
-						(*numTextures - i) * sizeof(Texture)
+						(numTextures - i) * sizeof(Texture)
 					);
 				}
 
@@ -644,7 +636,15 @@ int32 freeTexture(
 	return 0;
 }
 
-int32 unloadScene(Scene **scene)
+int32 unloadScene(Scene *scene)
 {
+	for (uint32 i = 0; i < scene->numModels; i++)
+	{
+		freeModel(scene->models[i]);
+		free(scene->models[i]);
+	}
+
+	free(scene->models);
+
 	return 0;
 }

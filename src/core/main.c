@@ -55,55 +55,10 @@ int main()
 
 	// State previous
 	// State next
+	Scene *scene; 
+  	loadScene("scene_1", &scene); 
 
-	Model *models;
-	uint32 numModels = 0;
-	Texture *textures;
-	uint32 numTextures = 0;
-	Scene *scene;
-	loadScene(
-		"scene_1",
-		models,
-		&numModels,
-		textures,
-		&numTextures,
-		&scene
-	);
-
-	Shader vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
-	printf("Value of the vert shader location: %d\n", vertShader.object);
-	Shader fragShader = compileShaderFromFile("resources/shaders/color.frag", SHADER_FRAGMENT);
-	printf("Value of the frag shader location: %d\n", fragShader.object);
-
-	ShaderPipeline pipeline;
-	{
-		Shader *program[2];
-		program[0] = &vertShader;
-		program[1] = &fragShader;
-
-		pipeline = composeShaderPipeline(program, 2);
-	}
-	printf("Value of the shader pipeline location: %d\n", pipeline.object);
-
-	freeShader(vertShader);
-	freeShader(fragShader);
-	free(pipeline.shaders);
-	pipeline.shaderCount = 0;
-
-	Uniform modelUniform = getUniform(pipeline, "model", UNIFORM_MAT4);
-	printf("Value of the location for model uniform: %d\n", modelUniform.location);
-	printf("Get model uniform: %s\n", gluErrorString(glGetError()));
-	Uniform viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
-	printf("Value of the location for view uniform: %d\n", viewUniform.location);
-	printf("Get view uniform: %s\n", gluErrorString(glGetError()));
-	Uniform projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
-	printf("Value of the location for projection uniform: %d\n", projectionUniform.location);
-	printf("Get projection uniform: %s\n", gluErrorString(glGetError()));
-
-	Uniform textureUniform = getUniform(pipeline, "diffuseTexture", UNIFORM_TEXTURE_2D);
-	printf("Value of the location for texture uniform: %d\n", textureUniform.location);
-	printf("Get texture uniform: %s\n", gluErrorString(glGetError()));
-	GLint textureIndex = 0;
+	initRenderer();
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -151,33 +106,17 @@ int main()
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		// Render
-		// TODO: Real render code
-		bindShaderPipeline(pipeline);
-
-		kmMat4 projection;
-		kmMat4PerspectiveProjection(&projection, 90, aspect, 0.1f, 1000.0f);
-		kmMat4 world;
-		kmMat4RotationX(&world, kmDegreesToRadians(-90));
-		kmMat4 view;
-		kmMat4Translation(&view, 0, 0, 150);
-		kmMat4Inverse(&view, &view);
-
-		setUniform(modelUniform, &world);
-		setUniform(viewUniform, &view);
-		setUniform(projectionUniform, &projection);
-		setUniform(textureUniform, &textureIndex);
-
-		// renderScene(&scene);
-
-		glUseProgram(0);
+		for (uint32 i = 0; i < scene->numModels; i++)
+		{
+			renderModel(scene->models[i]);
+		}
 
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
 	}
 
-	// TODO
-	// unloadScene(&scene);
+	unloadScene(scene);
 	freeWindow(window);
 
 	return 0;

@@ -8,6 +8,8 @@
 #include <kazmath/vec4.h>
 #include <kazmath/mat4.h>
 
+#define NUM_VERTEX_ATTRIBUTES 6
+
 typedef struct vertex_t
 {
 	kmVec4 color;
@@ -112,6 +114,7 @@ typedef struct model_t
 typedef struct scene_t
 {
 	char **models;
+	uint32 numModels;
 } Scene;
 
 typedef enum shader_type_e
