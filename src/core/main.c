@@ -1,6 +1,9 @@
 #include "defines.h"
 #include "core/window.h"
 
+#include "ECS/ecs_types.h"
+#include "ECS/component.h"
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -18,6 +21,11 @@ void keyCallback(
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
 }
+
+typedef struct example_component_t
+{
+
+} ExampleComponent;
 
 int main()
 {
@@ -41,6 +49,8 @@ int main()
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
+
+	// TODO: Setup basic component state
 
 	// State previous
 	// State next

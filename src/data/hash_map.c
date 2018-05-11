@@ -30,7 +30,7 @@ HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, Comp
 	return map;
 }
 
-void deleteHashMap(HashMap *map)
+void freeHashMap(HashMap *map)
 {
 	hashMapClear(*map);
 	free(*map);

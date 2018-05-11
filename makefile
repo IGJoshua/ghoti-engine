@@ -17,9 +17,10 @@ CORE_DEPS = defines.h core/window.h
 DATA_DEPS = data/data_types.h data/list.h data/hash_map.h
 ASSET_MANAGEMENT_DEPS = asset_management/asset_management_types.h
 THREADING_DEPS = threading/threading_types.h threading/promise.h
-DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS)) $(patsubst %,$(IDIRS)/%,$(THREADING_DEPS)) $(patsubst %,$(IDIRS)/%,$(DATA_DEPS))
+ECS_DEPS = ECS/ecs_types.h ECS/component.h ECS/scene.h ECS/system.h
+DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS)) $(patsubst %,$(IDIRS)/%,$(THREADING_DEPS)) $(patsubst %,$(IDIRS)/%,$(DATA_DEPS)) $(patsubst %,$(IDIRS)/%,$(ECS_DEPS))
 
-_OBJ = core/main core/window threading/promise data/list data/hash_map
+_OBJ = core/main core/window threading/promise data/list data/hash_map ECS/component ECS/scene ECS/system
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
@@ -37,6 +38,7 @@ clean:
 	mkdir $(OBJDIR)/core
 	mkdir $(OBJDIR)/data
 	mkdir $(OBJDIR)/renderer
+	mkdir $(OBJDIR)/ECS
 	mkdir $(OBJDIR)/threading
 	mkdir $(OBJDIR)/asset_management
 
