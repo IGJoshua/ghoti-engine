@@ -18,7 +18,7 @@ Uniform projectionUniform;
 
 Uniform diffuseTextureUniform;
 	
-int32 initRenderer()
+int32 initRenderer(void)
 {
 	vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
 	fragShader = compileShaderFromFile("resources/shaders/color.frag", SHADER_FRAGMENT);

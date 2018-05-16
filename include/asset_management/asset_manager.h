@@ -8,7 +8,7 @@ struct aiMesh;
 struct aiString;
 
 int32 loadScene(const char *name, Scene **scene);
-int32 loadModel(char *name);
+int32 loadModel(const char *name);
 int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData);
 int32 loadMaterial(
 	const struct aiScene *scene,
@@ -16,7 +16,7 @@ int32 loadMaterial(
 	const MeshData *meshData,
 	Material *material
 );
-int32 loadTexture(char *name, TextureType type);
+int32 loadTexture(const struct aiString *name, TextureType type);
 
 Model* getModel(const char *name);
 Texture* getTexture(const char *name);

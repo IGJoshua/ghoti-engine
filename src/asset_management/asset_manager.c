@@ -81,11 +81,12 @@ int32 loadScene(const char *name, Scene **scene)
 	return 0;
 }
 
-int32 loadModel(char *name)
+int32 loadModel(const char *name)
 {
 	Model *model = &models[numModels++];
 
-	model->name = name;
+	model->name = malloc(256);
+	strcpy(model->name, name);
 	
 	char filename[1024];
 	sprintf(filename, "resources/models/%s.dae", name);
@@ -103,7 +104,8 @@ int32 loadModel(char *name)
 	
 	// If texture is not unique, increase texture refcount
 	uint32 previousBufferSize = numTextures * sizeof(Texture);
-	uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
+	// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
+	uint32 newBufferSize = (numTextures + 1) * sizeof(Texture);
 	
 	if (previousBufferSize == 0)
 	{
@@ -324,7 +326,7 @@ int32 loadMaterial(
 	{
 		material->diffuseTexture = malloc(textureName.length + 1);
 		strcpy(material->diffuseTexture, textureName.data);
-		loadTexture(textureName.data, TEXTURE_TYPE_DIFFUSE);
+		loadTexture(&textureName, TEXTURE_TYPE_DIFFUSE);
 	}
 
 	if (aiGetMaterialString(
@@ -334,7 +336,7 @@ int32 loadMaterial(
 	{
 		material->specularTexture = malloc(textureName.length + 1);
 		strcpy(material->specularTexture, textureName.data);
-		loadTexture(textureName.data, TEXTURE_TYPE_SPECULAR);
+		loadTexture(&textureName, TEXTURE_TYPE_SPECULAR);
 	}
 
 	if (aiGetMaterialString(
@@ -344,7 +346,7 @@ int32 loadMaterial(
 	{
 		material->normalMap = malloc(textureName.length + 1);
 		strcpy(material->normalMap, textureName.data);
-		loadTexture(textureName.data, TEXTURE_TYPE_NORMAL);
+		loadTexture(&textureName, TEXTURE_TYPE_NORMAL);
 	}
 
 	if (aiGetMaterialString(
@@ -354,7 +356,7 @@ int32 loadMaterial(
 	{
 		material->emissiveMap = malloc(textureName.length + 1);
 		strcpy(material->emissiveMap, textureName.data);
-		loadTexture(textureName.data, TEXTURE_TYPE_EMISSIVE);
+		loadTexture(&textureName, TEXTURE_TYPE_EMISSIVE);
 	}
 
 	struct aiColor4D materialValue;
@@ -443,11 +445,12 @@ int32 loadMaterial(
 	return 0;
 }
 
-int32 loadTexture(char *name, TextureType type)
+int32 loadTexture(const struct aiString *name, TextureType type)
 {
 	Texture *texture = &textures[numTextures++];
 
-	strcpy(texture->name, name);
+	texture->name = malloc(name->length + 1);
+	strcpy(texture->name, name->data);
 
 	texture->type = type;
 
@@ -456,7 +459,7 @@ int32 loadTexture(char *name, TextureType type)
 	ilBindImage(devilID);
 	
 	char filename[1024];
-	sprintf(filename, "resources/textures/%s", name);
+	sprintf(filename, "resources/textures/%s", texture->name);
 	ilLoadImage(filename);
 
 	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
@@ -483,9 +486,10 @@ int32 loadTexture(char *name, TextureType type)
 		textureData
 	);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	// TODO Add mipmapping
+	// glGenerateMipmap(GL_TEXTURE_2D);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -555,6 +559,7 @@ int32 freeModel(const char *name)
 
 	if (--(model->refCount) == 0)
 	{
+		free(model->name);
 		freeMesh(&model->mesh);
 
 		for (uint32 i = 0; i < model->numMaterials; i++)
@@ -604,9 +609,13 @@ int32 freeMesh(Mesh *mesh)
 int32 freeMaterial(Material *material)
 {
 	freeTexture(material->diffuseTexture);
+	free(material->diffuseTexture);
 	freeTexture(material->specularTexture);
+	free(material->specularTexture);
 	freeTexture(material->normalMap);
+	free(material->normalMap);
 	freeTexture(material->emissiveMap);
+	free(material->emissiveMap);
 
 	return 0;
 }
@@ -620,6 +629,7 @@ int32 freeTexture(const char *name)
 	{
 		if (--(texture->refCount) == 0)
 		{
+			free(texture->name);
 			glDeleteTextures(1, &texture->id);
 
 			Texture *resizedTextures = malloc(--numTextures * sizeof(Texture));
