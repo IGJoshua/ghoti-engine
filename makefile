@@ -18,11 +18,11 @@ _LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 CORE_DEPS = defines.h core/window.h
-RENDERER_DEPS = renderer/renderer_types.h renderer/shader.h
+RENDERER_DEPS = renderer/renderer_types.h renderer/renderer.h renderer/shader.h
 ASSET_MANAGEMENT_DEPS = asset_management/asset_manager.h
 DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(RENDERER_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS))
 
-_OBJ = core/main core/window renderer/shader asset_management/asset_manager
+_OBJ = core/main core/window renderer/shader renderer/renderer asset_management/asset_manager
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
 RELOBJ = $(patsubst %,$(RELOBJDIR)/%.o,$(_OBJ))

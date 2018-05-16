@@ -4,6 +4,7 @@
 #include "asset_management/asset_manager.h"
 
 #include "renderer/renderer_types.h"
+#include "renderer/renderer.h"
 #include "renderer/shader.h"
 
 #include <GL/glu.h>
@@ -56,7 +57,7 @@ int main()
 	// State previous
 	// State next
 	Scene *scene; 
-  	loadScene("scene_1", &scene); 
+  	loadScene("scene_1", &scene);
 
 	initRenderer();
 
@@ -95,20 +96,26 @@ int main()
 		}
 
 		int32 width, height;
-		real32 aspect;
-
 		glfwGetFramebufferSize(window, &width, &height);
-
-		aspect = (real32)width / (real32)height;
 
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
+		real32 aspectRatio = (real32)width / (real32)height;
+
+		kmMat4 projection;
+		kmMat4PerspectiveProjection(&projection, 90, aspectRatio, 0.1f, 1000.0f);
+		kmMat4 view;
+		kmMat4Translation(&view, 0, 0, 150);
+		kmMat4Inverse(&view, &view);
+
 		// Render
 		for (uint32 i = 0; i < scene->numModels; i++)
 		{
-			renderModel(scene->models[i]);
+			kmMat4 world;
+			kmMat4RotationX(&world, kmDegreesToRadians(-90));
+			renderModel(scene->models[i], &world, &view, &projection);
 		}
 
 		glfwSwapBuffers(window);
@@ -116,7 +123,7 @@ int main()
 		glfwPollEvents();
 	}
 
-	unloadScene(scene);
+	unloadScene(&scene);
 	freeWindow(window);
 
 	return 0;

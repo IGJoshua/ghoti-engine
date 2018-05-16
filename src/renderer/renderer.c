@@ -1,6 +1,11 @@
-#include "asset_manager/asset_manager.h"
+#include "asset_management/asset_manager.h"
 #include "renderer/renderer_types.h"
+#include "renderer/renderer.h"
 #include "renderer/shader.h"
+
+#include <GLFW/glfw3.h>
+
+#include <malloc.h>
 
 Shader vertShader;
 Shader fragShader;
@@ -36,38 +41,23 @@ int32 initRenderer()
 	projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
 
 	diffuseTextureUniform = getUniform(pipeline, "diffuseTexture", UNIFORM_TEXTURE_2D);
+
+	return 0;
 }
 
-int32 renderModel(const char *name)
+int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *projection)
 {
 	Model *model = getModel(name);
 	Mesh *mesh = &model->mesh;
 
 	bindShaderPipeline(pipeline);
 
-	kmMat4 projection;
-	kmMat4PerspectiveProjection(&projection, 90, aspect, 0.1f, 1000.0f);
-	kmMat4 world;
-	kmMat4RotationX(&world, kmDegreesToRadians(-90));
-	kmMat4 view;
-	kmMat4Translation(&view, 0, 0, 150);
-	kmMat4Inverse(&view, &view);
-
-	setUniform(modelUniform, &world);
-	setUniform(viewUniform, &view);
-	setUniform(projectionUniform, &projection);
+	setUniform(modelUniform, world);
+	setUniform(viewUniform, view);
+	setUniform(projectionUniform, projection);
 
 	GLint textureIndex = 0;
 	setUniform(diffuseTextureUniform, &textureIndex);
-
-	for (uint32 i = model->numMaterials; i++)
-	{
-		Material *material = &model->materials[i];
-		Texture *texture = getTexture(material->diffuseTexture);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture->id);
-	}
 
 	glBindVertexArray(mesh->vertexArray);
 
@@ -77,7 +67,38 @@ int32 renderModel(const char *name)
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
-	glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+
+	for (uint32 i = 0; i < model->numMaterials; i++)
+	{
+		Material *material = &model->materials[i];
+		Texture *texture = getTexture(material->diffuseTexture);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture->id);
+
+		uint32 offsetStart = 0;
+		if (i > 0)
+		{
+			offsetStart = model->materials[i - 1].subsetOffset;
+		}
+
+		uint32 numIndices = material->subsetOffset;
+		if (i > 0)
+		{
+			numIndices -= model->materials[i - 1].subsetOffset;
+		}
+
+		glDrawElements(
+			GL_TRIANGLES,
+			numIndices,
+			GL_UNSIGNED_INT,
+			(GLvoid*)(sizeof(uint32) * offsetStart)
+		);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
@@ -87,4 +108,6 @@ int32 renderModel(const char *name)
 
 	glBindVertexArray(0);
 	glUseProgram(0);
+
+	return 0;
 }

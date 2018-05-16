@@ -30,7 +30,6 @@ typedef struct mesh_t
 	GLuint uvBuffer;
 	GLuint vertexArray;
 	GLuint indexBuffer;
-	uint32 numIndices;
 } Mesh;
 
 typedef struct mesh_data_t
