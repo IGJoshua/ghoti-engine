@@ -34,13 +34,7 @@ build : $(OBJ)
 clean:
 	rm -f -r $(BUILDDIR)
 	mkdir $(BUILDDIR)
-	mkdir $(OBJDIR)
-	mkdir $(OBJDIR)/core
-	mkdir $(OBJDIR)/data
-	mkdir $(OBJDIR)/renderer
-	mkdir $(OBJDIR)/ECS
-	mkdir $(OBJDIR)/threading
-	mkdir $(OBJDIR)/asset_management
+	mkdir $(OBJDIR)/{,core,data,renderer,ECS,threading,asset_management}
 
 .PHONY: run
 
