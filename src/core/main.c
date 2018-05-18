@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "core/window.h"
 
-#include "asset_management/asset_manager.h"
+#include "asset_management/scene.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/renderer.h"

@@ -19,10 +19,10 @@ LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 CORE_DEPS = defines.h core/window.h
 RENDERER_DEPS = renderer/renderer_types.h renderer/renderer.h renderer/shader.h
-ASSET_MANAGEMENT_DEPS = asset_management/asset_manager.h
+ASSET_MANAGEMENT_DEPS = asset_management/asset_manager_types.h asset_management/material.h asset_management/mesh.h asset_management/model.h asset_management/scene.h asset_management/texture.h
 DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(RENDERER_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS))
 
-_OBJ = core/main core/window renderer/shader renderer/renderer asset_management/asset_manager
+_OBJ = resources core/main core/window renderer/shader renderer/renderer asset_management/material asset_management/mesh asset_management/model asset_management/scene asset_management/texture
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
 RELOBJ = $(patsubst %,$(RELOBJDIR)/%.o,$(_OBJ))

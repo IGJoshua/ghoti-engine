@@ -1,4 +1,5 @@
-#include "asset_management/asset_manager.h"
+#include "asset_management/model.h"
+#include "asset_management/texture.h"
 #include "renderer/renderer_types.h"
 #include "renderer/renderer.h"
 #include "renderer/shader.h"
