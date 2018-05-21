@@ -3,6 +3,7 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
+#include <alloca.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -56,14 +57,12 @@ void hashMapPush(HashMap map, void *key, void *value)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	HashMapStorage *storage = malloc(sizeof(HashMapStorage) + map->keySizeBytes + map->valueSizeBytes);
+	HashMapStorage *storage = alloca(sizeof(HashMapStorage) + map->keySizeBytes + map->valueSizeBytes);
 	storage->hash = keyHash;
 	memcpy(storage->data, key, map->keySizeBytes);
 	memcpy(storage->data + map->keySizeBytes, value, map->valueSizeBytes);
 
 	listPushFront(&map->buckets[bucketIndex], storage);
-
-	free(storage);
 }
 
 void hashMapInsert(HashMap map, void *key, void *value)
