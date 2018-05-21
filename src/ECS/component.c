@@ -11,9 +11,12 @@ ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 component
 {
 	ComponentDataTable *ret = malloc(sizeof(ComponentDataTable) + numEntries * componentSize);
 
+	ASSERT(ret);
+
 	ret->componentSize = componentSize;
 	ret->numEntries = numEntries;
 	ret->idToIndex = createHashMap(sizeof(UUID), sizeof(uint32), numEntries, (ComparisonOp)&strcmp);
+	ASSERT(ret->idToIndex);
 
 	memset(ret->data, 0, numEntries * componentSize);
 

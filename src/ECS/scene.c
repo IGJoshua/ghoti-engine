@@ -13,7 +13,12 @@ Scene *createScene()
 {
 	Scene *ret = malloc(sizeof(Scene));
 
-	ret->componentTypes = createHashMap(sizeof(UUID), sizeof(ComponentDataTable *), COMPONENT_TYPE_BUCKETS, (ComparisonOp)&strcmp);
+	ret->componentTypes = createHashMap(
+		sizeof(UUID),
+		sizeof(ComponentDataTable *),
+		COMPONENT_TYPE_BUCKETS,
+		(ComparisonOp)&strcmp
+	);
 	ret->entities = createHashMap(sizeof(UUID), sizeof(List), ENTITY_BUCKETS, (ComparisonOp)&strcmp);
 
 	return ret;
@@ -25,6 +30,19 @@ void freeScene(Scene **scene)
 	freeHashMap(&(*scene)->entities);
 	free(*scene);
 	*scene = 0;
+}
+
+void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize, uint32 maxComponents)
+{
+	ComponentDataTable *table = createComponentDataTable(maxComponents, componentSize);
+	ASSERT(table);
+	hashMapInsert(scene->componentTypes, &componentID, &table);
+}
+
+void sceneRemoveComponentType(Scene *scene, UUID componentID)
+{
+	ComponentDataTable *temp = hashMapGetKey(scene->componentTypes, &componentID);
+	freeComponentDataTable(&temp);
 }
 
 internal
@@ -80,9 +98,13 @@ void sceneAddComponentToEntity(
 	UUID componentType,
 	void *componentData)
 {
+	// Get the data table
+	ComponentDataTable *dataTable = hashMapGetKey(s->componentTypes, &componentType);
+	ASSERT(dataTable);
+
 	// Add the component to the data table
 	cdtInsert(
-		hashMapGetKey(s->componentTypes, &componentType),
+		dataTable,
 		entity,
 		componentData
 	);

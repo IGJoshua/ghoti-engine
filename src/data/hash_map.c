@@ -38,15 +38,14 @@ void freeHashMap(HashMap *map)
 }
 
 internal
-uint64 hash(void *bytes, uint32 numBytes)
+uint64 hash(unsigned char *str)
 {
-	uint64 hash = 5381;
-	int32 c;
+	unsigned long hash = 5381;
+	int c;
 
-	for (uint32 i = 0; i < numBytes; ++i)
+	while ((c = *str++))
 	{
-		c = *((int32 *)bytes++);
-		hash = ((hash << 5) + hash) + c;
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 	}
 
 	return hash;
@@ -54,7 +53,7 @@ uint64 hash(void *bytes, uint32 numBytes)
 
 void hashMapPush(HashMap map, void *key, void *value)
 {
-	uint64 keyHash = hash(key, map->keySizeBytes);
+	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	HashMapStorage *storage = malloc(sizeof(HashMapStorage) + map->keySizeBytes + map->valueSizeBytes);
@@ -75,7 +74,7 @@ void hashMapInsert(HashMap map, void *key, void *value)
 
 void *hashMapGetKey(HashMap map, void *key)
 {
-	uint64 keyHash = hash(key, map->keySizeBytes);
+	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
@@ -93,7 +92,7 @@ void *hashMapGetKey(HashMap map, void *key)
 
 void hashMapPopKey(HashMap map, void *key)
 {
-	uint64 keyHash = hash(key, map->keySizeBytes);
+	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
@@ -110,7 +109,7 @@ void hashMapPopKey(HashMap map, void *key)
 
 void hashMapDeleteKey(HashMap map, void *key)
 {
-	uint64 keyHash = hash(key, map->keySizeBytes);
+	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);

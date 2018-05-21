@@ -12,3 +12,5 @@ void systemRun(
 	Scene *scene,
 	System *system
 );
+
+void freeSystem(System *system);

@@ -18,3 +18,14 @@ typedef double real64;
 typedef float real32;
 
 #define VSYNC 0
+
+#ifdef _DEBUG
+#define ASSERT(test) if (!(test))\
+	{\
+		printf("Assertion: %s failed in file %s on line %d\n", #test, __FILE__, __LINE__);\
+		volatile uint32 *n = 0;\
+		*(uint32*)n = 5;\
+	}
+#else
+#define ASSERT(test)
+#endif

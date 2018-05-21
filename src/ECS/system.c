@@ -24,6 +24,12 @@ void systemRun(
 	Scene *scene,
 	System *system)
 {
+	// Return if it's not a system which runs each frame
+	if (!system->fn)
+	{
+		return;
+	}
+
 	// Get the first component type
 	ComponentDataTable *firstComp = (ComponentDataTable *)system->componentTypes.front->data;
 
@@ -62,4 +68,12 @@ void systemRun(
 			system->fn(scene, *(UUID *)(firstComp->data + i * (firstComp->componentSize * sizeof(UUID))));
 		}
 	}
+}
+
+void freeSystem(System *system)
+{
+	listClear(&system->componentTypes);
+	system->init = 0;
+	system->fn = 0;
+	system->shutdown = 0;
 }
