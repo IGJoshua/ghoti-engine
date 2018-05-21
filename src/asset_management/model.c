@@ -38,7 +38,7 @@ int32 loadModel(const char *name)
 	// If texture is not unique, increase texture refcount
 	uint32 previousBufferSize = numTextures * sizeof(Texture);
 	// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
-	uint32 newBufferSize = (numTextures + 1) * sizeof(Texture);
+	uint32 newBufferSize = (numTextures + 2) * sizeof(Texture);
 	
 	if (previousBufferSize == 0)
 	{
@@ -60,132 +60,148 @@ int32 loadModel(const char *name)
 #endif
 	}
 
-	MeshData meshData;
-	memset(&meshData, 0, sizeof(MeshData));
-	
-	uint32 numVertices = 0;
-	uint32 numIndices = 0;
-	for (uint32 i = 0; i < scene->mNumMeshes; i++)
+	model->numMaterials = scene->mNumMaterials;
+	model->materials = malloc(scene->mNumMaterials * sizeof(Material));
+	memset(model->materials, 0, scene->mNumMaterials * sizeof(Material));
+
+	for (uint32 i = 0; i < scene->mNumMaterials; i++)
 	{
-		numVertices += scene->mMeshes[i]->mNumVertices;
-		numIndices += scene->mMeshes[i]->mNumFaces * 3;
-	}
-
-	meshData.colors = malloc(numVertices * sizeof(kmVec4));
-	meshData.positions = malloc(numVertices * sizeof(kmVec3));
-	meshData.normals = malloc(numVertices * sizeof(kmVec3));
-	meshData.tangents = malloc(numVertices * sizeof(kmVec3));
-	meshData.bitangents = malloc(numVertices * sizeof(kmVec3));
-	meshData.uvs = malloc(numVertices * sizeof(kmVec2));
-	meshData.indices = malloc(numIndices * sizeof(uint32));
-
-	model->numMaterials = scene->mNumMeshes;
-	model->materials = malloc(scene->mNumMeshes * sizeof(Material));
-	memset(model->materials, 0, scene->mNumMeshes * sizeof(Material));
-
-	for (uint32 i = 0; i < scene->mNumMeshes; i++)
-	{
-		loadMesh(scene->mMeshes[i], &meshData);
 		loadMaterial(
-			scene,
-			scene->mMeshes[i],
-			&meshData,
+			scene->mMaterials[i],
 			&model->materials[i]
 		);
 	}
+
+	model->numMeshes = scene->mNumMaterials;
+	model->meshes = malloc(scene->mNumMaterials * sizeof(Mesh));
+
+	for (uint32 i = 0; i < scene->mNumMaterials; i++)
+	{
+		MeshData meshData;
+		memset(&meshData, 0, sizeof(MeshData));
+
+		uint32 numVertices = 0;
+		uint32 numIndices = 0;
+		for (uint32 j = 0; j < scene->mNumMeshes; j++)
+		{
+			if (scene->mMeshes[j]->mMaterialIndex == i)
+			{
+				numVertices += scene->mMeshes[j]->mNumVertices;
+				numIndices += scene->mMeshes[j]->mNumFaces * 3;
+			}
+		}
+
+		meshData.colors = malloc(numVertices * sizeof(kmVec4));
+		meshData.positions = malloc(numVertices * sizeof(kmVec3));
+		meshData.normals = malloc(numVertices * sizeof(kmVec3));
+		meshData.tangents = malloc(numVertices * sizeof(kmVec3));
+		meshData.bitangents = malloc(numVertices * sizeof(kmVec3));
+		meshData.uvs = malloc(numVertices * sizeof(kmVec2));
+		meshData.indices = malloc(numIndices * sizeof(uint32));
+
+		for (uint32 j = 0; j < scene->mNumMeshes; j++)
+		{
+			if (scene->mMeshes[j]->mMaterialIndex == i)
+			{
+				loadMesh(scene->mMeshes[j], &meshData);
+			}
+		}
+
+		GLuint vao;
+		glGenVertexArrays(1, &vao);
+
+		model->meshes[i].vertexArray = vao;
+
+		glBindVertexArray(vao);
+
+		uint32 bufferIndex = 0;
+		
+		GLuint colorBuffer;
+		glGenBuffers(1, &colorBuffer);
+
+		model->meshes[i].colorBuffer = colorBuffer;
+
+		glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec4) * numVertices, meshData.colors, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+		GLuint positionBuffer;
+		glGenBuffers(1, &positionBuffer);
+
+		model->meshes[i].positionBuffer = positionBuffer;
+
+		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.positions, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		GLuint normalBuffer;
+		glGenBuffers(1, &normalBuffer);
+
+		model->meshes[i].normalBuffer = normalBuffer;
+
+		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.normals, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
+		
+		GLuint tangentBuffer;
+		glGenBuffers(1, &tangentBuffer);
+
+		model->meshes[i].tangentBuffer = tangentBuffer;
+
+		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.tangents, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
 	
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
+		GLuint bitangentBuffer;
+		glGenBuffers(1, &bitangentBuffer);
 
-	model->mesh.vertexArray = vao;
+		model->meshes[i].bitangentBuffer = bitangentBuffer;
 
-	glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.bitangents, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
-	uint32 bufferIndex = 0;
-	
-	GLuint colorBuffer;
-	glGenBuffers(1, &colorBuffer);
+		GLuint uvBuffer;
+		glGenBuffers(1, &uvBuffer);
 
-	model->mesh.colorBuffer = colorBuffer;
+		model->meshes[i].uvBuffer = uvBuffer;
 
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec4) * numVertices, meshData.colors, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec2) * numVertices, meshData.uvs, GL_STATIC_DRAW);
+		glVertexAttribPointer(bufferIndex++, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-	GLuint positionBuffer;
-	glGenBuffers(1, &positionBuffer);
+		GLuint indexBuffer;
+		glGenBuffers(1, &indexBuffer);
 
-	model->mesh.positionBuffer = positionBuffer;
+		model->meshes[i].indexBuffer = indexBuffer;
 
-	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.positions, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * numIndices, meshData.indices, GL_STATIC_DRAW);
 
-	GLuint normalBuffer;
-	glGenBuffers(1, &normalBuffer);
+		model->meshes[i].numIndices = numIndices;
 
-	model->mesh.normalBuffer = normalBuffer;
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.normals, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
-	
-	GLuint tangentBuffer;
-	glGenBuffers(1, &tangentBuffer);
-
-	model->mesh.tangentBuffer = tangentBuffer;
-
-	glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.tangents, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
-	
-	GLuint bitangentBuffer;
-	glGenBuffers(1, &bitangentBuffer);
-
-	model->mesh.bitangentBuffer = bitangentBuffer;
-
-	glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.bitangents, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
-
-	GLuint uvBuffer;
-	glGenBuffers(1, &uvBuffer);
-
-	model->mesh.uvBuffer = uvBuffer;
-
-	glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec2) * numVertices, meshData.uvs, GL_STATIC_DRAW);
-	glVertexAttribPointer(bufferIndex++, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-	GLuint indexBuffer;
-	glGenBuffers(1, &indexBuffer);
-
-	model->mesh.indexBuffer = indexBuffer;
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * numIndices, meshData.indices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(0);
+		glBindVertexArray(0);
+		
+		free(meshData.colors);
+		meshData.colors = 0;
+		free(meshData.positions);
+		meshData.positions = 0;
+		free(meshData.normals);
+		meshData.normals = 0;
+		free(meshData.tangents);
+		meshData.normals = 0;
+		free(meshData.bitangents);
+		meshData.normals = 0;
+		free(meshData.uvs);
+		meshData.uvs = 0;
+		free(meshData.indices);
+		meshData.indices = 0;
+	}
 
 	aiReleaseImport(scene);
-
-	free(meshData.colors);
-	meshData.colors = 0;
-	free(meshData.positions);
-	meshData.positions = 0;
-	free(meshData.normals);
-	meshData.normals = 0;
-	free(meshData.tangents);
-	meshData.normals = 0;
-	free(meshData.bitangents);
-	meshData.normals = 0;
-	free(meshData.uvs);
-	meshData.uvs = 0;
-	free(meshData.indices);
-	meshData.indices = 0;
 
 	model->refCount++;
 	
@@ -194,11 +210,14 @@ int32 loadModel(const char *name)
 
 Model* getModel(const char *name)
 {
-	for (uint32 i = 0; i < numModels; i++)
+	if (name)
 	{
-		if (strcmp(models[i].name, name) == 0)
+		for (uint32 i = 0; i < numModels; i++)
 		{
-			return &models[i];
+			if (strcmp(models[i].name, name) == 0)
+			{
+				return &models[i];
+			}
 		}
 	}
 
@@ -207,11 +226,14 @@ Model* getModel(const char *name)
 
 uint32 getModelIndex(const char *name)
 {
-	for (uint32 i = 0; i < numModels; i++)
+	if (name)
 	{
-		if (strcmp(models[i].name, name) == 0)
+		for (uint32 i = 0; i < numModels; i++)
 		{
-			return i;
+			if (strcmp(models[i].name, name) == 0)
+			{
+				return i;
+			}
 		}
 	}
 
@@ -226,7 +248,13 @@ int32 freeModel(const char *name)
 	if (--(model->refCount) == 0)
 	{
 		free(model->name);
-		freeMesh(&model->mesh);
+
+		for (uint32 i = 0; i < model->numMeshes; i++)
+		{
+			freeMesh(&model->meshes[i]);
+		}
+
+		free(model->meshes);
 
 		for (uint32 i = 0; i < model->numMaterials; i++)
 		{
@@ -241,8 +269,8 @@ int32 freeModel(const char *name)
 		if (index < numModels)
 		{
 			memcpy(
-				resizedModels + index * sizeof(Model),
-				model + sizeof(Model),
+				&resizedModels[index],
+				&models[index + 1],
 				(numModels - index) * sizeof(Model)
 			);
 		}

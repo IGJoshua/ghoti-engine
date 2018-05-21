@@ -17,6 +17,7 @@ typedef struct mesh_t
 	GLuint uvBuffer;
 	GLuint vertexArray;
 	GLuint indexBuffer;
+	uint32 numIndices;
 } Mesh;
 
 typedef enum material_type_e
@@ -41,7 +42,6 @@ typedef struct material_t
 	float specularPower;
 	float specularScale;
 	float opacity;
-	uint32 subsetOffset;
 } Material;
 
 typedef struct scene_t

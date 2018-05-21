@@ -21,7 +21,7 @@ int32 loadScene(const char *name, Scene **scene)
 	for (uint32 i = 0; i < numSceneModels; i++)
 	{
 		// TODO Get unique model names from JSON file
-		modelNames[i] = "teapot";
+		modelNames[i] = "test";
 	}
 
 	if (scene)

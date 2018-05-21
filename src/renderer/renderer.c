@@ -49,7 +49,6 @@ int32 initRenderer(void)
 int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *projection)
 {
 	Model *model = getModel(name);
-	Mesh *mesh = &model->mesh;
 
 	bindShaderPipeline(pipeline);
 
@@ -60,54 +59,44 @@ int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *project
 	GLint textureIndex = 0;
 	setUniform(diffuseTextureUniform, &textureIndex);
 
-	glBindVertexArray(mesh->vertexArray);
-
-	for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+	for (uint32 i = 0; i < model->numMeshes; i++)
 	{
-		glEnableVertexAttribArray(i);
-	}
+		Mesh *mesh = &model->meshes[i];
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+		glBindVertexArray(mesh->vertexArray);
 
-	for (uint32 i = 0; i < model->numMaterials; i++)
-	{
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
 		Material *material = &model->materials[i];
 		Texture *texture = getTexture(material->diffuseTexture);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture->id);
 
-		uint32 offsetStart = 0;
-		if (i > 0)
-		{
-			offsetStart = model->materials[i - 1].subsetOffset;
-		}
-
-		uint32 numIndices = material->subsetOffset;
-		if (i > 0)
-		{
-			numIndices -= model->materials[i - 1].subsetOffset;
-		}
-
 		glDrawElements(
 			GL_TRIANGLES,
-			numIndices,
+			mesh->numIndices,
 			GL_UNSIGNED_INT,
-			(GLvoid*)(sizeof(uint32) * offsetStart)
+			NULL
 		);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 	}
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
-	{
-		glDisableVertexAttribArray(i);
-	}
-
-	glBindVertexArray(0);
 	glUseProgram(0);
 
 	return 0;

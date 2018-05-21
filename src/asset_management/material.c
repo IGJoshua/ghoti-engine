@@ -5,14 +5,10 @@
 #include <malloc.h>
 
 int32 loadMaterial(
-	const struct aiScene *scene,
-	const struct aiMesh *mesh,
-	const MeshData *meshData,
+	const struct aiMaterial *materialData,
 	Material *material)
 {
 	material->type = MATERIAL_TYPE_DEBUG;
-
-	const struct aiMaterial *materialData = scene->mMaterials[mesh->mMaterialIndex];
 
 	// TODO Error Checking using if-else statements
 
@@ -138,8 +134,6 @@ int32 loadMaterial(
 	{
 		material->opacity = materialConstant;
 	}
-
-	material->subsetOffset = meshData->numIndices;
 
 	return 0;
 }

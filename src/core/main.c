@@ -107,7 +107,7 @@ int main()
 		kmMat4 projection;
 		kmMat4PerspectiveProjection(&projection, 90, aspectRatio, 0.1f, 1000.0f);
 		kmMat4 view;
-		kmMat4Translation(&view, 0, 0, 150);
+		kmMat4Translation(&view, 0, 0, 2);
 		kmMat4Inverse(&view, &view);
 
 		// Render

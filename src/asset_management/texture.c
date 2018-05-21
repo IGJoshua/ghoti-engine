@@ -66,11 +66,14 @@ int32 loadTexture(const struct aiString *name, TextureType type)
 
 Texture* getTexture(const char *name)
 {
-	for (uint32 i = 0; i < numTextures; i++)
+	if (name)
 	{
-		if (strcmp(textures[i].name, name) == 0)
+		for (uint32 i = 0; i < numTextures; i++)
 		{
-			return &textures[i];
+			if (strcmp(textures[i].name, name) == 0)
+			{
+				return &textures[i];
+			}
 		}
 	}
 
@@ -79,11 +82,14 @@ Texture* getTexture(const char *name)
 
 uint32 getTextureIndex(const char *name)
 {
-	for (uint32 i = 0; i < numTextures; i++)
+	if (name)
 	{
-		if (strcmp(textures[i].name, name) == 0)
+		for (uint32 i = 0; i < numTextures; i++)
 		{
-			return i;
+			if (strcmp(textures[i].name, name) == 0)
+			{
+				return i;
+			}
 		}
 	}
 
@@ -108,8 +114,8 @@ int32 freeTexture(const char *name)
 			if (index < numTextures)
 			{
 				memcpy(
-					resizedTextures + index * sizeof(Texture),
-					texture + sizeof(Texture),
+					&resizedTextures[index],
+					&textures[index + 1],
 					(numTextures - index) * sizeof(Texture)
 				);
 			}

@@ -54,7 +54,8 @@ typedef struct texture_t
 typedef struct model_t
 {
 	char *name;
-	Mesh mesh;
+	Mesh *meshes;
+	uint32 numMeshes;
 	Material *materials;
 	uint32 numMaterials;
 	uint32 refCount;

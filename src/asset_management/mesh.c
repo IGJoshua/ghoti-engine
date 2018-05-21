@@ -36,7 +36,6 @@ int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData)
 		meshData->numVertices++;
 	}
 
-	uint32 numIndices = mesh->mNumFaces * 3;
 	for (uint32 i = 0; i < mesh->mNumFaces; ++i)
 	{
 		for (int j = 0; j < 3; ++j)
