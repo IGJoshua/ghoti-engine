@@ -3,6 +3,8 @@
 
 #include "ECS/ecs_types.h"
 
+#define CDT_ID_BUCKETS 1
+
 ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 componentSize);
 void freeComponentDataTable(ComponentDataTable **table);
 

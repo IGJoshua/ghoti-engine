@@ -15,7 +15,7 @@ ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 component
 
 	ret->componentSize = componentSize;
 	ret->numEntries = numEntries;
-	ret->idToIndex = createHashMap(sizeof(UUID), sizeof(uint32), numEntries, (ComparisonOp)&strcmp);
+	ret->idToIndex = createHashMap(sizeof(UUID), sizeof(uint32), CDT_ID_BUCKETS, (ComparisonOp)&strcmp);
 	ASSERT(ret->idToIndex);
 
 	memset(ret->data, 0, numEntries * componentSize);
