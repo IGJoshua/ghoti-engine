@@ -8,6 +8,7 @@
 
 #include "data/data_types.h"
 #include "data/list.h"
+#include "data/hash_map.h"
 
 #include <GLFW/glfw3.h>
 
@@ -55,8 +56,47 @@ void nameSystem(Scene *scene, UUID entityID)
 	printf("%s\n", name->name);
 }
 
+int32 equint32(void *num1, void *num2)
+{
+	return *(uint32 *)num1 == *(uint32 *)num2;
+}
+
 int main()
 {
+	// TODO: Test hash table
+	HashMap map = createHashMap(sizeof(uint32), sizeof(uint32), 7, &equint32);
+
+	UUID k = {};
+	uint32 v = 5;
+
+	memset(k.string, 0, sizeof(UUID));
+	strcpy(k.string, "transform");
+	v = 1;
+	hashMapInsert(map, &k, &v);
+	ASSERT(hashMapGetKey(map, &k));
+	ASSERT(*(uint32 *)hashMapGetKey(map, &k) == 1);
+
+	memset(k.string, 0, sizeof(UUID));
+	strcpy(k.string, "name");
+	v = 2;
+	hashMapInsert(map, &k, &v);
+	ASSERT(hashMapGetKey(map, &k));
+	ASSERT(*(uint32 *)hashMapGetKey(map, &k) == 2);
+
+	memset(k.string, 0, sizeof(UUID));
+	strcpy(k.string, "mesh");
+	v = 3;
+	hashMapInsert(map, &k, &v);
+	ASSERT(hashMapGetKey(map, &k));
+	ASSERT(*(uint32 *)hashMapGetKey(map, &k) == 3);
+
+	memset(k.string, 0, sizeof(UUID));
+	strcpy(k.string, "transform");
+	ASSERT(hashMapGetKey(map, &k));
+	ASSERT(*(uint32 *)hashMapGetKey(map, &k) == 1);
+
+	freeHashMap(&map);
+
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
 	if (!window)
