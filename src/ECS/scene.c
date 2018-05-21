@@ -37,6 +37,8 @@ void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize,
 	ComponentDataTable *table = createComponentDataTable(maxComponents, componentSize);
 	ASSERT(table);
 	hashMapInsert(scene->componentTypes, &componentID, &table);
+	ASSERT(hashMapGetKey(scene->componentTypes, &componentID));
+	ASSERT(table == *(ComponentDataTable **)hashMapGetKey(scene->componentTypes, &componentID));
 }
 
 void sceneRemoveComponentType(Scene *scene, UUID componentID)
