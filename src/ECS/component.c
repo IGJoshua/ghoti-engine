@@ -9,16 +9,25 @@
 
 ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 componentSize)
 {
-	ComponentDataTable *ret = malloc(sizeof(ComponentDataTable) + numEntries * componentSize);
+	ComponentDataTable *ret = malloc(
+		sizeof(ComponentDataTable)
+		+ numEntries
+		* (componentSize + sizeof(UUID))
+	);
 
 	ASSERT(ret);
 
 	ret->componentSize = componentSize;
 	ret->numEntries = numEntries;
-	ret->idToIndex = createHashMap(sizeof(UUID), sizeof(uint32), CDT_ID_BUCKETS, (ComparisonOp)&strcmp);
+	ret->idToIndex = createHashMap(
+		sizeof(UUID),
+		sizeof(uint32),
+		CDT_ID_BUCKETS,
+		(ComparisonOp)&strcmp
+	);
 	ASSERT(ret->idToIndex);
 
-	memset(ret->data, 0, numEntries * componentSize);
+	memset(ret->data, 0, numEntries * (componentSize + sizeof(UUID)));
 
 	return ret;
 }
@@ -40,7 +49,10 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		UUID emptyID = {};
 		for (; i < table->numEntries; ++i)
 		{
-			if (!strcmp((char *)(table->data + i * (table->componentSize + sizeof(UUID))), emptyID.string))
+			if (!strcmp(
+					(char *)(table->data + i * (table->componentSize + sizeof(UUID))),
+					emptyID.string
+				))
 			{
 				break;
 			}
@@ -54,6 +66,11 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		// Set i to the index
 		i = *(uint32 *)hashMapGetKey(table->idToIndex, &entityID);
 	}
+
+	ASSERT(i >= 0);
+	ASSERT(i < table->numEntries);
+	ASSERT(i * (table->componentSize + sizeof(UUID)) + sizeof(UUID) + table->componentSize
+		   <= table->numEntries * (table->componentSize + sizeof(UUID)));
 
 	// Put the UUID into the table
 	memcpy(table->data + i * (table->componentSize + sizeof(UUID)),
@@ -76,10 +93,13 @@ void cdtRemove(
 	if (pIndex)
 	{
 		memset(
-			table->data + *pIndex * (table->componentSize + sizeof(UUID)),
+			table->data
+			+ *pIndex
+			* (table->componentSize + sizeof(UUID)),
 			0,
 			sizeof(UUID)
 		);
+		hashMapDeleteKey(table->idToIndex, &entityID);
 	}
 }
 

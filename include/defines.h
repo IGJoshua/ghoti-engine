@@ -27,7 +27,8 @@ typedef float real32;
 #define ASSERT(test) if (!(test))\
 	{\
 		printf("Assertion: %s failed in file %s on line %d\n", #test, __FILE__, __LINE__);\
-		exit(ASSERTION_FAILED);\
+		volatile int32* crash = 0;\
+		*crash = 0;\
 	}
 #else
 #define ASSERT(test)
