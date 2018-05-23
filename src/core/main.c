@@ -37,7 +37,7 @@ int main()
 	{
 		return -1;
 	}
-	
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
 	glfwSetKeyCallback(window, &keyCallback);
@@ -56,7 +56,7 @@ int main()
 
 	// State previous
 	// State next
-	Scene *scene; 
+	Scene *scene;
   	loadScene("scene_1", &scene);
 
 	initRenderer();
