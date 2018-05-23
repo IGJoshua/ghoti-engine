@@ -3,8 +3,8 @@
 
 #include "ECS/ecs_types.h"
 
-#define COMPONENT_TYPE_BUCKETS 1
-#define ENTITY_BUCKETS 1
+#define COMPONENT_TYPE_BUCKETS 97
+#define ENTITY_BUCKETS 97
 
 Scene *createScene(void);
 void freeScene(Scene **scene);
@@ -12,6 +12,7 @@ void freeScene(Scene **scene);
 void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize, uint32 maxComponents);
 void sceneRemoveComponentType(Scene *scene, UUID componentID);
 
+void sceneRegisterEntity(Scene *s, UUID newEntity);
 UUID sceneCreateEntity(Scene *s);
 void sceneRemoveEntity(Scene *s, UUID entity);
 

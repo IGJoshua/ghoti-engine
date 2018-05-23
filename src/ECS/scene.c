@@ -63,13 +63,16 @@ UUID generateUUID()
 	return ret;
 }
 
+void sceneRegisterEntity(Scene *s, UUID newEntity)
+{
+	List emptyList = createList(sizeof(UUID));
+	hashMapInsert(s->entities, &newEntity, &emptyList);
+}
+
 UUID sceneCreateEntity(Scene *s)
 {
 	UUID newEntity = generateUUID();
-
-	List emptyList = createList(sizeof(UUID));
-	hashMapInsert(s->entities, &newEntity, &emptyList);
-
+	sceneRegisterEntity(s, newEntity);
 	return newEntity;
 }
 

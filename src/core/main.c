@@ -42,14 +42,23 @@ typedef struct name_component_t
 
 void moveSystem(Scene *scene, UUID entityID)
 {
+	puts("Move system.");
+	printf("Entity ID: %s\n", entityID.string);
+
 	UUID transID = {};
 	strcpy(transID.string, "transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(scene, entityID, transID);
+
+	printf("New Location: %f\n", transform->position[0]);
+
 	transform->position[0] += 1.0f;
 }
 
 void nameSystem(Scene *scene, UUID entityID)
 {
+	puts("Name system.");
+	printf("Entity ID: %s\n", entityID.string);
+
 	UUID nameID = {};
 	strcpy(nameID.string, "name");
 	NameComponent *name = sceneGetComponentFromEntity(scene, entityID, nameID);
@@ -98,11 +107,15 @@ int main()
 
 	List nameComponents = createList(sizeof(UUID));
 	listPushFront(&nameComponents, &nameComponentID);
-	System printNameSystem = createSystem(movementComponents, 0, &nameSystem, 0);
+	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
 
 	// Create entities
-	UUID entity1 = sceneCreateEntity(scene);
-	UUID entity2 = sceneCreateEntity(scene);
+	UUID entity1 = {};
+	strcpy(entity1.string, "ENTITY1");
+	sceneRegisterEntity(scene, entity1);
+	UUID entity2 = {};
+	strcpy(entity2.string, "ENTITY2");
+	sceneRegisterEntity(scene, entity2);
 
 	TransformComponent transform = {};
 	transform.position[0] = 1.0f;

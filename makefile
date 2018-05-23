@@ -33,8 +33,7 @@ build : $(OBJ)
 
 clean:
 	rm -f -r $(BUILDDIR)
-	mkdir $(BUILDDIR)
-	mkdir $(OBJDIR)/{,core,data,renderer,ECS,threading,asset_management}
+	mkdir {$(BUILDDIR),$(OBJDIR)/{,core,data,renderer,ECS,threading,asset_management}}
 
 .PHONY: run
 
