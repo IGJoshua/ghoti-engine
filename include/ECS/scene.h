@@ -6,7 +6,7 @@
 #define COMPONENT_TYPE_BUCKETS 1
 #define ENTITY_BUCKETS 1
 
-Scene *createScene();
+Scene *createScene(void);
 void freeScene(Scene **scene);
 
 void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize, uint32 maxComponents);

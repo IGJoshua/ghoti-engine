@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-Scene *createScene()
+Scene *createScene(void)
 {
 	Scene *ret = malloc(sizeof(Scene));
 
