@@ -43,7 +43,7 @@ void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize,
 
 void sceneRemoveComponentType(Scene *scene, UUID componentID)
 {
-	ComponentDataTable *temp = hashMapGetKey(scene->componentTypes, &componentID);
+	ComponentDataTable *temp = *(ComponentDataTable **)hashMapGetKey(scene->componentTypes, &componentID);
 	freeComponentDataTable(&temp);
 }
 
@@ -84,7 +84,7 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	{
 		// Remove this entity from the components
 		cdtRemove(
-			hashMapGetKey(s->componentTypes, (*listIterator)->data),
+			*(ComponentDataTable **)hashMapGetKey(s->componentTypes, (*listIterator)->data),
 			entity
 		);
 	}
@@ -101,7 +101,7 @@ void sceneAddComponentToEntity(
 	void *componentData)
 {
 	// Get the data table
-	ComponentDataTable *dataTable = hashMapGetKey(s->componentTypes, &componentType);
+	ComponentDataTable *dataTable = *(ComponentDataTable **)hashMapGetKey(s->componentTypes, &componentType);
 	ASSERT(dataTable);
 
 	// Add the component to the data table
@@ -119,7 +119,7 @@ void sceneRemoveComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	cdtRemove(hashMapGetKey(s->componentTypes, &componentType), entity);
+	cdtRemove(*(ComponentDataTable **)hashMapGetKey(s->componentTypes, &componentType), entity);
 
 	List *componentTypeList = hashMapGetKey(s->entities, &entity);
 	for (ListNode **itr = listGetIterator(componentTypeList);
@@ -139,5 +139,5 @@ void *sceneGetComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	return cdtGet(hashMapGetKey(s->componentTypes, &componentType), entity);
+	return cdtGet(*(ComponentDataTable **)hashMapGetKey(s->componentTypes, &componentType), entity);
 }
