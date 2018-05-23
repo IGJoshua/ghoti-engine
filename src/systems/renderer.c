@@ -105,7 +105,7 @@ void runRendererSystem(Scene *scene, UUID entityID)
 	kmMat4Translation(&view, 0, 0, 2);
 	kmMat4Inverse(&view, &view);
 	kmMat4 projection;
-	kmMat4PerspectiveProjection(&projection, 90, 4.0f / 3.0f, 0.1f, 1000.0f);
+	kmMat4PerspectiveProjection(&projection, 90, 16.0f / 9.0f, 0.1f, 1000.0f);
 
 	renderModel(model->name, &worldMatrix, &view, &projection);
 }
