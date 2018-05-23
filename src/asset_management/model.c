@@ -1,6 +1,10 @@
 #include "asset_management/model.h"
-#include "asset_management/mesh.h"
+
 #include "asset_management/material.h"
+#include "asset_management/mesh.h"
+#include "asset_management/texture.h"
+
+#include "renderer/shader.h"
 
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
@@ -278,6 +282,76 @@ int32 freeModel(const char *name)
 		free(models);
 		models = resizedModels;
 	}
+
+	return 0;
+}
+
+// =================================
+// Rendering
+
+extern Shader vertShader;
+extern Shader fragShader;
+
+extern ShaderPipeline pipeline;
+
+extern Uniform modelUniform;
+extern Uniform viewUniform;
+extern Uniform projectionUniform;
+
+extern Uniform diffuseTextureUniform;
+
+int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *projection)
+{
+	Model *model = getModel(name);
+
+	bindShaderPipeline(pipeline);
+
+	setUniform(modelUniform, world);
+	setUniform(viewUniform, view);
+	setUniform(projectionUniform, projection);
+
+	GLint textureIndex = 0;
+	setUniform(diffuseTextureUniform, &textureIndex);
+
+	for (uint32 i = 0; i < model->numMeshes; i++)
+	{
+		Mesh *mesh = &model->meshes[i];
+
+		glBindVertexArray(mesh->vertexArray);
+
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+		Material *material = &model->materials[i];
+		Texture *texture = getTexture(material->diffuseTexture);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture->id);
+
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL
+		);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+	glUseProgram(0);
 
 	return 0;
 }

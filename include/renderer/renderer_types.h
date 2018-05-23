@@ -44,12 +44,6 @@ typedef struct material_t
 	float opacity;
 } Material;
 
-typedef struct scene_t
-{
-	char **models;
-	uint32 numModels;
-} Scene;
-
 typedef enum shader_type_e
 {
 	SHADER_VERTEX = 0,

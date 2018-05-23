@@ -2,7 +2,6 @@
 
 #define internal static
 #define persistent static
-#define global static
 
 typedef long int64;
 typedef int int32;
@@ -20,3 +19,18 @@ typedef float real32;
 typedef enum { false, true } bool;
 
 #define VSYNC 0
+
+#define ASSERTION_FAILED 1
+
+#ifdef _DEBUG
+#include <stdio.h>
+#include <stdlib.h>
+#define ASSERT(test) if (!(test))\
+	{\
+		printf("Assertion: %s failed in file %s on line %d\n", #test, __FILE__, __LINE__);\
+		volatile int32* crash = 0;\
+		*crash = 0;\
+	}
+#else
+#define ASSERT(test)
+#endif

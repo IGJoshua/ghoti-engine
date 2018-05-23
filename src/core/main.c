@@ -2,10 +2,23 @@
 #include "core/window.h"
 
 #include "asset_management/scene.h"
+#include "asset_management/model.h"
 
 #include "renderer/renderer_types.h"
-#include "renderer/renderer.h"
 #include "renderer/shader.h"
+
+#include "ECS/ecs_types.h"
+#include "ECS/scene.h"
+#include "ECS/component.h"
+#include "ECS/system.h"
+
+#include "components/component_types.h"
+
+#include "systems.h"
+
+#include "data/data_types.h"
+#include "data/list.h"
+#include "data/hash_map.h"
 
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
@@ -15,6 +28,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
+#include <string.h>
 
 void keyCallback(
 	GLFWwindow *window,
@@ -27,6 +41,36 @@ void keyCallback(
 	{
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
+}
+
+typedef struct name_component_t
+{
+	char name[64];
+} NameComponent;
+
+void moveSystem(Scene *scene, UUID entityID)
+{
+	puts("Move system.");
+	printf("Entity ID: %s\n", entityID.string);
+
+	UUID transID = {};
+	strcpy(transID.string, "transform");
+	TransformComponent *transform = sceneGetComponentFromEntity(scene, entityID, transID);
+
+	printf("New Location: %f\n", transform->position.x);
+
+	transform->position.x += 1.0f;
+}
+
+void nameSystem(Scene *scene, UUID entityID)
+{
+	puts("Name system.");
+	printf("Entity ID: %s\n", entityID.string);
+
+	UUID nameID = {};
+	strcpy(nameID.string, "name");
+	NameComponent *name = sceneGetComponentFromEntity(scene, entityID, nameID);
+	printf("%s\n", name->name);
 }
 
 int main()
@@ -54,12 +98,72 @@ int main()
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
 
+	// TODO: Setup basic component state
+	Scene *scene = createScene();
+
+	// Add component types
+	UUID transformComponentID = {};
+	strcpy(transformComponentID.string, "transform");
+	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 2);
+
+	UUID nameComponentID = {};
+	strcpy(nameComponentID.string, "name");
+	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 2);
+
+	UUID modelComponentID = {};
+	strcpy(modelComponentID.string, "model");
+	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 2);
+
+	// Add systems
+	List movementComponents = createList(sizeof(UUID));
+	listPushFront(&movementComponents, &transformComponentID);
+	System movementSystem = createSystem(movementComponents, 0, &moveSystem, 0);
+
+	List nameComponents = createList(sizeof(UUID));
+	listPushFront(&nameComponents, &nameComponentID);
+	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
+
+	System rendererSystem = createRendererSystem();
+
+	// Create entities
+	UUID entity1 = {};
+	strcpy(entity1.string, "ENTITY1");
+	sceneRegisterEntity(scene, entity1);
+	UUID entity2 = {};
+	strcpy(entity2.string, "ENTITY2");
+	sceneRegisterEntity(scene, entity2);
+
+	UUID teapot = {};
+	strcpy(teapot.string, "TEAPOT");
+	sceneRegisterEntity(scene, teapot);
+
+	TransformComponent transform = {};
+	transform.position.x = 1.0f;
+	transform.position.y = 1.0f;
+	transform.position.z = 1.0f;
+	sceneAddComponentToEntity(scene, entity1, transformComponentID, &transform);
+
+	NameComponent name = {};
+	strcpy(name.name, "Hello, world!");
+	sceneAddComponentToEntity(scene, entity2, nameComponentID, &name);
+
+	ModelComponent teapotModel = {};
+	strcpy(teapotModel.name, "teapot");
+	sceneAddComponentToEntity(scene, teapot, modelComponentID, &teapotModel);
+	kmVec3Zero(&transform.position);
+	transform.scale.x = 1;
+	transform.scale.y = 1;
+	transform.scale.z = 1;
+	kmQuaternionIdentity(&transform.rotation);
+	sceneAddComponentToEntity(scene, teapot, transformComponentID, &transform);
+
 	// State previous
 	// State next
-	Scene *scene;
-  	loadScene("scene_1", &scene);
 
-	initRenderer();
+	// TODO: Make this thing work
+  	//loadScene("scene_1", &scene);
+
+	rendererSystem.init(scene);
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -76,9 +180,13 @@ int main()
 
 		while (accumulator >= dt)
 		{
+			// Previous state = currentState
 			// TODO: State chates
 			// TODO: App update
-			// Previous state = currentState
+			systemRun(scene, &movementSystem);
+			systemRun(scene, &printNameSystem);
+			systemRun(scene, &rendererSystem);
+
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
@@ -111,19 +219,27 @@ int main()
 		kmMat4Inverse(&view, &view);
 
 		// Render
-		for (uint32 i = 0; i < scene->numModels; i++)
-		{
-			kmMat4 world;
-			kmMat4RotationX(&world, kmDegreesToRadians(-90));
-			renderModel(scene->models[i], &world, &view, &projection);
-		}
 
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
 	}
 
-	unloadScene(&scene);
+	freeModel("teapot");
+
+	sceneRemoveEntity(scene, entity1);
+	sceneRemoveEntity(scene, entity2);
+	sceneRemoveEntity(scene, teapot);
+
+	sceneRemoveComponentType(scene, transformComponentID);
+	sceneRemoveComponentType(scene, nameComponentID);
+	sceneRemoveComponentType(scene, modelComponentID);
+
+	listClear(&nameComponents);
+	listClear(&movementComponents);
+	freeRendererSystem(&rendererSystem);
+
+	freeScene(&scene);
 	freeWindow(window);
 
 	return 0;

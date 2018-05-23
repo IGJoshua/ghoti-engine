@@ -3,16 +3,18 @@
 
 * Dependencies
 #+BEGIN_SRC
-#clang
-#glfw
-#glew
-#kazmath
-#devil
-#assimp
-#mingw-w64-clang
-#mingw-w64-glfw
-#mingw-w64-glew
-##+END_SRC
+clang
+glfw
+glew
+kazmath
+devil
+assimp
+pthread
+mingw-w64-clang
+mingw-w64-glfw
+mingw-w64-glew
+mingw-w64-winpthreads
+#+END_SRC
 * Rendering Engine
 * Scene Representation
 * LUA Integration

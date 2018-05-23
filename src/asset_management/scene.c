@@ -10,13 +10,14 @@
 extern Model *models;
 extern uint32 numModels;
 
+/*
 int32 loadScene(const char *name, Scene **scene)
 {
 	// TODO Get number of models in the scene from JSON file,
 	// check for only models that haven't already been loaded
 	// If model has already been loaded, increase refcount
 	uint32 numSceneModels = 1;
-	
+
 	char **modelNames = malloc(numSceneModels * sizeof(char*));
 	for (uint32 i = 0; i < numSceneModels; i++)
 	{
@@ -36,7 +37,7 @@ int32 loadScene(const char *name, Scene **scene)
 
 	uint32 previousBufferSize = numModels * sizeof(Model);
 	uint32 newBufferSize = (numModels + numSceneModels) * sizeof(Model);
-	
+
 	if (previousBufferSize == 0)
 	{
 		models = malloc(newBufferSize);
@@ -56,7 +57,7 @@ int32 loadScene(const char *name, Scene **scene)
 		);
 #endif
 	}
-	
+
 	for (uint32 i = 0; i < numSceneModels; i++)
 	{
 		loadModel(modelNames[i]);
@@ -79,3 +80,4 @@ int32 unloadScene(Scene **scene)
 
 	return 0;
 }
+*/

@@ -18,11 +18,14 @@ _LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 CORE_DEPS = defines.h core/window.h
-RENDERER_DEPS = renderer/renderer_types.h renderer/renderer.h renderer/shader.h
+DATA_DEPS = data/data_types.h data/list.h data/hash_map.h
+RENDERER_DEPS = renderer/renderer_types.h renderer/shader.h
 ASSET_MANAGEMENT_DEPS = asset_management/asset_manager_types.h asset_management/material.h asset_management/mesh.h asset_management/model.h asset_management/scene.h asset_management/texture.h
-DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(RENDERER_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS))
+THREADING_DEPS = threading/threading_types.h threading/promise.h
+ECS_DEPS = ECS/ecs_types.h ECS/component.h ECS/scene.h ECS/system.h systems.h
+DEPS = $(patsubst %,$(IDIRS)/%,$(CORE_DEPS)) $(patsubst %,$(IDIRS)/%,$(RENDERER_DEPS)) $(patsubst %,$(IDIRS)/%,$(ASSET_MANAGEMENT_DEPS)) $(patsubst %,$(IDIRS)/%,$(THREADING_DEPS)) $(patsubst %,$(IDIRS)/%,$(DATA_DEPS)) $(patsubst %,$(IDIRS)/%,$(ECS_DEPS))
 
-_OBJ = resources core/main core/window renderer/shader renderer/renderer asset_management/material asset_management/mesh asset_management/model asset_management/scene asset_management/texture
+_OBJ = resources core/main core/window renderer/shader asset_management/material asset_management/mesh asset_management/model asset_management/scene asset_management/texture threading/promise data/list data/hash_map ECS/component ECS/scene ECS/system systems/renderer
 OBJ = $(patsubst %,$(OBJDIR)/%.o,$(_OBJ))
 
 RELOBJ = $(patsubst %,$(RELOBJDIR)/%.o,$(_OBJ))
@@ -47,17 +50,7 @@ release : $(RELOBJ)
 
 clean:
 	rm -f -r $(BUILDDIR)
-	rm -f -r $(RELDIR)
-	mkdir $(BUILDDIR)
-	mkdir $(OBJDIR)
-	mkdir $(OBJDIR)/core
-	mkdir $(OBJDIR)/renderer
-	mkdir $(OBJDIR)/asset_management
-	mkdir $(RELDIR)
-	mkdir $(RELOBJDIR)
-	mkdir $(RELOBJDIR)/core
-	mkdir $(RELOBJDIR)/renderer
-	mkdir $(RELOBJDIR)/asset_management
+	mkdir {$(BUILDDIR),$(OBJDIR)/{,core,data,renderer,ECS,threading,asset_management,systems}}
 
 .PHONY: run
 
@@ -87,7 +80,7 @@ rebuild : clean build
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I./vendor -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 _WINOBJ = $(foreach O,$(_OBJ),$(O).obj)
