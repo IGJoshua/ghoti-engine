@@ -209,13 +209,6 @@ int main()
 
 		// Lerp state between previous and next
 
-		char title[128];
-		sprintf(title, "Monochrome FPS: %f MS/F: %f", 1 / frameTime, frameTime * 1000);
-		if (fmodf((real32)currentTime, 1.0f) < 0.001)
-		{
-			glfwSetWindowTitle(window, title);
-		}
-
 		int32 width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 
