@@ -18,7 +18,7 @@ Uniform viewUniform;
 Uniform projectionUniform;
 
 Uniform diffuseTextureUniform;
-	
+
 int32 initRenderer(void)
 {
 	vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);

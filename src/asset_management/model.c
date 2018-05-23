@@ -20,7 +20,7 @@ int32 loadModel(const char *name)
 
 	model->name = malloc(256);
 	strcpy(model->name, name);
-	
+
 	char filename[1024];
 	sprintf(filename, "resources/models/%s.dae", name);
 	const struct aiScene *scene = aiImportFile(
@@ -31,15 +31,15 @@ int32 loadModel(const char *name)
 
 	// Assumes that all textures are unique, TODO Maybe don't assume this
 	// to prevent allocation overhead?
-	
+
 	// TODO Check for unique textures in LoadMaterial() and
 	// reallocate to a smaller size if some textures were unique
-	
+
 	// If texture is not unique, increase texture refcount
 	uint32 previousBufferSize = numTextures * sizeof(Texture);
 	// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
 	uint32 newBufferSize = (numTextures + 2) * sizeof(Texture);
-	
+
 	if (previousBufferSize == 0)
 	{
 		textures = malloc(newBufferSize);
@@ -115,7 +115,7 @@ int32 loadModel(const char *name)
 		glBindVertexArray(vao);
 
 		uint32 bufferIndex = 0;
-		
+
 		GLuint colorBuffer;
 		glGenBuffers(1, &colorBuffer);
 
@@ -142,7 +142,7 @@ int32 loadModel(const char *name)
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.normals, GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
-		
+
 		GLuint tangentBuffer;
 		glGenBuffers(1, &tangentBuffer);
 
@@ -151,7 +151,7 @@ int32 loadModel(const char *name)
 		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.tangents, GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
-	
+
 		GLuint bitangentBuffer;
 		glGenBuffers(1, &bitangentBuffer);
 
@@ -184,7 +184,7 @@ int32 loadModel(const char *name)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		glBindVertexArray(0);
-		
+
 		free(meshData.colors);
 		meshData.colors = 0;
 		free(meshData.positions);
@@ -204,7 +204,7 @@ int32 loadModel(const char *name)
 	aiReleaseImport(scene);
 
 	model->refCount++;
-	
+
 	return 0;
 }
 
