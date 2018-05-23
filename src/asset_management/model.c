@@ -59,6 +59,7 @@ int32 loadModel(const char *name)
 
 	if (numTextures + 2 > texturesCapacity)
 	{
+		texturesCapacity += 2 + 16;
 		// Assumes that all textures are unique, TODO Maybe don't assume this
 		// to prevent allocation overhead?
 
@@ -68,7 +69,7 @@ int32 loadModel(const char *name)
 		// If texture is not unique, increase texture refcount
 		uint32 previousBufferSize = numTextures * sizeof(Texture);
 		// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
-		uint32 newBufferSize = (numTextures + 2) * sizeof(Texture);
+		uint32 newBufferSize = texturesCapacity * sizeof(Texture);
 
 		if (previousBufferSize == 0)
 		{
