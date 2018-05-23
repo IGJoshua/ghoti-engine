@@ -58,26 +58,6 @@ void nameSystem(Scene *scene, UUID entityID)
 
 int main()
 {
-	// TODO: Test component data table
-
-	ComponentDataTable *table = createComponentDataTable(3, sizeof(TransformComponent));
-
-	UUID entityID = {};
-	strcpy(entityID.string, "ENTITY1");
-
-	TransformComponent data = {};
-	data.position[0] = 1.0f;
-
-	cdtInsert(table, entityID, &data);
-	ASSERT(cdtGet(table, entityID));
-	ASSERT(((TransformComponent *)cdtGet(table, entityID))->position[0] == 1.0f);
-	cdtRemove(table, entityID);
-	ASSERT(!cdtGet(table, entityID));
-
-	freeComponentDataTable(&table);
-
-	return 0;
-
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
 	if (!window)
@@ -192,8 +172,14 @@ int main()
 		glfwPollEvents();
 	}
 
+	sceneRemoveEntity(scene, entity1);
+	sceneRemoveEntity(scene, entity2);
+
 	sceneRemoveComponentType(scene, transformComponentID);
 	sceneRemoveComponentType(scene, nameComponentID);
+
+	listClear(&nameComponents);
+	listClear(&movementComponents);
 
 	freeScene(&scene);
 	freeWindow(window);
