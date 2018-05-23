@@ -15,11 +15,35 @@
 
 extern Model *models;
 extern uint32 numModels;
+extern uint32 modelsCapacity;
 extern Texture *textures;
 extern uint32 numTextures;
+extern uint32 texturesCapacity;
 
 int32 loadModel(const char *name)
 {
+	if (numModels + 1 > modelsCapacity)
+	{
+		modelsCapacity += 16;
+		uint32 previousBufferSize = numModels * sizeof(Model);
+		uint32 newBufferSize = modelsCapacity * sizeof(Model);
+
+		if (previousBufferSize == 0)
+		{
+			models = malloc(newBufferSize);
+			memset(models, 0, newBufferSize);
+		}
+		else
+		{
+			models = realloc(models, newBufferSize);
+			memset(
+				models + previousBufferSize,
+				0,
+				newBufferSize - previousBufferSize
+        	);
+		}
+	}
+
 	Model *model = &models[numModels++];
 
 	model->name = malloc(256);
@@ -33,35 +57,34 @@ int32 loadModel(const char *name)
 		~aiProcess_SplitLargeMeshes
 	);
 
-	// Assumes that all textures are unique, TODO Maybe don't assume this
-	// to prevent allocation overhead?
-
-	// TODO Check for unique textures in LoadMaterial() and
-	// reallocate to a smaller size if some textures were unique
-
-	// If texture is not unique, increase texture refcount
-	uint32 previousBufferSize = numTextures * sizeof(Texture);
-	// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
-	uint32 newBufferSize = (numTextures + 2) * sizeof(Texture);
-
-	if (previousBufferSize == 0)
+	if (numTextures + 2 > texturesCapacity)
 	{
-		textures = malloc(newBufferSize);
-#ifdef _DEBUG
-		memset(textures, 0, newBufferSize);
-#endif
-	}
-	else
-	{
-		textures = realloc(textures, newBufferSize);
+		// Assumes that all textures are unique, TODO Maybe don't assume this
+		// to prevent allocation overhead?
 
-#ifdef _DEBUG
-		memset(
-			textures + previousBufferSize,
-			0,
-			newBufferSize - previousBufferSize
-		);
-#endif
+		// TODO Check for unique textures in LoadMaterial() and
+		// reallocate to a smaller size if some textures were unique
+
+		// If texture is not unique, increase texture refcount
+		uint32 previousBufferSize = numTextures * sizeof(Texture);
+		// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
+		uint32 newBufferSize = (numTextures + 2) * sizeof(Texture);
+
+		if (previousBufferSize == 0)
+		{
+			textures = malloc(newBufferSize);
+			memset(textures, 0, newBufferSize);
+		}
+		else
+		{
+			textures = realloc(textures, newBufferSize);
+
+			memset(
+				textures + previousBufferSize,
+				0,
+				newBufferSize - previousBufferSize
+			);
+		}
 	}
 
 	model->numMaterials = scene->mNumMaterials;
