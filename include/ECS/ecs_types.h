@@ -32,7 +32,7 @@ typedef void(*InitSystem)(Scene *scene);
 typedef void(*SystemFn)(Scene *scene, UUID entityID);
 typedef void(*ShutdownSystem)(Scene *scene);
 
-typedef struct
+typedef struct system_t
 {
 	List componentTypes;
 

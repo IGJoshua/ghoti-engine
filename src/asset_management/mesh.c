@@ -21,18 +21,18 @@ int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData)
 		meshData->normals[index].x = mesh->mNormals[i].x;
 		meshData->normals[index].y = mesh->mNormals[i].y;
 		meshData->normals[index].z = mesh->mNormals[i].z;
-		
+
 		meshData->tangents[index].x = mesh->mTangents[i].x;
 		meshData->tangents[index].y = mesh->mTangents[i].y;
 		meshData->tangents[index].z = mesh->mTangents[i].z;
-		
+
 		meshData->bitangents[index].x = mesh->mBitangents[i].x;
 		meshData->bitangents[index].y = mesh->mBitangents[i].y;
 		meshData->bitangents[index].z = mesh->mBitangents[i].z;
 
 		meshData->uvs[index].x = mesh->mTextureCoords[0][i].x;
 		meshData->uvs[index].y = mesh->mTextureCoords[0][i].y;
-		
+
 		meshData->numVertices++;
 	}
 
@@ -40,7 +40,8 @@ int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData)
 	{
 		for (int j = 0; j < 3; ++j)
 		{
-			meshData->indices[meshData->numIndices++] = mesh->mFaces[i].mIndices[j];
+			meshData->indices[meshData->numIndices++] =
+				mesh->mFaces[i].mIndices[j];
 		}
 	}
 
@@ -61,6 +62,6 @@ int32 freeMesh(Mesh *mesh)
 
 	glBindVertexArray(0);
 	glDeleteVertexArrays(1, &mesh->vertexArray);
-	
+
 	return 0;
 }

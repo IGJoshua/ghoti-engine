@@ -3,7 +3,11 @@
 
 #include "data_types.h"
 
-HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison);
+HashMap createHashMap(
+	uint32 keySize,
+	uint32 valueSize,
+	uint32 bucketCount,
+	ComparisonOp comparison);
 void freeHashMap(HashMap *map);
 
 void hashMapPush(HashMap map, void *key, void *value);

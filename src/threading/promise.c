@@ -29,21 +29,6 @@ Promise *pReturn(void *pData)
 
 Promise *pBind(Promise **p, Promise *(*fn)(void *pData))
 {
-	/*
-	while (1)
-	{
-		pthread_mutex_lock(&(*p)->mut);
-		if ((*p)->isDone)
-		{
-			pthread_mutex_unlock(&(*p)->mut);
-			break;
-		}
-		pthread_mutex_unlock(&(*p)->mut);
-
-		// sleep maybe?
-	}
-	*/
-
 	pthread_mutex_lock(&(*p)->mut);
 
 	pthread_cond_wait(&(*p)->cond, &(*p)->mut);
@@ -77,5 +62,6 @@ void freePromise(Promise **p)
 		pthread_cond_destroy(&(*p)->cond);
 		free(*p);
 	}
+
 	*p = NULL;
 }

@@ -21,7 +21,7 @@ int32 loadTexture(const struct aiString *name, TextureType type)
 	ILuint devilID;
 	ilGenImages(1, &devilID);
 	ilBindImage(devilID);
-	
+
 	char filename[1024];
 	sprintf(filename, "resources/textures/%s", texture->name);
 	ilLoadImage(filename);
@@ -47,8 +47,7 @@ int32 loadTexture(const struct aiString *name, TextureType type)
 		0,
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
-		textureData
-	);
+		textureData);
 
 	// TODO Add mipmapping
 	// glGenerateMipmap(GL_TEXTURE_2D);
@@ -100,7 +99,7 @@ int32 freeTexture(const char *name)
 {
 	Texture *texture = getTexture(name);
 	uint32 index = getTextureIndex(name);
-	
+
 	if (texture)
 	{
 		if (--(texture->refCount) == 0)
@@ -116,8 +115,7 @@ int32 freeTexture(const char *name)
 				memcpy(
 					&resizedTextures[index],
 					&textures[index + 1],
-					(numTextures - index) * sizeof(Texture)
-				);
+					(numTextures - index) * sizeof(Texture));
 			}
 
 			free(textures);

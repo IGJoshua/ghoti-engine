@@ -1,5 +1,4 @@
 #include "ECS/component.h"
-
 #include "ECS/ecs_types.h"
 
 #include "data/hash_map.h"
@@ -7,13 +6,14 @@
 #include <malloc.h>
 #include <string.h>
 
-ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 componentSize)
+ComponentDataTable *createComponentDataTable(
+	uint32 numEntries,
+	uint32 componentSize)
 {
 	ComponentDataTable *ret = malloc(
 		sizeof(ComponentDataTable)
 		+ numEntries
-		* (componentSize + sizeof(UUID))
-	);
+		* (componentSize + sizeof(UUID)));
 
 	ASSERT(ret);
 
@@ -23,8 +23,7 @@ ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 component
 		sizeof(UUID),
 		sizeof(uint32),
 		CDT_ID_BUCKETS,
-		(ComparisonOp)&strcmp
-	);
+		(ComparisonOp)&strcmp);
 	ASSERT(ret->idToIndex);
 
 	memset(ret->data, 0, numEntries * (componentSize + sizeof(UUID)));
@@ -49,10 +48,10 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		UUID emptyID = {};
 		for (; i < table->numEntries; ++i)
 		{
-			if (!strcmp(
-					(char *)(table->data + i * (table->componentSize + sizeof(UUID))),
-					emptyID.string
-				))
+			if (!strcmp((char *)(table->data
+								 + i
+								 * (table->componentSize + sizeof(UUID))),
+						emptyID.string))
 			{
 				break;
 			}
@@ -69,15 +68,23 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 
 	ASSERT(i >= 0);
 	ASSERT(i < table->numEntries);
-	ASSERT(i * (table->componentSize + sizeof(UUID)) + sizeof(UUID) + table->componentSize
+	ASSERT(i
+		   * (table->componentSize + sizeof(UUID))
+		   + sizeof(UUID)
+		   + table->componentSize
 		   <= table->numEntries * (table->componentSize + sizeof(UUID)));
 
 	// Put the UUID into the table
 	memcpy(table->data + i * (table->componentSize + sizeof(UUID)),
 		   &entityID, sizeof(UUID));
 	// Put the component data into the table
-	memcpy(table->data + i * (table->componentSize + sizeof(UUID)) + sizeof(UUID),
-		   componentData, table->componentSize);
+	memcpy(
+		table->data
+		+ i
+		* (table->componentSize + sizeof(UUID))
+		+ sizeof(UUID),
+		componentData,
+		table->componentSize);
 }
 
 void cdtRemove(
@@ -88,8 +95,7 @@ void cdtRemove(
 	uint32 *pIndex =
 		hashMapGetKey(
 			table->idToIndex,
-			&entityID
-		);
+			&entityID);
 	if (pIndex)
 	{
 		memset(
@@ -97,8 +103,7 @@ void cdtRemove(
 			+ *pIndex
 			* (table->componentSize + sizeof(UUID)),
 			0,
-			sizeof(UUID)
-		);
+			sizeof(UUID));
 		hashMapDeleteKey(table->idToIndex, &entityID);
 	}
 }
@@ -109,7 +114,11 @@ void *cdtGet(ComponentDataTable *table, UUID entityID)
 
 	if (index)
 	{
-		return (void *)table->data + *index * (table->componentSize + sizeof(UUID)) + sizeof(UUID);
+		return
+			(void *)table->data
+			+ *index
+			* (table->componentSize + sizeof(UUID))
+			+ sizeof(UUID);
 	}
 
 	return 0;

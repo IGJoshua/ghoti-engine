@@ -5,7 +5,6 @@
 
 #include <kazmath/vec2.h>
 #include <kazmath/vec3.h>
-#include <kazmath/vec4.h>
 
 typedef struct mesh_t
 {

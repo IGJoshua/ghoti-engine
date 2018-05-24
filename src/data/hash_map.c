@@ -15,9 +15,15 @@ typedef struct hash_map_storage_t
 	uint8 data[];
 } HashMapStorage;
 
-HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, ComparisonOp comparison)
+HashMap createHashMap(
+	uint32 keySize,
+	uint32 valueSize,
+	uint32 bucketCount,
+	ComparisonOp comparison)
 {
-	uint32 mapSize = sizeof(struct hash_map_t) + (sizeof(HashMapBucket) * bucketCount);
+	uint32 mapSize =
+		sizeof(struct hash_map_t)
+		+ (sizeof(HashMapBucket) * bucketCount);
 	HashMap map = malloc(mapSize);
 
 	map->keySizeBytes = keySize;
@@ -27,7 +33,10 @@ HashMap createHashMap(uint32 keySize, uint32 valueSize, uint32 bucketCount, Comp
 
 	for (uint32 i = 0; i < map->bucketCount; ++i)
 	{
-		map->buckets[i] = createList(sizeof(HashMapStorage) + map->keySizeBytes + map->valueSizeBytes);
+		map->buckets[i] = createList(
+			sizeof(HashMapStorage)
+			+ map->keySizeBytes
+			+ map->valueSizeBytes);
 	}
 
 	return map;
@@ -59,7 +68,10 @@ void hashMapPush(HashMap map, void *key, void *value)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	HashMapStorage *storage = alloca(sizeof(HashMapStorage) + map->keySizeBytes + map->valueSizeBytes);
+	HashMapStorage *storage = alloca(
+		sizeof(HashMapStorage)
+		+ map->keySizeBytes
+		+ map->valueSizeBytes);
 	storage->hash = keyHash;
 	memcpy(storage->data, key, map->keySizeBytes);
 	memcpy(storage->data + map->keySizeBytes, value, map->valueSizeBytes);

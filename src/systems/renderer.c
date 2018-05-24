@@ -54,16 +54,18 @@ System createRendererSystem()
 
 void initRendererSystem(Scene *scene)
 {
-	vertShader = compileShaderFromFile("resources/shaders/base.vert", SHADER_VERTEX);
-	fragShader = compileShaderFromFile("resources/shaders/color.frag", SHADER_FRAGMENT);
+	vertShader = compileShaderFromFile(
+		"resources/shaders/base.vert",
+		SHADER_VERTEX);
+	fragShader = compileShaderFromFile(
+		"resources/shaders/color.frag",
+		SHADER_FRAGMENT);
 
-	{
-		Shader *program[2];
-		program[0] = &vertShader;
-		program[1] = &fragShader;
+	Shader *program[2];
+	program[0] = &vertShader;
+	program[1] = &fragShader;
 
-		pipeline = composeShaderPipeline(program, 2);
-	}
+	pipeline = composeShaderPipeline(program, 2);
 
 	freeShader(vertShader);
 	freeShader(fragShader);
@@ -74,14 +76,20 @@ void initRendererSystem(Scene *scene)
 	viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
 	projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
 
-	diffuseTextureUniform = getUniform(pipeline, "diffuseTexture", UNIFORM_TEXTURE_2D);
+	diffuseTextureUniform = getUniform(
+		pipeline,
+		"diffuseTexture",
+		UNIFORM_TEXTURE_2D);
 }
 
 void runRendererSystem(Scene *scene, UUID entityID)
 {
 	UUID modelComponentID = {};
 	strcpy(modelComponentID.string, "model");
-	ModelComponent *model = sceneGetComponentFromEntity(scene, entityID, modelComponentID);
+	ModelComponent *model = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		modelComponentID);
 
 	if (!getModel(model->name))
 	{
@@ -90,7 +98,10 @@ void runRendererSystem(Scene *scene, UUID entityID)
 
 	UUID transformComponentID = {};
 	strcpy(transformComponentID.string, "transform");
-	TransformComponent *transform = sceneGetComponentFromEntity(scene, entityID, transformComponentID);
+	TransformComponent *transform = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		transformComponentID);
 
 	kmMat3 rotation;
 	kmMat3FromRotationQuaternion(&rotation, &transform->rotation);
@@ -98,7 +109,11 @@ void runRendererSystem(Scene *scene, UUID entityID)
 	kmMat4 worldMatrix;
 	kmMat4RotationTranslation(&worldMatrix, &rotation, &transform->position);
 	kmMat4 scalingMatrix;
-	kmMat4Scaling(&scalingMatrix, transform->scale.x, transform->scale.y, transform->scale.z);
+	kmMat4Scaling(
+		&scalingMatrix,
+		transform->scale.x,
+		transform->scale.y,
+		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
 	kmMat4 view;

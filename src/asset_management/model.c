@@ -1,5 +1,4 @@
 #include "asset_management/model.h"
-
 #include "asset_management/material.h"
 #include "asset_management/mesh.h"
 #include "asset_management/texture.h"
@@ -16,6 +15,7 @@
 extern Model *models;
 extern uint32 numModels;
 extern uint32 modelsCapacity;
+
 extern Texture *textures;
 extern uint32 numTextures;
 extern uint32 texturesCapacity;
@@ -24,7 +24,7 @@ int32 loadModel(const char *name)
 {
 	if (numModels + 1 > modelsCapacity)
 	{
-		modelsCapacity += 16;
+		modelsCapacity += ASSET_MANAGEMENT_PREALLOCATION_SIZE;
 		uint32 previousBufferSize = numModels * sizeof(Model);
 		uint32 newBufferSize = modelsCapacity * sizeof(Model);
 
@@ -39,8 +39,7 @@ int32 loadModel(const char *name)
 			memset(
 				models + previousBufferSize,
 				0,
-				newBufferSize - previousBufferSize
-        	);
+				newBufferSize - previousBufferSize);
 		}
 	}
 
@@ -54,12 +53,11 @@ int32 loadModel(const char *name)
 	const struct aiScene *scene = aiImportFile(
 		filename,
 		aiProcessPreset_TargetRealtime_Quality &
-		~aiProcess_SplitLargeMeshes
-	);
+		~aiProcess_SplitLargeMeshes);
 
 	if (numTextures + 2 > texturesCapacity)
 	{
-		texturesCapacity += 2 + 16;
+		texturesCapacity += 2 + ASSET_MANAGEMENT_PREALLOCATION_SIZE;
 		// Assumes that all textures are unique, TODO Maybe don't assume this
 		// to prevent allocation overhead?
 
@@ -68,7 +66,6 @@ int32 loadModel(const char *name)
 
 		// If texture is not unique, increase texture refcount
 		uint32 previousBufferSize = numTextures * sizeof(Texture);
-		// uint32 newBufferSize = (numTextures + scene->mNumTextures) * sizeof(Texture);
 		uint32 newBufferSize = texturesCapacity * sizeof(Texture);
 
 		if (previousBufferSize == 0)
@@ -83,8 +80,7 @@ int32 loadModel(const char *name)
 			memset(
 				textures + previousBufferSize,
 				0,
-				newBufferSize - previousBufferSize
-			);
+				newBufferSize - previousBufferSize);
 		}
 	}
 
@@ -96,8 +92,7 @@ int32 loadModel(const char *name)
 	{
 		loadMaterial(
 			scene->mMaterials[i],
-			&model->materials[i]
-		);
+			&model->materials[i]);
 	}
 
 	model->numMeshes = scene->mNumMaterials;
@@ -150,7 +145,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].colorBuffer = colorBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec4) * numVertices, meshData.colors, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec4) * numVertices,
+			meshData.colors,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
 		GLuint positionBuffer;
@@ -159,7 +158,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].positionBuffer = positionBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.positions, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec3) * numVertices,
+			meshData.positions,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 		GLuint normalBuffer;
@@ -168,7 +171,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].normalBuffer = normalBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.normals, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec3) * numVertices,
+			meshData.normals,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
 		GLuint tangentBuffer;
@@ -177,7 +184,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].tangentBuffer = tangentBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, tangentBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.tangents, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec3) * numVertices,
+			meshData.tangents,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
 		GLuint bitangentBuffer;
@@ -186,7 +197,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].bitangentBuffer = bitangentBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, bitangentBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec3) * numVertices, meshData.bitangents, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec3) * numVertices,
+			meshData.bitangents,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
 		GLuint uvBuffer;
@@ -195,7 +210,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].uvBuffer = uvBuffer;
 
 		glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(kmVec2) * numVertices, meshData.uvs, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(kmVec2) * numVertices,
+			meshData.uvs,
+			GL_STATIC_DRAW);
 		glVertexAttribPointer(bufferIndex++, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 		GLuint indexBuffer;
@@ -204,7 +223,11 @@ int32 loadModel(const char *name)
 		model->meshes[i].indexBuffer = indexBuffer;
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32) * numIndices, meshData.indices, GL_STATIC_DRAW);
+		glBufferData(
+			GL_ELEMENT_ARRAY_BUFFER,
+			sizeof(uint32) * numIndices,
+			meshData.indices,
+			GL_STATIC_DRAW);
 
 		model->meshes[i].numIndices = numIndices;
 
@@ -299,8 +322,7 @@ int32 freeModel(const char *name)
 			memcpy(
 				&resizedModels[index],
 				&models[index + 1],
-				(numModels - index) * sizeof(Model)
-			);
+				(numModels - index) * sizeof(Model));
 		}
 
 		free(models);
@@ -324,7 +346,11 @@ extern Uniform projectionUniform;
 
 extern Uniform diffuseTextureUniform;
 
-int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *projection)
+int32 renderModel(
+	const char *name,
+	kmMat4 *world,
+	kmMat4 *view,
+	kmMat4 *projection)
 {
 	Model *model = getModel(name);
 
@@ -360,8 +386,7 @@ int32 renderModel(const char *name, kmMat4 *world, kmMat4 *view, kmMat4 *project
 			GL_TRIANGLES,
 			mesh->numIndices,
 			GL_UNSIGNED_INT,
-			NULL
-		);
+			NULL);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);

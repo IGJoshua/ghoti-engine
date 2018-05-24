@@ -11,7 +11,6 @@ void listPushFront(List *l, void *data);
 void listPushBack(List *l, void *data);
 
 void listPopFront(List *l);
-
 void listClear(List *l);
 
 ListNode **listGetIterator(List *l);

@@ -1,14 +1,11 @@
 #pragma once
 #include "defines.h"
 
-#include "asset_management/asset_manager_types.h"
-#include "renderer/renderer_types.h"
+#include <assimp/material.h>
 
-struct aiMaterial;
+#include "renderer/renderer_types.h"
 
 int32 loadMaterial(
 	const struct aiMaterial *materialData,
-	Material *material
-);
-
+	Material *material);
 int32 freeMaterial(Material *material);

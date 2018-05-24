@@ -9,7 +9,11 @@
 Scene *createScene(void);
 void freeScene(Scene **scene);
 
-void sceneAddComponentType(Scene *scene, UUID componentID, uint32 componentSize, uint32 maxComponents);
+void sceneAddComponentType(
+	Scene *scene,
+	UUID componentID,
+	uint32 componentSize,
+	uint32 maxComponents);
 void sceneRemoveComponentType(Scene *scene, UUID componentID);
 
 void sceneRegisterEntity(Scene *s, UUID newEntity);
@@ -20,17 +24,12 @@ void sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType,
-	void *componentData
-);
-
+	void *componentData);
 void sceneRemoveComponentFromEntity(
 	Scene *s,
 	UUID entity,
-	UUID componentType
-);
-
+	UUID componentType);
 void *sceneGetComponentFromEntity(
 	Scene *s,
 	UUID entity,
-	UUID componentType
-);
+	UUID componentType);

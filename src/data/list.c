@@ -25,7 +25,9 @@ void listPushFront(List *l, void *data)
 
 	l->front = node;
 	if (!l->back)
+	{
 		l->back = node;
+	}
 }
 
 void listPushBack(List *l, void *data)
@@ -53,9 +55,13 @@ void listPopFront(List *l)
 	ListNode *node = l->front;
 
 	if (l->front)
+	{
 		l->front = l->front->next;
+	}
 	if (!l->front)
+	{
 		l->back = 0;
+	}
 
 	free(node);
 }
@@ -97,10 +103,14 @@ void listRemove(List *l, ListNode **itr)
 
 	// Ensure that front and back are up to date
 	if (temp == l->back)
+	{
 		l->back = 0;
+	}
 
 	if (!l->front)
+	{
 		l->back = 0;
+	}
 
 	// Delete the node
 	free(temp);

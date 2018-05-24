@@ -25,11 +25,15 @@ typedef enum { false, true } bool;
 #ifdef _DEBUG
 #include <stdio.h>
 #include <stdlib.h>
-#define ASSERT(test) if (!(test))\
-	{\
-		printf("Assertion: %s failed in file %s on line %d\n", #test, __FILE__, __LINE__);\
-		volatile int32* crash = 0;\
-		*crash = 0;\
+#define ASSERT(test) if (!(test))							\
+	{														\
+		printf(												\
+			"Assertion: %s failed in file %s on line %d\n",	\
+			#test,											\
+			__FILE__,										\
+			__LINE__);										\
+		volatile int32* crash = 0;							\
+		*crash = 0;											\
 	}
 #else
 #define ASSERT(test)

@@ -5,7 +5,9 @@
 
 #define CDT_ID_BUCKETS 97
 
-ComponentDataTable *createComponentDataTable(uint32 numEntries, uint32 componentSize);
+ComponentDataTable *createComponentDataTable(
+	uint32 numEntries,
+	uint32 componentSize);
 void freeComponentDataTable(ComponentDataTable **table);
 
 void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData);

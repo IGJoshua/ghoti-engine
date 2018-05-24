@@ -1,4 +1,5 @@
 #version 420 core
+
 layout(location=0) in vec4 color;
 layout(location=1) in vec3 position;
 layout(location=2) in vec3 normal;
@@ -18,9 +19,9 @@ uniform mat4 projection;
 void main()
 {
 	fragColor = color;
+	fragPosition = (model * vec4(position, 1)).xyz;
 	fragNormal = normalize((model * vec4(normal, 0)).xyz);
 	fragUV = uv;
 
-	fragPosition = (model * vec4(position, 1)).xyz;
 	gl_Position = projection * view * vec4(fragPosition, 1);
 }

@@ -5,12 +5,8 @@ System createSystem(
 	List components,
 	InitSystem init,
 	SystemFn fn,
-	ShutdownSystem shutdown
-);
-
+	ShutdownSystem shutdown);
 void systemRun(
 	Scene *scene,
-	System *system
-);
-
+	System *system);
 void freeSystem(System *system);
