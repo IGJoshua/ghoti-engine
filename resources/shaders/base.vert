@@ -18,7 +18,7 @@ uniform mat4 projection;
 void main()
 {
 	fragColor = color;
-	fragNormal = (model * vec4(normal, 0)).xyz;
+	fragNormal = normalize((model * vec4(normal, 0)).xyz);
 	fragUV = uv;
 
 	fragPosition = (model * vec4(position, 1)).xyz;

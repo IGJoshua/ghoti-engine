@@ -79,8 +79,6 @@ void initRendererSystem(Scene *scene)
 
 void runRendererSystem(Scene *scene, UUID entityID)
 {
-	printf("Entity: %s is being rendered!\n", entityID.string);
-
 	UUID modelComponentID = {};
 	strcpy(modelComponentID.string, "model");
 	ModelComponent *model = sceneGetComponentFromEntity(scene, entityID, modelComponentID);
@@ -99,6 +97,9 @@ void runRendererSystem(Scene *scene, UUID entityID)
 
 	kmMat4 worldMatrix;
 	kmMat4RotationTranslation(&worldMatrix, &rotation, &transform->position);
+	kmMat4 scalingMatrix;
+	kmMat4Scaling(&scalingMatrix, transform->scale.x, transform->scale.y, transform->scale.z);
+	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
 	kmMat4 view;
 	kmMat4Translation(&view, 0, 0, 2);

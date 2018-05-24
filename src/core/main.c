@@ -59,7 +59,7 @@ void moveSystem(Scene *scene, UUID entityID)
 
 	printf("New Location: %f\n", transform->position.x);
 
-	transform->position.x += 1.0f;
+	transform->position.x += 0.01f;
 }
 
 void nameSystem(Scene *scene, UUID entityID)
@@ -104,15 +104,15 @@ int main()
 	// Add component types
 	UUID transformComponentID = {};
 	strcpy(transformComponentID.string, "transform");
-	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 2);
+	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 4);
 
 	UUID nameComponentID = {};
 	strcpy(nameComponentID.string, "name");
-	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 2);
+	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 4);
 
 	UUID modelComponentID = {};
 	strcpy(modelComponentID.string, "model");
-	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 2);
+	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
 
 	// Add systems
 	List movementComponents = createList(sizeof(UUID));
@@ -137,6 +137,10 @@ int main()
 	strcpy(teapot.string, "TEAPOT");
 	sceneRegisterEntity(scene, teapot);
 
+	UUID test = {};
+	strcpy(test.string, "test");
+	sceneRegisterEntity(scene, test);
+
 	TransformComponent transform = {};
 	transform.position.x = 1.0f;
 	transform.position.y = 1.0f;
@@ -151,11 +155,21 @@ int main()
 	strcpy(teapotModel.name, "teapot");
 	sceneAddComponentToEntity(scene, teapot, modelComponentID, &teapotModel);
 	kmVec3Zero(&transform.position);
+	transform.scale.x = 0.01f;
+	transform.scale.y = 0.01f;
+	transform.scale.z = 0.01f;
+	kmQuaternionRotationPitchYawRoll(&transform.rotation, kmDegreesToRadians(90), 0, 0);
+	sceneAddComponentToEntity(scene, teapot, transformComponentID, &transform);
+
+	ModelComponent testModel = {};
+	strcpy(testModel.name, "test");
+	sceneAddComponentToEntity(scene, test, modelComponentID, &testModel);
+	kmVec3Fill(&transform.position, -1, 0, 0);
 	transform.scale.x = 1;
 	transform.scale.y = 1;
 	transform.scale.z = 1;
-	kmQuaternionIdentity(&transform.rotation);
-	sceneAddComponentToEntity(scene, teapot, transformComponentID, &transform);
+	kmQuaternionRotationPitchYawRoll(&transform.rotation, kmDegreesToRadians(90), 0, 0);
+	sceneAddComponentToEntity(scene, test, transformComponentID, &transform);
 
 	// State previous
 	// State next
@@ -185,7 +199,6 @@ int main()
 			// TODO: App update
 			systemRun(scene, &movementSystem);
 			systemRun(scene, &printNameSystem);
-			systemRun(scene, &rendererSystem);
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -213,6 +226,7 @@ int main()
 		//real32 aspectRatio = (real32)width / (real32)height;
 
 		// Render
+		systemRun(scene, &rendererSystem);
 
 		glfwSwapBuffers(window);
 
@@ -220,10 +234,12 @@ int main()
 	}
 
 	freeModel("teapot");
+	freeModel("test");
 
 	sceneRemoveEntity(scene, entity1);
 	sceneRemoveEntity(scene, entity2);
 	sceneRemoveEntity(scene, teapot);
+	sceneRemoveEntity(scene, test);
 
 	sceneRemoveComponentType(scene, transformComponentID);
 	sceneRemoveComponentType(scene, nameComponentID);

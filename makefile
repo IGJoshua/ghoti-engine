@@ -12,7 +12,7 @@ WINLIBDIRS = -Lwinlib
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-DBFLAGS = -g -D_DEBUG
+DBFLAGS = -g -D_DEBUG -O0
 
 _LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
