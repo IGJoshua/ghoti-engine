@@ -3,7 +3,9 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
+#ifndef _WIN32
 #include <alloca.h>
+#endif
 #include <malloc.h>
 #include <string.h>
 
