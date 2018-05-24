@@ -59,7 +59,8 @@ void moveSystem(Scene *scene, UUID entityID)
 
 	printf("New Location: %f\n", transform->position.x);
 
-	transform->position.x += 0.01f;
+	transform->position.x = sinf(glfwGetTime() * 3);
+	transform->position.y = cosf(glfwGetTime() * 3);
 }
 
 void nameSystem(Scene *scene, UUID entityID)
@@ -93,7 +94,7 @@ int main()
 	// total accumulated fixed timestep
 	real64 t = 0.0;
 	// Fixed timesetep
-	real64 dt = 1.0 / 30.0;
+	real64 dt = 1.0 / 60.0;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
