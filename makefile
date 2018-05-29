@@ -24,7 +24,7 @@ DEPS = $(shell find $(IDIRS) -name *.h)
 
 OBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(shell find $(SRCDIR) -name *.c))
 
-RELOBJ = $(patsubst %,$(RELOBJDIR)/%.o,$(_OBJ))
+RELOBJ = $(patsubst $(SRCDIR)/%.c,$(RELOBJDIR)/%.o,$(OBJ))
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
 	$(CC) $(CFLAGS) $(DBFLAGS) -c -o $@ $<
@@ -46,7 +46,7 @@ release : $(RELOBJ)
 
 clean:
 	rm -f -r {$(RELOBJDIR),$(RELDIR),$(BUILDDIR),$(OBJDIR)}
-	mkdir {$(RELOBJDIR),$(RELDIR),$(BUILDDIR),$(OBJDIR)}
+	mkdir {$(BUILDDIR),$(OBJDIR),$(RELDIR),$(RELOBJDIR)}
 	$(DIRS)
 
 .PHONY: run
