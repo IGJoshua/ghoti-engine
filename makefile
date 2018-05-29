@@ -45,8 +45,8 @@ release : $(RELOBJ)
 .PHONY: clean
 
 clean:
-	rm -f -r {$(BUILDDIR),$(OBJDIR)}
-	mkdir {$(BUILDDIR),$(OBJDIR)}
+	rm -f -r {$(RELOBJDIR),$(RELDIR),$(BUILDDIR),$(OBJDIR)}
+	mkdir {$(RELOBJDIR),$(RELDIR),$(BUILDDIR),$(OBJDIR)}
 	$(DIRS)
 
 .PHONY: run
