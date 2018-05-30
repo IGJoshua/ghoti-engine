@@ -11,11 +11,13 @@ LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR))
 _WINLIBDIRS = winlib
 WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 DIRS = $(foreach DIR,$(shell find ./src -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(OBJDIR)/$(DIR) &&) :
+RELDIRS = $(foreach DIR,$(shell find ./src -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(RELOBJDIR)/$(DIR) &&) :
 
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 DBFLAGS = -g -D_DEBUG -O0
+RELFLAGS = -O3
 
 _LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
@@ -24,7 +26,7 @@ DEPS = $(shell find $(IDIRS) -name *.h)
 
 OBJ = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(shell find $(SRCDIR) -name *.c))
 
-RELOBJ = $(patsubst $(SRCDIR)/%.c,$(RELOBJDIR)/%.o,$(OBJ))
+RELOBJ = $(patsubst $(SRCDIR)/%.c,$(RELOBJDIR)/%.o,$(shell find $(SRCDIR) -name *.c))
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPS)
 	$(CC) $(CFLAGS) $(DBFLAGS) -c -o $@ $<
@@ -48,6 +50,7 @@ clean:
 	rm -f -r {$(RELOBJDIR),$(RELDIR),$(BUILDDIR),$(OBJDIR)}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(RELDIR),$(RELOBJDIR)}
 	$(DIRS)
+	$(RELDIRS)
 
 .PHONY: run
 
