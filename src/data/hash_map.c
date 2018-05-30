@@ -26,6 +26,8 @@ HashMap createHashMap(
 		+ (sizeof(HashMapBucket) * bucketCount);
 	HashMap map = malloc(mapSize);
 
+	ASSERT(map != 0);
+
 	map->keySizeBytes = keySize;
 	map->valueSizeBytes = valueSize;
 	map->bucketCount = bucketCount;
@@ -72,6 +74,9 @@ void hashMapPush(HashMap map, void *key, void *value)
 		sizeof(HashMapStorage)
 		+ map->keySizeBytes
 		+ map->valueSizeBytes);
+
+	ASSERT(storage != 0);
+
 	storage->hash = keyHash;
 	memcpy(storage->data, key, map->keySizeBytes);
 	memcpy(storage->data + map->keySizeBytes, value, map->valueSizeBytes);

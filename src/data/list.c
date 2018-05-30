@@ -19,6 +19,9 @@ List createList(uint32 dataSize)
 void listPushFront(List *l, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
+
+	ASSERT(node != 0);
+
 	memcpy(node->data, data, l->dataSize);
 
 	node->next = l->front;
@@ -33,6 +36,9 @@ void listPushFront(List *l, void *data)
 void listPushBack(List *l, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
+
+	ASSERT(node);
+
 	memcpy(node->data, data, l->dataSize);
 
 	node->next = 0;
@@ -49,7 +55,6 @@ void listPushBack(List *l, void *data)
 	}
 }
 
-inline
 void listPopFront(List *l)
 {
 	ListNode *node = l->front;
@@ -120,6 +125,9 @@ inline
 void listInsert(List *l, ListNode **itr, void *data)
 {
 	ListNode *node = malloc(sizeof(ListNode) + l->dataSize);
+
+	ASSERT(node != 0);
+
 	memcpy(node->data, data, l->dataSize);
 	node->next = *itr;
 	(*itr)->next = node;

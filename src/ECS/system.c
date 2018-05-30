@@ -31,22 +31,27 @@ void systemRun(
 	}
 
 	// Get the first component type
-	ComponentDataTable *firstComp = *(ComponentDataTable **)
-		hashMapGetKey(
-			scene->componentTypes,
-			(UUID*)system->componentTypes.front->data);
+	ComponentDataTable **firstComp = hashMapGetKey(
+		scene->componentTypes,
+		(UUID*)system->componentTypes.front->data);
+
+	// If there are no required components
+	if (!firstComp || !*firstComp)
+	{
+		return;
+	}
 
 	UUID emptyID = {};
 
 	// For each entity in the component table
-	for (uint32 i = 0; i < firstComp->numEntries; ++i)
+	for (uint32 i = 0; i < (*firstComp)->numEntries; ++i)
 	{
 		if (!strcmp(
 				emptyID.string,
 				// NOTE(Joshua): "Feels like pretty standard C to me"
-				((UUID *)(firstComp->data
+				((UUID *)((*firstComp)->data
 						  + i
-						  * (firstComp->componentSize
+						  * ((*firstComp)->componentSize
 							 + sizeof(UUID))))->string))
 		{
 			continue;
@@ -62,17 +67,22 @@ void systemRun(
 		{
 			// Get the component to check
 			UUID *componentID = (UUID *)(*itr)->data;
-			ComponentDataTable *table = *(ComponentDataTable **)hashMapGetKey(
+			ComponentDataTable **table = hashMapGetKey(
 				scene->componentTypes,
 				componentID);
+
+			if (!table || !*table || !componentID)
+			{
+				continue;
+			}
 
 			// Check if the entity exists in the table
 			uint32 *entityIndex =
 				hashMapGetKey(
-					table->idToIndex,
-					firstComp->data
+					(*table)->idToIndex,
+					(*firstComp)->data
 					+ i
-					* (firstComp->componentSize + sizeof(UUID)));
+					* ((*firstComp)->componentSize + sizeof(UUID)));
 
 			if (!entityIndex)
 			{
@@ -86,9 +96,9 @@ void systemRun(
 		{
 			system->fn(
 				scene,
-				*(UUID *)(firstComp->data
+				*(UUID *)((*firstComp)->data
 						  + i
-						  * (firstComp->componentSize
+						  * ((*firstComp)->componentSize
 							 + sizeof(UUID))));
 		}
 	}
