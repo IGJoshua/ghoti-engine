@@ -138,22 +138,22 @@ int32 loadMaterial(
 
 int32 freeMaterial(Material *material)
 {
-	if (freeTexture(material->diffuseTexture) == -1)
+	if (material->diffuseTexture && freeTexture(material->diffuseTexture) == -1)
 	{
 		return -1;
 	}
 
-	if (freeTexture(material->specularTexture) == -1)
+	if (material->specularTexture && freeTexture(material->specularTexture) == -1)
 	{
 		return -1;
 	}
 
-	if (freeTexture(material->normalMap) == -1)
+	if (material->normalMap && freeTexture(material->normalMap) == -1)
 	{
 		return -1;
 	}
 
-	if (freeTexture(material->emissiveMap) == -1)
+	if (material->emissiveMap && freeTexture(material->emissiveMap) == -1)
 	{
 		return -1;
 	}
