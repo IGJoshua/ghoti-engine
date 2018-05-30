@@ -116,11 +116,33 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
+	UUID cameraComponentID = {};
+	strcpy(cameraComponentID.string, "camera");
+	CameraComponent *camera =
+		sceneGetComponentFromEntity(
+			scene,
+			scene->mainCamera,
+			cameraComponentID);
+	TransformComponent *cameraTransform =
+		sceneGetComponentFromEntity(
+			scene,
+			scene->mainCamera,
+			transformComponentID);
+
+	kmMat3 cameraRotation;
+	kmMat3FromRotationQuaternion(&cameraRotation, &cameraTransform->rotation);
+
 	kmMat4 view;
-	kmMat4Translation(&view, 0, 0, 2);
+	kmMat4RotationTranslation(&view, &cameraRotation, &cameraTransform->position);
 	kmMat4Inverse(&view, &view);
+
 	kmMat4 projection;
-	kmMat4PerspectiveProjection(&projection, 90, 4.0f / 3.0f, 0.1f, 1000.0f);
+	kmMat4PerspectiveProjection(
+		&projection,
+		camera->fov,
+		camera->aspectRatio,
+		camera->nearPlane,
+		camera->farPlane);
 
 	renderModel(model->name, &worldMatrix, &view, &projection);
 }

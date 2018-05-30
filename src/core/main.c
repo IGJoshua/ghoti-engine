@@ -48,6 +48,13 @@ typedef struct name_component_t
 	char name[64];
 } NameComponent;
 
+typedef struct orbit_component_t
+{
+	kmVec3 origin;
+	float speed;
+	float radius;
+} OrbitComponent;
+
 void moveSystem(Scene *scene, UUID entityID)
 {
 	puts("Move system.");
@@ -55,12 +62,29 @@ void moveSystem(Scene *scene, UUID entityID)
 
 	UUID transID = {};
 	strcpy(transID.string, "transform");
-	TransformComponent *transform = sceneGetComponentFromEntity(scene, entityID, transID);
+	TransformComponent *transform =
+		sceneGetComponentFromEntity(scene, entityID, transID);
 
-	printf("New Location: %f\n", transform->position.x);
+	UUID orbitID = {};
+	strcpy(orbitID.string, "orbit");
+	OrbitComponent *orbit =
+		sceneGetComponentFromEntity(scene, entityID, orbitID);
 
-	transform->position.x = sinf(glfwGetTime() * 3);
-	transform->position.y = cosf(glfwGetTime() * 3);
+	transform->position.x =
+		sinf(glfwGetTime() * orbit->speed)
+		* orbit->radius
+		+ orbit->origin.x;
+	transform->position.y =
+		cosf(glfwGetTime() * orbit->speed)
+		* orbit->radius
+		+ orbit->origin.y;
+	transform->position.z = orbit->origin.z;
+
+	printf(
+		"New Location: %f, %f, %f\n",
+		transform->position.x,
+		transform->position.y,
+		transform->position.z);
 }
 
 void nameSystem(Scene *scene, UUID entityID)
@@ -70,8 +94,22 @@ void nameSystem(Scene *scene, UUID entityID)
 
 	UUID nameID = {};
 	strcpy(nameID.string, "name");
-	NameComponent *name = sceneGetComponentFromEntity(scene, entityID, nameID);
+	NameComponent *name =
+		sceneGetComponentFromEntity(scene, entityID, nameID);
 	printf("%s\n", name->name);
+}
+
+void cameraOrbit(Scene *scene, UUID entityID)
+{
+	puts("Camera system.");
+	printf("EntityID: %s\n", entityID.string);
+
+	UUID transID = {};
+	strcpy(transID.string, "transform");
+	TransformComponent *transform =
+		sceneGetComponentFromEntity(scene, entityID, transID);
+
+	transform->position.x = sinf(glfwGetTime() + 2.0f);
 }
 
 int main()
@@ -107,6 +145,10 @@ int main()
 	strcpy(transformComponentID.string, "transform");
 	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 4);
 
+	UUID orbitComponentID = {};
+	strcpy(orbitComponentID.string, "orbit");
+	sceneAddComponentType(scene, orbitComponentID, sizeof(OrbitComponent), 4);
+
 	UUID nameComponentID = {};
 	strcpy(nameComponentID.string, "name");
 	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 4);
@@ -115,16 +157,26 @@ int main()
 	strcpy(modelComponentID.string, "model");
 	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
 
+	UUID cameraComponentID = {};
+	strcpy(cameraComponentID.string, "camera");
+	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
+
 	// Add systems
 	List movementComponents = createList(sizeof(UUID));
-	listPushFront(&movementComponents, &transformComponentID);
+	listPushBack(&movementComponents, &orbitComponentID);
+	listPushBack(&movementComponents, &transformComponentID);
 	System movementSystem = createSystem(movementComponents, 0, &moveSystem, 0);
 
 	List nameComponents = createList(sizeof(UUID));
-	listPushFront(&nameComponents, &nameComponentID);
+	listPushBack(&nameComponents, &nameComponentID);
 	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
 
 	System rendererSystem = createRendererSystem();
+
+	List cameraComponents = createList(sizeof(UUID));
+	listPushBack(&cameraComponents, &cameraComponentID);
+	listPushBack(&cameraComponents, &transformComponentID);
+	System cameraSystem = createSystem(cameraComponents, 0, &cameraOrbit, 0);
 
 	// Create entities
 	UUID entity1 = {};
@@ -142,6 +194,12 @@ int main()
 	strcpy(test.string, "test");
 	sceneRegisterEntity(scene, test);
 
+	UUID camera = {};
+	strcpy(camera.string, "CAMERA");
+	sceneRegisterEntity(scene, camera);
+
+	scene->mainCamera = camera;
+
 	TransformComponent transform = {};
 	transform.position.x = 1.0f;
 	transform.position.y = 1.0f;
@@ -155,6 +213,11 @@ int main()
 	ModelComponent teapotModel = {};
 	strcpy(teapotModel.name, "teapot");
 	sceneAddComponentToEntity(scene, teapot, modelComponentID, &teapotModel);
+	OrbitComponent orbitPosition = {};
+	kmVec3Zero(&orbitPosition.origin);
+	orbitPosition.radius = 2.0f;
+	orbitPosition.speed = 3.0f;
+	sceneAddComponentToEntity(scene, teapot, orbitComponentID, &orbitPosition);
 	kmVec3Zero(&transform.position);
 	transform.scale.x = 0.01f;
 	transform.scale.y = 0.01f;
@@ -165,12 +228,26 @@ int main()
 	ModelComponent testModel = {};
 	strcpy(testModel.name, "test");
 	sceneAddComponentToEntity(scene, test, modelComponentID, &testModel);
-	kmVec3Fill(&transform.position, -1, 0, 0);
+	kmVec3Zero(&transform.position);
 	transform.scale.x = 1;
 	transform.scale.y = 1;
 	transform.scale.z = 1;
 	kmQuaternionRotationPitchYawRoll(&transform.rotation, kmDegreesToRadians(90), 0, 0);
 	sceneAddComponentToEntity(scene, test, transformComponentID, &transform);
+
+	CameraComponent cameraComp = {};
+	cameraComp.aspectRatio = 4.0f / 3.0f;
+	cameraComp.fov = 80;
+	cameraComp.nearPlane = 0.1f;
+	cameraComp.farPlane = 1000.0f;
+	cameraComp.projectionType = CAMERA_PROJECTION_TYPE_PERSPECTIVE;
+	sceneAddComponentToEntity(scene, camera, cameraComponentID, &cameraComp);
+	kmVec3Fill(&transform.position, 0, 0, 2);
+	transform.scale.x = 1;
+	transform.scale.y = 1;
+	transform.scale.z = 1;
+	kmQuaternionIdentity(&transform.rotation);
+	sceneAddComponentToEntity(scene, camera, transformComponentID, &transform);
 
 	// State previous
 	// State next
@@ -200,6 +277,7 @@ int main()
 			// TODO: App update
 			systemRun(scene, &movementSystem);
 			systemRun(scene, &printNameSystem);
+			systemRun(scene, &cameraSystem);
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -217,7 +295,13 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		//real32 aspectRatio = (real32)width / (real32)height;
+		real32 aspectRatio = (real32)width / (real32)height;
+
+		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, cameraComponentID);
+		if (cam)
+		{
+			cam->aspectRatio = aspectRatio;
+		}
 
 		// Render
 		systemRun(scene, &rendererSystem);
