@@ -10,8 +10,6 @@ int32 loadMaterial(
 {
 	material->type = MATERIAL_TYPE_DEBUG;
 
-	// TODO Error Checking using if-else statements
-
 	struct aiString textureName;
 
 	if (aiGetMaterialString(
@@ -140,13 +138,29 @@ int32 loadMaterial(
 
 int32 freeMaterial(Material *material)
 {
-	freeTexture(material->diffuseTexture);
+	if (freeTexture(material->diffuseTexture) == -1)
+	{
+		return -1;
+	}
+
+	if (freeTexture(material->specularTexture) == -1)
+	{
+		return -1;
+	}
+
+	if (freeTexture(material->normalMap) == -1)
+	{
+		return -1;
+	}
+
+	if (freeTexture(material->emissiveMap) == -1)
+	{
+		return -1;
+	}
+
 	free(material->diffuseTexture);
-	freeTexture(material->specularTexture);
 	free(material->specularTexture);
-	freeTexture(material->normalMap);
 	free(material->normalMap);
-	freeTexture(material->emissiveMap);
 	free(material->emissiveMap);
 
 	return 0;

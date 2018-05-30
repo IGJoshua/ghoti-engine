@@ -3,9 +3,18 @@
 
 #include "renderer_types.h"
 
-Shader compileShaderFromFile(char *filename, ShaderType type);
-Shader compileShaderFromSource(char *source, ShaderType type);
-ShaderPipeline composeShaderPipeline(Shader **shaders, uint32 numShaders);
+int32 compileShaderFromFile(
+	char *filename,
+	ShaderType type,
+	Shader *shader);
+int32 compileShaderFromSource(
+	char *source,
+	ShaderType type,
+	Shader *shader);
+int32 composeShaderPipeline(
+	Shader **shaders,
+	uint32 numShaders,
+	ShaderPipeline *pipeline);
 
 void freeShader(Shader shader);
 void freeShaderPipeline(ShaderPipeline shader);
@@ -13,6 +22,10 @@ void freeShaderPipeline(ShaderPipeline shader);
 void bindShaderPipeline(ShaderPipeline pipeline);
 void unbindShaderPipeline();
 
-Uniform getUniform(ShaderPipeline pipeline, char *name, UniformType type);
+int32 getUniform(
+	ShaderPipeline pipeline,
+	char *name,
+	UniformType type,
+	Uniform *uniform);
 
-void setUniform(Uniform uniform, void *data);
+int32 setUniform(Uniform uniform, void *data);
