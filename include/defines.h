@@ -36,5 +36,9 @@ typedef enum { false, true } bool;
 		*crash = 0;											\
 	}
 #else
-#define ASSERT(test)
+#define ASSERT(test) if (!(test))							\
+	{														\
+		volatile int32* crash = 0;							\
+		*crash = 0;											\
+	}
 #endif

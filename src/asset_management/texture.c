@@ -3,6 +3,7 @@
 #include <assimp/cimport.h>
 
 #include <IL/il.h>
+#include <IL/ilu.h>
 
 #include <malloc.h>
 
@@ -25,6 +26,12 @@ int32 loadTexture(const struct aiString *name, TextureType type)
 	char filename[1024];
 	sprintf(filename, "resources/textures/%s", texture->name);
 	ilLoadImage(filename);
+	ILenum devilError = ilGetError();
+	printf("Load %s: %s\n", texture->name, iluErrorString(devilError));
+	if (devilError != IL_NO_ERROR)
+	{
+		return -1;
+	}
 
 	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
 
@@ -48,6 +55,12 @@ int32 loadTexture(const struct aiString *name, TextureType type)
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
 		textureData);
+	GLenum glError = glGetError();
+	printf("Load Texture Data onto GPU (%s): %s\n", texture->name, gluErrorString(glError));
+	if (glError != GL_NO_ERROR)
+	{
+		return -1;
+	}
 
 	// TODO Add mipmapping
 	// glGenerateMipmap(GL_TEXTURE_2D);
@@ -92,12 +105,19 @@ uint32 getTextureIndex(const char *name)
 		}
 	}
 
-	return -1;
+	return 0;
 }
 
 int32 freeTexture(const char *name)
 {
 	Texture *texture = getTexture(name);
+
+	if (!texture)
+	{
+		printf("%s not found.\n", name);
+		return -1;
+	}
+
 	uint32 index = getTextureIndex(name);
 
 	if (texture)

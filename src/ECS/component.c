@@ -15,7 +15,7 @@ ComponentDataTable *createComponentDataTable(
 		+ numEntries
 		* (componentSize + sizeof(UUID)));
 
-	ASSERT(ret);
+	ASSERT(ret != 0);
 
 	ret->componentSize = componentSize;
 	ret->numEntries = numEntries;
@@ -24,9 +24,12 @@ ComponentDataTable *createComponentDataTable(
 		sizeof(uint32),
 		CDT_ID_BUCKETS,
 		(ComparisonOp)&strcmp);
-	ASSERT(ret->idToIndex);
+
+	ASSERT(ret->idToIndex != 0);
 
 	memset(ret->data, 0, numEntries * (componentSize + sizeof(UUID)));
+
+	printf("Created a component data table with %d entries of %d bytes\n", numEntries, componentSize);
 
 	return ret;
 }
@@ -56,6 +59,12 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 				break;
 			}
 		}
+
+		if (i >= table->numEntries)
+		{
+			return;
+		}
+
 		// Associate the UUID with the index in the map
 		hashMapInsert(table->idToIndex, &entityID, &i);
 	}

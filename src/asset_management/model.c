@@ -41,6 +41,15 @@ int32 loadModel(const char *name)
 				0,
 				newBufferSize - previousBufferSize);
 		}
+
+		if (numModels == 0)
+		{
+			printf("Increased models array capacity to %d models to accommodate 1 more model.\n", modelsCapacity);
+		}
+		else
+		{
+			printf("Increased models array capacity to %d models to accommodate %d more models.\n", modelsCapacity, numModels + 1);
+		}
 	}
 
 	Model *model = &models[numModels++];
@@ -54,6 +63,11 @@ int32 loadModel(const char *name)
 		filename,
 		aiProcessPreset_TargetRealtime_Quality &
 		~aiProcess_SplitLargeMeshes);
+
+	if (!scene) {
+		printf("Failed to load model file (%s).\n", filename);
+		return -1;
+	}
 
 	if (numTextures + 2 > texturesCapacity)
 	{
@@ -82,6 +96,15 @@ int32 loadModel(const char *name)
 				0,
 				newBufferSize - previousBufferSize);
 		}
+
+		if (numTextures + 2 == 1)
+		{
+			printf("Increased textures array capacity to %d textures to accommodate 1 more texture.\n", texturesCapacity);
+		}
+		else
+		{
+			printf("Increased textures array capacity to %d textures to accommodate %d more textures.\n", texturesCapacity, numTextures + 2);
+		}
 	}
 
 	model->numMaterials = scene->mNumMaterials;
@@ -90,9 +113,12 @@ int32 loadModel(const char *name)
 
 	for (uint32 i = 0; i < scene->mNumMaterials; i++)
 	{
-		loadMaterial(
+		if (loadMaterial(
 			scene->mMaterials[i],
-			&model->materials[i]);
+			&model->materials[i]) == -1)
+		{
+			return -1;
+		}
 	}
 
 	model->numMeshes = scene->mNumMaterials;
@@ -126,9 +152,14 @@ int32 loadModel(const char *name)
 		{
 			if (scene->mMeshes[j]->mMaterialIndex == i)
 			{
-				loadMesh(scene->mMeshes[j], &meshData);
+				if (loadMesh(scene->mMeshes[j], &meshData) == -1)
+				{
+					return -1;
+				}
 			}
 		}
+
+		printf("Loaded subset #%d in %s.dae.\n", i + 1, name);
 
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
@@ -234,6 +265,8 @@ int32 loadModel(const char *name)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+		printf("Loaded subset #%d in %s.dae onto the GPU.\n", i + 1, name);
+
 		glBindVertexArray(0);
 
 		free(meshData.colors);
@@ -250,11 +283,17 @@ int32 loadModel(const char *name)
 		meshData.uvs = 0;
 		free(meshData.indices);
 		meshData.indices = 0;
+
+		printf("Finished loading #%d in %s.dae.\n", i + 1, name);
+		printf("Vertex Count: %d\n", numVertices);
+		printf("Index Count: %d\n", numIndices);
 	}
 
 	aiReleaseImport(scene);
 
 	model->refCount++;
+
+	printf("Number of models: %d.\n", numModels);
 
 	return 0;
 }
@@ -288,12 +327,19 @@ uint32 getModelIndex(const char *name)
 		}
 	}
 
-	return -1;
+	return 0;
 }
 
 int32 freeModel(const char *name)
 {
 	Model *model = getModel(name);
+
+	if (!model)
+	{
+		printf("%s.dae not found.\n", name);
+		return -1;
+	}
+
 	uint32 index = getModelIndex(name);
 
 	if (--(model->refCount) == 0)
@@ -302,14 +348,20 @@ int32 freeModel(const char *name)
 
 		for (uint32 i = 0; i < model->numMeshes; i++)
 		{
-			freeMesh(&model->meshes[i]);
+			if (freeMesh(&model->meshes[i]) == -1)
+			{
+				return -1;
+			}
 		}
 
 		free(model->meshes);
 
 		for (uint32 i = 0; i < model->numMaterials; i++)
 		{
-			freeMaterial(&model->materials[i]);
+			if (freeMaterial(&model->materials[i]) == -1)
+			{
+				return -1;
+			}
 		}
 
 		free(model->materials);
@@ -356,12 +408,26 @@ int32 renderModel(
 
 	bindShaderPipeline(pipeline);
 
-	setUniform(modelUniform, world);
-	setUniform(viewUniform, view);
-	setUniform(projectionUniform, projection);
+	if (setUniform(modelUniform, world) == -1)
+	{
+		return -1;
+	}
+
+	if (setUniform(viewUniform, view) == -1)
+	{
+		return -1;
+	}
+
+	if (setUniform(projectionUniform, projection) == -1)
+	{
+		return -1;
+	}
 
 	GLint textureIndex = 0;
-	setUniform(diffuseTextureUniform, &textureIndex);
+	if (setUniform(diffuseTextureUniform, &textureIndex) == -1)
+	{
+		return -1;
+	}
 
 	for (uint32 i = 0; i < model->numMeshes; i++)
 	{
@@ -387,6 +453,12 @@ int32 renderModel(
 			mesh->numIndices,
 			GL_UNSIGNED_INT,
 			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			printf("Draw %s: %s\n", name, gluErrorString(glError));
+			return -1;
+		}
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);

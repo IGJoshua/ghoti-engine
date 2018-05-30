@@ -54,32 +54,59 @@ System createRendererSystem()
 
 void initRendererSystem(Scene *scene)
 {
-	vertShader = compileShaderFromFile(
+	if (compileShaderFromFile(
 		"resources/shaders/base.vert",
-		SHADER_VERTEX);
-	fragShader = compileShaderFromFile(
+		SHADER_VERTEX,
+		&vertShader) == -1)
+	{
+		return;
+	}
+
+	if (compileShaderFromFile(
 		"resources/shaders/color.frag",
-		SHADER_FRAGMENT);
+		SHADER_FRAGMENT,
+		&fragShader) == -1)
+	{
+		return;
+	}
 
 	Shader *program[2];
 	program[0] = &vertShader;
 	program[1] = &fragShader;
 
-	pipeline = composeShaderPipeline(program, 2);
+	if (composeShaderPipeline(program, 2, &pipeline) == -1)
+	{
+		return;
+	}
 
 	freeShader(vertShader);
 	freeShader(fragShader);
 	free(pipeline.shaders);
 	pipeline.shaderCount = 0;
 
-	modelUniform = getUniform(pipeline, "model", UNIFORM_MAT4);
-	viewUniform = getUniform(pipeline, "view", UNIFORM_MAT4);
-	projectionUniform = getUniform(pipeline, "projection", UNIFORM_MAT4);
+	if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
+	{
+		return;
+	}
 
-	diffuseTextureUniform = getUniform(
+	if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
+	{
+		return;
+	}
+
+	if (getUniform(pipeline, "projection", UNIFORM_MAT4, &projectionUniform) == -1)
+	{
+		return;
+	}
+
+	if (getUniform(
 		pipeline,
 		"diffuseTexture",
-		UNIFORM_TEXTURE_2D);
+		UNIFORM_TEXTURE_2D,
+		&diffuseTextureUniform) == -1)
+	{
+		return;
+	}
 }
 
 void runRendererSystem(Scene *scene, UUID entityID)
@@ -93,7 +120,10 @@ void runRendererSystem(Scene *scene, UUID entityID)
 
 	if (!getModel(model->name))
 	{
-		loadModel(model->name);
+		if (loadModel(model->name) == -1)
+		{
+			return;
+		}
 	}
 
 	UUID transformComponentID = {};
@@ -144,7 +174,10 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		camera->nearPlane,
 		camera->farPlane);
 
-	renderModel(model->name, &worldMatrix, &view, &projection);
+	if (renderModel(model->name, &worldMatrix, &view, &projection) == -1)
+	{
+		return;
+	}
 }
 
 void shutdownRendererSystem(Scene *scene)

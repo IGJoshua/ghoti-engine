@@ -18,6 +18,8 @@ Promise *pReturn(void *pData)
 {
 	Promise *ret = malloc(sizeof(Promise));
 
+	ASSERT(ret != 0);
+
 	ret->pData = pData;
 	ret->isDone = 1;
 

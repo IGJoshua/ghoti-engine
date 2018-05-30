@@ -14,6 +14,8 @@ typedef struct list_t
 	ListNode *back;
 } List;
 
+typedef ListNode **ListIterator;
+
 typedef struct binary_search_tree_node_t
 {
 	struct binary_search_tree_node_t *left;
