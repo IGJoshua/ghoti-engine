@@ -95,13 +95,13 @@ void *hashMapGetKey(HashMap map, void *key)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (!map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
+		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
 		{
-			return ((HashMapStorage *)(*itr)->data)->data + map->keySizeBytes;
+			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data + map->keySizeBytes;
 		}
 	}
 
@@ -113,11 +113,11 @@ void hashMapPopKey(HashMap map, void *key)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (!map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
+		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
 		{
 			listRemove(&map->buckets[bucketIndex], itr);
 			break;
@@ -130,10 +130,10 @@ void hashMapDeleteKey(HashMap map, void *key)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListNode **itr = listGetIterator(&map->buckets[bucketIndex]);
+	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
 		 !listIteratorAtEnd(itr);)
 	{
-		if (!map->comparison(((HashMapStorage *)(*itr)->data)->data, key))
+		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
 		{
 			listRemove(&map->buckets[bucketIndex], itr);
 		}

@@ -108,13 +108,13 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	}
 
 	// For each component type
-	for (ListNode **listIterator = listGetIterator(entityComponentList);
+	for (ListIterator listIterator = listGetIterator(entityComponentList);
 		 !listIteratorAtEnd(listIterator);
 		 listMoveIterator(&listIterator))
 	{
 		ComponentDataTable **table = hashMapGetKey(
 			s->componentTypes,
-			(*listIterator)->data);
+			LIST_ITERATOR_GET_ELEMENT(void, listIterator));
 
 		if (!table || !*table)
 		{
@@ -178,11 +178,11 @@ void sceneRemoveComponentFromEntity(
 		return;
 	}
 
-	for (ListNode **itr = listGetIterator(componentTypeList);
+	for (ListIterator itr = listGetIterator(componentTypeList);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (strcmp(((UUID *)(*itr)->data)->string, componentType.string))
+		if (strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string, componentType.string))
 		{
 			listRemove(componentTypeList, itr);
 		}

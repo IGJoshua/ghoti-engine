@@ -13,9 +13,9 @@ void listPushBack(List *l, void *data);
 void listPopFront(List *l);
 void listClear(List *l);
 
-ListNode **listGetIterator(List *l);
-void listMoveIterator(ListNode ***itr);
-int32 listIteratorAtEnd(ListNode **itr);
+ListIterator listGetIterator(List *l);
+void listMoveIterator(ListIterator *itr);
+int32 listIteratorAtEnd(ListIterator itr);
 
-void listRemove(List *l, ListNode **itr);
-void listInsert(List *l, ListNode **itr, void *data);
+void listRemove(List *l, ListIterator itr);
+void listInsert(List *l, ListIterator itr, void *data);

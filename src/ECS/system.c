@@ -60,13 +60,13 @@ void systemRun(
 		// Check to see if it has the other component types
 		int32 entityValid = 1;
 
-		ListNode **itr = listGetIterator(&system->componentTypes);
+		ListIterator itr = listGetIterator(&system->componentTypes);
 		for (listMoveIterator(&itr);
 			 !listIteratorAtEnd(itr);
 			 listMoveIterator(&itr))
 		{
 			// Get the component to check
-			UUID *componentID = (UUID *)(*itr)->data;
+			UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 			ComponentDataTable **table = hashMapGetKey(
 				scene->componentTypes,
 				componentID);
