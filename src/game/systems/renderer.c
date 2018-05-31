@@ -18,16 +18,16 @@
 #include <string.h>
 #include <malloc.h>
 
-Shader vertShader;
-Shader fragShader;
+extern Shader vertShader;
+extern Shader fragShader;
 
-ShaderPipeline pipeline;
+extern ShaderPipeline pipeline;
 
-Uniform modelUniform;
-Uniform viewUniform;
-Uniform projectionUniform;
+extern Uniform modelUniform;
+extern Uniform viewUniform;
+extern Uniform projectionUniform;
 
-Uniform diffuseTextureUniform;
+extern Uniform diffuseTextureUniform;
 
 System createRendererSystem()
 {

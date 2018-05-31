@@ -25,6 +25,10 @@
 
 #include <kazmath/mat4.h>
 
+#include <luajit-2.0/lua.h>
+#include <luajit-2.0/lauxlib.h>
+#include <luajit-2.0/lualib.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
@@ -57,9 +61,6 @@ typedef struct orbit_component_t
 
 void moveSystem(Scene *scene, UUID entityID)
 {
-	puts("Move system.");
-	printf("Entity ID: %s\n", entityID.string);
-
 	UUID transID = {};
 	strcpy(transID.string, "transform");
 	TransformComponent *transform =
@@ -79,31 +80,18 @@ void moveSystem(Scene *scene, UUID entityID)
 		* orbit->radius
 		+ orbit->origin.y;
 	transform->position.z = orbit->origin.z;
-
-	printf(
-		"New Location: %f, %f, %f\n",
-		transform->position.x,
-		transform->position.y,
-		transform->position.z);
 }
 
 void nameSystem(Scene *scene, UUID entityID)
 {
-	puts("Name system.");
-	printf("Entity ID: %s\n", entityID.string);
-
 	UUID nameID = {};
 	strcpy(nameID.string, "name");
 	NameComponent *name =
 		sceneGetComponentFromEntity(scene, entityID, nameID);
-	printf("%s\n", name->name);
 }
 
 void cameraOrbit(Scene *scene, UUID entityID)
 {
-	puts("Camera system.");
-	printf("EntityID: %s\n", entityID.string);
-
 	UUID transID = {};
 	strcpy(transID.string, "transform");
 	TransformComponent *transform =
@@ -137,6 +125,21 @@ int main()
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
 
+	// Init Lua
+	lua_State *L = luaL_newstate();
+	luaL_openlibs(L);
+
+	int luaError = luaL_loadfile(L, "resources/scripts/main.lua") || lua_pcall(L, 0, 0, 0);
+	if (luaError)
+	{
+		printf("Lua Error: %s\n", lua_tostring(L, -1));
+		lua_pop(L, 1);
+
+		lua_close(L);
+		freeWindow(window);
+		return 1;
+	}
+
 	// TODO: Setup basic component state
 	Scene *scene = createScene();
 
@@ -162,6 +165,7 @@ int main()
 	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
 
 	// Add systems
+	// TODO: Invent way to register systems
 	List movementComponents = createList(sizeof(UUID));
 	listPushBack(&movementComponents, &orbitComponentID);
 	listPushBack(&movementComponents, &transformComponentID);
@@ -275,6 +279,7 @@ int main()
 			// Previous state = currentState
 			// TODO: State chates
 			// TODO: App update
+			// TODO: Run all fixed-frame systems
 			systemRun(scene, &movementSystem);
 			systemRun(scene, &printNameSystem);
 			systemRun(scene, &cameraSystem);
@@ -304,6 +309,7 @@ int main()
 		}
 
 		// Render
+		// TODO: Run all render-frame systems
 		systemRun(scene, &rendererSystem);
 
 		glfwSwapBuffers(window);
@@ -328,6 +334,9 @@ int main()
 	freeRendererSystem(&rendererSystem);
 
 	freeScene(&scene);
+
+	lua_close(L);
+
 	freeWindow(window);
 
 	return 0;
