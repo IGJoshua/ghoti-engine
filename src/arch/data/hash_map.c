@@ -151,3 +151,82 @@ void hashMapClear(HashMap map)
 		listClear(&map->buckets[i]);
 	}
 }
+
+HashMapIterator hashMapGetIterator(HashMap map)
+{
+	HashMapIterator ret = {};
+
+	ret.map = map;
+	ret.bucket = 0;
+	ret.itr = listGetIterator(&map->buckets[ret.bucket]);
+	while (listIteratorAtEnd(ret.itr))
+	{
+		// move the iterator if the iterator is at a valid bucket index
+		if (++ret.bucket < ret.map->bucketCount)
+		{
+			ret.itr = listGetIterator(&ret.map->buckets[ret.bucket]);
+		}
+		// break the loop if the iterator is past the end of the hashmap
+		else
+		{
+			break;
+		}
+	}
+
+	return ret;
+}
+
+void hashMapMoveIterator(HashMapIterator *itr)
+{
+	// Return if the iterator is already at the end
+	if (itr->bucket >= itr->map->bucketCount)
+	{
+		return;
+	}
+
+	// If the iterator can move in the current bucket
+	if (!listIteratorAtEnd(itr->itr))
+	{
+		// Move the iterator
+		listMoveIterator(&itr->itr);
+	}
+
+	/*
+	 * If the iterator has to go to the next bucket,
+	 * find the next non-empty bucket
+	 */
+	if (listIteratorAtEnd(itr->itr))
+	{
+		while (listIteratorAtEnd(itr->itr))
+		{
+			// move the iterator if the iterator is at a valid bucket index
+			if (++itr->bucket < itr->map->bucketCount)
+			{
+				itr->itr = listGetIterator(&itr->map->buckets[itr->bucket]);
+			}
+			// break the loop if the iterator is past the end of the hashmap
+			else
+			{
+				break;
+			}
+		}
+	}
+}
+
+inline
+int32 hashMapIteratorAtEnd(HashMapIterator itr)
+{
+	return itr.bucket >= itr.map->bucketCount;
+}
+
+inline
+void *hashMapIteratorGetKey(HashMapIterator itr)
+{
+	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data;
+}
+
+inline
+void *hashMapIteratorGet(HashMapIterator itr)
+{
+	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data + itr.map->keySizeBytes;
+}

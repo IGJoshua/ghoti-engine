@@ -41,3 +41,10 @@ typedef struct hash_map_t
 	ComparisonOp comparison;
 	HashMapBucket buckets[];
 } *HashMap;
+
+typedef struct hash_map_iterator_t
+{
+	HashMap map;
+	ListIterator itr;
+	uint32 bucket;
+} HashMapIterator;
