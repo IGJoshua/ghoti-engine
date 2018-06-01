@@ -9,6 +9,24 @@
 Scene *createScene(void);
 void freeScene(Scene **scene);
 
+void sceneAddRenderFrameSystem(
+	Scene *scene,
+	System system);
+void sceneAddPhysicsFrameSystem(
+	Scene *scene,
+	System system);
+
+void sceneInitRenderFrameSystems(Scene *scene);
+void sceneInitPhysicsFrameSystems(Scene *scene);
+void sceneInitSystems(Scene *scene);
+
+void sceneRunRenderFrameSystems(Scene *scene);
+void sceneRunPhysicsFrameSystems(Scene *scene);
+
+void sceneShutdownRenderFrameSystems(Scene *scene);
+void sceneShutdownPhysicsFrameSystems(Scene *scene);
+void sceneShutdownSystems(Scene *scene);
+
 void sceneAddComponentType(
 	Scene *scene,
 	UUID componentID,

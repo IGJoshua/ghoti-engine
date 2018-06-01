@@ -1,5 +1,6 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
+#include "ECS/system.h"
 
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -25,27 +26,16 @@ Scene *createScene(void)
 		ENTITY_BUCKETS,
 		(ComparisonOp)&strcmp);
 
+	ret->physicsFrameSystems = createList(sizeof(System));
+	ret->renderFrameSystems = createList(sizeof(System));
+
 	return ret;
 }
 
 void freeScene(Scene **scene)
 {
-	ListIterator litr = listGetIterator(&(*scene)->physicsFrameSystems);
-	while (!listIteratorAtEnd(litr))
-	{
-		LIST_ITERATOR_GET_ELEMENT(System, litr)->shutdown(*scene);
-
-		listMoveIterator(&litr);
-	}
+	sceneShutdownSystems(*scene);
 	listClear(&(*scene)->physicsFrameSystems);
-
-	litr = listGetIterator(&(*scene)->renderFrameSystems);
-	while (!listIteratorAtEnd(litr))
-	{
-		LIST_ITERATOR_GET_ELEMENT(System, litr)->shutdown(*scene);
-
-		listMoveIterator(&litr);
-	}
 	listClear(&(*scene)->renderFrameSystems);
 
 	HashMapIterator itr = hashMapGetIterator((*scene)->entities);
@@ -67,6 +57,112 @@ void freeScene(Scene **scene)
 
 	free(*scene);
 	*scene = 0;
+}
+
+inline
+void sceneAddRenderFrameSystem(
+	Scene *scene,
+	System system)
+{
+	listPushBack(&scene->renderFrameSystems, &system);
+}
+
+inline
+void sceneAddPhysicsFrameSystem(
+	Scene *scene,
+	System system)
+{
+	listPushBack(&scene->physicsFrameSystems, &system);
+}
+
+void sceneInitRenderFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneInitPhysicsFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneInitSystems(Scene *scene)
+{
+	sceneInitRenderFrameSystems(scene);
+	sceneInitPhysicsFrameSystems(scene);
+}
+
+void sceneRunRenderFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr));
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneRunPhysicsFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr));
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownRenderFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownPhysicsFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownSystems(Scene *scene)
+{
+	sceneShutdownRenderFrameSystems(scene);
+	sceneShutdownPhysicsFrameSystems(scene);
 }
 
 void sceneAddComponentType(

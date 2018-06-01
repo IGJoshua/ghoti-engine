@@ -170,16 +170,22 @@ int32 main()
 	listPushBack(&movementComponents, &transformComponentID);
 	System movementSystem = createSystem(movementComponents, 0, &moveSystem, 0);
 
+	sceneAddPhysicsFrameSystem(scene, movementSystem);
+
 	List nameComponents = createList(sizeof(UUID));
 	listPushBack(&nameComponents, &nameComponentID);
 	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
 
 	System rendererSystem = createRendererSystem();
 
+	sceneAddRenderFrameSystem(scene, rendererSystem);
+
 	List cameraComponents = createList(sizeof(UUID));
 	listPushBack(&cameraComponents, &cameraComponentID);
 	listPushBack(&cameraComponents, &transformComponentID);
 	System cameraSystem = createSystem(cameraComponents, 0, &cameraOrbit, 0);
+
+	sceneAddRenderFrameSystem(scene, cameraSystem);
 
 	// Create entities
 	UUID entity1 = idFromName("ENTITY1");
@@ -253,7 +259,7 @@ int32 main()
 	// TODO: Make this thing work
   	//loadScene("scene_1", &scene);
 
-	rendererSystem.init(scene);
+	sceneInitSystems(scene);
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -273,10 +279,7 @@ int32 main()
 			// Previous state = currentState
 			// TODO: State chates
 			// TODO: App update
-			// TODO: Run all fixed-frame systems
-			systemRun(scene, &movementSystem);
-			systemRun(scene, &printNameSystem);
-			systemRun(scene, &cameraSystem);
+			sceneRunPhysicsFrameSystems(scene);
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -303,8 +306,7 @@ int32 main()
 		}
 
 		// Render
-		// TODO: Run all render-frame systems
-		systemRun(scene, &rendererSystem);
+		sceneRunRenderFrameSystems(scene);
 
 		glfwSwapBuffers(window);
 
