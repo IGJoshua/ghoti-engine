@@ -33,3 +33,5 @@ void *sceneGetComponentFromEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType);
+
+UUID idFromName(const char *name);

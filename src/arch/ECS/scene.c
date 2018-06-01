@@ -205,3 +205,11 @@ void *sceneGetComponentFromEntity(
 
 	return cdtGet(*table, entity);
 }
+
+inline
+UUID idFromName(const char *name)
+{
+	UUID ret = {};
+	strcpy(ret.string, name);
+	return ret;
+}

@@ -61,13 +61,11 @@ typedef struct orbit_component_t
 
 void moveSystem(Scene *scene, UUID entityID)
 {
-	UUID transID = {};
-	strcpy(transID.string, "transform");
+	UUID transID = idFromName("transform");
 	TransformComponent *transform =
 		sceneGetComponentFromEntity(scene, entityID, transID);
 
-	UUID orbitID = {};
-	strcpy(orbitID.string, "orbit");
+	UUID orbitID = idFromName("orbit");
 	OrbitComponent *orbit =
 		sceneGetComponentFromEntity(scene, entityID, orbitID);
 
@@ -84,23 +82,29 @@ void moveSystem(Scene *scene, UUID entityID)
 
 void nameSystem(Scene *scene, UUID entityID)
 {
-	UUID nameID = {};
-	strcpy(nameID.string, "name");
+	UUID nameID = idFromName("name");
 	NameComponent *name =
 		sceneGetComponentFromEntity(scene, entityID, nameID);
 }
 
 void cameraOrbit(Scene *scene, UUID entityID)
 {
-	UUID transID = {};
-	strcpy(transID.string, "transform");
+	UUID transID = idFromName("transform");
 	TransformComponent *transform =
 		sceneGetComponentFromEntity(scene, entityID, transID);
 
 	transform->position.x = sinf(glfwGetTime() + 2.0f);
 }
 
-int main()
+int32 int32Comp(void *a, void *b)
+{
+	return *(uint32 *)a != *(uint32 *)b;
+}
+
+#include <stdlib.h>
+#include <time.h>
+
+int32 main()
 {
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
@@ -144,24 +148,19 @@ int main()
 	Scene *scene = createScene();
 
 	// Add component types
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
+	UUID transformComponentID = idFromName("transform");
 	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 4);
 
-	UUID orbitComponentID = {};
-	strcpy(orbitComponentID.string, "orbit");
+	UUID orbitComponentID = idFromName("orbit");
 	sceneAddComponentType(scene, orbitComponentID, sizeof(OrbitComponent), 4);
 
-	UUID nameComponentID = {};
-	strcpy(nameComponentID.string, "name");
+	UUID nameComponentID = idFromName("name");
 	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 4);
 
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
+	UUID modelComponentID = idFromName("model");
 	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
 
-	UUID cameraComponentID = {};
-	strcpy(cameraComponentID.string, "camera");
+	UUID cameraComponentID = idFromName("camera");
 	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
 
 	// Add systems
@@ -183,23 +182,18 @@ int main()
 	System cameraSystem = createSystem(cameraComponents, 0, &cameraOrbit, 0);
 
 	// Create entities
-	UUID entity1 = {};
-	strcpy(entity1.string, "ENTITY1");
+	UUID entity1 = idFromName("ENTITY1");
 	sceneRegisterEntity(scene, entity1);
-	UUID entity2 = {};
-	strcpy(entity2.string, "ENTITY2");
+	UUID entity2 = idFromName("ENTITY2");
 	sceneRegisterEntity(scene, entity2);
 
-	UUID teapot = {};
-	strcpy(teapot.string, "TEAPOT");
+	UUID teapot = idFromName("TEAPOT");
 	sceneRegisterEntity(scene, teapot);
 
-	UUID test = {};
-	strcpy(test.string, "test");
+	UUID test = idFromName("test");
 	sceneRegisterEntity(scene, test);
 
-	UUID camera = {};
-	strcpy(camera.string, "CAMERA");
+	UUID camera = idFromName("CAMERA");
 	sceneRegisterEntity(scene, camera);
 
 	scene->mainCamera = camera;

@@ -33,10 +33,8 @@ System createRendererSystem()
 {
 	System renderer = {};
 
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
+	UUID transformComponentID = idFromName("transform");
+	UUID modelComponentID = idFromName("model");
 
 	List componentList = createList(sizeof(UUID));
 
@@ -111,8 +109,7 @@ void initRendererSystem(Scene *scene)
 
 void runRendererSystem(Scene *scene, UUID entityID)
 {
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
+	UUID modelComponentID = idFromName("model");
 	ModelComponent *model = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -126,8 +123,7 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		}
 	}
 
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
+	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -146,8 +142,7 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
-	UUID cameraComponentID = {};
-	strcpy(cameraComponentID.string, "camera");
+	UUID cameraComponentID = idFromName("camera");
 	CameraComponent *camera =
 		sceneGetComponentFromEntity(
 			scene,
