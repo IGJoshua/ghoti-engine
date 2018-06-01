@@ -89,7 +89,10 @@ ListIterator listGetIterator(List *l)
 inline
 void listMoveIterator(ListIterator *itr)
 {
-	*itr = &(**itr)->next;
+	if (**itr)
+	{
+		*itr = &(**itr)->next;
+	}
 }
 
 inline

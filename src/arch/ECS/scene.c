@@ -30,8 +30,41 @@ Scene *createScene(void)
 
 void freeScene(Scene **scene)
 {
-	freeHashMap(&(*scene)->componentTypes);
+	ListIterator litr = listGetIterator(&(*scene)->physicsFrameSystems);
+	while (!listIteratorAtEnd(litr))
+	{
+		LIST_ITERATOR_GET_ELEMENT(System, litr)->shutdown(*scene);
+
+		listMoveIterator(&litr);
+	}
+	listClear(&(*scene)->physicsFrameSystems);
+
+	litr = listGetIterator(&(*scene)->renderFrameSystems);
+	while (!listIteratorAtEnd(litr))
+	{
+		LIST_ITERATOR_GET_ELEMENT(System, litr)->shutdown(*scene);
+
+		listMoveIterator(&litr);
+	}
+	listClear(&(*scene)->renderFrameSystems);
+
+	HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+	while (!hashMapIteratorAtEnd(itr))
+	{
+		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		hashMapMoveIterator(&itr);
+	}
+
+	itr = hashMapGetIterator((*scene)->componentTypes);
+	while (!hashMapIteratorAtEnd(itr))
+	{
+		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		hashMapMoveIterator(&itr);
+	}
+
 	freeHashMap(&(*scene)->entities);
+	freeHashMap(&(*scene)->componentTypes);
+
 	free(*scene);
 	*scene = 0;
 }
@@ -59,6 +92,24 @@ void sceneAddComponentType(
 
 void sceneRemoveComponentType(Scene *scene, UUID componentID)
 {
+	// Iterate over every entity
+	HashMapIterator itr = hashMapGetIterator(scene->entities);
+	while (!hashMapIteratorAtEnd(itr))
+	{
+		// Iterate over every component type in the entity
+		ListIterator litr = listGetIterator((List *)hashMapIteratorGetValue(itr));
+		while (!listIteratorAtEnd(litr))
+		{
+			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
+			{
+				listRemove((List *)hashMapIteratorGetValue(itr), litr);
+			}
+			listMoveIterator(&litr);
+		}
+
+		hashMapMoveIterator(&itr);
+	}
+
 	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
 		scene->componentTypes,
 		&componentID);

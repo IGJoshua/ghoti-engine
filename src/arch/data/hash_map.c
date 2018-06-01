@@ -226,7 +226,7 @@ void *hashMapIteratorGetKey(HashMapIterator itr)
 }
 
 inline
-void *hashMapIteratorGet(HashMapIterator itr)
+void *hashMapIteratorGetValue(HashMapIterator itr)
 {
 	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data + itr.map->keySizeBytes;
 }

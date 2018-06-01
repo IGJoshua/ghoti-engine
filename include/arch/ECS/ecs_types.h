@@ -27,6 +27,8 @@ typedef struct scene_t
 	// Maps entity UUIDs to lists of component UUIDs
 	HashMap entities;
 	UUID mainCamera;
+	List physicsFrameSystems;
+	List renderFrameSystems;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

@@ -314,17 +314,9 @@ int32 main()
 	freeModel("teapot");
 	freeModel("test");
 
-	sceneRemoveEntity(scene, entity1);
-	sceneRemoveEntity(scene, entity2);
-	sceneRemoveEntity(scene, teapot);
-	sceneRemoveEntity(scene, test);
-
-	sceneRemoveComponentType(scene, transformComponentID);
-	sceneRemoveComponentType(scene, nameComponentID);
-	sceneRemoveComponentType(scene, modelComponentID);
-
-	listClear(&nameComponents);
-	listClear(&movementComponents);
+	freeSystem(&movementSystem);
+	freeSystem(&printNameSystem);
+	freeSystem(&cameraSystem);
 	freeRendererSystem(&rendererSystem);
 
 	freeScene(&scene);
