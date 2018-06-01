@@ -107,7 +107,7 @@ void initRendererSystem(Scene *scene)
 	}
 }
 
-void runRendererSystem(Scene *scene, UUID entityID)
+void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	UUID modelComponentID = idFromName("model");
 	ModelComponent *model = sceneGetComponentFromEntity(

@@ -32,7 +32,7 @@ typedef struct scene_t
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
-typedef void(*SystemFn)(Scene *scene, UUID entityID);
+typedef void(*SystemFn)(Scene *scene, UUID entityID, real64 dt);
 typedef void(*ShutdownSystem)(Scene *scene);
 
 typedef struct system_t

@@ -109,23 +109,23 @@ void sceneInitSystems(Scene *scene)
 	sceneInitPhysicsFrameSystems(scene);
 }
 
-void sceneRunRenderFrameSystems(Scene *scene)
+void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 {
 	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr));
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
 
 		listMoveIterator(&itr);
 	}
 }
 
-void sceneRunPhysicsFrameSystems(Scene *scene)
+void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 {
 	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr));
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
 
 		listMoveIterator(&itr);
 	}

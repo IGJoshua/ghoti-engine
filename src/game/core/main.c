@@ -59,7 +59,7 @@ typedef struct orbit_component_t
 	float radius;
 } OrbitComponent;
 
-void moveSystem(Scene *scene, UUID entityID)
+void moveSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	UUID transID = idFromName("transform");
 	TransformComponent *transform =
@@ -80,14 +80,14 @@ void moveSystem(Scene *scene, UUID entityID)
 	transform->position.z = orbit->origin.z;
 }
 
-void nameSystem(Scene *scene, UUID entityID)
+void nameSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	UUID nameID = idFromName("name");
 	NameComponent *name =
 		sceneGetComponentFromEntity(scene, entityID, nameID);
 }
 
-void cameraOrbit(Scene *scene, UUID entityID)
+void cameraOrbit(Scene *scene, UUID entityID, real64 dt)
 {
 	UUID transID = idFromName("transform");
 	TransformComponent *transform =
@@ -279,7 +279,7 @@ int32 main()
 			// Previous state = currentState
 			// TODO: State chates
 			// TODO: App update
-			sceneRunPhysicsFrameSystems(scene);
+			sceneRunPhysicsFrameSystems(scene, dt);
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -306,7 +306,7 @@ int32 main()
 		}
 
 		// Render
-		sceneRunRenderFrameSystems(scene);
+		sceneRunRenderFrameSystems(scene, frameTime);
 
 		glfwSwapBuffers(window);
 

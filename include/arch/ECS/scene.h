@@ -20,8 +20,8 @@ void sceneInitRenderFrameSystems(Scene *scene);
 void sceneInitPhysicsFrameSystems(Scene *scene);
 void sceneInitSystems(Scene *scene);
 
-void sceneRunRenderFrameSystems(Scene *scene);
-void sceneRunPhysicsFrameSystems(Scene *scene);
+void sceneRunRenderFrameSystems(Scene *scene, real64 dt);
+void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt);
 
 void sceneShutdownRenderFrameSystems(Scene *scene);
 void sceneShutdownPhysicsFrameSystems(Scene *scene);
