@@ -324,11 +324,15 @@ int main()
 	sceneRemoveEntity(scene, entity2);
 	sceneRemoveEntity(scene, teapot);
 	sceneRemoveEntity(scene, test);
+	sceneRemoveEntity(scene, camera);
 
+	sceneRemoveComponentType(scene, orbitComponentID);
+	sceneRemoveComponentType(scene, cameraComponentID);
 	sceneRemoveComponentType(scene, transformComponentID);
 	sceneRemoveComponentType(scene, nameComponentID);
 	sceneRemoveComponentType(scene, modelComponentID);
 
+	listClear(&cameraComponents);
 	listClear(&nameComponents);
 	listClear(&movementComponents);
 	freeRendererSystem(&rendererSystem);
