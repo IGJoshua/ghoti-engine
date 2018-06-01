@@ -3,7 +3,8 @@
 
 #include "data/data_types.h"
 
-typedef union uuid_t {
+typedef union uuid_t
+{
 	char string[64];
 	uint8 bytes[64];
 } UUID;
