@@ -69,6 +69,7 @@ void moveSystem(Scene *scene, UUID entityID, real64 dt)
 	OrbitComponent *orbit =
 		sceneGetComponentFromEntity(scene, entityID, orbitID);
 
+	/*
 	transform->position.x =
 		sinf(glfwGetTime() * orbit->speed)
 		* orbit->radius
@@ -78,6 +79,7 @@ void moveSystem(Scene *scene, UUID entityID, real64 dt)
 		* orbit->radius
 		+ orbit->origin.y;
 	transform->position.z = orbit->origin.z;
+	*/
 }
 
 void nameSystem(Scene *scene, UUID entityID, real64 dt)
@@ -211,7 +213,7 @@ int32 main()
 	orbitPosition.radius = 2.0f;
 	orbitPosition.speed = 3.0f;
 	sceneAddComponentToEntity(scene, teapot, orbitComponentID, &orbitPosition);
-	kmVec3Zero(&transform.position);
+	kmVec3Fill(&transform.position, 1, 0, 0);
 	transform.scale.x = 0.01f;
 	transform.scale.y = 0.01f;
 	transform.scale.z = 0.01f;

@@ -2,20 +2,42 @@ ffi = require("ffi")
 
 engine = {}
 
+io.write("Loaded cFFI\n")
+
 engine.C = ffi.load(ffi.os == "Windows"
 					  and "build/monochrome.dll"
 					  or "build/monochrome.so")
 
+local C = engine.C
+
+io.write("Loaded monochrome library\n")
+
+engine.kazmath = ffi.load(ffi.os == "Windows"
+							and "winlib/libkazmath.a"
+							or "lualib/libkazmath.so")
+
+io.write("Loaded kazmath library\n")
+
 require("resources/scripts/cdefs")
+
+io.write("Created cffi definitions\n")
 
 local Scene = require("resources/scripts/scene")
 
-local C = engine.C
+io.write("Required scene\n")
+
+engine.components = require("resources/scripts/components")
+
+-- TODO: iterate over every file in resources/scripts/components/ and require them
+require("resources/scripts/components/orbit")
+require("resources/scripts/components/transform")
 
 engine.scenes = {}
 
 function engine.initScene(pScene)
-  local scene = Scene.new(pScene)
+  local scene = Scene:new(pScene)
+
+  -- TODO: Register all lua components into the scene
 
   -- Find all physics systems in the scene
   local list = ffi.new("List[1]", scene.ptr.luaPhysicsFrameSystemNames)
@@ -142,7 +164,7 @@ function engine.runPhysicsSystems(pScene, dt)
 								ffi.cast("UUID *", firstComp[0].data
 										   + j
 										   * (firstComp[0].componentSize
-												+ ffi.sizeof("UUID"))),
+												+ ffi.sizeof("UUID")))[0],
 								dt)
 			end
 		  end
@@ -201,10 +223,10 @@ function engine.runRenderSystems(pScene, dt)
 
 			if valid then
 			  renderSystem.run(scene,
-								ffi.cast("UUID *", firstComp[0].data
-										   + j
-										   * (firstComp[0].componentSize
-												+ ffi.sizeof("UUID"))),
+							   ffi.cast("UUID *", firstComp[0].data
+										  + j
+										  * (firstComp[0].componentSize
+											   + ffi.sizeof("UUID")))[0],
 								dt)
 			end
 		  end

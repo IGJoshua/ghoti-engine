@@ -11,21 +11,19 @@ system.numComponents = 2
 local time = {}
 
 function system.run(scene, uuid, dt)
-  io.write(string.format("Running orbit on entity %s\n", ffi.string(uuid.string)))
---[[
-  if time[uuid] == nil then
-	time[uuid] = 0
+  local name = ffi.string(uuid.string)
+  if time[name] == nil then
+	time[name] = 0
   end
 
-  time[uuid] = time[uuid] + dt
+  time[name] = time[name] + dt
 
   local transform = scene:getComponent("transform", uuid)
   local orbit = scene:getComponent("orbit", uuid)
 
-  transform.x = math.sin(time[uuid] * orbit.speed) * orbit.radius + orbit.origin.x
-  transform.y = math.cos(time[uuid] * orbit.speed) * orbit.radius + orbit.origin.y
-  transform.z = orbit.origin.z
---]]
+  transform.position.x = math.sin(time[name] * orbit.speed) * orbit.radius + orbit.origin.x
+  transform.position.y = math.cos(time[name] * orbit.speed) * orbit.radius + orbit.origin.y
+  transform.position.z = orbit.origin.z
 end
 
 return system
