@@ -101,9 +101,6 @@ int32 int32Comp(void *a, void *b)
 	return *(uint32 *)a != *(uint32 *)b;
 }
 
-#include <stdlib.h>
-#include <time.h>
-
 int32 main()
 {
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
@@ -121,19 +118,11 @@ int32 main()
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
-	// total accumulated fixed timestep
-	real64 t = 0.0;
-	// Fixed timesetep
-	real64 dt = 1.0 / 60.0;
-
-	real64 currentTime = glfwGetTime();
-	real64 accumulator = 0.0;
-
 	// Init Lua
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/main.lua") || lua_pcall(L, 0, 0, 0);
+	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
 		printf("Lua Error: %s\n", lua_tostring(L, -1));
@@ -259,7 +248,19 @@ int32 main()
 	// TODO: Make this thing work
   	//loadScene("scene_1", &scene);
 
+	UUID orbitSystemID = idFromName("orbit");
+	listPushFront(&scene->luaPhysicsFrameSystemNames, &orbitSystemID);
+
 	sceneInitSystems(scene);
+	sceneInitLua(&L, scene);
+
+	// total accumulated fixed timestep
+	real64 t = 0.0;
+	// Fixed timesetep
+	real64 dt = 1.0 / 60.0;
+
+	real64 currentTime = glfwGetTime();
+	real64 accumulator = 0.0;
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -280,6 +281,23 @@ int32 main()
 			// TODO: State chates
 			// TODO: App update
 			sceneRunPhysicsFrameSystems(scene, dt);
+
+			// Load the lua engine table and run its physics systems
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "runPhysicsSystems");
+				lua_remove(L, -2);
+				lua_pushlightuserdata(L, scene);
+				lua_pushnumber(L, dt);
+				luaError = lua_pcall(L, 2, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -306,6 +324,22 @@ int32 main()
 		}
 
 		// Render
+		if (L)
+		{
+			lua_getglobal(L, "engine");
+			lua_getfield(L, -1, "runRenderSystems");
+			lua_remove(L, -2);
+			lua_pushlightuserdata(L, scene);
+			lua_pushnumber(L, frameTime);
+			luaError = lua_pcall(L, 2, 0, 0);
+			if (luaError)
+			{
+				printf("Lua error: %s\n", lua_tostring(L, -1));
+				lua_close(L);
+				L = 0;
+			}
+		}
+
 		sceneRunRenderFrameSystems(scene, frameTime);
 
 		glfwSwapBuffers(window);
@@ -321,9 +355,17 @@ int32 main()
 	freeSystem(&cameraSystem);
 	freeRendererSystem(&rendererSystem);
 
+	if (L)
+	{
+		sceneShutdownLua(&L, scene);
+	}
+	sceneShutdownSystems(scene);
 	freeScene(&scene);
 
-	lua_close(L);
+	if (L)
+	{
+		lua_close(L);
+	}
 
 	freeWindow(window);
 

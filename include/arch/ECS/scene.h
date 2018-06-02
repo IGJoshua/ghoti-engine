@@ -3,6 +3,8 @@
 
 #include "ECS/ecs_types.h"
 
+#include <luajit-2.0/lua.h>
+
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
 
@@ -26,6 +28,9 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt);
 void sceneShutdownRenderFrameSystems(Scene *scene);
 void sceneShutdownPhysicsFrameSystems(Scene *scene);
 void sceneShutdownSystems(Scene *scene);
+
+void sceneInitLua(lua_State **L, Scene *scene);
+void sceneShutdownLua(lua_State **L, Scene *scene);
 
 void sceneAddComponentType(
 	Scene *scene,

@@ -30,6 +30,8 @@ typedef struct scene_t
 	UUID mainCamera;
 	List physicsFrameSystems;
 	List renderFrameSystems;
+	List luaPhysicsFrameSystemNames;
+	List luaRenderFrameSystemNames;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

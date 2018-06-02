@@ -5,6 +5,9 @@
 #include "data/hash_map.h"
 #include "data/list.h"
 
+#include <luajit-2.0/lauxlib.h>
+#include <luajit-2.0/lualib.h>
+
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,13 +31,16 @@ Scene *createScene(void)
 
 	ret->physicsFrameSystems = createList(sizeof(System));
 	ret->renderFrameSystems = createList(sizeof(System));
+	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
+	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
 
 	return ret;
 }
 
 void freeScene(Scene **scene)
 {
-	sceneShutdownSystems(*scene);
+	listClear(&(*scene)->luaPhysicsFrameSystemNames);
+	listClear(&(*scene)->luaRenderFrameSystemNames);
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
@@ -163,6 +169,36 @@ void sceneShutdownSystems(Scene *scene)
 {
 	sceneShutdownRenderFrameSystems(scene);
 	sceneShutdownPhysicsFrameSystems(scene);
+}
+
+void sceneInitLua(lua_State **L, Scene *scene)
+{
+	lua_getglobal(*L, "engine");
+	lua_getfield(*L, -1, "initScene");
+	lua_remove(*L, -2);
+	lua_pushlightuserdata(*L, scene);
+	int luaError = lua_pcall(*L, 1, 0, 0);
+	if (luaError)
+	{
+		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		lua_pop(*L, 1);
+		lua_close(*L);
+	}
+}
+
+void sceneShutdownLua(lua_State **L, Scene *scene)
+{
+	lua_getglobal(*L, "engine");
+	lua_getfield(*L, -1, "shutdownScene");
+	lua_remove(*L, -2);
+	lua_pushlightuserdata(*L, scene);
+	int luaError = lua_pcall(*L, 1, 0, 0);
+	if (luaError)
+	{
+		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		lua_pop(*L, 1);
+		lua_close(*L);
+	}
 }
 
 void sceneAddComponentType(

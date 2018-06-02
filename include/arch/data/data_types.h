@@ -9,9 +9,9 @@ typedef struct list_node_t
 
 typedef struct list_t
 {
-	uint32 dataSize;
 	ListNode *front;
 	ListNode *back;
+	uint32 dataSize;
 } List;
 
 typedef ListNode **ListIterator;
@@ -25,8 +25,8 @@ typedef struct binary_search_tree_node_t
 
 typedef struct binary_search_tree_t
 {
-	uint32 dataSize;
 	BinarySearchTreeNode *root;
+	uint32 dataSize;
 } BinarySearchTree;
 
 typedef List HashMapBucket;
@@ -35,10 +35,10 @@ typedef int32(*ComparisonOp)(void*, void*);
 
 typedef struct hash_map_t
 {
+	ComparisonOp comparison;
 	uint32 keySizeBytes;
 	uint32 valueSizeBytes;
 	uint32 bucketCount;
-	ComparisonOp comparison;
 	HashMapBucket buckets[];
 } *HashMap;
 
