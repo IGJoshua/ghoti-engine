@@ -60,7 +60,12 @@ function engine.initScene(pScene)
 
 	-- Call all the init functions
 	if physicsSystem.init then
-	  physicsSystem.init(scene)
+	  local err, message = pcall(physicsSystem.init, scene)
+	  if err == false then
+		io.write(string.format("Error raised during physics init for system %s\n%s\n",
+							   C.listGetIterator(itr),
+							   message))
+	  end
 	end
 
 	scene.physicsSystems[i] = physicsSystem
@@ -94,7 +99,12 @@ function engine.initScene(pScene)
 
 	-- Call all the init functions
 	if renderSystem.init then
-	  renderSystem.init(scene)
+	  local err, message = pcall(renderSystem.init, scene)
+	  if err == false then
+		io.write(string.format("Error raised during render init for system %s\n%s\n",
+							   C.listGetIterator(itr),
+							   message))
+	  end
 	end
 
 	scene.renderSystems[i] = renderSystem
@@ -160,12 +170,17 @@ function engine.runPhysicsSystems(pScene, dt)
 			end
 
 			if valid then
-			  physicsSystem.run(scene,
-								ffi.cast("UUID *", firstComp[0].data
-										   + j
-										   * (firstComp[0].componentSize
-												+ ffi.sizeof("UUID")))[0],
-								dt)
+			  local err, message = pcall(physicsSystem.run,
+										 scene,
+										 ffi.cast("UUID *", firstComp[0].data
+													+ j
+													* (firstComp[0].componentSize
+														 + ffi.sizeof("UUID")))[0],
+										 dt)
+			  if err == false then
+				io.write(string.format("Error raised while running physics system\n%s\n",
+									   message))
+			  end
 			end
 		  end
 		end
@@ -222,12 +237,17 @@ function engine.runRenderSystems(pScene, dt)
 			end
 
 			if valid then
-			  renderSystem.run(scene,
-							   ffi.cast("UUID *", firstComp[0].data
-										  + j
-										  * (firstComp[0].componentSize
-											   + ffi.sizeof("UUID")))[0],
-								dt)
+			  local err, message = pcall(renderSystem.run,
+										 scene,
+										 ffi.cast("UUID *", firstComp[0].data
+													+ j
+													* (firstComp[0].componentSize
+														 + ffi.sizeof("UUID")))[0],
+										 dt)
+			  if err == false then
+				io.write(string.format("Error raised while running render system\n%s\n",
+									   message))
+			  end
 			end
 		  end
 		end
@@ -246,7 +266,11 @@ function engine.shutdownScene(pScene)
   -- TODO: Call all the shutdown methods on the systems
   for i = 1,scene.numPhysicsFrameSystems do
 	if scene.physicsSystems[i].shutdown then
-	  scene.physicsSystems[i].shutdown(scene)
+	  local err, message = pcall(scene.physicsSystems[i].shutdown, scene)
+	  if err == false then
+		io.write(string.format("Error raised during physics shutdown\n%s\n",
+							   message))
+	  end
 	end
   end
 
@@ -256,7 +280,11 @@ function engine.shutdownScene(pScene)
 
   for i = 1,scene.numRenderFrameSystems do
 	if scene.renderSystems[i].shutdown then
-	  scene.renderSystems[i].shutdown(scene)
+	  local err, message = pcall(scene.renderSystems[i].shutdown, scene)
+	  if err == false then
+		io.write(string.format("Error raised during render shutdown\n%s\n",
+							   message))
+	  end
 	end
   end
 end
