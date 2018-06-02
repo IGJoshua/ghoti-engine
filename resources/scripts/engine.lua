@@ -5,8 +5,8 @@ engine = {}
 io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(ffi.os == "Windows"
-					  and "build/monochrome.dll"
-					  or "build/monochrome.so")
+					  and "./monochrome.dll"
+					  or "./monochrome.so")
 
 local C = engine.C
 
@@ -63,7 +63,7 @@ function engine.initScene(pScene)
 	  local err, message = pcall(physicsSystem.init, scene)
 	  if err == false then
 		io.write(string.format("Error raised during physics init for system %s\n%s\n",
-							   C.listGetIterator(itr),
+							   ffi.string(ffi.cast("UUID *", itr[0].data).string),
 							   message))
 	  end
 	end
@@ -81,7 +81,7 @@ function engine.initScene(pScene)
   io.write(string.format("Loaded %d physics systems\n", scene.numPhysicsFrameSystems))
 
   -- Find all render systems in the scene
-  list = ffi.new("List[1]", scene.ptr.luaPhysicsFrameSystemNames)
+  list = ffi.new("List[1]", scene.ptr.luaRenderFrameSystemNames)
   itr = ffi.new(
 	"ListIterator",
 	C.listGetIterator(
@@ -90,19 +90,19 @@ function engine.initScene(pScene)
   io.write("Got rendering iterator\n")
 
   i = 1
-  while not C.listIteratorAtEnd(itr) do
+  while C.listIteratorAtEnd(itr) == 0 do
 	io.write(string.format("Adding render system number: %d\n", i))
 	-- Load all the systems named
 	local renderSystem = require(string.format(
 								   "resources/scripts/systems/%s",
-								   C.listGetIterator(itr)))
+								   ffi.string(ffi.cast("UUID *", itr[0].data).string)))
 
 	-- Call all the init functions
 	if renderSystem.init then
 	  local err, message = pcall(renderSystem.init, scene)
 	  if err == false then
 		io.write(string.format("Error raised during render init for system %s\n%s\n",
-							   C.listGetIterator(itr),
+							   ffi.string(ffi.cast("UUID *", itr[0].data).string),
 							   message))
 	  end
 	end
@@ -117,7 +117,7 @@ function engine.initScene(pScene)
 
   scene.numRenderFrameSystems = i - 1
 
-  io.write(string.format("Loaded %d render systems\n", scene.numPhysicsFrameSystems))
+  io.write(string.format("Loaded %d render systems\n", scene.numRenderFrameSystems))
 
   engine.scenes[pScene] = scene
 end

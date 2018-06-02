@@ -47,61 +47,12 @@ void keyCallback(
 	}
 }
 
-typedef struct name_component_t
-{
-	char name[64];
-} NameComponent;
-
 typedef struct orbit_component_t
 {
 	kmVec3 origin;
 	float speed;
 	float radius;
 } OrbitComponent;
-
-void moveSystem(Scene *scene, UUID entityID, real64 dt)
-{
-	UUID transID = idFromName("transform");
-	TransformComponent *transform =
-		sceneGetComponentFromEntity(scene, entityID, transID);
-
-	UUID orbitID = idFromName("orbit");
-	OrbitComponent *orbit =
-		sceneGetComponentFromEntity(scene, entityID, orbitID);
-
-	/*
-	transform->position.x =
-		sinf(glfwGetTime() * orbit->speed)
-		* orbit->radius
-		+ orbit->origin.x;
-	transform->position.y =
-		cosf(glfwGetTime() * orbit->speed)
-		* orbit->radius
-		+ orbit->origin.y;
-	transform->position.z = orbit->origin.z;
-	*/
-}
-
-void nameSystem(Scene *scene, UUID entityID, real64 dt)
-{
-	UUID nameID = idFromName("name");
-	NameComponent *name =
-		sceneGetComponentFromEntity(scene, entityID, nameID);
-}
-
-void cameraOrbit(Scene *scene, UUID entityID, real64 dt)
-{
-	UUID transID = idFromName("transform");
-	TransformComponent *transform =
-		sceneGetComponentFromEntity(scene, entityID, transID);
-
-	transform->position.x = sinf(glfwGetTime() + 2.0f);
-}
-
-int32 int32Comp(void *a, void *b)
-{
-	return *(uint32 *)a != *(uint32 *)b;
-}
 
 int32 main()
 {
@@ -145,9 +96,6 @@ int32 main()
 	UUID orbitComponentID = idFromName("orbit");
 	sceneAddComponentType(scene, orbitComponentID, sizeof(OrbitComponent), 4);
 
-	UUID nameComponentID = idFromName("name");
-	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 4);
-
 	UUID modelComponentID = idFromName("model");
 	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
 
@@ -155,28 +103,9 @@ int32 main()
 	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
 
 	// Add systems
-	// TODO: Invent way to register systems
-	List movementComponents = createList(sizeof(UUID));
-	listPushBack(&movementComponents, &orbitComponentID);
-	listPushBack(&movementComponents, &transformComponentID);
-	System movementSystem = createSystem(movementComponents, 0, &moveSystem, 0);
-
-	sceneAddPhysicsFrameSystem(scene, movementSystem);
-
-	List nameComponents = createList(sizeof(UUID));
-	listPushBack(&nameComponents, &nameComponentID);
-	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
-
 	System rendererSystem = createRendererSystem();
 
 	sceneAddRenderFrameSystem(scene, rendererSystem);
-
-	List cameraComponents = createList(sizeof(UUID));
-	listPushBack(&cameraComponents, &cameraComponentID);
-	listPushBack(&cameraComponents, &transformComponentID);
-	System cameraSystem = createSystem(cameraComponents, 0, &cameraOrbit, 0);
-
-	sceneAddRenderFrameSystem(scene, cameraSystem);
 
 	// Create entities
 	UUID entity1 = idFromName("ENTITY1");
@@ -200,10 +129,6 @@ int32 main()
 	transform.position.y = 1.0f;
 	transform.position.z = 1.0f;
 	sceneAddComponentToEntity(scene, entity1, transformComponentID, &transform);
-
-	NameComponent name = {};
-	strcpy(name.name, "Hello, world!");
-	sceneAddComponentToEntity(scene, entity2, nameComponentID, &name);
 
 	ModelComponent teapotModel = {};
 	strcpy(teapotModel.name, "teapot");
@@ -279,9 +204,7 @@ int32 main()
 
 		while (accumulator >= dt)
 		{
-			// Previous state = currentState
-			// TODO: State chates
-			// TODO: App update
+			// TODO: Previous state = currentState
 			sceneRunPhysicsFrameSystems(scene, dt);
 
 			// Load the lua engine table and run its physics systems
@@ -351,11 +274,6 @@ int32 main()
 
 	freeModel("teapot");
 	freeModel("test");
-
-	freeSystem(&movementSystem);
-	freeSystem(&printNameSystem);
-	freeSystem(&cameraSystem);
-	freeRendererSystem(&rendererSystem);
 
 	if (L)
 	{

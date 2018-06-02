@@ -41,21 +41,35 @@ void freeScene(Scene **scene)
 {
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
+
+	for (ListIterator itr = listGetIterator(&(*scene)->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
+	}
 	listClear(&(*scene)->physicsFrameSystems);
+
+	for (ListIterator itr = listGetIterator(&(*scene)->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
+	}
 	listClear(&(*scene)->renderFrameSystems);
 
-	HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-	while (!hashMapIteratorAtEnd(itr))
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
-		hashMapMoveIterator(&itr);
 	}
 
-	itr = hashMapGetIterator((*scene)->componentTypes);
-	while (!hashMapIteratorAtEnd(itr))
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
-		hashMapMoveIterator(&itr);
 	}
 
 	freeHashMap(&(*scene)->entities);
