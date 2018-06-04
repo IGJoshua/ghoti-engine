@@ -29,29 +29,7 @@ extern Uniform projectionUniform;
 
 extern Uniform diffuseTextureUniform;
 
-System createRendererSystem()
-{
-	System renderer = {};
-
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
-
-	List componentList = createList(sizeof(UUID));
-
-	listPushFront(&componentList, &transformComponentID);
-	listPushFront(&componentList, &modelComponentID);
-
-	renderer.componentTypes = componentList;
-
-	renderer.init = &initRendererSystem;
-	renderer.fn = &runRendererSystem;
-	renderer.shutdown = &shutdownRendererSystem;
-
-	return renderer;
-}
-
+internal
 void initRendererSystem(Scene *scene)
 {
 	if (compileShaderFromFile(
@@ -109,10 +87,10 @@ void initRendererSystem(Scene *scene)
 	}
 }
 
-void runRendererSystem(Scene *scene, UUID entityID)
+internal
+void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
+	UUID modelComponentID = idFromName("model");
 	ModelComponent *model = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -126,8 +104,7 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		}
 	}
 
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
+	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -146,8 +123,7 @@ void runRendererSystem(Scene *scene, UUID entityID)
 		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
-	UUID cameraComponentID = {};
-	strcpy(cameraComponentID.string, "camera");
+	UUID cameraComponentID = idFromName("camera");
 	CameraComponent *camera =
 		sceneGetComponentFromEntity(
 			scene,
@@ -180,13 +156,30 @@ void runRendererSystem(Scene *scene, UUID entityID)
 	}
 }
 
+internal
 void shutdownRendererSystem(Scene *scene)
 {
 
 }
 
-inline
-void freeRendererSystem(System *renderer)
+System createRendererSystem()
 {
-	listClear(&renderer->componentTypes);
+	System renderer = {};
+
+	UUID transformComponentID = idFromName("transform");
+	UUID modelComponentID = idFromName("model");
+
+	List componentList = createList(sizeof(UUID));
+
+	listPushFront(&componentList, &transformComponentID);
+	listPushFront(&componentList, &modelComponentID);
+
+	renderer.componentTypes = componentList;
+
+	renderer.init = &initRendererSystem;
+	renderer.fn = &runRendererSystem;
+	renderer.shutdown = &shutdownRendererSystem;
+
+	return renderer;
 }
+

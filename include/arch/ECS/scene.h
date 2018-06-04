@@ -3,11 +3,34 @@
 
 #include "ECS/ecs_types.h"
 
+#include <luajit-2.0/lua.h>
+
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
 
 Scene *createScene(void);
 void freeScene(Scene **scene);
+
+void sceneAddRenderFrameSystem(
+	Scene *scene,
+	System system);
+void sceneAddPhysicsFrameSystem(
+	Scene *scene,
+	System system);
+
+void sceneInitRenderFrameSystems(Scene *scene);
+void sceneInitPhysicsFrameSystems(Scene *scene);
+void sceneInitSystems(Scene *scene);
+
+void sceneRunRenderFrameSystems(Scene *scene, real64 dt);
+void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt);
+
+void sceneShutdownRenderFrameSystems(Scene *scene);
+void sceneShutdownPhysicsFrameSystems(Scene *scene);
+void sceneShutdownSystems(Scene *scene);
+
+void sceneInitLua(lua_State **L, Scene *scene);
+void sceneShutdownLua(lua_State **L, Scene *scene);
 
 void sceneAddComponentType(
 	Scene *scene,
@@ -33,3 +56,5 @@ void *sceneGetComponentFromEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType);
+
+UUID idFromName(const char *name);

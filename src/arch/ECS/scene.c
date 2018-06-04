@@ -1,8 +1,12 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
+#include "ECS/system.h"
 
 #include "data/hash_map.h"
 #include "data/list.h"
+
+#include <luajit-2.0/lauxlib.h>
+#include <luajit-2.0/lualib.h>
 
 #include <malloc.h>
 #include <string.h>
@@ -25,15 +29,190 @@ Scene *createScene(void)
 		ENTITY_BUCKETS,
 		(ComparisonOp)&strcmp);
 
+	ret->physicsFrameSystems = createList(sizeof(System));
+	ret->renderFrameSystems = createList(sizeof(System));
+	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
+	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
+
 	return ret;
 }
 
 void freeScene(Scene **scene)
 {
-	freeHashMap(&(*scene)->componentTypes);
+	listClear(&(*scene)->luaPhysicsFrameSystemNames);
+	listClear(&(*scene)->luaRenderFrameSystemNames);
+
+	for (ListIterator itr = listGetIterator(&(*scene)->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
+	}
+	listClear(&(*scene)->physicsFrameSystems);
+
+	for (ListIterator itr = listGetIterator(&(*scene)->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
+	}
+	listClear(&(*scene)->renderFrameSystems);
+
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+	}
+
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+	}
+
 	freeHashMap(&(*scene)->entities);
+	freeHashMap(&(*scene)->componentTypes);
+
 	free(*scene);
 	*scene = 0;
+}
+
+inline
+void sceneAddRenderFrameSystem(
+	Scene *scene,
+	System system)
+{
+	listPushBack(&scene->renderFrameSystems, &system);
+}
+
+inline
+void sceneAddPhysicsFrameSystem(
+	Scene *scene,
+	System system)
+{
+	listPushBack(&scene->physicsFrameSystems, &system);
+}
+
+void sceneInitRenderFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneInitPhysicsFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneInitSystems(Scene *scene)
+{
+	sceneInitRenderFrameSystems(scene);
+	sceneInitPhysicsFrameSystems(scene);
+}
+
+void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownRenderFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownPhysicsFrameSystems(Scene *scene)
+{
+	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+	while (!listIteratorAtEnd(itr))
+	{
+		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		{
+			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+		}
+
+		listMoveIterator(&itr);
+	}
+}
+
+void sceneShutdownSystems(Scene *scene)
+{
+	sceneShutdownRenderFrameSystems(scene);
+	sceneShutdownPhysicsFrameSystems(scene);
+}
+
+void sceneInitLua(lua_State **L, Scene *scene)
+{
+	lua_getglobal(*L, "engine");
+	lua_getfield(*L, -1, "initScene");
+	lua_remove(*L, -2);
+	lua_pushlightuserdata(*L, scene);
+	int luaError = lua_pcall(*L, 1, 0, 0);
+	if (luaError)
+	{
+		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		lua_pop(*L, 1);
+		lua_close(*L);
+	}
+}
+
+void sceneShutdownLua(lua_State **L, Scene *scene)
+{
+	lua_getglobal(*L, "engine");
+	lua_getfield(*L, -1, "shutdownScene");
+	lua_remove(*L, -2);
+	lua_pushlightuserdata(*L, scene);
+	int luaError = lua_pcall(*L, 1, 0, 0);
+	if (luaError)
+	{
+		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		lua_pop(*L, 1);
+		lua_close(*L);
+	}
 }
 
 void sceneAddComponentType(
@@ -59,6 +238,24 @@ void sceneAddComponentType(
 
 void sceneRemoveComponentType(Scene *scene, UUID componentID)
 {
+	// Iterate over every entity
+	HashMapIterator itr = hashMapGetIterator(scene->entities);
+	while (!hashMapIteratorAtEnd(itr))
+	{
+		// Iterate over every component type in the entity
+		ListIterator litr = listGetIterator((List *)hashMapIteratorGetValue(itr));
+		while (!listIteratorAtEnd(litr))
+		{
+			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
+			{
+				listRemove((List *)hashMapIteratorGetValue(itr), litr);
+			}
+			listMoveIterator(&litr);
+		}
+
+		hashMapMoveIterator(&itr);
+	}
+
 	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
 		scene->componentTypes,
 		&componentID);
@@ -204,4 +401,12 @@ void *sceneGetComponentFromEntity(
 	}
 
 	return cdtGet(*table, entity);
+}
+
+inline
+UUID idFromName(const char *name)
+{
+	UUID ret = {};
+	strcpy(ret.string, name);
+	return ret;
 }

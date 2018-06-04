@@ -8,5 +8,6 @@ System createSystem(
 	ShutdownSystem shutdown);
 void systemRun(
 	Scene *scene,
-	System *system);
+	System *system,
+	real64 dt);
 void freeSystem(System *system);

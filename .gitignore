@@ -5,6 +5,8 @@
 
 # Binary resources
 build/
+monochrome.so
+monochrome.dll
 
 # Art assets
 resources/*

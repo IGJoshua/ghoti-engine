@@ -22,7 +22,8 @@ System createSystem(
 
 void systemRun(
 	Scene *scene,
-	System *system)
+	System *system,
+	real64 dt)
 {
 	// Return if it's not a system which runs each frame
 	if (!system->fn)
@@ -99,7 +100,8 @@ void systemRun(
 				*(UUID *)((*firstComp)->data
 						  + i
 						  * ((*firstComp)->componentSize
-							 + sizeof(UUID))));
+							 + sizeof(UUID))),
+				dt);
 		}
 	}
 }

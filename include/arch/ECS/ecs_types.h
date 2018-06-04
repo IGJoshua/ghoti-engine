@@ -3,7 +3,8 @@
 
 #include "data/data_types.h"
 
-typedef union uuid_t {
+typedef union uuid_t
+{
 	char string[64];
 	uint8 bytes[64];
 } UUID;
@@ -27,10 +28,14 @@ typedef struct scene_t
 	// Maps entity UUIDs to lists of component UUIDs
 	HashMap entities;
 	UUID mainCamera;
+	List physicsFrameSystems;
+	List renderFrameSystems;
+	List luaPhysicsFrameSystemNames;
+	List luaRenderFrameSystemNames;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
-typedef void(*SystemFn)(Scene *scene, UUID entityID);
+typedef void(*SystemFn)(Scene *scene, UUID entityID, real64 dt);
 typedef void(*ShutdownSystem)(Scene *scene);
 
 typedef struct system_t

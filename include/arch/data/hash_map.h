@@ -16,3 +16,9 @@ void *hashMapGetKey(HashMap map, void *key);
 void hashMapPopKey(HashMap map, void *key);
 void hashMapDeleteKey(HashMap map, void *key);
 void hashMapClear(HashMap map);
+
+HashMapIterator hashMapGetIterator(HashMap map);
+void hashMapMoveIterator(HashMapIterator *itr);
+int32 hashMapIteratorAtEnd(HashMapIterator itr);
+void *hashMapIteratorGetKey(HashMapIterator itr);
+void *hashMapIteratorGetValue(HashMapIterator itr);

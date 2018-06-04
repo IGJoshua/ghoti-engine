@@ -15,6 +15,8 @@ GAMEOBJDIR = $(OBJDIR)/game
 _LIBDIRS = lib
 LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR))
 
+LUALIBDIR = lualib
+
 _WINLIBDIRS = winlib
 WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 
@@ -52,6 +54,9 @@ build : $(GAMEOBJ) $(BUILDDIR)/$(LIBNAME).so
 $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(LIBS)
 
+$(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
+	ln -s $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
+
 .PHONY: arch
 
 arch : $(BUILDDIR)/$(LIBNAME)
@@ -60,13 +65,14 @@ arch : $(BUILDDIR)/$(LIBNAME)
 
 clean:
 	rm -f -r {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
+	rm -f $(LIBNAME).{so,dll}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 
 .PHONY: run
 
-run : build
+run : build $(LIBNAME).so
 	$(BUILDDIR)/$(PROJ)
 
 SUPPRESSIONS = monochrome.supp
@@ -90,6 +96,11 @@ rebuild : clean build
 release : clean
 	@make RELEASE=yes
 
+.PHONY: relrun
+
+relrun : release $(LIBNAME).so
+	$(BUILDDIR)/$(PROJ)
+
 # TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
@@ -108,6 +119,9 @@ $(GAMEOBJDIR)/%.obj : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
 $(BUILDDIR)/$(LIBNAME).dll : $(WINARCHOBJ)
 	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(WINLIBS)
 
+$(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
+	ln -s $(BUILDDIR)/$(LIBNAME).dll $(LIBNAME).dll
+
 .PHONY: windows
 
 windows : $(WINGAMEOBJ) $(BUILDDIR)/$(LIBNAME).dll
@@ -117,5 +131,5 @@ windows : $(WINGAMEOBJ) $(BUILDDIR)/$(LIBNAME).dll
 
 .PHONY: wine
 
-wine : windows
+wine : windows $(LIBNAME).dll
 	wine $(BUILDDIR)/$(PROJ).exe

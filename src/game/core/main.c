@@ -47,11 +47,6 @@ void keyCallback(
 	}
 }
 
-typedef struct name_component_t
-{
-	char name[64];
-} NameComponent;
-
 typedef struct orbit_component_t
 {
 	kmVec3 origin;
@@ -59,48 +54,7 @@ typedef struct orbit_component_t
 	float radius;
 } OrbitComponent;
 
-void moveSystem(Scene *scene, UUID entityID)
-{
-	UUID transID = {};
-	strcpy(transID.string, "transform");
-	TransformComponent *transform =
-		sceneGetComponentFromEntity(scene, entityID, transID);
-
-	UUID orbitID = {};
-	strcpy(orbitID.string, "orbit");
-	OrbitComponent *orbit =
-		sceneGetComponentFromEntity(scene, entityID, orbitID);
-
-	transform->position.x =
-		sinf(glfwGetTime() * orbit->speed)
-		* orbit->radius
-		+ orbit->origin.x;
-	transform->position.y =
-		cosf(glfwGetTime() * orbit->speed)
-		* orbit->radius
-		+ orbit->origin.y;
-	transform->position.z = orbit->origin.z;
-}
-
-void nameSystem(Scene *scene, UUID entityID)
-{
-	UUID nameID = {};
-	strcpy(nameID.string, "name");
-	NameComponent *name =
-		sceneGetComponentFromEntity(scene, entityID, nameID);
-}
-
-void cameraOrbit(Scene *scene, UUID entityID)
-{
-	UUID transID = {};
-	strcpy(transID.string, "transform");
-	TransformComponent *transform =
-		sceneGetComponentFromEntity(scene, entityID, transID);
-
-	transform->position.x = sinf(glfwGetTime() + 2.0f);
-}
-
-int main()
+int32 main()
 {
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
@@ -117,19 +71,11 @@ int main()
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
-	// total accumulated fixed timestep
-	real64 t = 0.0;
-	// Fixed timesetep
-	real64 dt = 1.0 / 60.0;
-
-	real64 currentTime = glfwGetTime();
-	real64 accumulator = 0.0;
-
 	// Init Lua
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/main.lua") || lua_pcall(L, 0, 0, 0);
+	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
 		printf("Lua Error: %s\n", lua_tostring(L, -1));
@@ -144,62 +90,36 @@ int main()
 	Scene *scene = createScene();
 
 	// Add component types
-	UUID transformComponentID = {};
-	strcpy(transformComponentID.string, "transform");
+	UUID transformComponentID = idFromName("transform");
 	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 4);
 
-	UUID orbitComponentID = {};
-	strcpy(orbitComponentID.string, "orbit");
+	UUID orbitComponentID = idFromName("orbit");
 	sceneAddComponentType(scene, orbitComponentID, sizeof(OrbitComponent), 4);
 
-	UUID nameComponentID = {};
-	strcpy(nameComponentID.string, "name");
-	sceneAddComponentType(scene, nameComponentID, sizeof(NameComponent), 4);
-
-	UUID modelComponentID = {};
-	strcpy(modelComponentID.string, "model");
+	UUID modelComponentID = idFromName("model");
 	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
 
-	UUID cameraComponentID = {};
-	strcpy(cameraComponentID.string, "camera");
+	UUID cameraComponentID = idFromName("camera");
 	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
 
 	// Add systems
-	// TODO: Invent way to register systems
-	List movementComponents = createList(sizeof(UUID));
-	listPushBack(&movementComponents, &orbitComponentID);
-	listPushBack(&movementComponents, &transformComponentID);
-	System movementSystem = createSystem(movementComponents, 0, &moveSystem, 0);
-
-	List nameComponents = createList(sizeof(UUID));
-	listPushBack(&nameComponents, &nameComponentID);
-	System printNameSystem = createSystem(nameComponents, 0, &nameSystem, 0);
-
 	System rendererSystem = createRendererSystem();
 
-	List cameraComponents = createList(sizeof(UUID));
-	listPushBack(&cameraComponents, &cameraComponentID);
-	listPushBack(&cameraComponents, &transformComponentID);
-	System cameraSystem = createSystem(cameraComponents, 0, &cameraOrbit, 0);
+	sceneAddRenderFrameSystem(scene, rendererSystem);
 
 	// Create entities
-	UUID entity1 = {};
-	strcpy(entity1.string, "ENTITY1");
+	UUID entity1 = idFromName("ENTITY1");
 	sceneRegisterEntity(scene, entity1);
-	UUID entity2 = {};
-	strcpy(entity2.string, "ENTITY2");
+	UUID entity2 = idFromName("ENTITY2");
 	sceneRegisterEntity(scene, entity2);
 
-	UUID teapot = {};
-	strcpy(teapot.string, "TEAPOT");
+	UUID teapot = idFromName("TEAPOT");
 	sceneRegisterEntity(scene, teapot);
 
-	UUID test = {};
-	strcpy(test.string, "test");
+	UUID test = idFromName("test");
 	sceneRegisterEntity(scene, test);
 
-	UUID camera = {};
-	strcpy(camera.string, "CAMERA");
+	UUID camera = idFromName("CAMERA");
 	sceneRegisterEntity(scene, camera);
 
 	scene->mainCamera = camera;
@@ -210,10 +130,6 @@ int main()
 	transform.position.z = 1.0f;
 	sceneAddComponentToEntity(scene, entity1, transformComponentID, &transform);
 
-	NameComponent name = {};
-	strcpy(name.name, "Hello, world!");
-	sceneAddComponentToEntity(scene, entity2, nameComponentID, &name);
-
 	ModelComponent teapotModel = {};
 	strcpy(teapotModel.name, "teapot");
 	sceneAddComponentToEntity(scene, teapot, modelComponentID, &teapotModel);
@@ -222,7 +138,7 @@ int main()
 	orbitPosition.radius = 2.0f;
 	orbitPosition.speed = 3.0f;
 	sceneAddComponentToEntity(scene, teapot, orbitComponentID, &orbitPosition);
-	kmVec3Zero(&transform.position);
+	kmVec3Fill(&transform.position, 1, 0, 0);
 	transform.scale.x = 0.01f;
 	transform.scale.y = 0.01f;
 	transform.scale.z = 0.01f;
@@ -259,7 +175,19 @@ int main()
 	// TODO: Make this thing work
   	//loadScene("scene_1", &scene);
 
-	rendererSystem.init(scene);
+	UUID orbitSystemID = idFromName("orbit");
+	listPushFront(&scene->luaPhysicsFrameSystemNames, &orbitSystemID);
+
+	sceneInitSystems(scene);
+	sceneInitLua(&L, scene);
+
+	// total accumulated fixed timestep
+	real64 t = 0.0;
+	// Fixed timesetep
+	real64 dt = 1.0 / 60.0;
+
+	real64 currentTime = glfwGetTime();
+	real64 accumulator = 0.0;
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -276,13 +204,25 @@ int main()
 
 		while (accumulator >= dt)
 		{
-			// Previous state = currentState
-			// TODO: State chates
-			// TODO: App update
-			// TODO: Run all fixed-frame systems
-			systemRun(scene, &movementSystem);
-			systemRun(scene, &printNameSystem);
-			systemRun(scene, &cameraSystem);
+			// TODO: Previous state = currentState
+			sceneRunPhysicsFrameSystems(scene, dt);
+
+			// Load the lua engine table and run its physics systems
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "runPhysicsSystems");
+				lua_remove(L, -2);
+				lua_pushlightuserdata(L, scene);
+				lua_pushnumber(L, dt);
+				luaError = lua_pcall(L, 2, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
 
 			// Integrate current state over t to dt (so, update)
 			t += dt;
@@ -309,8 +249,23 @@ int main()
 		}
 
 		// Render
-		// TODO: Run all render-frame systems
-		systemRun(scene, &rendererSystem);
+		if (L)
+		{
+			lua_getglobal(L, "engine");
+			lua_getfield(L, -1, "runRenderSystems");
+			lua_remove(L, -2);
+			lua_pushlightuserdata(L, scene);
+			lua_pushnumber(L, frameTime);
+			luaError = lua_pcall(L, 2, 0, 0);
+			if (luaError)
+			{
+				printf("Lua error: %s\n", lua_tostring(L, -1));
+				lua_close(L);
+				L = 0;
+			}
+		}
+
+		sceneRunRenderFrameSystems(scene, frameTime);
 
 		glfwSwapBuffers(window);
 
@@ -320,26 +275,17 @@ int main()
 	freeModel("teapot");
 	freeModel("test");
 
-	sceneRemoveEntity(scene, entity1);
-	sceneRemoveEntity(scene, entity2);
-	sceneRemoveEntity(scene, teapot);
-	sceneRemoveEntity(scene, test);
-	sceneRemoveEntity(scene, camera);
-
-	sceneRemoveComponentType(scene, orbitComponentID);
-	sceneRemoveComponentType(scene, cameraComponentID);
-	sceneRemoveComponentType(scene, transformComponentID);
-	sceneRemoveComponentType(scene, nameComponentID);
-	sceneRemoveComponentType(scene, modelComponentID);
-
-	listClear(&cameraComponents);
-	listClear(&nameComponents);
-	listClear(&movementComponents);
-	freeRendererSystem(&rendererSystem);
-
+	if (L)
+	{
+		sceneShutdownLua(&L, scene);
+	}
+	sceneShutdownSystems(scene);
 	freeScene(&scene);
 
-	lua_close(L);
+	if (L)
+	{
+		lua_close(L);
+	}
 
 	freeWindow(window);
 
