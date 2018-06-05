@@ -2,7 +2,7 @@ ffi = require("ffi")
 
 engine = {}
 
-io.output("log.txt")
+-- io.output("log.txt")
 
 io.write("Loaded cFFI\n")
 
@@ -61,6 +61,31 @@ function engine.initScene(pScene)
   end
 
   -- Find all physics systems in the scene
+  io.write("Searching for physics systems\n")
+  local systemsFile = io.popen(ffi.os == "Windows" and 'dir /b resources\\scripts\\systems' or 'find resources/scripts/systems -name "*.lua"')
+  for line in systemsFile:lines() do
+	if ffi.os == "Windows" then
+	  line = 'resources/scripts/systems/'..line
+	end
+	local system = require(string.sub(line, 0, -5))
+
+	if system.init then
+	  local err, message = pcall(system.init, scene)
+	  if err == false then
+		io.write(string.format("Error raised during physics init for system %s\n%s\n",
+							   ffi.string(ffi.cast("UUID *", itr[0].data).string),
+							   message))
+	  end
+	end
+
+	if system.renderSystem then
+	  scene.renderSystems[#scene.renderSystems + 1] = system
+	else
+	  scene.physicsSystems[#scene.physicsSystems + 1] = system
+	end
+  end
+
+  --[[
   local list = ffi.new("List[1]", scene.ptr.luaPhysicsFrameSystemNames)
   local itr = ffi.new(
 	"ListIterator",
@@ -96,12 +121,12 @@ function engine.initScene(pScene)
 	itr = itrRef[0]
 	i = i + 1
   end
+  --]]
 
-  scene.numPhysicsFrameSystems = i - 1
-
-  io.write(string.format("Loaded %d physics systems\n", scene.numPhysicsFrameSystems))
+  io.write(string.format("Loaded %d physics systems\n", #scene.physicsSystems))
 
   -- Find all render systems in the scene
+  --[[
   list = ffi.new("List[1]", scene.ptr.luaRenderFrameSystemNames)
   itr = ffi.new(
 	"ListIterator",
@@ -135,10 +160,9 @@ function engine.initScene(pScene)
 	itr = itrRef[0]
 	i = i + 1
   end
+  --]]
 
-  scene.numRenderFrameSystems = i - 1
-
-  io.write(string.format("Loaded %d render systems\n", scene.numRenderFrameSystems))
+  io.write(string.format("Loaded %d render systems\n", #scene.renderSystems))
 
   engine.scenes[pScene] = scene
 end
@@ -149,7 +173,7 @@ function engine.runPhysicsSystems(pScene, dt)
   local null = ffi.new("int64", 0)
   local emptyUUID = ffi.new("UUID")
 
-  for i = 1,scene.numPhysicsFrameSystems do
+  for i = 1,#scene.physicsSystems do
 	local physicsSystem = scene.physicsSystems[i]
 
 	if physicsSystem.run then
@@ -216,7 +240,7 @@ function engine.runRenderSystems(pScene, dt)
   local null = ffi.new("int64", 0)
   local emptyUUID = ffi.new("UUID")
 
-  for i = 1,scene.numRenderFrameSystems do
+  for i = 1,#scene.renderSystems do
 	local renderSystem = scene.renderSystems[i]
 
 	if renderSystem.run then
@@ -282,10 +306,10 @@ function engine.shutdownScene(pScene)
 
   io.write(string.format(
 			 "Scene has %d physics systems\n",
-			 scene.numPhysicsFrameSystems))
+			 #scene.physicsSystems))
 
   -- TODO: Call all the shutdown methods on the systems
-  for i = 1,scene.numPhysicsFrameSystems do
+  for i = 1,#scene.physicsSystems do
 	if scene.physicsSystems[i].shutdown then
 	  local err, message = pcall(scene.physicsSystems[i].shutdown, scene)
 	  if err == false then
@@ -297,9 +321,9 @@ function engine.shutdownScene(pScene)
 
   io.write(string.format(
 			 "Scene has %d render systems\n",
-			 scene.numRenderFrameSystems))
+			 #scene.renderSystems))
 
-  for i = 1,scene.numRenderFrameSystems do
+  for i = 1,#scene.renderSystems do
 	if scene.renderSystems[i].shutdown then
 	  local err, message = pcall(scene.renderSystems[i].shutdown, scene)
 	  if err == false then

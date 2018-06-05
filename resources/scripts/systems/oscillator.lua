@@ -1,3 +1,5 @@
+io.write("Loading the Oscillator system\n")
+
 local system = {}
 
 local C = engine.C
@@ -31,5 +33,7 @@ function system.run(scene, uuid, dt)
 					pos,
 					oscillator.position)
 end
+
+io.write("Finished loading the Oscillator system\n")
 
 return system

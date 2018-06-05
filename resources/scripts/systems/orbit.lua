@@ -1,3 +1,5 @@
+io.write("Loading the Orbit system\n")
+
 local system = {}
 
 system.init = nil
@@ -24,5 +26,7 @@ function system.run(scene, uuid, dt)
   transform.position.y = math.cos(time[name] * orbit.speed) * orbit.radius + orbit.origin.y
   transform.position.z = orbit.origin.z
 end
+
+io.write("Finished loading the Orbit system\n")
 
 return system

@@ -175,11 +175,6 @@ int32 main()
 	// TODO: Make this thing work
   	//loadScene("scene_1", &scene);
 
-	UUID orbitSystemID = idFromName("orbit");
-	listPushFront(&scene->luaPhysicsFrameSystemNames, &orbitSystemID);
-	UUID oscillatorSystemID = idFromName("oscillator");
-	listPushFront(&scene->luaPhysicsFrameSystemNames, &oscillatorSystemID);
-
 	sceneInitSystems(scene);
 	sceneInitLua(&L, scene);
 
