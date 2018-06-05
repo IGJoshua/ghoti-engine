@@ -76,10 +76,27 @@ typedef struct scene_t
   List luaRenderFrameSystemNames;
 } Scene;
 
+void sceneAddComponentToEntity(
+  Scene *s,
+  UUID entity,
+  UUID componentType,
+  void *componentData);
+
+void sceneRemoveComponentFromEntity(
+  Scene *s,
+  UUID entity,
+  UUID componentType);
+
 void *sceneGetComponentFromEntity(
   Scene *s,
   UUID entity,
   UUID componentType);
+
+void sceneAddComponentType(
+  Scene *scene,
+  UUID componentID,
+  uint32 componentSize,
+  uint32 maxComponents);
 
 typedef float kmScalar;
 
@@ -88,6 +105,9 @@ typedef struct kmVec3 {
   kmScalar y;
   kmScalar z;
 } kmVec3;
+
+kmVec3* kmVec3Scale(kmVec3* pOut, const kmVec3* pIn, const kmScalar s);
+kmVec3* kmVec3Add(kmVec3* pOut, const kmVec3* pV1, const kmVec3* pV2);
 
 typedef struct kmQuaternion {
   kmScalar x;

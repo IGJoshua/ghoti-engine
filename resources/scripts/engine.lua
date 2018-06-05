@@ -2,6 +2,8 @@ ffi = require("ffi")
 
 engine = {}
 
+io.output("log.txt")
+
 io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(ffi.os == "Windows"
@@ -29,8 +31,13 @@ io.write("Required scene\n")
 engine.components = require("resources/scripts/components")
 
 -- TODO: iterate over every file in resources/scripts/components/ and require them
-require("resources/scripts/components/orbit")
-require("resources/scripts/components/transform")
+local testFile = io.popen(ffi.os == "Windows" and 'dir /b resources\\scripts\\components' or 'find resources/scripts/components -name "*.lua"')
+for line in testFile:lines() do
+  if ffi.os == "Windows" then
+	line = 'resources/scripts/components/'..line
+  end
+  require(string.sub(line, 0, -5))
+end
 
 engine.scenes = {}
 
@@ -38,6 +45,20 @@ function engine.initScene(pScene)
   local scene = Scene:new(pScene)
 
   -- TODO: Register all lua components into the scene
+  for name, component in pairs(engine.components) do
+	-- If the component does not exist in the scene
+	if type(component) == 'table' then
+	  if C.hashMapGetKey(scene.ptr.componentTypes, C.idFromName(name))
+	  == ffi.cast("ComponentDataTable **", 0) then
+		-- Register the component
+		io.write(string.format(
+				   "The component %s is being registered with %d entries\n",
+				   name,
+				   component.numEntries))
+		C.sceneAddComponentType(scene.ptr, C.idFromName(name), ffi.sizeof(component.type), component.numEntries)
+	  end
+	end
+  end
 
   -- Find all physics systems in the scene
   local list = ffi.new("List[1]", scene.ptr.luaPhysicsFrameSystemNames)
@@ -55,8 +76,8 @@ function engine.initScene(pScene)
 	io.write(ffi.string(ffi.cast("UUID *", itr[0].data).string))
 	-- Load all the systems named
 	local physicsSystem = require(string.format(
-				"resources/scripts/systems/%s",
-				ffi.string(ffi.cast("UUID *", itr[0].data).string)))
+									"resources/scripts/systems/%s",
+									ffi.string(ffi.cast("UUID *", itr[0].data).string)))
 
 	-- Call all the init functions
 	if physicsSystem.init then
@@ -148,7 +169,7 @@ function engine.runPhysicsSystems(pScene, dt)
 							+ ffi.sizeof("UUID"))).string) then
 
 			local valid = true
-			for k = 2,physicsSystem.numComponents do
+			for k = 2,#physicsSystem.components do
 			  local componentID = C.idFromName(physicsSystem.components[k])
 			  local componentTable = ffi.cast(
 				"ComponentDataTable **",
@@ -215,7 +236,7 @@ function engine.runRenderSystems(pScene, dt)
 							+ ffi.sizeof("UUID"))).string) then
 
 			local valid = true
-			for k = 2,renderSystem.numComponents do
+			for k = 2,#renderSystem.components do
 			  local componentID = C.idFromName(renderSystem.components[k])
 			  local componentTable = ffi.cast(
 				"ComponentDataTable **",

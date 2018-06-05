@@ -177,6 +177,8 @@ int32 main()
 
 	UUID orbitSystemID = idFromName("orbit");
 	listPushFront(&scene->luaPhysicsFrameSystemNames, &orbitSystemID);
+	UUID oscillatorSystemID = idFromName("oscillator");
+	listPushFront(&scene->luaPhysicsFrameSystemNames, &oscillatorSystemID);
 
 	sceneInitSystems(scene);
 	sceneInitLua(&L, scene);

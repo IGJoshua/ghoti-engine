@@ -6,7 +6,6 @@ system.shutdown = nil
 system.components = {}
 system.components[1] = "orbit"
 system.components[2] = "transform"
-system.numComponents = 2
 
 local time = {}
 
