@@ -5,11 +5,7 @@ local system = {}
 local C = engine.C
 local kazmath = engine.kazmath
 
-function system.init(scene)
-  local oscillator = ffi.new("OscillatorComponent", {0, 0, 0}, {0.707, 0.707, 0}, 0, 1, 2)
-  C.sceneAddComponentToEntity(scene.ptr, C.idFromName("test"), C.idFromName("oscillator"), oscillator)
-end
-
+system.init = nil
 system.shutdown = nil
 
 system.components = {}

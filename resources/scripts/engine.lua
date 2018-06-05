@@ -73,7 +73,7 @@ function engine.initScene(pScene)
 	  local err, message = pcall(system.init, scene)
 	  if err == false then
 		io.write(string.format("Error raised during physics init for system %s\n%s\n",
-							   ffi.string(ffi.cast("UUID *", itr[0].data).string),
+							   line,
 							   message))
 	  end
 	end

@@ -90,17 +90,6 @@ int32 main()
 	Scene *scene = createScene();
 
 	// Add component types
-	UUID transformComponentID = idFromName("transform");
-	sceneAddComponentType(scene, transformComponentID, sizeof(TransformComponent), 4);
-
-	UUID orbitComponentID = idFromName("orbit");
-	sceneAddComponentType(scene, orbitComponentID, sizeof(OrbitComponent), 4);
-
-	UUID modelComponentID = idFromName("model");
-	sceneAddComponentType(scene, modelComponentID, sizeof(ModelComponent), 4);
-
-	UUID cameraComponentID = idFromName("camera");
-	sceneAddComponentType(scene, cameraComponentID, sizeof(CameraComponent), 2);
 
 	// Add systems
 	System rendererSystem = createRendererSystem();
@@ -108,66 +97,6 @@ int32 main()
 	sceneAddRenderFrameSystem(scene, rendererSystem);
 
 	// Create entities
-	UUID entity1 = idFromName("ENTITY1");
-	sceneRegisterEntity(scene, entity1);
-	UUID entity2 = idFromName("ENTITY2");
-	sceneRegisterEntity(scene, entity2);
-
-	UUID teapot = idFromName("TEAPOT");
-	sceneRegisterEntity(scene, teapot);
-
-	UUID test = idFromName("test");
-	sceneRegisterEntity(scene, test);
-
-	UUID camera = idFromName("CAMERA");
-	sceneRegisterEntity(scene, camera);
-
-	scene->mainCamera = camera;
-
-	TransformComponent transform = {};
-	transform.position.x = 1.0f;
-	transform.position.y = 1.0f;
-	transform.position.z = 1.0f;
-	sceneAddComponentToEntity(scene, entity1, transformComponentID, &transform);
-
-	ModelComponent teapotModel = {};
-	strcpy(teapotModel.name, "teapot");
-	sceneAddComponentToEntity(scene, teapot, modelComponentID, &teapotModel);
-	OrbitComponent orbitPosition = {};
-	kmVec3Zero(&orbitPosition.origin);
-	orbitPosition.radius = 2.0f;
-	orbitPosition.speed = 3.0f;
-	sceneAddComponentToEntity(scene, teapot, orbitComponentID, &orbitPosition);
-	kmVec3Fill(&transform.position, 1, 0, 0);
-	transform.scale.x = 0.01f;
-	transform.scale.y = 0.01f;
-	transform.scale.z = 0.01f;
-	kmQuaternionRotationPitchYawRoll(&transform.rotation, kmDegreesToRadians(90), 0, 0);
-	sceneAddComponentToEntity(scene, teapot, transformComponentID, &transform);
-
-	ModelComponent testModel = {};
-	strcpy(testModel.name, "test");
-	sceneAddComponentToEntity(scene, test, modelComponentID, &testModel);
-	kmVec3Zero(&transform.position);
-	transform.scale.x = 1;
-	transform.scale.y = 1;
-	transform.scale.z = 1;
-	kmQuaternionRotationPitchYawRoll(&transform.rotation, kmDegreesToRadians(90), 0, 0);
-	sceneAddComponentToEntity(scene, test, transformComponentID, &transform);
-
-	CameraComponent cameraComp = {};
-	cameraComp.aspectRatio = 4.0f / 3.0f;
-	cameraComp.fov = 80;
-	cameraComp.nearPlane = 0.1f;
-	cameraComp.farPlane = 1000.0f;
-	cameraComp.projectionType = CAMERA_PROJECTION_TYPE_PERSPECTIVE;
-	sceneAddComponentToEntity(scene, camera, cameraComponentID, &cameraComp);
-	kmVec3Fill(&transform.position, 0, 0, 2);
-	transform.scale.x = 1;
-	transform.scale.y = 1;
-	transform.scale.z = 1;
-	kmQuaternionIdentity(&transform.rotation);
-	sceneAddComponentToEntity(scene, camera, transformComponentID, &transform);
 
 	// State previous
 	// State next
@@ -239,7 +168,7 @@ int32 main()
 
 		real32 aspectRatio = (real32)width / (real32)height;
 
-		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, cameraComponentID);
+		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, idFromName("camera"));
 		if (cam)
 		{
 			cam->aspectRatio = aspectRatio;

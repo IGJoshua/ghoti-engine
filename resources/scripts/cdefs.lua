@@ -12,6 +12,8 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
+char *strcpy(char *destination, const char *source);
+
 typedef struct list_node_t
 {
   struct list_node_t *next;
@@ -76,6 +78,10 @@ typedef struct scene_t
   List luaRenderFrameSystemNames;
 } Scene;
 
+void sceneRegisterEntity(Scene *s, UUID newEntity);
+UUID sceneCreateEntity(Scene *s);
+void sceneRemoveEntity(Scene *s, UUID entity);
+
 void sceneAddComponentToEntity(
   Scene *s,
   UUID entity,
@@ -106,6 +112,8 @@ typedef struct kmVec3 {
   kmScalar z;
 } kmVec3;
 
+kmVec3* kmVec3Zero(kmVec3* pOut);
+kmVec3* kmVec3Fill(kmVec3* pOut, kmScalar x, kmScalar y, kmScalar z);
 kmVec3* kmVec3Scale(kmVec3* pOut, const kmVec3* pIn, const kmScalar s);
 kmVec3* kmVec3Add(kmVec3* pOut, const kmVec3* pV1, const kmVec3* pV2);
 
@@ -115,4 +123,12 @@ typedef struct kmQuaternion {
   kmScalar z;
   kmScalar w;
 } kmQuaternion;
+
+kmQuaternion* kmQuaternionIdentity(kmQuaternion* pOut);
+kmQuaternion* kmQuaternionRotationPitchYawRoll(kmQuaternion* pOut,
+  kmScalar pitch,
+  kmScalar yaw, kmScalar roll);
+
+kmScalar kmDegreesToRadians(kmScalar degrees);
+kmScalar kmRadiansToDegrees(kmScalar radians);
 ]]
