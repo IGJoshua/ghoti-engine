@@ -18,7 +18,7 @@ function system.init(scene)
   local teapot = C.sceneCreateEntity(scene.ptr)
   io.write(string.format("Teapot ID: %s\n", ffi.string(teapot.string)))
 
-  C.strcpy(model.name, "teapot")
+  ffi.copy(model.name, ffi.new("char[32]", "teapot"), 32)
   C.sceneAddComponentToEntity(scene.ptr, teapot, C.idFromName("model"), model)
   kazmath.kmVec3Zero(orbit.origin)
   orbit.speed = 3
@@ -34,7 +34,7 @@ function system.init(scene)
   local test = C.sceneCreateEntity(scene.ptr)
   io.write(string.format("Test ID: %s\n", ffi.string(test.string)))
 
-  C.strcpy(model.name, "test")
+  ffi.copy(model.name, ffi.new("char[32]", "test"), 32)
   C.sceneAddComponentToEntity(scene.ptr, test, C.idFromName("model"), model)
   C.sceneAddComponentToEntity(scene.ptr, test, C.idFromName("oscillator"), oscillator)
   transform.scale.x = 1
