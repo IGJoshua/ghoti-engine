@@ -64,7 +64,7 @@ arch : $(BUILDDIR)/$(LIBNAME)
 .PHONY: clean
 
 clean:
-	rm -f -r {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
+	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
 	$(ARCHDIRS)
