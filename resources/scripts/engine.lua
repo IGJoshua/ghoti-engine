@@ -24,6 +24,10 @@ require("resources/scripts/cdefs")
 
 io.write("Created cffi definitions\n")
 
+engine.keyboard = require("resources/scripts/keyboard")
+engine.mouse = require("resources/scripts/mouse")
+engine.input = require("resources/scripts/input")
+
 local Scene = require("resources/scripts/scene")
 
 io.write("Required scene\n")
@@ -176,6 +180,10 @@ function engine.runPhysicsSystems(pScene, dt)
   for i = 1,#scene.physicsSystems do
 	local physicsSystem = scene.physicsSystems[i]
 
+	if physicsSystem.begin then
+	  local err, message = pcall(physicsSystem.begin, scene, dt)
+	end
+
 	if physicsSystem.run then
 	  local componentName = ffi.new("UUID[1]", C.idFromName(physicsSystem.components[1]))
 	  -- Loop over every entity which has the correct components
@@ -230,6 +238,10 @@ function engine.runPhysicsSystems(pScene, dt)
 		  end
 		end
 	  end
+
+	  if physicsSystem.clean then
+		local err, message = pcall(physicsSystem.clean, scene, dt)
+	  end
 	end
   end
 end
@@ -242,6 +254,10 @@ function engine.runRenderSystems(pScene, dt)
 
   for i = 1,#scene.renderSystems do
 	local renderSystem = scene.renderSystems[i]
+
+	if renderSystem.begin then
+	  local err, message = pcall(renderSystem.begin, scene, dt)
+	end
 
 	if renderSystem.run then
 	  local componentName = ffi.new("UUID[1]", C.idFromName(renderSystem.components[1]))
@@ -298,6 +314,10 @@ function engine.runRenderSystems(pScene, dt)
 		end
 	  end
 	end
+
+	if renderSystem.clean then
+	  local err, message = pcall(renderSystem.clean, scene, dt)
+	end
   end
 end
 
@@ -331,5 +351,11 @@ function engine.shutdownScene(pScene)
 							   message))
 	  end
 	end
+  end
+end
+
+function engine.cleanInput()
+  for key, value in pairs(engine.keyboard) do
+	value.updated = false
   end
 end

@@ -31,7 +31,7 @@ int32 loadMesh(const struct aiMesh *mesh, MeshData *meshData)
 		meshData->bitangents[index].z = mesh->mBitangents[i].z;
 
 		meshData->uvs[index].x = mesh->mTextureCoords[0][i].x;
-		meshData->uvs[index].y = mesh->mTextureCoords[0][i].y;
+		meshData->uvs[index].y = 1.0f - mesh->mTextureCoords[0][i].y;
 
 		meshData->numVertices++;
 	}

@@ -1,0 +1,3 @@
+local mouse = {}
+
+return mouse

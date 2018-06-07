@@ -34,6 +34,8 @@
 #include <malloc.h>
 #include <string.h>
 
+static lua_State *L;
+
 void keyCallback(
 	GLFWwindow *window,
 	int key,
@@ -41,18 +43,58 @@ void keyCallback(
 	int action,
 	int mods)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (L)
 	{
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+		lua_checkstack(L, 3);
+
+		// Get the keyboard
+		lua_getglobal(L, "engine");
+		lua_getfield(L, -1, "keyboard");
+		lua_remove(L, -2);
+
+		// Stack: keyboard
+
+		// Check if the field is nil
+		lua_pushnumber(L, key);
+		lua_gettable(L, -2);
+		int32 nil = lua_isnil(L, -1);
+		// stack: keyboard nil/keytable
+		if (nil)
+		{
+			lua_pop(L, 1);
+			// stack: keyboard
+
+			// Make a new table at the key
+			lua_pushnumber(L, key);
+			lua_createtable(L, 0, 2);
+			lua_settable(L, -3);
+			// stack: keyboard(with keynum set to table)
+			lua_pushnumber(L, key);
+			lua_gettable(L, -2);
+		}
+		// stack: keyboard keytable
+
+		// Set the correct values in the table
+		// The key is down (or not)
+		lua_pushboolean(L, action != GLFW_RELEASE ? 1 : 0);
+		// stack: keyboard keytable bool
+		lua_setfield(L, -2, "keydown");
+		// stack: keyboard keytable(with keydown set)
+
+		// The key has just been updated
+		lua_pushboolean(L, 1);
+		// stack: keyboard keytable bool
+		lua_setfield(L, -2, "updated");
+		// stack: keyboard keytable(with updated set)
+
+		lua_pop(L, 2);
+		// stack: cleaned
+	}
+	else
+	{
+		printf("No lua state exists, failing to register keypress\n");
 	}
 }
-
-typedef struct orbit_component_t
-{
-	kmVec3 origin;
-	float speed;
-	float radius;
-} OrbitComponent;
 
 int32 main()
 {
@@ -72,7 +114,7 @@ int32 main()
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
 	// Init Lua
-	lua_State *L = luaL_newstate();
+	L = luaL_newstate();
 	luaL_openlibs(L);
 
 	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
@@ -150,6 +192,21 @@ int32 main()
 				}
 			}
 
+			// Clean input
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "cleanInput");
+				lua_remove(L, -2);
+				luaError = lua_pcall(L, 0, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
+
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
@@ -197,9 +254,6 @@ int32 main()
 
 		glfwPollEvents();
 	}
-
-	freeModel("teapot");
-	freeModel("test");
 
 	if (L)
 	{
