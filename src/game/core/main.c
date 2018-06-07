@@ -33,6 +33,8 @@
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
 void keyCallback(
 	GLFWwindow *window,
@@ -56,6 +58,8 @@ typedef struct orbit_component_t
 
 int32 main()
 {
+	srand(time(0));
+
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
 	if (!window)

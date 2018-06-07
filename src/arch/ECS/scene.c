@@ -274,7 +274,10 @@ UUID generateUUID()
 	// Generate random byte for all but the last byte
 	for (uint32 i = 0; i < sizeof(UUID) - 1; ++i)
 	{
-		ret.bytes[i] = (rand() % 255) + 1;
+		do
+		{
+			ret.bytes[i] = (rand() % (126 - 33)) + 33;
+		} while (ret.bytes[i] == 92);
 	}
 
 	ret.bytes[sizeof(UUID) - 1] = 0;
