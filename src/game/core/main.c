@@ -183,7 +183,7 @@ int32 main()
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
-	// Fixed timesetep
+	// Fixed timestep
 	real64 dt = 1.0 / 60.0;
 
 	real64 currentTime = glfwGetTime();
