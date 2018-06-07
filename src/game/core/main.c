@@ -43,6 +43,11 @@ void keyCallback(
 	int action,
 	int mods)
 {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, 1);
+	}
+
 	if (L)
 	{
 		lua_checkstack(L, 3);
