@@ -4,6 +4,7 @@ typedef struct orbit_component_t
   kmVec3 origin;
   float speed;
   float radius;
+  float time;
 } OrbitComponent;
 ]]
 
