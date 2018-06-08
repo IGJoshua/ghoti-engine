@@ -9,7 +9,8 @@ function mt.__index(t, key)
 	key = "GLFW_KEY_"..key
 	local valid, enum = pcall(ffi.new, "GLFW_KEY", key)
 	if valid then
-	  local val = rawget(t, tonumber(ffi.cast("int32", enum)))
+	  local index = tonumber(ffi.cast("int32", enum))
+	  local val = rawget(t, index)
 	  if val then
 		return val
 	  else
@@ -17,6 +18,8 @@ function mt.__index(t, key)
 
 		ret.updated = false
 		ret.keydown = false
+
+		t[index] = ret
 
 		return ret
 	  end
