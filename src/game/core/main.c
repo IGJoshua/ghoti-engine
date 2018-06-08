@@ -210,6 +210,8 @@ int32 main()
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
+
+			glfwPollEvents();
 		}
 
 		const real64 alpha = accumulator / dt;
@@ -251,8 +253,6 @@ int32 main()
 		sceneRunRenderFrameSystems(scene, frameTime);
 
 		glfwSwapBuffers(window);
-
-		glfwPollEvents();
 	}
 
 	if (L)
