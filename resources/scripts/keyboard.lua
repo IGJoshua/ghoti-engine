@@ -1,7 +1,10 @@
 local keyboard = {}
 
-local mt = {}
+function keyboard.key(key)
+  return tonumber(ffi.cast("int32", ffi.new("GLFW_KEY", "GLFW_KEY_"..key)))
+end
 
+local mt = {}
 setmetatable(keyboard, mt)
 
 function mt.__index(t, key)

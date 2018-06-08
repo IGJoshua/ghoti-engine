@@ -356,6 +356,8 @@ end
 
 function engine.cleanInput()
   for key, value in pairs(engine.keyboard) do
-	value.updated = false
+	if type(value) == "table" then
+	  value.updated = false
+	end
   end
 end
