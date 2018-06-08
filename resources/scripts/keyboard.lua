@@ -9,7 +9,17 @@ function mt.__index(t, key)
 	key = "GLFW_KEY_"..key
 	local valid, enum = pcall(ffi.new, "GLFW_KEY", key)
 	if valid then
-	  return rawget(t, tonumber(ffi.cast("int32", enum)))
+	  local val = rawget(t, tonumber(ffi.cast("int32", enum)))
+	  if val then
+		return val
+	  else
+		local ret = {}
+
+		ret.updated = false
+		ret.keydown = false
+
+		return ret
+	  end
 	else
 	  error("Indexing into keyboard failed, key was not valid")
 	end
