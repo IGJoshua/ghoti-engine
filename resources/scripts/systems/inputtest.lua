@@ -11,6 +11,10 @@ function system.begin(scene, dt)
 	  io.write("Keyup!\n")
 	end
   end
+
+  if keyboard.ESCAPE.keydown then
+	engine.C.closeWindow()
+  end
 end
 
 return system

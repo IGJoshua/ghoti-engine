@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+static GLFWwindow *wnd;
+
 internal
 void errorCallback(
 	int error,
@@ -54,7 +56,15 @@ GLFWwindow *initWindow(
 	ilInit();
 	iluInit();
 
+	wnd = window;
+
 	return window;
+}
+
+int32 closeWindow()
+{
+	glfwSetWindowShouldClose(wnd, 1);
+	return 0;
 }
 
 int32 freeWindow(
@@ -63,6 +73,8 @@ int32 freeWindow(
 	glfwDestroyWindow(window);
 
 	glfwTerminate();
+
+	wnd = 0;
 
 	return 0;
 }

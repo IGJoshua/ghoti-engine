@@ -256,4 +256,6 @@ typedef enum glfw_key_e
   GLFW_KEY_RIGHT_SUPER = 347,
   GLFW_KEY_MENU = 348
 } GLFW_KEY;
+
+int32 closeWindow();
 ]]
