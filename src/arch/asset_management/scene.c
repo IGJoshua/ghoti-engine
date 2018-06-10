@@ -1,14 +1,11 @@
-#include "asset_management/scene.h"
-#include "asset_management/model.h"
+// #include "asset_management/scene.h"
+// #include "asset_management/model.h"
 
-// TODO Add JSON loading
-// #include <cjson/cJSON.h>
+// #include <malloc.h>
+// #include <string.h>
 
-#include <malloc.h>
-#include <string.h>
-
-extern Model *models;
-extern uint32 numModels;
+// extern Model *models;
+// extern uint32 numModels;
 
 /*int32 loadScene(const char *name)
 {

@@ -1,167 +1,113 @@
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
-#include <assimp/scene.h>
+#include "file/utilities.h"
+
 #include <malloc.h>
 
-int32 loadMaterial(
-	const struct aiMaterial *materialData,
-	Material *material)
+internal const char *getMaterialComponentName(
+	MaterialComponentType materialComponentType);
+
+int32 loadMaterial(Material *material, FILE *file)
 {
 	material->type = MATERIAL_TYPE_DEBUG;
+	material->name = readString(file);
 
-	struct aiString textureName;
+	printf("Loading subset material (%s)...\n", material->name);
 
-	if (aiGetMaterialString(
-		materialData,
-		AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0),
-		&textureName) == AI_SUCCESS)
+	uint32 numMaterialComponents;
+	fread(&numMaterialComponents, sizeof(uint32), 1, file);
+
+	memset(
+		&material->components,
+		0,
+		sizeof(MaterialComponent) * MATERIAL_COMPONENT_TYPE_COUNT);
+
+	for (uint32 i = 0; i < numMaterialComponents; i++)
 	{
-		material->diffuseTexture = malloc(textureName.length + 1);
-		strcpy(material->diffuseTexture, textureName.data);
-		loadTexture(&textureName, TEXTURE_TYPE_DIFFUSE);
+		int8 materialComponentType;
+		fread(&materialComponentType, sizeof(int8), 1, file);
+
+		const char *materialComponentName =
+			getMaterialComponentName(
+				(MaterialComponentType)materialComponentType);
+
+		printf("Loading %s material component...\n", materialComponentName);
+
+		MaterialComponent *materialComponent =
+			&material->components[materialComponentType];
+
+		switch ((MaterialComponentType)materialComponentType)
+		{
+			case MATERIAL_COMPONENT_TYPE_DIFFUSE:
+			case MATERIAL_COMPONENT_TYPE_SPECULAR:
+			case MATERIAL_COMPONENT_TYPE_NORMAL:
+			case MATERIAL_COMPONENT_TYPE_EMISSIVE:
+				materialComponent->texture = readString(file);
+				fread(&materialComponent->uvMap, sizeof(uint32), 1, file);
+				break;
+			default:
+				return -1;
+		}
+
+		fread(&materialComponent->value.x, sizeof(real32), 1, file);
+		fread(&materialComponent->value.y, sizeof(real32), 1, file);
+		fread(&materialComponent->value.z, sizeof(real32), 1, file);
+
+		switch ((MaterialComponentType)materialComponentType)
+		{
+			case MATERIAL_COMPONENT_TYPE_SPECULAR:
+				fread(&materialComponent->value.w, sizeof(real32), 1, file);
+				break;
+			default:
+				break;
+		}
+
+		printf(
+			"Successfully loaded %s material component\n",
+			materialComponentName);
 	}
 
-	if (aiGetMaterialString(
-		materialData,
-		AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0),
-		&textureName) == AI_SUCCESS)
-	{
-		material->specularTexture = malloc(textureName.length + 1);
-		strcpy(material->specularTexture, textureName.data);
-		loadTexture(&textureName, TEXTURE_TYPE_SPECULAR);
-	}
-
-	if (aiGetMaterialString(
-		materialData,
-		AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0),
-		&textureName) == AI_SUCCESS)
-	{
-		material->normalMap = malloc(textureName.length + 1);
-		strcpy(material->normalMap, textureName.data);
-		loadTexture(&textureName, TEXTURE_TYPE_NORMAL);
-	}
-
-	if (aiGetMaterialString(
-		materialData,
-		AI_MATKEY_TEXTURE(aiTextureType_EMISSIVE, 0),
-		&textureName) == AI_SUCCESS)
-	{
-		material->emissiveMap = malloc(textureName.length + 1);
-		strcpy(material->emissiveMap, textureName.data);
-		loadTexture(&textureName, TEXTURE_TYPE_EMISSIVE);
-	}
-
-	struct aiColor4D materialValue;
-
-	if (aiGetMaterialColor(
-		materialData,
-		AI_MATKEY_COLOR_DIFFUSE,
-		&materialValue) == AI_SUCCESS)
-	{
-		material->diffuseValue.x = materialValue.r;
-		material->diffuseValue.y = materialValue.g;
-		material->diffuseValue.z = materialValue.b;
-	}
-
-	if (aiGetMaterialColor(
-		materialData,
-		AI_MATKEY_COLOR_SPECULAR,
-		&materialValue) == AI_SUCCESS)
-	{
-		material->specularValue.x = materialValue.r;
-		material->specularValue.y = materialValue.g;
-		material->specularValue.z = materialValue.b;
-	}
-
-	if (aiGetMaterialColor(
-		materialData,
-		AI_MATKEY_COLOR_AMBIENT,
-		&materialValue) == AI_SUCCESS)
-	{
-		material->ambientValue.x = materialValue.r;
-		material->ambientValue.y = materialValue.g;
-		material->ambientValue.z = materialValue.b;
-	}
-
-	if (aiGetMaterialColor(
-		materialData,
-		AI_MATKEY_COLOR_EMISSIVE,
-		&materialValue) == AI_SUCCESS)
-	{
-		material->emissiveValue.x = materialValue.r;
-		material->emissiveValue.y = materialValue.g;
-		material->emissiveValue.z = materialValue.b;
-	}
-
-	if (aiGetMaterialColor(
-		materialData,
-		AI_MATKEY_COLOR_TRANSPARENT,
-		&materialValue) == AI_SUCCESS)
-	{
-		material->transparentValue.x = materialValue.r;
-		material->transparentValue.y = materialValue.g;
-		material->transparentValue.z = materialValue.b;
-	}
-
-	real32 materialConstant;
-
-	if (aiGetMaterialFloatArray(
-		materialData,
-		AI_MATKEY_SHININESS,
-		&materialConstant,
-		NULL) == AI_SUCCESS)
-	{
-		material->specularPower = materialConstant;
-	}
-
-	if (aiGetMaterialFloatArray(
-		materialData,
-		AI_MATKEY_SHININESS_STRENGTH,
-		&materialConstant,
-		NULL) == AI_SUCCESS)
-	{
-		material->specularScale = materialConstant;
-	}
-
-	if (aiGetMaterialFloatArray(
-		materialData,
-		AI_MATKEY_OPACITY,
-		&materialConstant,
-		NULL) == AI_SUCCESS)
-	{
-		material->opacity = materialConstant;
-	}
+	printf("Successfully loaded subset material (%s)\n", material->name);
 
 	return 0;
 }
 
+internal const char *getMaterialComponentName(
+	MaterialComponentType materialComponentType)
+{
+	switch (materialComponentType)
+	{
+		case MATERIAL_COMPONENT_TYPE_DIFFUSE:
+			return "diffuse";
+		case MATERIAL_COMPONENT_TYPE_SPECULAR:
+			return "specular";
+		case MATERIAL_COMPONENT_TYPE_NORMAL:
+			return "normal";
+		case MATERIAL_COMPONENT_TYPE_EMISSIVE:
+			return "emissive";
+		case MATERIAL_COMPONENT_TYPE_AMBIENT:
+			return "ambient";
+		default:
+			break;
+	}
+
+	return NULL;
+}
+
 int32 freeMaterial(Material *material)
 {
-	if (material->diffuseTexture && freeTexture(material->diffuseTexture) == -1)
-	{
-		return -1;
-	}
+	free(material->name);
 
-	if (material->specularTexture && freeTexture(material->specularTexture) == -1)
+	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		return -1;
-	}
+		if (freeTexture(material->components[i].texture) == -1)
+		{
+			return -1;
+		}
 
-	if (material->normalMap && freeTexture(material->normalMap) == -1)
-	{
-		return -1;
+		free(material->components[i].texture);
 	}
-
-	if (material->emissiveMap && freeTexture(material->emissiveMap) == -1)
-	{
-		return -1;
-	}
-
-	free(material->diffuseTexture);
-	free(material->specularTexture);
-	free(material->normalMap);
-	free(material->emissiveMap);
 
 	return 0;
 }
