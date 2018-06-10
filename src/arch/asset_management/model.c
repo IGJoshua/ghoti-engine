@@ -28,7 +28,7 @@ int32 loadModel(const char *name)
 {
 	Model *model = getModel(name);
 
-	if (!model)
+	if (name && !model)
 	{
 		printf("Loading model (%s)...\n", name);
 
@@ -37,7 +37,7 @@ int32 loadModel(const char *name)
 			increaseModelsCapacity();
 		}
 
-		Model *model = &models[numModels++];
+		model = &models[numModels++];
 
 		model->name = malloc(strlen(name) + 1);
 		strcpy(model->name, name);
@@ -55,7 +55,11 @@ int32 loadModel(const char *name)
 		printf("Successfully loaded model (%s)\n", name);
 	}
 
-	printf("Model (%s) Reference Count: %d\n", name, ++model->refCount);
+	if (model)
+	{
+		printf("Model (%s) Reference Count: %d\n", name, ++(model->refCount));
+	}
+
 	printf("Model Count: %d\n", numModels);
 	printf("Models Capacity: %d\n", modelsCapacity);
 
@@ -145,7 +149,9 @@ int32 loadTextures(Model *model)
 		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
 		{
 			MaterialComponent *materialComponent = &material->components[j];
-			if (getTexture(materialComponent->texture))
+			if (
+				materialComponent->texture &&
+				!getTexture(materialComponent->texture))
 			{
 				numUniqueTextures++;
 			}
@@ -190,8 +196,11 @@ int32 loadSubsets(Model *model)
 
 	if (!scene) {
 		printf("Failed to open %s\n", modelFilename);
+		free(modelFilename);
 		return -1;
 	}
+
+	free(modelFilename);
 
 	model->meshes = calloc(model->numSubsets, sizeof(Mesh));
 
@@ -292,6 +301,7 @@ int32 freeModel(const char *name)
 		free(model->materials);
 		free(model->meshes);
 
+		numModels--;
 		Model *resizedModels = calloc(modelsCapacity, sizeof(Model));
 		memcpy(resizedModels, models, index * sizeof(Model));
 
@@ -311,8 +321,10 @@ int32 freeModel(const char *name)
 	}
 	else
 	{
-		printf("Successfully reduced model (%s) reference count\n", name);
-		printf("Model (%s) Reference Count: %d\n", name, model->refCount);
+		printf(
+			"Successfully reduced model (%s) reference count to %d\n",
+			name,
+			model->refCount);
 	}
 
 	return 0;
@@ -335,75 +347,80 @@ int32 renderModel(
 	kmMat4 *view,
 	kmMat4 *projection)
 {
-	// Model *model = getModel(name);
+	Model *model = getModel(name);
 
-	// bindShaderPipeline(pipeline);
+	bindShaderPipeline(pipeline);
 
-	// if (setUniform(modelUniform, world) == -1)
-	// {
-	// 	return -1;
-	// }
+	if (setUniform(modelUniform, world) == -1)
+	{
+		return -1;
+	}
 
-	// if (setUniform(viewUniform, view) == -1)
-	// {
-	// 	return -1;
-	// }
+	if (setUniform(viewUniform, view) == -1)
+	{
+		return -1;
+	}
 
-	// if (setUniform(projectionUniform, projection) == -1)
-	// {
-	// 	return -1;
-	// }
+	if (setUniform(projectionUniform, projection) == -1)
+	{
+		return -1;
+	}
 
-	// GLint textureIndex = 0;
-	// if (setUniform(diffuseTextureUniform, &textureIndex) == -1)
-	// {
-	// 	return -1;
-	// }
+	GLint textureIndex = 0;
+	if (setUniform(diffuseTextureUniform, &textureIndex) == -1)
+	{
+		return -1;
+	}
 
-	// for (uint32 i = 0; i < model->numMeshes; i++)
-	// {
-	// 	Mesh *mesh = &model->meshes[i];
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Mesh *mesh = &model->meshes[i];
 
-	// 	glBindVertexArray(mesh->vertexArray);
+		glBindVertexArray(mesh->vertexArray);
 
-	// 	for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
-	// 	{
-	// 		glEnableVertexAttribArray(i);
-	// 	}
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glEnableVertexAttribArray(i);
+		}
 
-	// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
 
-	// 	Material *material = &model->materials[i];
-	// 	Texture *texture = getTexture(material->diffuseTexture);
+		Material *material = &model->materials[i];
+		Texture *texture = getTexture(
+			material->components[MATERIAL_COMPONENT_TYPE_DIFFUSE].texture);
 
-	// 	glActiveTexture(GL_TEXTURE0);
-	// 	glBindTexture(GL_TEXTURE_2D, texture->id);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture->id);
 
-	// 	glDrawElements(
-	// 		GL_TRIANGLES,
-	// 		mesh->numIndices,
-	// 		GL_UNSIGNED_INT,
-	// 		NULL);
-	// 	GLenum glError = glGetError();
-	// 	if (glError != GL_NO_ERROR)
-	// 	{
-	// 		printf("Draw %s: %s\n", name, gluErrorString(glError));
-	// 		return -1;
-	// 	}
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			printf(
+				"Draw Subset %s in Model (%s): %s\n",
+				material->name,
+				name,
+				gluErrorString(glError));
+			return -1;
+		}
 
-	// 	glActiveTexture(GL_TEXTURE0);
-	// 	glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
-	// 	for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
-	// 	{
-	// 		glDisableVertexAttribArray(i);
-	// 	}
+		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
 
-	// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	// 	glBindVertexArray(0);
-	// }
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
 
-	// glUseProgram(0);
+	glUseProgram(0);
 
 	return 0;
 }

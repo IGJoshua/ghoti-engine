@@ -106,41 +106,42 @@ int32 loadMesh(
 		vertices,
 		GL_STATIC_DRAW);
 
+	glBindVertexArray(mesh->vertexArray);
 	glVertexAttribPointer(
 		bufferIndex++,
 		3,
 		GL_FLOAT,
 		GL_FALSE,
 		sizeof(Vertex),
-		vertices + offsetof(Vertex, position));
+		(GLvoid*)offsetof(Vertex, position));
 	glVertexAttribPointer(
 		bufferIndex++,
 		4,
 		GL_FLOAT,
 		GL_FALSE,
 		sizeof(Vertex),
-		vertices + offsetof(Vertex, color));
+		(GLvoid*)offsetof(Vertex, color));
 	glVertexAttribPointer(
 		bufferIndex++,
 		3,
 		GL_FLOAT,
-		GL_TRUE,
+		GL_FALSE,
 		sizeof(Vertex),
-		vertices + offsetof(Vertex, normal));
+		(GLvoid*)offsetof(Vertex, normal));
 	glVertexAttribPointer(
 		bufferIndex++,
 		3,
 		GL_FLOAT,
-		GL_TRUE,
+		GL_FALSE,
 		sizeof(Vertex),
-		vertices + offsetof(Vertex, tangent));
+		(GLvoid*)offsetof(Vertex, tangent));
 	glVertexAttribPointer(
 		bufferIndex++,
 		3,
 		GL_FLOAT,
-		GL_TRUE,
+		GL_FALSE,
 		sizeof(Vertex),
-		vertices + offsetof(Vertex, bitangent));
+		(GLvoid*)offsetof(Vertex, bitangent));
 
 	for (i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
@@ -150,7 +151,7 @@ int32 loadMesh(
 			GL_FLOAT,
 			GL_FALSE,
 			sizeof(Vertex),
-			vertices + offsetof(Vertex, uv[i]));
+			(GLvoid*)offsetof(Vertex, uv[i]));
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

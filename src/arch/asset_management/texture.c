@@ -15,7 +15,7 @@ int32 loadTexture(const char *name)
 {
 	Texture *texture = getTexture(name);
 
-	if (!texture)
+	if (name && !texture)
 	{
 		printf("Loading texture (%s)...\n", name);
 
@@ -35,6 +35,7 @@ int32 loadTexture(const char *name)
 		printf("Load %s: %s\n", filename, iluErrorString(ilError));
 		if (ilError != IL_NO_ERROR)
 		{
+			free(filename);
 			return -1;
 		}
 
@@ -78,7 +79,13 @@ int32 loadTexture(const char *name)
 		printf("Successfully loaded texture (%s)\n", name);
 	}
 
-	printf("Texture (%s) Reference Count: %d\n", name, ++texture->refCount);
+	if (texture)
+	{
+		printf(
+			"Texture (%s) Reference Count: %d\n",
+			name,
+			++(texture->refCount));
+	}
 
 	return 0;
 }
@@ -170,6 +177,7 @@ int32 freeTexture(const char *name)
 		free(texture->name);
 		glDeleteTextures(1, &texture->id);
 
+		numTextures--;
 		Texture *resizedTextures = calloc(texturesCapacity, sizeof(Texture));
 		memcpy(resizedTextures, textures, index * sizeof(Texture));
 
@@ -189,8 +197,10 @@ int32 freeTexture(const char *name)
 	}
 	else
 	{
-		printf("Successfully reduced texture (%s) reference count\n", name);
-		printf("Texture (%s) Reference Count: %d\n", name, texture->refCount);
+		printf(
+			"Successfully reduced texture (%s) reference count to %d\n",
+			name,
+			texture->refCount);
 	}
 
 	return 0;

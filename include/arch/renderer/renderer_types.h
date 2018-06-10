@@ -5,7 +5,7 @@
 
 #include <kazmath/vec4.h>
 
-#define NUM_VERTEX_ATTRIBUTES 6
+#define NUM_VERTEX_ATTRIBUTES 5 + MATERIAL_COMPONENT_TYPE_COUNT
 
 typedef struct mesh_t
 {

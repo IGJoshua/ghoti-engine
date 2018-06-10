@@ -101,12 +101,15 @@ int32 freeMaterial(Material *material)
 
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		if (freeTexture(material->components[i].texture) == -1)
+		if (material->components[i].texture)
 		{
-			return -1;
-		}
+			if (freeTexture(material->components[i].texture) == -1)
+			{
+				return -1;
+			}
 
-		free(material->components[i].texture);
+			free(material->components[i].texture);
+		}
 	}
 
 	return 0;

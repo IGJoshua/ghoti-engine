@@ -31,7 +31,7 @@ char* readString(FILE *file)
 	fread(&stringLength, sizeof(uint32), 1, file);
 
 	char *string = malloc(stringLength);
-	fread(&string, stringLength, 1, file);
+	fread(string, stringLength, 1, file);
 
 	return string;
 }

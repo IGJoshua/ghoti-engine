@@ -1,11 +1,11 @@
 #version 420 core
 
-layout(location=0) in vec4 color;
-layout(location=1) in vec3 position;
+layout(location=0) in vec3 position;
+layout(location=1) in vec4 color;
 layout(location=2) in vec3 normal;
 layout(location=3) in vec3 tangent;
 layout(location=4) in vec3 bitangent;
-layout(location=5) in vec2 uv;
+layout(location=5) in vec2 uv[5];
 
 out vec4 fragColor;
 out vec3 fragPosition;
@@ -21,7 +21,7 @@ void main()
 	fragColor = color;
 	fragPosition = (model * vec4(position, 1)).xyz;
 	fragNormal = normalize((model * vec4(normal, 0)).xyz);
-	fragUV = uv;
+	fragUV = uv[0];
 
 	gl_Position = projection * view * vec4(fragPosition, 1);
 }
