@@ -339,7 +339,7 @@ extern Uniform modelUniform;
 extern Uniform viewUniform;
 extern Uniform projectionUniform;
 
-extern Uniform diffuseTextureUniform;
+extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
 int32 renderModel(
 	const char *name,
@@ -366,10 +366,15 @@ int32 renderModel(
 		return -1;
 	}
 
-	GLint textureIndex = 0;
-	if (setUniform(diffuseTextureUniform, &textureIndex) == -1)
+	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		return -1;
+		if (textureUniforms[i].type != UNIFORM_INVALID)
+		{
+			if (setUniform(textureUniforms[i], &i) == -1)
+			{
+				return -1;
+			}
+		}
 	}
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
@@ -378,19 +383,29 @@ int32 renderModel(
 
 		glBindVertexArray(mesh->vertexArray);
 
-		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		uint8 j;
+		for (j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
 		{
-			glEnableVertexAttribArray(i);
+			glEnableVertexAttribArray(j);
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
 
 		Material *material = &model->materials[i];
-		Texture *texture = getTexture(
-			material->components[MATERIAL_COMPONENT_TYPE_DIFFUSE].texture);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture->id);
+		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
+		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
+
+		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			textures[j] = getTexture(material->components[j].texture);
+
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, textures[j]->id);
+			}
+		}
 
 		glDrawElements(
 			GL_TRIANGLES,
@@ -408,12 +423,18 @@ int32 renderModel(
 			return -1;
 		}
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		for (uint32 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
 		{
-			glDisableVertexAttribArray(i);
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+
+		for (j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glDisableVertexAttribArray(j);
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

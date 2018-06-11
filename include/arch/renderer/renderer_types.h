@@ -75,7 +75,8 @@ typedef struct shader_pipeline_t
 
 typedef enum uniform_type_e
 {
-	UNIFORM_MAT4,
+	UNIFORM_INVALID = -1,
+	UNIFORM_MAT4 = 0,
 	UNIFORM_TEXTURE_2D,
 	UNIFORM_COUNT
 } UniformType;

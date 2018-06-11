@@ -18,4 +18,4 @@ Uniform modelUniform;
 Uniform viewUniform;
 Uniform projectionUniform;
 
-Uniform diffuseTextureUniform;
+Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];

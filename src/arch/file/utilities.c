@@ -1,4 +1,5 @@
 #include "file/utilities.h"
+
 #include "defines.h"
 
 #include <malloc.h>

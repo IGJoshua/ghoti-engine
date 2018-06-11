@@ -60,8 +60,9 @@ GLFWwindow *initWindow(
 int32 freeWindow(
 	GLFWwindow *window)
 {
-	glfwDestroyWindow(window);
+	ilShutDown();
 
+	glfwDestroyWindow(window);
 	glfwTerminate();
 
 	return 0;

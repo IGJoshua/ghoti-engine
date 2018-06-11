@@ -1,7 +1,5 @@
 #include "asset_management/texture.h"
 
-#include "file/utilities.h"
-
 #include <IL/il.h>
 #include <IL/ilu.h>
 
@@ -49,13 +47,19 @@ int32 loadTexture(const char *name)
 		GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
 		GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
 		const GLvoid *textureData = ilGetData();
-		glTexImage2D(
+		glTexStorage2D(
 			GL_TEXTURE_2D,
-			0,
+			1,
 			GL_RGBA8,
 			textureWidth,
-			textureHeight,
+			textureHeight);
+		glTexSubImage2D(
+			GL_TEXTURE_2D,
 			0,
+			0,
+			0,
+			textureWidth,
+			textureHeight,
 			GL_RGBA,
 			GL_UNSIGNED_BYTE,
 			textureData);
