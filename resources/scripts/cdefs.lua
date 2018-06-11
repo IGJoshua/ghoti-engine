@@ -258,4 +258,16 @@ typedef enum glfw_key_e
 } GLFW_KEY;
 
 int32 closeWindow();
+
+typedef enum glfw_mouse_button_e
+{
+  GLFW_MOUSE_BUTTON_1 = 0,
+  GLFW_MOUSE_BUTTON_2 = 1,
+  GLFW_MOUSE_BUTTON_3 = 2,
+  GLFW_MOUSE_BUTTON_4 = 3,
+  GLFW_MOUSE_BUTTON_5 = 4,
+  GLFW_MOUSE_BUTTON_6 = 5,
+  GLFW_MOUSE_BUTTON_7 = 6,
+  GLFW_MOUSE_BUTTON_8 = 7
+} GLFW_MOUSE_BUTTON;
 ]]

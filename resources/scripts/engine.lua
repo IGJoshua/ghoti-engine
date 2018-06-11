@@ -363,4 +363,12 @@ function engine.cleanInput()
 	  value.updated = false
 	end
   end
+  for key, value in pairs(engine.mouse.buttons) do
+	if type(value) == "table" then
+	  value.updated = false
+	end
+  end
+
+  engine.mouse.scroll.x = 0
+  engine.mouse.scroll.y = 0
 end

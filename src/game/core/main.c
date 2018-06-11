@@ -45,7 +45,7 @@ void keyCallback(
 {
 	if (L)
 	{
-		lua_checkstack(L, 3);
+		lua_checkstack(L, 4);
 
 		// Get the keyboard
 		lua_getglobal(L, "engine");
@@ -57,21 +57,6 @@ void keyCallback(
 		// Check if the field is nil
 		lua_pushnumber(L, key);
 		lua_gettable(L, -2);
-		int32 nil = lua_isnil(L, -1);
-		// stack: keyboard nil/keytable
-		if (nil)
-		{
-			lua_pop(L, 1);
-			// stack: keyboard
-
-			// Make a new table at the key
-			lua_pushnumber(L, key);
-			lua_createtable(L, 0, 2);
-			lua_settable(L, -3);
-			// stack: keyboard(with keynum set to table)
-			lua_pushnumber(L, key);
-			lua_gettable(L, -2);
-		}
 		// stack: keyboard keytable
 
 		// Set the correct values in the table
@@ -82,7 +67,7 @@ void keyCallback(
 		// stack: keyboard keytable(with keydown set)
 
 		// The key has just been updated
-		lua_pushboolean(L, 1);
+		lua_pushboolean(L, action == GLFW_PRESS || action == GLFW_RELEASE);
 		// stack: keyboard keytable bool
 		lua_setfield(L, -2, "updated");
 		// stack: keyboard keytable(with updated set)
@@ -93,6 +78,116 @@ void keyCallback(
 	else
 	{
 		printf("No lua state exists, failing to register keypress\n");
+	}
+}
+
+void cursorPositionCallback(
+	GLFWwindow *window,
+	double xpos,
+	double ypos)
+{
+	if (L)
+	{
+		lua_checkstack(L, 3);
+
+		lua_getglobal(L, "engine");
+		lua_getfield(L, -1, "mouse");
+		lua_remove(L, -2);
+		// stack: mouse
+
+		lua_pushnumber(L, xpos);
+		lua_setfield(L, -2, "x");
+
+		lua_pushnumber(L, ypos);
+		lua_setfield(L, -2, "y");
+	}
+	else
+	{
+		printf("No lua state exists, failing to register cursor position\n");
+	}
+}
+
+void mouseButtonCallback(
+	GLFWwindow *window,
+	int button,
+	int action,
+	int mods)
+{
+	if (L)
+	{
+		lua_checkstack(L, 4);
+
+		lua_getglobal(L, "engine");
+		lua_getfield(L, -1, "mouse");
+		lua_remove(L, -2);
+		lua_getfield(L, -1, "buttons");
+		lua_remove(L, -2);
+		// stack: buttons
+
+		++button;
+
+		// Get the proper table
+		lua_pushnumber(L, button);
+		// stack: buttons button_number
+		lua_gettable(L, -2);
+		// stack: buttons button_table/nil
+		if (lua_isnil(L, -1))
+		{
+			lua_pop(L, 1);
+
+			lua_pushnumber(L, button);
+			lua_createtable(L, 0, 2);
+
+			lua_pushboolean(L, 0);
+			lua_setfield(L, -2, "keydown");
+
+			lua_pushboolean(L, 0);
+			lua_setfield(L, -2, "updated");
+
+			lua_settable(L, -3);
+
+			lua_pushnumber(L, button);
+			lua_gettable(L, -2);
+		}
+		// stack: buttons button_table
+
+		lua_pushboolean(L, action == GLFW_PRESS);
+		lua_setfield(L, -2, "keydown");
+
+		lua_pushboolean(L, 1);
+		lua_setfield(L, -2, "updated");
+	}
+	else
+	{
+		printf("No lua state exists, failing to register mouse click\n");
+	}
+}
+
+void mouseScrollCallback(
+	GLFWwindow *window,
+	double xoffset,
+	double yoffset)
+{
+	if (L)
+	{
+		lua_checkstack(L, 3); // TODO: Get a valid size here
+
+		lua_getglobal(L, "engine");
+		lua_getfield(L, -1, "mouse");
+		lua_remove(L, -2);
+		lua_getfield(L, -1, "scroll");
+		lua_remove(L, -2);
+		// stack: scroll
+
+		lua_pushnumber(L, xoffset);
+		lua_setfield(L, -2, "x");
+
+		lua_pushnumber(L, yoffset);
+		lua_setfield(L, -2, "y");
+	}
+	else
+	{
+		printf("No lua state exists, failing to register mouse scroll\n");
 	}
 }
 
@@ -108,6 +203,9 @@ int32 main()
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
 	glfwSetKeyCallback(window, &keyCallback);
+	glfwSetCursorPosCallback(window, &cursorPositionCallback);
+	glfwSetMouseButtonCallback(window, &mouseButtonCallback);
+	glfwSetScrollCallback(window, &mouseScrollCallback);
 
 	glEnable(GL_DEPTH_TEST);
 

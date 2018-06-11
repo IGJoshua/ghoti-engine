@@ -61,7 +61,7 @@ GLFWwindow *initWindow(
 	return window;
 }
 
-int32 closeWindow()
+int32 closeWindow(void)
 {
 	glfwSetWindowShouldClose(wnd, 1);
 	return 0;
