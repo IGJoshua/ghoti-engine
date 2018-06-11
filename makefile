@@ -55,7 +55,7 @@ $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(LIBS)
 
 $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
-	ln -s $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
+	ln -sf $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
 
 .PHONY: arch
 
