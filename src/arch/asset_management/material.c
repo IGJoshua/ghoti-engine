@@ -4,6 +4,7 @@
 #include "file/utilities.h"
 
 #include <malloc.h>
+#include <string.h>
 
 internal const char *getMaterialComponentName(
 	MaterialComponentType materialComponentType);

@@ -1,9 +1,12 @@
 #include "asset_management/texture.h"
 
+#include "file/utilities.h"
+
 #include <IL/il.h>
 #include <IL/ilu.h>
 
 #include <malloc.h>
+#include <string.h>
 
 extern Texture *textures;
 extern uint32 numTextures;
