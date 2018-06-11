@@ -27,6 +27,7 @@ io.write("Created cffi definitions\n")
 engine.keyboard = require("resources/scripts/keyboard")
 engine.mouse = require("resources/scripts/mouse")
 engine.input = require("resources/scripts/input")
+engine.gamepad = require("resources/scripts/gamepad")
 
 local Scene = require("resources/scripts/scene")
 

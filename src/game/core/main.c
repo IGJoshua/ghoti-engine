@@ -191,6 +191,18 @@ void mouseScrollCallback(
 	}
 }
 
+void joystickCallback(int joy, int event)
+{
+	if (L)
+	{
+
+	}
+	else
+	{
+
+	}
+}
+
 int32 main()
 {
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
@@ -206,6 +218,7 @@ int32 main()
 	glfwSetCursorPosCallback(window, &cursorPositionCallback);
 	glfwSetMouseButtonCallback(window, &mouseButtonCallback);
 	glfwSetScrollCallback(window, &mouseScrollCallback);
+	glfwSetJoystickCallback(&joystickCallback);
 
 	glEnable(GL_DEPTH_TEST);
 
