@@ -159,9 +159,9 @@ int32 loadScene(const char *name, Scene **scene)
 		free(componentLimitNames);
 		free(componentLimitNumbers);
 
-		// UUID activeCamera;
-		// fread(activeCamera.bytes, UUID_LENGTH, 1, file);
-		// (*scene)->mainCamera = activeCamera;
+		UUID activeCamera;
+		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
+		(*scene)->mainCamera = activeCamera;
 
 		fclose(file);
 	}
@@ -227,6 +227,7 @@ int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
 			if (file)
 			{
 				fseek(file, UUID_LENGTH + 1, SEEK_CUR);
+
 				uint32 numComponents;
 				fread(&numComponents, sizeof(uint32), 1, file);
 
@@ -262,12 +263,11 @@ int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
 					}
 				}
 
-				(*scene)->numComponentsDefinitions += numComponents;
-
 				for (i = 0; i < numComponents; i++)
 				{
 					ComponentDefinition *componentDefiniton =
-						&(*scene)->componentDefinitions[i];
+						&(*scene)->componentDefinitions[
+							(*scene)->numComponentsDefinitions++];
 
 					componentDefiniton->name = readString(file);
 
