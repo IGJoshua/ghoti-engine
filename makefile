@@ -48,7 +48,7 @@ $(GAMEOBJDIR)/%.o : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
 
 .PHONY: build
 
-build : $(GAMEOBJ) $(BUILDDIR)/$(LIBNAME).so
+build : $(GAMEOBJ) $(LIBNAME).so
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
 
 $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
@@ -59,11 +59,15 @@ $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
 
 .PHONY: arch
 
-arch : $(BUILDDIR)/$(LIBNAME)
+arch : $(LIBNAME).so
 
 .PHONY: clean
 
 clean:
+<<<<<<< HEAD
+=======
+	rm -rf release
+>>>>>>> b982308... Add release target
 	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
@@ -72,8 +76,8 @@ clean:
 
 .PHONY: run
 
-run : build $(LIBNAME).so
-	$(BUILDDIR)/$(PROJ)
+run : build
+	LD_LIBRARY_PATH=. $(BUILDDIR)/$(PROJ)
 
 SUPPRESSIONS = monochrome.supp
 
@@ -84,8 +88,8 @@ leakcheck : build
 
 .PHONY: debug
 
-debug : build $(LIBNAME).so
-	$(CCDB) $(BUILDDIR)/$(PROJ)
+debug : build
+	LD_LIBRARY_PATH=. $(CCDB) $(BUILDDIR)/$(PROJ)
 
 .PHONY: rebuild
 
@@ -94,11 +98,15 @@ rebuild : clean build
 .PHONY: release
 
 release : clean
-	rm -rf release/
 	@make RELEASE=yes
+	rm -r build/obj
 	mkdir release/
 	cp build/* release/
 	cp -r resources/ release/
+	cp -r lualib/ release/
+	echo '#!/bin/bash' > release/run
+	echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run
+	chmod +x release/run
 
 # TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
