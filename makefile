@@ -98,15 +98,13 @@ rebuild : clean build
 .PHONY: release
 
 release : clean
-	@make RELEASE=yes
+	@make RELEASE=yes$(if $(WINDOWS), windows,)
 	rm -r build/obj
 	mkdir release/
 	cp build/* release/
 	cp -r resources/ release/
 	cp -r lualib/ release/
-	echo '#!/bin/bash' > release/run
-	echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run
-	chmod +x release/run
+	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)
 
 # TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
