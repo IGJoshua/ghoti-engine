@@ -26,7 +26,7 @@ GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | so
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-DBFLAGS = -g -D_DEBUG -O0
+DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
@@ -97,8 +97,7 @@ rebuild : clean build
 release : clean
 	@make RELEASE=yes$(if $(WINDOWS), windows,)
 	mkdir release/
-	cp build/* release/
-	rm -r build/obj
+	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	cp -r resources/ release/
 	cp -r lualib/ release/
 	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)

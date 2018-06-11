@@ -10,6 +10,7 @@ function system.init(scene)
   io.write("Main scene init\n")
 
   local model = ffi.new("ModelComponent")
+  model.visible = true
   local orbit = ffi.new("OrbitComponent")
   local transform = ffi.new("TransformComponent")
   local oscillator = ffi.new("OscillatorComponent", {0, 0, 0}, {0.707, 0.707, 0}, 0, 1, 2)
