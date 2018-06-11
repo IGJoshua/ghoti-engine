@@ -84,7 +84,7 @@ leakcheck : build
 
 .PHONY: debug
 
-debug : build
+debug : build $(LIBNAME).so
 	$(CCDB) $(BUILDDIR)/$(PROJ)
 
 .PHONY: rebuild
