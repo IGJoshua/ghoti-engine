@@ -64,10 +64,7 @@ arch : $(LIBNAME).so
 .PHONY: clean
 
 clean:
-<<<<<<< HEAD
-=======
 	rm -rf release
->>>>>>> b982308... Add release target
 	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
