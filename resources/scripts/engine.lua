@@ -182,6 +182,9 @@ function engine.runPhysicsSystems(pScene, dt)
 
 	if physicsSystem.begin then
 	  local err, message = pcall(physicsSystem.begin, scene, dt)
+	  if err == false then
+		io.write(string.format("Error while beginning a system\n%s\n", message))
+	  end
 	end
 
 	if physicsSystem.run then
