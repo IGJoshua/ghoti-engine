@@ -94,12 +94,11 @@ rebuild : clean build
 .PHONY: release
 
 release : clean
+	rm -rf release/
 	@make RELEASE=yes
-
-.PHONY: relrun
-
-relrun : release $(LIBNAME).so
-	$(BUILDDIR)/$(PROJ)
+	mkdir release/
+	cp build/* release/
+	cp -r resources/ release/
 
 # TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
