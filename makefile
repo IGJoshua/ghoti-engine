@@ -81,7 +81,7 @@ SUPPRESSIONS = monochrome.supp
 .PHONY: leakcheck
 
 leakcheck : build
-	valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=. valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 
@@ -96,9 +96,9 @@ rebuild : clean build
 
 release : clean
 	@make RELEASE=yes$(if $(WINDOWS), windows,)
-	rm -r build/obj
 	mkdir release/
 	cp build/* release/
+	rm -r build/obj
 	cp -r resources/ release/
 	cp -r lualib/ release/
 	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)
