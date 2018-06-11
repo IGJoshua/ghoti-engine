@@ -27,7 +27,7 @@ extern Uniform modelUniform;
 extern Uniform viewUniform;
 extern Uniform projectionUniform;
 
-extern Uniform diffuseTextureUniform;
+extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
 internal
 void initRendererSystem(Scene *scene)
@@ -77,11 +77,43 @@ void initRendererSystem(Scene *scene)
 		return;
 	}
 
+	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		textureUniforms[i].type = UNIFORM_INVALID;
+	}
+
 	if (getUniform(
 		pipeline,
 		"diffuseTexture",
 		UNIFORM_TEXTURE_2D,
-		&diffuseTextureUniform) == -1)
+		&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
+	{
+		return;
+	}
+
+	if (getUniform(
+		pipeline,
+		"specularTexture",
+		UNIFORM_TEXTURE_2D,
+		&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
+	{
+		return;
+	}
+
+	if (getUniform(
+		pipeline,
+		"normalTexture",
+		UNIFORM_TEXTURE_2D,
+		&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
+	{
+		return;
+	}
+
+	if (getUniform(
+		pipeline,
+		"emissiveTexture",
+		UNIFORM_TEXTURE_2D,
+		&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
 	{
 		return;
 	}
@@ -182,4 +214,3 @@ System createRendererSystem()
 
 	return renderer;
 }
-

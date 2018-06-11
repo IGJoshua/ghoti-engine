@@ -18,7 +18,7 @@ typedef float real32;
 
 typedef enum { false, true } bool;
 
-#define VSYNC 0
+#define VSYNC 1
 
 #define ASSERTION_FAILED 1
 

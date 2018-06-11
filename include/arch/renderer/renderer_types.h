@@ -3,17 +3,13 @@
 
 #include <GL/glew.h>
 
-#include <kazmath/vec2.h>
-#include <kazmath/vec3.h>
+#include <kazmath/vec4.h>
+
+#define NUM_VERTEX_ATTRIBUTES 5 + MATERIAL_COMPONENT_TYPE_COUNT
 
 typedef struct mesh_t
 {
-	GLuint colorBuffer;
-	GLuint positionBuffer;
-	GLuint normalBuffer;
-	GLuint tangentBuffer;
-	GLuint bitangentBuffer;
-	GLuint uvBuffer;
+	GLuint vertexBuffer;
 	GLuint vertexArray;
 	GLuint indexBuffer;
 	uint32 numIndices;
@@ -26,21 +22,29 @@ typedef enum material_type_e
 	MATERIAL_TYPE_COUNT
 } MaterialType;
 
+typedef enum material_component_type_e
+{
+	INVALID_MATERIAL_COMPONENT_TYPE = -1,
+	MATERIAL_COMPONENT_TYPE_DIFFUSE = 0,
+	MATERIAL_COMPONENT_TYPE_SPECULAR,
+	MATERIAL_COMPONENT_TYPE_NORMAL,
+	MATERIAL_COMPONENT_TYPE_EMISSIVE,
+	MATERIAL_COMPONENT_TYPE_AMBIENT,
+	MATERIAL_COMPONENT_TYPE_COUNT
+} MaterialComponentType;
+
+typedef struct material_component_t
+{
+	char *texture;
+	uint32 uvMap;
+	kmVec4 value;
+} MaterialComponent;
+
 typedef struct material_t
 {
+	char *name;
 	MaterialType type;
-	char *diffuseTexture;
-	char *specularTexture;
-	char *normalMap;
-	char *emissiveMap;
-	kmVec3 diffuseValue;
-	kmVec3 specularValue;
-	kmVec3 ambientValue;
-	kmVec3 emissiveValue;
-	kmVec3 transparentValue;
-	float specularPower;
-	float specularScale;
-	float opacity;
+	MaterialComponent components[MATERIAL_COMPONENT_TYPE_COUNT];
 } Material;
 
 typedef enum shader_type_e
@@ -71,7 +75,8 @@ typedef struct shader_pipeline_t
 
 typedef enum uniform_type_e
 {
-	UNIFORM_MAT4,
+	UNIFORM_INVALID = -1,
+	UNIFORM_MAT4 = 0,
 	UNIFORM_TEXTURE_2D,
 	UNIFORM_COUNT
 } UniformType;
