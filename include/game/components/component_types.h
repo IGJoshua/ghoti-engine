@@ -12,8 +12,8 @@ typedef struct model_component_t
 
 typedef struct transform_component_t
 {
-	kmQuaternion rotation;
 	kmVec3 position;
+	kmQuaternion rotation;
 	kmVec3 scale;
 } TransformComponent;
 

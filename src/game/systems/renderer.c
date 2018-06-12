@@ -136,10 +136,10 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 	}
 
-	// if (!model->visible)
-	// {
-	// 	return;
-	// }
+	if (!model->visible)
+	{
+		return;
+	}
 
 	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(

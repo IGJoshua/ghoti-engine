@@ -139,7 +139,7 @@ int32 loadScene(const char *name, Scene **scene)
 			fread(&componentLimitNumbers[i], sizeof(uint32), 1, file);
 		}
 
-		loadSceneComponentDefinitions(scene, name);
+		loadSceneEntities(scene, name, false);
 
 		for (i = 0; i < numComponentLimits; i++)
 		{
@@ -150,6 +150,8 @@ int32 loadScene(const char *name, Scene **scene)
 				getComponentDefinition(*scene, componentName).size,
 				componentLimitNumbers[i]);
 		}
+
+		loadSceneEntities(scene, name, true);
 
 		for (i = 0; i < numComponentLimits; i++)
 		{
@@ -178,7 +180,7 @@ int32 loadScene(const char *name, Scene **scene)
 
 #define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
 
-int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
+int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 {
 	int32 error = 0;
 
@@ -226,67 +228,85 @@ int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
 
 			if (file)
 			{
-				fseek(file, UUID_LENGTH + 1, SEEK_CUR);
+				UUID uuid;
+				fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
+
+				if (loadData)
+				{
+					sceneRegisterEntity(*scene, uuid);
+				}
 
 				uint32 numComponents;
 				fread(&numComponents, sizeof(uint32), 1, file);
 
-				if ((*scene)->numComponentsDefinitions + numComponents
-					> componentDefinitionsCapacity)
+				if (!loadData)
 				{
-					while (
-						(*scene)->numComponentsDefinitions + numComponents
+					if ((*scene)->numComponentsDefinitions + numComponents
 						> componentDefinitionsCapacity)
 					{
-						componentDefinitionsCapacity +=
-							COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
-					}
+						while (
+							(*scene)->numComponentsDefinitions + numComponents
+							> componentDefinitionsCapacity)
+						{
+							componentDefinitionsCapacity +=
+								COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
+						}
 
-					uint32 previousBufferSize = (*scene)->numComponentsDefinitions
-						* sizeof(ComponentDefinition);
-					uint32 newBufferSize = componentDefinitionsCapacity
-						* sizeof(ComponentDefinition);
+						uint32 previousBufferSize = (*scene)->numComponentsDefinitions
+							* sizeof(ComponentDefinition);
+						uint32 newBufferSize = componentDefinitionsCapacity
+							* sizeof(ComponentDefinition);
 
-					if (previousBufferSize == 0)
-					{
-						(*scene)->componentDefinitions = calloc(newBufferSize, 1);
-					}
-					else
-					{
-						(*scene)->componentDefinitions = realloc(
-							(*scene)->componentDefinitions,
-							newBufferSize);
-						memset(
-							(*scene)->componentDefinitions + previousBufferSize,
-							0,
-							newBufferSize - previousBufferSize);
+						if (previousBufferSize == 0)
+						{
+							(*scene)->componentDefinitions = calloc(newBufferSize, 1);
+						}
+						else
+						{
+							(*scene)->componentDefinitions = realloc(
+								(*scene)->componentDefinitions,
+								newBufferSize);
+							memset(
+								(*scene)->componentDefinitions + previousBufferSize,
+								0,
+								newBufferSize - previousBufferSize);
+						}
 					}
 				}
 
 				for (i = 0; i < numComponents; i++)
 				{
-					ComponentDefinition *componentDefiniton =
-						&(*scene)->componentDefinitions[
-							(*scene)->numComponentsDefinitions++];
+					ComponentDefinition *componentDefinition = malloc(
+						sizeof(ComponentDefinition));
 
-					componentDefiniton->name = readString(file);
+					if (!loadData)
+					{
+						componentDefinition =
+							&(*scene)->componentDefinitions[
+							(*scene)->numComponentsDefinitions++];
+					}
+
+					componentDefinition->name = readString(file);
 
 					fread(
-						&componentDefiniton->numValues,
+						&componentDefinition->numValues,
 						sizeof(uint32),
 						1,
 						file);
 
-					componentDefiniton->values =
-						malloc(componentDefiniton->numValues
+					componentDefinition->values =
+						malloc(componentDefinition->numValues
 						* sizeof(ComponentValueDefinition));
 
-					for (uint32 j = 0; j < componentDefiniton->numValues; j++)
+					for (
+						uint32 j = 0;
+						j < componentDefinition->numValues;
+						j++)
 					{
-						ComponentValueDefinition *componentValueDefiniton =
-							&componentDefiniton->values[j];
+						ComponentValueDefinition *componentValueDefinition =
+							&componentDefinition->values[j];
 
-						componentValueDefiniton->name = readString(file);
+						componentValueDefinition->name = readString(file);
 
 						int8 dataType;
 						fread(
@@ -294,31 +314,46 @@ int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
 							sizeof(int8),
 							1,
 							file);
-						componentValueDefiniton->type = (DataType)dataType;
+						componentValueDefinition->type = (DataType)dataType;
 
-						if (componentValueDefiniton->type == STRING)
+						if (componentValueDefinition->type == STRING)
 						{
 							fread(
-								&componentValueDefiniton->maxStringSize,
+								&componentValueDefinition->maxStringSize,
 								sizeof(uint32),
 								1,
 								file);
 						}
 
 						fread(
-							&componentValueDefiniton->count,
+							&componentValueDefinition->count,
 							sizeof(uint32),
 							1,
 							file);
 					}
 
 					fread(
-						&componentDefiniton->size,
+						&componentDefinition->size,
 						sizeof(uint32),
 						1,
 						file);
 
-					fseek(file, componentDefiniton->size, SEEK_CUR);
+					void *data = malloc(componentDefinition->size);
+					fread(data, componentDefinition->size, 1, file);
+
+					if (loadData)
+					{
+						sceneAddComponentToEntity(
+							*scene,
+							uuid,
+							idFromName(componentDefinition->name),
+							data);
+
+						freeComponentDefinition(componentDefinition);
+						free(componentDefinition);
+					}
+
+					free(data);
 				}
 
 				fclose(file);
@@ -337,40 +372,44 @@ int32 loadSceneComponentDefinitions(Scene **scene, const char *name)
 
 		closedir(dir);
 
-		uint32 numUniqueComponentDefinitions = 0;
-		ComponentDefinition *uniqueComponentDefinitions = malloc(
-			(*scene)->numComponentsDefinitions * sizeof(ComponentDefinition));
-
-		for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
+		if (!loadData)
 		{
-			const char *componentDefinitionName =
-				(*scene)->componentDefinitions[i].name;
+			uint32 numUniqueComponentDefinitions = 0;
+			ComponentDefinition *uniqueComponentDefinitions = malloc(
+				(*scene)->numComponentsDefinitions * sizeof(ComponentDefinition));
 
-			bool unique = true;
-			for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
+			for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
 			{
-				if (!strcmp(
-					componentDefinitionName,
-					uniqueComponentDefinitions[j].name))
+				const char *componentDefinitionName =
+					(*scene)->componentDefinitions[i].name;
+
+				bool unique = true;
+				for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
 				{
-					unique = false;
-					break;
+					if (!strcmp(
+						componentDefinitionName,
+						uniqueComponentDefinitions[j].name))
+					{
+						unique = false;
+						break;
+					}
 				}
+
+				if (unique)
+				{
+					copyComponentDefinition(
+						&uniqueComponentDefinitions[
+							numUniqueComponentDefinitions++],
+						&(*scene)->componentDefinitions[i]);
+				}
+
+				freeComponentDefinition(&(*scene)->componentDefinitions[i]);
 			}
 
-			if (unique)
-			{
-				copyComponentDefinition(
-					&uniqueComponentDefinitions[
-						numUniqueComponentDefinitions++],
-					&(*scene)->componentDefinitions[i]);
-			}
-
-			freeComponentDefinition(&(*scene)->componentDefinitions[i]);
+			free((*scene)->componentDefinitions);
+			(*scene)->componentDefinitions = uniqueComponentDefinitions;
+			(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
 		}
-
-		free((*scene)->componentDefinitions);
-		(*scene)->componentDefinitions = uniqueComponentDefinitions;
 	}
 	else
 	{

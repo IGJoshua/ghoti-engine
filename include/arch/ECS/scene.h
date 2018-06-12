@@ -10,7 +10,7 @@
 
 Scene *createScene(void);
 int32 loadScene(const char *name, Scene **scene);
-int32 loadSceneComponentDefinitions(Scene **scene, const char *name);
+int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 void freeScene(Scene **scene);
 
 ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);

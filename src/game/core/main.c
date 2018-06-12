@@ -202,9 +202,6 @@ int32 main()
 		glfwPollEvents();
 	}
 
-	freeModel("teapot");
-	freeModel("test");
-
 	if (L)
 	{
 		sceneShutdownLua(&L, scene);
