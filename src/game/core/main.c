@@ -60,6 +60,19 @@ void keyCallback(
 		// Check if the field is nil
 		lua_pushnumber(L, key);
 		lua_gettable(L, -2);
+		// stack: keyboard keytable/nil
+		if (lua_isnil(L, -1))
+		{
+			lua_pop(L, 1);
+
+			lua_pushnumber(L, key);
+			lua_createtable(L, 0, 2);
+
+			lua_settable(L, -3);
+
+			lua_pushnumber(L, key);
+			lua_gettable(L, -2);
+		}
 		// stack: keyboard keytable
 
 		// Set the correct values in the table
