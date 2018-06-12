@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1
+_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1 SDL2
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -105,7 +105,7 @@ release : clean
 # TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))

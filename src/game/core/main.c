@@ -29,6 +29,9 @@
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_gamecontroller.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
@@ -205,6 +208,12 @@ void joystickCallback(int joy, int event)
 
 int32 main()
 {
+	if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
+	{
+		printf("Failed to initialize SDL2.\n%s\n", SDL_GetError());
+		return -1;
+	}
+
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
 	if (!window)
@@ -379,6 +388,8 @@ int32 main()
 	}
 
 	freeWindow(window);
+
+	SDL_Quit();
 
 	return 0;
 }
