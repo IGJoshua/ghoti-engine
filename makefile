@@ -81,7 +81,7 @@ SUPPRESSIONS = monochrome.supp
 .PHONY: leakcheck
 
 leakcheck : build
-	LD_LIBRARY_PATH=. valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=. valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 

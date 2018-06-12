@@ -198,7 +198,11 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 		struct dirent *dirEntry = readdir(dir);
 
-		(*scene)->numComponentsDefinitions = 0;
+		if (!loadData)
+		{
+			(*scene)->numComponentsDefinitions = 0;
+		}
+
 		uint32 componentDefinitionsCapacity = 0;
 
 		while (dirEntry)
@@ -252,14 +256,16 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 								COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
 						}
 
-						uint32 previousBufferSize = (*scene)->numComponentsDefinitions
+						uint32 previousBufferSize =
+							(*scene)->numComponentsDefinitions
 							* sizeof(ComponentDefinition);
 						uint32 newBufferSize = componentDefinitionsCapacity
 							* sizeof(ComponentDefinition);
 
 						if (previousBufferSize == 0)
 						{
-							(*scene)->componentDefinitions = calloc(newBufferSize, 1);
+							(*scene)->componentDefinitions =
+								calloc(newBufferSize, 1);
 						}
 						else
 						{
@@ -276,11 +282,15 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 				for (i = 0; i < numComponents; i++)
 				{
-					ComponentDefinition *componentDefinition = malloc(
+					ComponentDefinition *componentDefinition = calloc(
+						1,
 						sizeof(ComponentDefinition));
 
 					if (!loadData)
 					{
+						freeComponentDefinition(componentDefinition);
+						free(componentDefinition);
+
 						componentDefinition =
 							&(*scene)->componentDefinitions[
 							(*scene)->numComponentsDefinitions++];
@@ -295,8 +305,8 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 						file);
 
 					componentDefinition->values =
-						malloc(componentDefinition->numValues
-						* sizeof(ComponentValueDefinition));
+						calloc(componentDefinition->numValues,
+							sizeof(ComponentValueDefinition));
 
 					for (
 						uint32 j = 0;
@@ -375,19 +385,20 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 		if (!loadData)
 		{
 			uint32 numUniqueComponentDefinitions = 0;
-			ComponentDefinition *uniqueComponentDefinitions = malloc(
-				(*scene)->numComponentsDefinitions * sizeof(ComponentDefinition));
+			ComponentDefinition *uniqueComponentDefinitions = calloc(
+				(*scene)->numComponentsDefinitions,
+				sizeof(ComponentDefinition));
 
 			for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
 			{
-				const char *componentDefinitionName =
-					(*scene)->componentDefinitions[i].name;
+				ComponentDefinition *componentDefinition =
+					&(*scene)->componentDefinitions[i];
 
 				bool unique = true;
 				for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
 				{
 					if (!strcmp(
-						componentDefinitionName,
+						componentDefinition->name,
 						uniqueComponentDefinitions[j].name))
 					{
 						unique = false;
@@ -400,13 +411,17 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 					copyComponentDefinition(
 						&uniqueComponentDefinitions[
 							numUniqueComponentDefinitions++],
-						&(*scene)->componentDefinitions[i]);
+						componentDefinition);
 				}
 
-				freeComponentDefinition(&(*scene)->componentDefinitions[i]);
+				freeComponentDefinition(componentDefinition);
 			}
 
 			free((*scene)->componentDefinitions);
+			uniqueComponentDefinitions = realloc(
+				uniqueComponentDefinitions,
+				numUniqueComponentDefinitions * sizeof(ComponentDefinition));
+
 			(*scene)->componentDefinitions = uniqueComponentDefinitions;
 			(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
 		}
@@ -493,21 +508,22 @@ void copyComponentDefinition(
 	ComponentDefinition *dest,
 	ComponentDefinition *src)
 {
-	memcpy(dest, src, sizeof(ComponentDefinition));
-	dest->values = malloc(sizeof(ComponentValueDefinition) * src->numValues);
-	memcpy(
-		dest->values,
-		src->values,
-		sizeof(ComponentValueDefinition) * src->numValues);
+	dest->name = malloc(strlen(src->name) + 1);
+	strcpy(dest->name, src->name);
 
+	dest->size = src->size;
+	dest->numValues = src->numValues;
+
+	dest->values = malloc(src->numValues * sizeof(ComponentValueDefinition));
 	for (uint32 i = 0; i < src->numValues; i++)
 	{
 		dest->values[i].name = malloc(strlen(src->values[i].name) + 1);
 		strcpy(dest->values[i].name, src->values[i].name);
-	}
 
-	dest->name = malloc(strlen(src->name) + 1);
-	strcpy(dest->name, src->name);
+		dest->values[i].type = src->values[i].type;
+		dest->values[i].maxStringSize = src->values[i].maxStringSize;
+		dest->values[i].count = src->values[i].count;
+	}
 }
 
 void freeComponentDefinition(ComponentDefinition *componentDefinition)
