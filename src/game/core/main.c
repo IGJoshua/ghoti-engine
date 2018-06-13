@@ -38,6 +38,7 @@
 #include <string.h>
 
 static lua_State *L;
+static SDL_GameController *controller;
 
 void keyCallback(
 	GLFWwindow *window,
@@ -186,7 +187,7 @@ void mouseScrollCallback(
 {
 	if (L)
 	{
-		lua_checkstack(L, 3); // TODO: Get a valid size here
+		lua_checkstack(L, 3);
 
 		lua_getglobal(L, "engine");
 		lua_getfield(L, -1, "mouse");
@@ -207,15 +208,295 @@ void mouseScrollCallback(
 	}
 }
 
-void joystickCallback(int joy, int event)
+void handleSDLEvents()
 {
-	if (L)
-	{
+	SDL_Event event;
 
-	}
-	else
+	while (SDL_PollEvent(&event))
 	{
+		if (!L)
+		{
+			continue;
+		}
 
+		switch (event.type)
+		{
+		case SDL_CONTROLLERAXISMOTION:
+		{
+			if (event.cdevice.which == 0)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "gamepad");
+				lua_remove(L, -2);
+
+				if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT
+					|| event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+				{
+					if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+					{
+						lua_getfield(L, -1, "lefttrigger");
+					}
+					else
+					{
+						lua_getfield(L, -1, "righttrigger");
+					}
+
+					// stack: gamepad trigger
+
+					lua_getfield(L, -1, "deadzone");
+					real64 deadzone = lua_tonumber(L, -1);
+					lua_pop(L, 1);
+
+					if (event.caxis.value < -SDL_MAX_SINT16 * deadzone
+						|| event.caxis.value > SDL_MAX_SINT16 * deadzone)
+					{
+						lua_pushnumber(
+							L,
+							(real64)event.caxis.value / (real64)SDL_MAX_SINT16);
+						lua_setfield(L, -2, "value");
+					}
+					else
+					{
+						lua_pushnumber(L, 0);
+						lua_setfield(L, -2, "value");
+					}
+
+					lua_pop(L, 1);
+				}
+				else
+				{
+					// TODO: Implement a proper dead zone
+					switch (event.caxis.axis)
+					{
+					case SDL_CONTROLLER_AXIS_LEFTX:
+					case SDL_CONTROLLER_AXIS_LEFTY:
+					{
+						lua_getfield(L, -1, "leftstick");
+					} break;
+					case SDL_CONTROLLER_AXIS_RIGHTX:
+					case SDL_CONTROLLER_AXIS_RIGHTY:
+					{
+						lua_getfield(L, -1, "rightstick");
+					} break;
+					}
+
+					// stack: gamepad stick
+
+					// Check deadzone type
+					lua_getfield(L, -1, "deadzone");
+
+					lua_getfield(L, -1, "type");
+					bool circularDeadzone = false;
+
+					{
+						const char *str = lua_tostring(L, -1);
+						if (!strcmp(str, "circular"))
+						{
+							circularDeadzone = true;
+						}
+					}
+
+					lua_pop(L, 1);
+
+					lua_getfield(L, -1, "value");
+					real64 deadzone = lua_tonumber(L, -1);
+					lua_pop(L, 2);
+
+					// stack: gamepad stick
+
+					lua_pushnumber(
+						L,
+						(real64)event.caxis.value
+						/ (real64)SDL_MAX_SINT16);
+
+					switch (event.caxis.axis)
+					{
+					case SDL_CONTROLLER_AXIS_LEFTX:
+					case SDL_CONTROLLER_AXIS_RIGHTX:
+					{
+						lua_setfield(L, -2, "rawx");
+					} break;
+					case SDL_CONTROLLER_AXIS_LEFTY:
+					case SDL_CONTROLLER_AXIS_RIGHTY:
+					{
+						lua_setfield(L, -2, "rawy");
+					} break;
+					}
+
+					if (circularDeadzone)
+					{
+						// Get the angle of the thumbstick
+						kmVec2 direction;
+
+						switch (event.caxis.axis)
+						{
+						case SDL_CONTROLLER_AXIS_LEFTX:
+						case SDL_CONTROLLER_AXIS_RIGHTX:
+						{
+							lua_getfield(L, -1, "rawy");
+							direction.y = lua_tonumber(L, -1);
+							lua_pop(L, 1);
+
+							direction.x = (real32)event.caxis.value
+								/ (real32)SDL_MAX_SINT16;
+						} break;
+						case SDL_CONTROLLER_AXIS_LEFTY:
+						case SDL_CONTROLLER_AXIS_RIGHTY:
+						{
+							lua_getfield(L, -1, "rawx");
+							direction.x = lua_tonumber(L, -1);
+							lua_pop(L, 1);
+
+							direction.y = (real32)event.caxis.value
+								/ (real32)SDL_MAX_SINT16;
+						} break;
+						}
+
+						if (kmVec2Length(&direction) > deadzone)
+						{
+							lua_pushnumber(L, direction.x);
+							lua_setfield(L, -2, "x");
+							lua_pushnumber(L, direction.y);
+							lua_setfield(L, -2, "y");
+						}
+						else
+						{
+							lua_pushnumber(L, 0);
+							lua_setfield(L, -2, "x");
+							lua_pushnumber(L, 0);
+							lua_setfield(L, -2, "y");
+						}
+					}
+					else
+					{
+						if (event.caxis.value < -SDL_MAX_SINT16 * deadzone
+							|| event.caxis.value > SDL_MAX_SINT16 * deadzone)
+						{
+							lua_pushnumber(
+								L,
+								(real64)event.caxis.value
+								/ (real64)SDL_MAX_SINT16);
+						}
+						else
+						{
+							lua_pushnumber(
+								L,
+								0);
+						}
+						switch (event.caxis.axis)
+						{
+						case SDL_CONTROLLER_AXIS_LEFTX:
+						case SDL_CONTROLLER_AXIS_RIGHTX:
+						{
+							lua_setfield(L, -2, "x");
+						} break;
+						case SDL_CONTROLLER_AXIS_LEFTY:
+						case SDL_CONTROLLER_AXIS_RIGHTY:
+						{
+							lua_setfield(L, -2, "y");
+						} break;
+						}
+					}
+
+					lua_pop(L, 1);
+				}
+
+				lua_pop(L, 1);
+			}
+
+		} break;
+		case SDL_CONTROLLERBUTTONDOWN:
+		case SDL_CONTROLLERBUTTONUP:
+		{
+			printf("Controller button! Button: %d; Value: %d\n",
+				   event.cbutton.button,
+				   event.cbutton.state);
+
+			if (event.cdevice.which == 0)
+			{
+				switch (event.cbutton.button)
+				{
+				case SDL_CONTROLLER_BUTTON_A:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_B:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_X:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_Y:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_START:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_BACK:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_GUIDE:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_DPAD_UP:
+				{
+
+				} break;
+				case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+				{
+
+				} break;
+				}
+			}
+		} break;
+		case SDL_CONTROLLERDEVICEADDED:
+		{
+			if (event.cdevice.which == 0)
+			{
+				controller = SDL_GameControllerOpen(0);
+			}
+		} break;
+		case SDL_CONTROLLERDEVICEREMOVED:
+		{
+			if (event.cdevice.which == 0 && controller)
+			{
+				SDL_GameControllerClose(controller);
+			}
+		} break;
+		default:
+		{
+		} break;
+		}
 	}
 }
 
@@ -240,7 +521,10 @@ int32 main()
 	glfwSetCursorPosCallback(window, &cursorPositionCallback);
 	glfwSetMouseButtonCallback(window, &mouseButtonCallback);
 	glfwSetScrollCallback(window, &mouseScrollCallback);
-	glfwSetJoystickCallback(&joystickCallback);
+
+	SDL_JoystickEventState(SDL_ENABLE);
+	SDL_GameControllerEventState(SDL_ENABLE);
+	controller = SDL_GameControllerOpen(0);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -345,6 +629,7 @@ int32 main()
 			accumulator -= dt;
 
 			glfwPollEvents();
+			handleSDLEvents();
 		}
 
 		const real64 alpha = accumulator / dt;

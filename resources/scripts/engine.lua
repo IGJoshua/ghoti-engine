@@ -372,4 +372,12 @@ function engine.cleanInput()
 
   engine.mouse.scroll.x = 0
   engine.mouse.scroll.y = 0
+
+  for name, button in pairs(engine.gamepad.buttons) do
+	button.updated = false
+  end
+
+  for name, dpad in pairs(engine.gamepad.dpad) do
+	dpad.updated = false
+  end
 end
