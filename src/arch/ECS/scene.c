@@ -53,6 +53,8 @@ int32 loadScene(const char *name, Scene **scene)
 	char *sceneFilename = getFullFilename(name, "scene", sceneFolder);
 	free(sceneFolder);
 
+	printf("Loading scene (%s)...\n", name);
+
 	FILE *file = fopen(sceneFilename, "rb");
 
 	if (file)
@@ -174,6 +176,11 @@ int32 loadScene(const char *name, Scene **scene)
 	}
 
 	free(sceneFilename);
+
+	if (error != -1)
+	{
+		printf("Successfully loaded scene (%s)\n", name);
+	}
 
 	return error;
 }
