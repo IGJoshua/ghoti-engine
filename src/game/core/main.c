@@ -219,16 +219,16 @@ void handleSDLEvents()
 			continue;
 		}
 
-		switch (event.type)
+		if (event.cdevice.which == 0)
 		{
-		case SDL_CONTROLLERAXISMOTION:
-		{
-			if (event.cdevice.which == 0)
-			{
-				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "gamepad");
-				lua_remove(L, -2);
+			lua_getglobal(L, "engine");
+			lua_getfield(L, -1, "gamepad");
+			lua_remove(L, -2);
 
+			switch (event.type)
+			{
+			case SDL_CONTROLLERAXISMOTION:
+			{
 				if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT
 					|| event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
 				{
@@ -400,102 +400,129 @@ void handleSDLEvents()
 
 					lua_pop(L, 1);
 				}
-
-				lua_pop(L, 1);
-			}
-
-		} break;
-		case SDL_CONTROLLERBUTTONDOWN:
-		case SDL_CONTROLLERBUTTONUP:
-		{
-			printf("Controller button! Button: %d; Value: %d\n",
-				   event.cbutton.button,
-				   event.cbutton.state);
-
-			if (event.cdevice.which == 0)
+			} break;
+			case SDL_CONTROLLERBUTTONDOWN:
+			case SDL_CONTROLLERBUTTONUP:
 			{
 				switch (event.cbutton.button)
 				{
 				case SDL_CONTROLLER_BUTTON_A:
+				case SDL_CONTROLLER_BUTTON_B:
+				case SDL_CONTROLLER_BUTTON_X:
+				case SDL_CONTROLLER_BUTTON_Y:
+				case SDL_CONTROLLER_BUTTON_START:
+				case SDL_CONTROLLER_BUTTON_BACK:
+				case SDL_CONTROLLER_BUTTON_GUIDE:
+				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+				case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
 				{
+					lua_getfield(L, -1, "buttons");
+				} break;
+				case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+				case SDL_CONTROLLER_BUTTON_DPAD_UP:
+				case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+				{
+					lua_getfield(L, -1, "dpad");
+				} break;
+				}
 
+				switch (event.cbutton.button)
+				{
+				case SDL_CONTROLLER_BUTTON_A:
+				{
+					lua_getfield(L, -1, "a");
 				} break;
 				case SDL_CONTROLLER_BUTTON_B:
 				{
-
+					lua_getfield(L, -1, "b");
 				} break;
 				case SDL_CONTROLLER_BUTTON_X:
 				{
-
+					lua_getfield(L, -1, "x");
 				} break;
 				case SDL_CONTROLLER_BUTTON_Y:
 				{
-
+					lua_getfield(L, -1, "y");
 				} break;
 				case SDL_CONTROLLER_BUTTON_START:
 				{
-
+					lua_getfield(L, -1, "start");
 				} break;
 				case SDL_CONTROLLER_BUTTON_BACK:
 				{
-
+					lua_getfield(L, -1, "back");
 				} break;
 				case SDL_CONTROLLER_BUTTON_GUIDE:
 				{
-
+					lua_getfield(L, -1, "guide");
 				} break;
 				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 				{
-
+					lua_getfield(L, -1, "leftbumper");
 				} break;
 				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 				{
-
+					lua_getfield(L, -1, "rightbumper");
 				} break;
 				case SDL_CONTROLLER_BUTTON_LEFTSTICK:
 				{
-
+					lua_getfield(L, -1, "leftstick");
 				} break;
 				case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
 				{
-
+					lua_getfield(L, -1, "rightstick");
 				} break;
 				case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
 				{
-
+					lua_getfield(L, -1, "down");
 				} break;
 				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
 				{
-
+					lua_getfield(L, -1, "right");
 				} break;
 				case SDL_CONTROLLER_BUTTON_DPAD_UP:
 				{
-
+					lua_getfield(L, -1, "up");
 				} break;
 				case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
 				{
-
+					lua_getfield(L, -1, "left");
 				} break;
 				}
-			}
-		} break;
-		case SDL_CONTROLLERDEVICEADDED:
-		{
-			if (event.cdevice.which == 0)
+
+				lua_remove(L, -2);
+
+				lua_pushboolean(L, event.cbutton.state);
+				lua_setfield(L, -2, "keydown");
+
+				lua_pushboolean(L, 1);
+				lua_setfield(L, -2, "updated");
+
+				lua_pop(L, 1);
+			} break;
+			case SDL_CONTROLLERDEVICEADDED:
 			{
-				controller = SDL_GameControllerOpen(0);
-			}
-		} break;
-		case SDL_CONTROLLERDEVICEREMOVED:
-		{
-			if (event.cdevice.which == 0 && controller)
+				if (event.cdevice.which == 0)
+				{
+					controller = SDL_GameControllerOpen(0);
+				}
+			} break;
+			case SDL_CONTROLLERDEVICEREMOVED:
 			{
-				SDL_GameControllerClose(controller);
+				if (event.cdevice.which == 0 && controller)
+				{
+					SDL_GameControllerClose(controller);
+				}
+			} break;
+			default:
+			{
+			} break;
 			}
-		} break;
-		default:
-		{
-		} break;
+
+			lua_pop(L, 1);
 		}
 	}
 }

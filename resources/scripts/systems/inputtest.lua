@@ -41,6 +41,10 @@ function system.begin(scene, dt)
   if gamepad.buttons.guide.keydown then
 	engine.C.closeWindow()
   end
+
+  if gamepad.buttons.x.updated and gamepad.buttons.x.keydown then
+	io.write("Pressed X\n")
+  end
 end
 
 return system

@@ -31,7 +31,7 @@ end
 
 gamepad.leftstick = {}
 gamepad.leftstick.deadzone = {}
-gamepad.leftstick.deadzone.value = 0.1
+gamepad.leftstick.deadzone.value = 0.25
 gamepad.leftstick.deadzone.type = "square"
 gamepad.leftstick.x = 0
 gamepad.leftstick.y = 0
@@ -40,7 +40,7 @@ gamepad.leftstick.rawy = 0
 
 gamepad.rightstick = {}
 gamepad.rightstick.deadzone = {}
-gamepad.rightstick.deadzone.value = 0.1
+gamepad.rightstick.deadzone.value = 0.25
 gamepad.rightstick.deadzone.type = "circular"
 gamepad.rightstick.x = 0
 gamepad.rightstick.y = 0
