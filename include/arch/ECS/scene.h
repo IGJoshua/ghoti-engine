@@ -19,6 +19,12 @@ void copyComponentDefinition(
 	ComponentDefinition *src);
 void freeComponentDefinition(ComponentDefinition *componentDefinition);
 
+uint32 getDataTypeSize(DataType type);
+char* getDataTypeString(
+	const ComponentValueDefinition *componentValueDefinition);
+
+void exportEntity(const Scene *scene, UUID entity);
+
 void sceneAddRenderFrameSystem(
 	Scene *scene,
 	System system);

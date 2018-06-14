@@ -15,7 +15,7 @@ local C = engine.C
 io.write("Loaded monochrome library\n")
 
 engine.kazmath = ffi.load(ffi.os == "Windows"
-							and "winlib/libkazmath.a"
+							and "./libkazmath.a"
 							or "lualib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
