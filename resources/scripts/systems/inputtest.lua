@@ -1,48 +1,46 @@
 local system = {}
 
+local input = engine.input
 local keyboard = engine.keyboard
 local mouse = engine.mouse
 local gamepad = engine.gamepad
 
-function system.begin(scene, dt)
-  if keyboard.A.updated then
-	io.write("Key event on A!\n")
-	if keyboard.A.keydown then
-	  io.write("Keydown!\n")
-	else
-	  io.write("Keyup!\n")
-	end
-  end
+function system.init(scene)
+  input:register("close", input.BUTTON(keyboard.ESCAPE, gamepad.buttons.guide))
+  input:register("mouseclick", input.BUTTON(mouse.buttons[1]))
+  input:register("attack", input.BUTTON(nil, gamepad.buttons.x))
+  input:register("scroll", input.AXIS(nil, nil, mouse.scroll.yaxis))
+  input:register("trigger", input.AXIS(nil, nil, gamepad.lefttrigger))
+  input:register("horizontal", input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
+  input:register("horizontallook", input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
+end
 
-  if keyboard.ESCAPE.keydown then
+function system.begin(scene, dt)
+  if input.close.keydown then
 	engine.C.closeWindow()
   end
 
-  if mouse.buttons[1].updated and mouse.buttons[1].keydown then
+  if input.mouseclick.updated and input.mouseclick.keydown then
 	io.write("Mouse click!\n")
   end
 
-  if mouse.scroll.y ~= 0 then
-	io.write(string.format("Mouse scrolled! %d\n", mouse.scroll.y))
+  if input.scroll.value ~= 0 then
+	io.write(string.format("Mouse scrolled! %s\n", input.scroll.value))
   end
 
-  if gamepad.lefttrigger.value ~= 0 then
-	io.write(string.format("Left trigger value: %f\n", gamepad.lefttrigger.value))
+  if input.trigger.value ~= 0 then
+	io.write(string.format("Left trigger value: %f\n", input.trigger.value))
   end
 
-  if gamepad.leftstick.x ~= 0 then
-	io.write(string.format("Left stick x value: %f\n", gamepad.leftstick.x))
+  if input.horizontal.value ~= 0 then
+	io.write(string.format("Left stick x value: %f\n", input.horizontal.value))
   end
 
-  if gamepad.rightstick.x ~= 0 then
-	io.write(string.format("Right stick x value: %f\n", gamepad.rightstick.x))
+  if input.horizontallook.value ~= 0 then
+	io.write(string.format("Right stick x value: %f\n", input.horizontallook.value))
   end
 
-  if gamepad.buttons.guide.keydown then
-	engine.C.closeWindow()
-  end
-
-  if gamepad.buttons.x.updated and gamepad.buttons.x.keydown then
+  if input.attack.updated and input.attack.keydown then
 	io.write("Pressed X\n")
   end
 end

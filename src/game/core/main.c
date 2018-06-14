@@ -196,10 +196,18 @@ void mouseScrollCallback(
 		lua_remove(L, -2);
 		// stack: scroll
 
-		lua_pushnumber(L, xoffset);
+		lua_getfield(L, -1, "x");
+		double x = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_pushnumber(L, xoffset * 0.1 + x);
 		lua_setfield(L, -2, "x");
 
-		lua_pushnumber(L, yoffset);
+		lua_getfield(L, -1, "y");
+		double y = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_pushnumber(L, yoffset * 0.1 + y);
 		lua_setfield(L, -2, "y");
 	}
 	else

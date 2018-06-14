@@ -24,9 +24,10 @@ require("resources/scripts/cdefs")
 
 io.write("Created cffi definitions\n")
 
+engine.input = require("resources/scripts/input")
+
 engine.keyboard = require("resources/scripts/keyboard")
 engine.mouse = require("resources/scripts/mouse")
-engine.input = require("resources/scripts/input")
 engine.gamepad = require("resources/scripts/gamepad")
 
 local Scene = require("resources/scripts/scene")
@@ -35,7 +36,7 @@ io.write("Required scene\n")
 
 engine.components = require("resources/scripts/components")
 
--- TODO: iterate over every file in resources/scripts/components/ and require them
+-- iterate over every file in resources/scripts/components/ and require them
 local testFile = io.popen(ffi.os == "Windows" and 'dir /b resources\\scripts\\components' or 'find resources/scripts/components -name "*.lua"')
 for line in testFile:lines() do
   if ffi.os == "Windows" then
@@ -49,7 +50,7 @@ engine.scenes = {}
 function engine.initScene(pScene)
   local scene = Scene:new(pScene)
 
-  -- TODO: Register all lua components into the scene
+  -- Register all lua components into the scene
   for name, component in pairs(engine.components) do
 	-- If the component does not exist in the scene
 	if type(component) == 'table' then

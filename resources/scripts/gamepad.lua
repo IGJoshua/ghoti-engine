@@ -47,6 +47,25 @@ gamepad.rightstick.y = 0
 gamepad.rightstick.rawx = 0
 gamepad.rightstick.rawy = 0
 
+gamepad.leftstick.xaxis = {}
+gamepad.leftstick.xaxis.__axisname = "x"
+gamepad.leftstick.xaxis.__container = gamepad.leftstick
+gamepad.leftstick.yaxis = {}
+gamepad.leftstick.yaxis.__axisname = "y"
+gamepad.leftstick.yaxis.__container = gamepad.leftstick
+
+gamepad.rightstick.xaxis = {}
+gamepad.rightstick.xaxis.__axisname = "x"
+gamepad.rightstick.xaxis.__container = gamepad.rightstick
+gamepad.rightstick.yaxis = {}
+gamepad.rightstick.yaxis.__axisname = "y"
+gamepad.rightstick.yaxis.__container = gamepad.rightstick
+
+setmetatable(gamepad.leftstick.xaxis, engine.input.axismt)
+setmetatable(gamepad.leftstick.yaxis, engine.input.axismt)
+setmetatable(gamepad.rightstick.xaxis, engine.input.axismt)
+setmetatable(gamepad.rightstick.yaxis, engine.input.axismt)
+
 gamepad.lefttrigger = {}
 gamepad.lefttrigger.deadzone = 0.1
 gamepad.lefttrigger.value = 0
