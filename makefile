@@ -6,7 +6,6 @@ IDIRS = include/arch include/game vendor
 SRCDIR = src
 ARCHDIR = $(SRCDIR)/arch
 GAMEDIR = $(SRCDIR)/game
-VENDORDIR = vendor
 
 BUILDDIR = build
 OBJDIR = $(BUILDDIR)/obj
