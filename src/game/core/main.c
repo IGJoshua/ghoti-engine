@@ -513,6 +513,8 @@ void handleSDLEvents()
 			} break;
 			case SDL_CONTROLLERDEVICEADDED:
 			{
+				printf("Controller connected!\n");
+
 				if (event.cdevice.which == 0)
 				{
 					controller = SDL_GameControllerOpen(0);
@@ -520,9 +522,12 @@ void handleSDLEvents()
 			} break;
 			case SDL_CONTROLLERDEVICEREMOVED:
 			{
+				printf("Controller disconnected!\n");
+
 				if (event.cdevice.which == 0 && controller)
 				{
 					SDL_GameControllerClose(controller);
+					controller = 0;
 				}
 			} break;
 			default:
@@ -569,7 +574,8 @@ int32 main()
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
+	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
+		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
 		printf("Lua Error: %s\n", lua_tostring(L, -1));
@@ -680,7 +686,10 @@ int32 main()
 
 		real32 aspectRatio = (real32)width / (real32)height;
 
-		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, idFromName("camera"));
+		CameraComponent *cam = sceneGetComponentFromEntity(
+			scene,
+			scene->mainCamera,
+			idFromName("camera"));
 		if (cam)
 		{
 			cam->aspectRatio = aspectRatio;
@@ -721,6 +730,12 @@ int32 main()
 	}
 
 	freeWindow(window);
+
+	if (controller)
+	{
+		SDL_GameControllerClose(controller);
+		controller = 0;
+	}
 
 	SDL_Quit();
 
