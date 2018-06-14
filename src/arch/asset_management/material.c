@@ -36,7 +36,7 @@ int32 loadMaterial(Material *material, FILE *file)
 		printf("Loading %s material component...\n", materialComponentName);
 
 		MaterialComponent *materialComponent =
-			&material->components[materialComponentType];
+			&material->components[(uint32)materialComponentType];
 
 		switch ((MaterialComponentType)materialComponentType)
 		{

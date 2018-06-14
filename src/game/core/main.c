@@ -1,7 +1,6 @@
 #include "defines.h"
 #include "core/window.h"
 
-#include "asset_management/scene.h"
 #include "asset_management/model.h"
 
 #include "renderer/renderer_types.h"
@@ -591,22 +590,22 @@ int32 main()
 	}
 
 	// TODO: Setup basic component state
-	Scene *scene = createScene();
+	Scene *scene;
+	if (loadScene("scene_1", &scene) == -1)
+	{
+		return -1;
+	}
 
 	// Add component types
 
 	// Add systems
 	System rendererSystem = createRendererSystem();
-
 	sceneAddRenderFrameSystem(scene, rendererSystem);
 
 	// Create entities
 
 	// State previous
 	// State next
-
-	// TODO: Make this thing work
-  	//loadScene("scene_1", &scene);
 
 	sceneInitSystems(scene);
 	sceneInitLua(&L, scene);
@@ -677,7 +676,7 @@ int32 main()
 			handleSDLEvents();
 		}
 
-		const real64 alpha = accumulator / dt;
+		// const real64 alpha = accumulator / dt;
 
 		// Lerp state between previous and next
 

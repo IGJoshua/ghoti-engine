@@ -13,6 +13,4 @@ io.write("Defined Oscillator component for FFI\n")
 
 local component = engine.components:register("oscillator", "OscillatorComponent")
 
-component.numEntries = 4
-
 io.write("Registered Oscillator component\n")

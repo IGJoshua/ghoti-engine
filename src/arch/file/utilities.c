@@ -17,12 +17,26 @@ char* getFullFilename(
 	const char *extension,
 	const char *folder)
 {
+	uint8 numExtraCharacters = 2;
+	if (extension)
+	{
+		numExtraCharacters = strlen(extension) + 3;
+	}
+
 	char *fullFilename = malloc(
 		strlen(folder) +
 		strlen(filename) +
-		strlen(extension) +
-		3);
-	sprintf(fullFilename, "%s/%s.%s", folder, filename, extension);
+		numExtraCharacters);
+
+	if (extension)
+	{
+		sprintf(fullFilename, "%s/%s.%s", folder, filename, extension);
+	}
+	else
+	{
+		sprintf(fullFilename, "%s/%s", folder, filename);
+	}
+
 	return fullFilename;
 }
 

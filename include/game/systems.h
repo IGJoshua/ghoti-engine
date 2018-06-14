@@ -3,4 +3,4 @@
 
 #include "ECS/ecs_types.h"
 
-System createRendererSystem();
+System createRendererSystem(void);

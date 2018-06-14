@@ -26,7 +26,7 @@ GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | so
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-DBFLAGS = -g -D_DEBUG -O0
+DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
@@ -81,7 +81,7 @@ SUPPRESSIONS = monochrome.supp
 .PHONY: leakcheck
 
 leakcheck : build
-	LD_LIBRARY_PATH=. valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=. valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 

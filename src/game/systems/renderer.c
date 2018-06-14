@@ -136,6 +136,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 	}
 
+	if (!model->visible)
+	{
+		return;
+	}
+
 	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
@@ -194,7 +199,7 @@ void shutdownRendererSystem(Scene *scene)
 
 }
 
-System createRendererSystem()
+System createRendererSystem(void)
 {
 	System renderer = {};
 

@@ -139,7 +139,7 @@ void bindShaderPipeline(ShaderPipeline pipeline)
 	glUseProgram(pipeline.object);
 }
 
-void unbindShaderPipeline()
+void unbindShaderPipeline(void)
 {
 	glUseProgram(0);
 }

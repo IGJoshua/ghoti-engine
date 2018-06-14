@@ -9,7 +9,15 @@
 #define ENTITY_BUCKETS 97
 
 Scene *createScene(void);
+int32 loadScene(const char *name, Scene **scene);
+int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 void freeScene(Scene **scene);
+
+ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
+void copyComponentDefinition(
+	ComponentDefinition *dest,
+	ComponentDefinition *src);
+void freeComponentDefinition(ComponentDefinition *componentDefinition);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,
