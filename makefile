@@ -12,7 +12,6 @@ BUILDDIR = build
 OBJDIR = $(BUILDDIR)/obj
 ARCHOBJDIR = $(OBJDIR)/arch
 GAMEOBJDIR = $(OBJDIR)/game
-VENDOROBJDIR = $(OBJDIR)/$(VENDORDIR)
 
 _LIBDIRS = lib
 LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR))
@@ -32,7 +31,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1
+_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1 cjson frozen
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -41,7 +40,6 @@ GAMEDEPS = $(shell find include/game -name *.h)
 
 ARCHOBJ = $(patsubst $(ARCHDIR)/%.c,$(ARCHOBJDIR)/%.o,$(shell find $(ARCHDIR) -name *.c))
 GAMEOBJ = $(patsubst $(GAMEDIR)/%.c,$(GAMEOBJDIR)/%.o,$(shell find $(GAMEDIR) -name *.c))
-VENDOROBJ = $(patsubst $(VENDORDIR)/%.c,$(VENDOROBJDIR)/%.o,$(shell find $(VENDORDIR) -name *.c))
 
 $(ARCHOBJDIR)/%.o : $(ARCHDIR)/%.c $(ARCHDEPS) $(VENDORDEPS)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
@@ -49,14 +47,9 @@ $(ARCHOBJDIR)/%.o : $(ARCHDIR)/%.c $(ARCHDEPS) $(VENDORDEPS)
 $(GAMEOBJDIR)/%.o : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
 
-$(VENDOROBJDIR)/%.o : $(VENDORDIR)/%.c $(VENDORDEPS)
-	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
-
-VENDOROBJDIRS = $(subst $(VENDORDIR),$(OBJDIR)/$(VENDORDIR),$(shell find $(VENDORDIR) -type d | paste -s -d ' ' | tr ' ' ','))
-
 .PHONY: build
 
-build : $(GAMEOBJ) $(VENDOROBJ) $(LIBNAME).so
+build : $(GAMEOBJ) $(LIBNAME).so
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
 
 $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
@@ -75,14 +68,14 @@ clean:
 	rm -rf release
 	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
-	mkdir {$(BUILDDIR),$(OBJDIR),$(VENDOROBJDIRS),$(ARCHOBJDIR),$(GAMEOBJDIR)}
+	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 
 .PHONY: run
 
 run : build
-	LD_LIBRARY_PATH=. $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
 SUPPRESSIONS = monochrome.supp
 
@@ -108,7 +101,8 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	cp -r resources/ release/
 	cp -r lualib/ release/
-	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)
+	cp -r lib/ release/
+	$(if $(WINDOWS),,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=.:./lib ./monochrome' >> release/run && chmod +x release/run)
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
