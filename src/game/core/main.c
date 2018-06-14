@@ -36,6 +36,8 @@
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
 static lua_State *L;
 static SDL_GameController *controller;
@@ -542,6 +544,8 @@ void handleSDLEvents()
 
 int32 main()
 {
+	srand(time(0));
+
 	if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		printf("Failed to initialize SDL2.\n%s\n", SDL_GetError());
@@ -609,7 +613,7 @@ int32 main()
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
-	// Fixed timesetep
+	// Fixed timestep
 	real64 dt = 1.0 / 60.0;
 
 	real64 currentTime = glfwGetTime();

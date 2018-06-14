@@ -20,6 +20,7 @@ resources/*
 GTAGS
 GRTAGS
 GPATH
+.vscode
 
 # Other files
 log.txt

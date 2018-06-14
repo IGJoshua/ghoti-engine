@@ -9,44 +9,21 @@
 #include <kazmath/vec3.h>
 #include <kazmath/vec4.h>
 
-#define NUM_VERTEX_ATTRIBUTES 6
+#define RESOURCE_REALLOCATION_AMOUNT 16
 
 typedef struct vertex_t
 {
-	kmVec4 color;
 	kmVec3 position;
+	kmVec4 color;
 	kmVec3 normal;
 	kmVec3 tangent;
 	kmVec3 bitangent;
-	kmVec2 uv;
+	kmVec2 uv[MATERIAL_COMPONENT_TYPE_COUNT];
 } Vertex;
-
-typedef struct mesh_data_t
-{
-	kmVec4 *colors;
-	kmVec3 *positions;
-	kmVec3 *normals;
-	kmVec3 *tangents;
-	kmVec3 *bitangents;
-	kmVec2 *uvs;
-	uint32 numVertices;
-	uint32 *indices;
-	uint32 numIndices;
-} MeshData;
-
-typedef enum texture_type_e
-{
-	TEXTURE_TYPE_DIFFUSE,
-	TEXTURE_TYPE_SPECULAR,
-	TEXTURE_TYPE_NORMAL,
-	TEXTURE_TYPE_EMISSIVE,
-	TEXTURE_TYPE_COUNT
-} TextureType;
 
 typedef struct texture_t
 {
 	char *name;
-	TextureType type;
 	GLuint id;
 	uint32 refCount;
 } Texture;
@@ -54,9 +31,8 @@ typedef struct texture_t
 typedef struct model_t
 {
 	char *name;
-	Mesh *meshes;
-	uint32 numMeshes;
+	uint32 numSubsets;
 	Material *materials;
-	uint32 numMaterials;
+	Mesh *meshes;
 	uint32 refCount;
 } Model;

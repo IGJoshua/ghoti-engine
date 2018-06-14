@@ -70,8 +70,9 @@ int32 closeWindow(void)
 int32 freeWindow(
 	GLFWwindow *window)
 {
-	glfwDestroyWindow(window);
+	ilShutDown();
 
+	glfwDestroyWindow(window);
 	glfwTerminate();
 
 	wnd = 0;
