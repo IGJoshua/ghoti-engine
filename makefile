@@ -6,11 +6,13 @@ IDIRS = include/arch include/game vendor
 SRCDIR = src
 ARCHDIR = $(SRCDIR)/arch
 GAMEDIR = $(SRCDIR)/game
+VENDORDIR = vendor
 
 BUILDDIR = build
 OBJDIR = $(BUILDDIR)/obj
 ARCHOBJDIR = $(OBJDIR)/arch
 GAMEOBJDIR = $(OBJDIR)/game
+VENDOROBJDIR = $(OBJDIR)/$(VENDORDIR)
 
 _LIBDIRS = lib
 LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR))
@@ -39,6 +41,7 @@ GAMEDEPS = $(shell find include/game -name *.h)
 
 ARCHOBJ = $(patsubst $(ARCHDIR)/%.c,$(ARCHOBJDIR)/%.o,$(shell find $(ARCHDIR) -name *.c))
 GAMEOBJ = $(patsubst $(GAMEDIR)/%.c,$(GAMEOBJDIR)/%.o,$(shell find $(GAMEDIR) -name *.c))
+VENDOROBJ = $(patsubst $(VENDORDIR)/%.c,$(VENDOROBJDIR)/%.o,$(shell find $(VENDORDIR) -name *.c))
 
 $(ARCHOBJDIR)/%.o : $(ARCHDIR)/%.c $(ARCHDEPS) $(VENDORDEPS)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
@@ -46,9 +49,14 @@ $(ARCHOBJDIR)/%.o : $(ARCHDIR)/%.c $(ARCHDEPS) $(VENDORDEPS)
 $(GAMEOBJDIR)/%.o : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
 
+$(VENDOROBJDIR)/%.o : $(VENDORDIR)/%.c $(VENDORDEPS)
+	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) -c -o $@ $<
+
+VENDOROBJDIRS = $(subst $(VENDORDIR),$(OBJDIR)/$(VENDORDIR),$(shell find $(VENDORDIR) -type d | paste -s -d ' ' | tr ' ' ','))
+
 .PHONY: build
 
-build : $(GAMEOBJ) $(LIBNAME).so
+build : $(GAMEOBJ) $(VENDOROBJ) $(LIBNAME).so
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
 
 $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
@@ -67,7 +75,7 @@ clean:
 	rm -rf release
 	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
-	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
+	mkdir {$(BUILDDIR),$(OBJDIR),$(VENDOROBJDIRS),$(ARCHOBJDIR),$(GAMEOBJDIR)}
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 
@@ -102,7 +110,6 @@ release : clean
 	cp -r lualib/ release/
 	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)
 
-# TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
 _WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit
@@ -125,7 +132,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 
 .PHONY: windows
 
-windows : $(WINGAMEOBJ) $(BUILDDIR)/$(LIBNAME).dll
+windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 	cp winlib/* $(BUILDDIR)/
 	cp $(BUILDDIR)/libassimp.dll $(BUILDDIR)/assimp.dll

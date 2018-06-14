@@ -7,6 +7,8 @@
 
 #include "file/utilities.h"
 
+#include "cJSON/cJSON.h"
+
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
@@ -197,7 +199,10 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	}
 
 	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	DIR *dir = opendir(sceneFolder);
+	char *entityFolder = getFullFilename("entities", NULL, sceneFolder);
+	free(sceneFolder);
+
+	DIR *dir = opendir(entityFolder);
 
 	if (dir)
 	{
@@ -233,7 +238,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 			char *entityFilename = getFullFilename(
 				dirEntry->d_name,
 				NULL,
-				sceneFolder);
+				entityFolder);
 
 			FILE *file = fopen(entityFilename, "rb");
 
@@ -435,11 +440,11 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	}
 	else
 	{
-		printf("Failed to open %s\n", sceneFolder);
+		printf("Failed to open %s\n", entityFolder);
 		error = -1;
 	}
 
-	free(sceneFolder);
+	free(entityFolder);
 
 	return error;
 }
@@ -543,6 +548,398 @@ void freeComponentDefinition(ComponentDefinition *componentDefinition)
 	}
 
 	free(componentDefinition->values);
+}
+
+uint32 getDataTypeSize(DataType type)
+{
+	switch (type) {
+		case UINT8:
+		case INT8:
+		case CHAR:
+			return 1;
+		case UINT16:
+		case INT16:
+			return 2;
+		case UINT32:
+		case INT32:
+		case FLOAT32:
+		case BOOL:
+			return 4;
+		case UINT64:
+		case INT64:
+		case FLOAT64:
+			return 8;
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+char* getDataTypeString(
+	const ComponentValueDefinition *componentValueDefinition)
+{
+	char *dataTypeString = malloc(256);
+
+	switch (componentValueDefinition->type) {
+		case UINT8:
+			strcpy(dataTypeString, "uint8");
+			break;
+		case UINT16:
+			strcpy(dataTypeString, "uint16");
+			break;
+		case UINT32:
+			strcpy(dataTypeString, "uint32");
+			break;
+		case UINT64:
+			strcpy(dataTypeString, "uint64");
+			break;
+		case INT8:
+			strcpy(dataTypeString, "int8");
+			break;
+		case INT16:
+			strcpy(dataTypeString, "int16");
+			break;
+		case INT32:
+			strcpy(dataTypeString, "int32");
+			break;
+		case INT64:
+			strcpy(dataTypeString, "int64");
+			break;
+		case FLOAT32:
+			strcpy(dataTypeString, "float32");
+			break;
+		case FLOAT64:
+			strcpy(dataTypeString, "float64");
+			break;
+		case BOOL:
+			strcpy(dataTypeString, "bool");
+			break;
+		case CHAR:
+			strcpy(dataTypeString, "char");
+			break;
+		case STRING:
+			sprintf(
+				dataTypeString,
+				"char(%d)",
+				componentValueDefinition->maxStringSize - 1);
+			break;
+		default:
+			break;
+	}
+
+	return dataTypeString;
+}
+
+void exportEntity(const Scene *scene, UUID entity)
+{
+	cJSON *json = cJSON_CreateObject();
+
+	cJSON_AddStringToObject(json, "uuid", entity.string);
+	cJSON *jsonComponents = cJSON_AddObjectToObject(json, "components");
+
+	List *components = (List*)hashMapGetKey(scene->entities, entity.bytes);
+
+	for (ListIterator itr = listGetIterator(components);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		UUID *componentUUID = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		cJSON *jsonComponent = cJSON_AddArrayToObject(
+			jsonComponents,
+			componentUUID->string);
+
+		ComponentDataTable **componentDataTable =
+			(ComponentDataTable**)hashMapGetKey(
+				scene->componentTypes,
+				componentUUID->bytes);
+
+		void *componentData = cdtGet((*componentDataTable), entity);
+
+		ComponentDefinition componentDefinition = getComponentDefinition(
+			scene,
+			*componentUUID);
+
+		uint32 maxValueSize = 0;
+		for (uint32 i = 0; i < componentDefinition.numValues; i++)
+		{
+			ComponentValueDefinition *componentValueDefinition =
+				&componentDefinition.values[i];
+
+			uint32 size = 0;
+			if (componentValueDefinition->type == STRING)
+			{
+				size = componentValueDefinition->maxStringSize;
+			}
+			else
+			{
+				size = getDataTypeSize(componentValueDefinition->type);
+			}
+
+			uint32 paddingSize = size;
+			if (componentValueDefinition->type == STRING)
+			{
+				paddingSize = 1;
+			}
+
+			if (paddingSize > maxValueSize)
+			{
+				maxValueSize = paddingSize;
+			}
+		}
+
+		uint32 bytesWritten = 0;
+
+		for (uint32 i = 0; i < componentDefinition.numValues; i++)
+		{
+			ComponentValueDefinition *componentValueDefinition =
+				&componentDefinition.values[i];
+
+			uint32 size = 0;
+			if (componentValueDefinition->type == STRING)
+			{
+				size = componentValueDefinition->maxStringSize;
+			}
+			else
+			{
+				size = getDataTypeSize(componentValueDefinition->type);
+			}
+
+			uint32 paddingSize = size;
+			if (componentValueDefinition->type == STRING)
+			{
+				paddingSize = 1;
+			}
+
+			cJSON *jsonComponentValue = cJSON_CreateObject();
+			cJSON_AddStringToObject(
+				jsonComponentValue,
+				"name",
+				componentValueDefinition->name);
+
+			char *dataTypeString = getDataTypeString(componentValueDefinition);
+
+			cJSON *jsonComponentValueData = NULL;
+			if (componentValueDefinition->count > 1)
+			{
+				jsonComponentValueData =
+					cJSON_AddArrayToObject(jsonComponentValue, dataTypeString);
+			}
+
+			for (uint32 j = 0; j < componentValueDefinition->count; j++)
+			{
+				uint32 padding = 0;
+				if (bytesWritten > 0)
+				{
+					padding = bytesWritten % paddingSize;
+					if (padding > 0)
+					{
+						padding = maxValueSize - padding;
+					}
+				}
+
+				void *valueData = componentData + bytesWritten;
+
+				uint8 uint8Data;
+				uint16 uint16Data;
+				uint32 uint32Data;
+				uint64 uint64Data;
+				int8 int8Data;
+				int16 int16Data;
+				int32 int32Data;
+				int64 int64Data;
+				real32 real32Data;
+				real64 real64Data;
+				bool boolData;
+				char charData[2];
+
+				if (componentValueDefinition->count == 1)
+				{
+					switch (componentValueDefinition->type) {
+						case UINT8:
+							uint8Data = *(uint8*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)uint8Data);
+							break;
+						case UINT16:
+							uint16Data = *(uint16*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)uint16Data);
+							break;
+						case UINT32:
+							uint32Data = *(uint32*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)uint32Data);
+							break;
+						case UINT64:
+							uint64Data = *(uint64*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)uint64Data);
+							break;
+						case INT8:
+							int8Data = *(int8*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)int8Data);
+							break;
+						case INT16:
+							int16Data = *(int16*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)int16Data);
+							break;
+						case INT32:
+							int32Data = *(int32*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)int32Data);
+							break;
+						case INT64:
+							int64Data = *(int64*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)int64Data);
+							break;
+						case FLOAT32:
+							real32Data = *(real32*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)real32Data);
+							break;
+						case FLOAT64:
+							real64Data = *(real64*)valueData;
+							cJSON_AddNumberToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(double)real64Data);
+							break;
+						case BOOL:
+							boolData = *(bool*)valueData;
+							cJSON_AddBoolToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(cJSON_bool)boolData);
+							break;
+						case CHAR:
+							charData[0] = *(char*)valueData;
+							charData[1] = '\0';
+							cJSON_AddStringToObject(
+								jsonComponentValue,
+								dataTypeString,
+								charData);
+							break;
+						case STRING:
+							cJSON_AddStringToObject(
+								jsonComponentValue,
+								dataTypeString,
+								(char*)valueData);
+							break;
+						default:
+							break;
+					}
+				}
+				else
+				{
+					cJSON *jsonComponentValueDataArrayItem = NULL;
+
+					switch (componentValueDefinition->type) {
+						case UINT8:
+							uint8Data = *(uint8*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)uint8Data);
+							break;
+						case UINT16:
+							uint16Data = *(uint16*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)uint16Data);
+							break;
+						case UINT32:
+							uint32Data = *(uint32*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)uint32Data);
+							break;
+						case UINT64:
+							uint64Data = *(uint64*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)uint64Data);
+							break;
+						case INT8:
+							int8Data = *(int8*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)int8Data);
+							break;
+						case INT16:
+							int16Data = *(int16*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)int16Data);
+							break;
+						case INT32:
+							int32Data = *(int32*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)int32Data);
+							break;
+						case INT64:
+							int64Data = *(int64*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)int64Data);
+							break;
+						case FLOAT32:
+							real32Data = *(real32*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)real32Data);
+							break;
+						case FLOAT64:
+							real64Data = *(real64*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateNumber((double)real64Data);
+							break;
+						case BOOL:
+							boolData = *(bool*)valueData;
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateBool((cJSON_bool)boolData);
+							break;
+						case CHAR:
+							charData[0] = *(char*)valueData;
+							charData[1] = '\0';
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateString(charData);
+							break;
+						case STRING:
+							jsonComponentValueDataArrayItem =
+								cJSON_CreateString((char*)valueData);
+							break;
+						default:
+							break;
+					}
+
+					cJSON_AddItemToArray(
+						jsonComponentValueData,
+						jsonComponentValueDataArrayItem);
+				}
+
+				bytesWritten += size + padding;
+			}
+
+			free(dataTypeString);
+			cJSON_AddItemToArray(jsonComponent, jsonComponentValue);
+		}
+	}
+
+	writeJSON(json, "entity");
+	cJSON_Delete(json);
 }
 
 inline
@@ -820,7 +1217,7 @@ void sceneAddComponentToEntity(
 		entity,
 		componentData);
 	// Add the component type to the list
-	listPushFront(hashMapGetKey(s->entities, &entity), &componentType);
+	listPushBack(hashMapGetKey(s->entities, &entity), &componentType);
 }
 
 void sceneRemoveComponentFromEntity(

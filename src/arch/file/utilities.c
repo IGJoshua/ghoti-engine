@@ -2,6 +2,8 @@
 
 #include "defines.h"
 
+#include "frozen/frozen.h"
+
 #include <malloc.h>
 #include <string.h>
 
@@ -17,24 +19,35 @@ char* getFullFilename(
 	const char *extension,
 	const char *folder)
 {
-	uint8 numExtraCharacters = 2;
+	uint32 numExtraCharacters = 1;
+
 	if (extension)
 	{
-		numExtraCharacters = strlen(extension) + 3;
+		numExtraCharacters += strlen(extension) + 1;
 	}
 
-	char *fullFilename = malloc(
-		strlen(folder) +
-		strlen(filename) +
-		numExtraCharacters);
+	if (folder)
+	{
+		numExtraCharacters += strlen(folder) + 1;
+	}
 
-	if (extension)
+	char *fullFilename = malloc(strlen(filename) + numExtraCharacters);
+
+	if (extension && folder)
 	{
 		sprintf(fullFilename, "%s/%s.%s", folder, filename, extension);
 	}
-	else
+	else if (extension)
+	{
+		sprintf(fullFilename, "%s.%s", filename, extension);
+	}
+	else if (folder)
 	{
 		sprintf(fullFilename, "%s/%s", folder, filename);
+	}
+	else
+	{
+		sprintf(fullFilename, "%s", filename);
 	}
 
 	return fullFilename;
@@ -49,4 +62,18 @@ char* readString(FILE *file)
 	fread(string, stringLength, 1, file);
 
 	return string;
+}
+
+void writeJSON(const cJSON *json, const char *filename) {
+	char *jsonFilename = getFullFilename(filename, "json", NULL);
+	FILE *file = fopen(jsonFilename, "w");
+
+	char *jsonString = cJSON_Print(json);
+	fwrite(jsonString, strlen(jsonString), 1, file);
+	free(jsonString);
+
+	fclose(file);
+
+	json_prettify_file(jsonFilename);
+	free(jsonFilename);
 }
