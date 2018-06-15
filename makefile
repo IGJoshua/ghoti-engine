@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1
+_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -55,7 +55,7 @@ $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(LIBS)
 
 $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
-	ln -s $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
+	ln -sf $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
 
 .PHONY: arch
 
@@ -74,14 +74,14 @@ clean:
 .PHONY: run
 
 run : build
-	LD_LIBRARY_PATH=. $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
 SUPPRESSIONS = monochrome.supp
 
 .PHONY: leakcheck
 
 leakcheck : build
-	LD_LIBRARY_PATH=. valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 
@@ -100,12 +100,12 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	cp -r resources/ release/
 	cp -r lualib/ release/
-	$(if $(WINDOWS),cp -r winlib/ release/,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=. ./monochrome' >> release/run && chmod +x release/run)
+	cp -r lib/ release/
+	$(if $(WINDOWS),,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=.:./lib ./monochrome' >> release/run && chmod +x release/run)
 
-# TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
@@ -125,7 +125,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 
 .PHONY: windows
 
-windows : $(WINGAMEOBJ) $(BUILDDIR)/$(LIBNAME).dll
+windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 	cp winlib/* $(BUILDDIR)/
 	cp $(BUILDDIR)/libassimp.dll $(BUILDDIR)/assimp.dll

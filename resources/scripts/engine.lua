@@ -15,7 +15,7 @@ local C = engine.C
 io.write("Loaded monochrome library\n")
 
 engine.kazmath = ffi.load(ffi.os == "Windows"
-							and "winlib/libkazmath.a"
+							and "./libkazmath.a"
 							or "lualib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
@@ -24,13 +24,19 @@ require("resources/scripts/cdefs")
 
 io.write("Created cffi definitions\n")
 
+engine.input = require("resources/scripts/input")
+
+engine.keyboard = require("resources/scripts/keyboard")
+engine.mouse = require("resources/scripts/mouse")
+engine.gamepad = require("resources/scripts/gamepad")
+
 local Scene = require("resources/scripts/scene")
 
 io.write("Required scene\n")
 
 engine.components = require("resources/scripts/components")
 
--- TODO: iterate over every file in resources/scripts/components/ and require them
+-- iterate over every file in resources/scripts/components/ and require them
 local testFile = io.popen(ffi.os == "Windows" and 'dir /b resources\\scripts\\components' or 'find resources/scripts/components -name "*.lua"')
 for line in testFile:lines() do
   if ffi.os == "Windows" then
@@ -44,7 +50,7 @@ engine.scenes = {}
 function engine.initScene(pScene)
   local scene = Scene:new(pScene)
 
-  -- TODO: Register all lua components into the scene
+  -- Register all lua components into the scene
   for name, component in pairs(engine.components) do
 	-- If the component does not exist in the scene
 	if type(component) == 'table' then
@@ -176,6 +182,13 @@ function engine.runPhysicsSystems(pScene, dt)
   for i = 1,#scene.physicsSystems do
 	local physicsSystem = scene.physicsSystems[i]
 
+	if physicsSystem.begin then
+	  local err, message = pcall(physicsSystem.begin, scene, dt)
+	  if err == false then
+		io.write(string.format("Error while beginning a system\n%s\n", message))
+	  end
+	end
+
 	if physicsSystem.run then
 	  local componentName = ffi.new("UUID[1]", C.idFromName(physicsSystem.components[1]))
 	  -- Loop over every entity which has the correct components
@@ -230,6 +243,10 @@ function engine.runPhysicsSystems(pScene, dt)
 		  end
 		end
 	  end
+
+	  if physicsSystem.clean then
+		local err, message = pcall(physicsSystem.clean, scene, dt)
+	  end
 	end
   end
 end
@@ -242,6 +259,10 @@ function engine.runRenderSystems(pScene, dt)
 
   for i = 1,#scene.renderSystems do
 	local renderSystem = scene.renderSystems[i]
+
+	if renderSystem.begin then
+	  local err, message = pcall(renderSystem.begin, scene, dt)
+	end
 
 	if renderSystem.run then
 	  local componentName = ffi.new("UUID[1]", C.idFromName(renderSystem.components[1]))
@@ -298,6 +319,10 @@ function engine.runRenderSystems(pScene, dt)
 		end
 	  end
 	end
+
+	if renderSystem.clean then
+	  local err, message = pcall(renderSystem.clean, scene, dt)
+	end
   end
 end
 
@@ -331,5 +356,29 @@ function engine.shutdownScene(pScene)
 							   message))
 	  end
 	end
+  end
+end
+
+function engine.cleanInput()
+  for key, value in pairs(engine.keyboard) do
+	if type(value) == "table" then
+	  value.updated = false
+	end
+  end
+  for key, value in pairs(engine.mouse.buttons) do
+	if type(value) == "table" then
+	  value.updated = false
+	end
+  end
+
+  engine.mouse.scroll.x = 0
+  engine.mouse.scroll.y = 0
+
+  for name, button in pairs(engine.gamepad.buttons) do
+	button.updated = false
+  end
+
+  for name, dpad in pairs(engine.gamepad.dpad) do
+	dpad.updated = false
   end
 end
