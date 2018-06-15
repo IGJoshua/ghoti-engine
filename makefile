@@ -98,10 +98,11 @@ release : clean
 	@make RELEASE=yes$(if $(WINDOWS), windows,)
 	mkdir release/
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
+	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
 	cp -r lualib/ release/
 	$(if $(WINDOWS),,cp -r lib/ release/)
-	$(if $(WINDOWS),,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=.:./lib ./monochrome' >> release/run && chmod +x release/run)
+	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
