@@ -23,7 +23,9 @@ uint32 getDataTypeSize(DataType type);
 char* getDataTypeString(
 	const ComponentValueDefinition *componentValueDefinition);
 
-void exportEntity(const Scene *scene, UUID entity);
+void exportEntity(const Scene *scene, UUID entity, const char *filename);
+void exportScene(const Scene *scene, const char *filename);
+void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,

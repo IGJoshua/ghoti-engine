@@ -58,6 +58,7 @@ typedef struct component_definition_t
 
 typedef struct scene_t
 {
+	char *name;
 	// Maps component UUIDs to pointers to component data tables
 	HashMap componentTypes;
 	// Maps entity UUIDs to lists of component UUIDs

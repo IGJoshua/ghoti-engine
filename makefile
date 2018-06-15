@@ -86,7 +86,7 @@ leakcheck : build
 .PHONY: debug
 
 debug : build
-	LD_LIBRARY_PATH=. $(CCDB) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib $(CCDB) $(BUILDDIR)/$(PROJ)
 
 .PHONY: rebuild
 
