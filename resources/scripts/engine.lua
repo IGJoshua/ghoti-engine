@@ -59,11 +59,11 @@ local systemsFile = io.popen(
 	and 'dir /b resources\\scripts\\systems'
 	or 'find resources/scripts/systems -name "*.lua"')
 for line in systemsFile:lines() do
-  local systemName = string.sub(line, 0, -5)
   if ffi.os == "Windows" then
 	line = 'resources/scripts/systems/'..line
   end
   local system = require(string.sub(line, 0, -5))
+  local systemName = string.sub(line, 27, -5)
 
   if system.init then
 	local err, message = pcall(system.init, scene)
@@ -122,6 +122,10 @@ function engine.runSystems(pScene, dt, physics)
   while C.listIteratorAtEnd(itr) == 0 do
 	local system = engine.systems[
 	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+
+	if not system then
+	  error("Unable to load system, panic")
+	end
 
 	if system.begin then
 	  local err, message = pcall(system.begin, scene, dt)
@@ -202,7 +206,9 @@ function engine.runSystems(pScene, dt, physics)
 	  end
 	end
 
-	C.listMoveIterator(itr)
+	local itrRef = ffi.new("ListIterator[1]", itr)
+	C.listMoveIterator(itrRef)
+	itr = itrRef[0]
   end
 end
 

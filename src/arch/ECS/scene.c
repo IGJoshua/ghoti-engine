@@ -97,24 +97,39 @@ int32 loadScene(const char *name, Scene **scene)
 				internalSystems[j] = readString(file);
 			}
 
+			UUID systemName;
+			memset(&systemName, 0, sizeof(UUID));
+
 			if (!strcmp(systemGroup, "update"))
 			{
 				for (j = 0; j < numExternalSystems; j++)
 				{
+					strcpy(systemName.string, externalSystems[j]);
 					listPushBack(
 						&(*scene)->luaPhysicsFrameSystemNames,
-						&externalSystems[j]);
-					// TODO: Internal system names
+						&systemName);
+				}
+
+				for (j = 0; j < numInternalSystems; j++)
+				{
+					strcpy(systemName.string, internalSystems[j]);
+					sceneAddPhysicsFrameSystem(*scene, systemName);
 				}
 			}
 			else if (!strcmp(systemGroup, "draw"))
 			{
 				for (j = 0; j < numExternalSystems; j++)
 				{
+					strcpy(systemName.string, externalSystems[j]);
 					listPushBack(
 						&(*scene)->luaRenderFrameSystemNames,
-						&externalSystems[j]);
-					// TODO: Internal system names
+						&systemName);
+				}
+
+				for (j = 0; j < numInternalSystems; j++)
+				{
+					strcpy(systemName.string, internalSystems[j]);
+					sceneAddRenderFrameSystem(*scene, systemName);
 				}
 			}
 

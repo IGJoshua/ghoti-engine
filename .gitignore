@@ -25,5 +25,5 @@ GPATH
 
 # Other files
 log.txt
-*.vgcore
+vgcore.*
 *.json

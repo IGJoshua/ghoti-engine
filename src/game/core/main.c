@@ -90,13 +90,6 @@ int32 main()
 		return -1;
 	}
 
-	// Add component types
-
-	// Add systems
-	sceneAddRenderFrameSystem(scene, idFromName("renderer"));
-
-	// Create entities
-
 	// State previous
 	// State next
 
@@ -212,7 +205,7 @@ int32 main()
 		glfwSwapBuffers(window);
 	}
 
-	exportSave(NULL, 0, scene, 1);
+	// exportSave(NULL, 0, scene, 1);
 
 	if (L)
 	{
