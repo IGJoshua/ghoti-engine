@@ -67,42 +67,11 @@ typedef struct component_data_table_t
   uint8 data[];
 } ComponentDataTable;
 
-typedef struct scene_t
-{
-  HashMap componentTypes;
-  HashMap entities;
-  UUID mainCamera;
-  List physicsFrameSystems;
-  List renderFrameSystems;
-  List luaPhysicsFrameSystemNames;
-  List luaRenderFrameSystemNames;
-} Scene;
 
-void sceneRegisterEntity(Scene *s, UUID newEntity);
-UUID sceneCreateEntity(Scene *s);
-void sceneRemoveEntity(Scene *s, UUID entity);
+int32 closeWindow();
 
-void sceneAddComponentToEntity(
-  Scene *s,
-  UUID entity,
-  UUID componentType,
-  void *componentData);
-
-void sceneRemoveComponentFromEntity(
-  Scene *s,
-  UUID entity,
-  UUID componentType);
-
-void *sceneGetComponentFromEntity(
-  Scene *s,
-  UUID entity,
-  UUID componentType);
-
-void sceneAddComponentType(
-  Scene *scene,
-  UUID componentID,
-  uint32 componentSize,
-  uint32 maxComponents);
 ]]
 
 local kazmath = require("resources/scripts/cdefs/kazmath")
+local sceneDefs = require("resources/scripts/cdefs/sceneDefs")
+local glfwKeys = require("resources/scripts/cdefs/GLFW")
