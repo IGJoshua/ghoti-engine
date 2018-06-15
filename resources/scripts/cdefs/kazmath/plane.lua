@@ -1,4 +1,4 @@
-ff.cdef[[
+ffi.cdef[[
 
 typedef enum KM_POINT_CLASSIFICATION {
     POINT_BEHIND_PLANE = -1,

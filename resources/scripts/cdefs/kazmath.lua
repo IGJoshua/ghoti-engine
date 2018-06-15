@@ -30,11 +30,11 @@ typedef struct kmVec2 { //extern consts
     kmScalar y;
 } kmVec2;
 
-const kmVec2 KM_VEC2_POS_Y = { 0, 1 };
-const kmVec2 KM_VEC2_NEG_Y = { 0, -1 };
-const kmVec2 KM_VEC2_NEG_X = { -1, 0 };
-const kmVec2 KM_VEC2_POS_X = { 1, 0 };
-const kmVec2 KM_VEC2_ZERO = { 0, 0 };
+const kmVec2 KM_VEC2_POS_Y;
+const kmVec2 KM_VEC2_NEG_Y;
+const kmVec2 KM_VEC2_NEG_X;
+const kmVec2 KM_VEC2_POS_X;
+const kmVec2 KM_VEC2_ZERO;
 
 typedef struct kmVec3 { //extern consts
     kmScalar x;
@@ -42,13 +42,13 @@ typedef struct kmVec3 { //extern consts
     kmScalar z;
 } kmVec3;
 
-const kmVec3 KM_VEC3_POS_Z = { 0, 0, 1 };
-const kmVec3 KM_VEC3_NEG_Z = { 0, 0, -1 };
-const kmVec3 KM_VEC3_POS_Y = { 0, 1, 0 };
-const kmVec3 KM_VEC3_NEG_Y = { 0, -1, 0 };
-const kmVec3 KM_VEC3_NEG_X = { -1, 0, 0 };
-const kmVec3 KM_VEC3_POS_X = { 1, 0, 0 };
-const kmVec3 KM_VEC3_ZERO = { 0, 0, 0 };
+const kmVec3 KM_VEC3_POS_Z;
+const kmVec3 KM_VEC3_NEG_Z;
+const kmVec3 KM_VEC3_POS_Y;
+const kmVec3 KM_VEC3_NEG_Y;
+const kmVec3 KM_VEC3_NEG_X;
+const kmVec3 KM_VEC3_POS_X;
+const kmVec3 KM_VEC3_ZERO;
 
 typedef struct kmVec4 { //extern consts
 	kmScalar x;
@@ -106,14 +106,14 @@ typedef struct kmQuaternion {
 
 ]]
 
-local kazAabb2      = require("aabb2")
-local kazAabb3      = require("aabb3")
-local kazMat3       = require("mat3")
-local kazMat4       = require("mat4")
-local kazPlane      = require("plane")
-local kazQuat       = require("quaternion")
-local kazRay2       = require{"ray2")
-local kazRay3       = require{"ray3")
-local kazVec2       = require("vec2")
-local kazVec3       = require("vec3")
-local kazVec4       = require("vec4")
+local kazAabb2      = require("resources/scripts/cdefs/kazmath/aabb2")
+local kazAabb3      = require("resources/scripts/cdefs/kazmath/aabb3")
+local kazMat3       = require("resources/scripts/cdefs/kazmath/mat3")
+local kazMat4       = require("resources/scripts/cdefs/kazmath/mat4")
+local kazPlane      = require("resources/scripts/cdefs/kazmath/plane")
+local kazQuat       = require("resources/scripts/cdefs/kazmath/quaternion")
+local kazRay2       = require("resources/scripts/cdefs/kazmath/ray2")
+local kazRay3       = require("resources/scripts/cdefs/kazmath/ray3")
+local kazVec2       = require("resources/scripts/cdefs/kazmath/vec2")
+local kazVec3       = require("resources/scripts/cdefs/kazmath/vec3")
+local kazVec4       = require("resources/scripts/cdefs/kazmath/vec4")

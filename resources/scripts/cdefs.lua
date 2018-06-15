@@ -12,8 +12,6 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum { false, true } bool;
-
 char *strcpy(char *destination, const char *source);
 
 typedef struct list_node_t
@@ -107,4 +105,4 @@ void sceneAddComponentType(
   uint32 maxComponents);
 ]]
 
-local kazmath = require("kazmath")
+local kazmath = require("resources/scripts/cdefs/kazmath")
