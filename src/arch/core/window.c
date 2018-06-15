@@ -1,6 +1,7 @@
 #include "core/window.h"
 
 #include <GL/glew.h>
+#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
 #include <IL/il.h>

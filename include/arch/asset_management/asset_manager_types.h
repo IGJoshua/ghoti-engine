@@ -3,8 +3,6 @@
 
 #include "renderer/renderer_types.h"
 
-#include <GL/glew.h>
-
 #include <kazmath/vec2.h>
 #include <kazmath/vec3.h>
 #include <kazmath/vec4.h>
