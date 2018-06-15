@@ -8,8 +8,6 @@ function Scene:new(pScene)
   setmetatable(scene, self)
 
   scene.ptr = ffi.cast("Scene *", pScene)
-  scene.physicsSystems = {}
-  scene.renderSystems = {}
   self.__index = self
 
   return scene
