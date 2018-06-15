@@ -100,7 +100,7 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	cp -r resources/ release/
 	cp -r lualib/ release/
-	cp -r lib/ release/
+	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/run && echo 'LD_LIBRARY_PATH=.:./lib ./monochrome' >> release/run && chmod +x release/run)
 
 WINCC = x86_64-w64-mingw32-clang
