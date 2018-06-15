@@ -72,7 +72,9 @@ typedef struct scene_t
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
-typedef void(*SystemFn)(Scene *scene, UUID entityID, real64 dt);
+typedef void(*BeginSystem)(Scene *scene, real64 dt);
+typedef void(*RunSystem)(Scene *scene, UUID entityID, real64 dt);
+typedef void(*EndSystem)(Scene *scene, real64 dt);
 typedef void(*ShutdownSystem)(Scene *scene);
 
 typedef struct system_t
@@ -80,6 +82,8 @@ typedef struct system_t
 	List componentTypes;
 
 	InitSystem init;
-	SystemFn fn;
+	BeginSystem begin;
+	RunSystem run;
+	EndSystem end;
 	ShutdownSystem shutdown;
 } System;

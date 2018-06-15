@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <dirent.h>
 
+extern HashMap systemRegistry;
+
 Scene *createScene(void)
 {
 	Scene *ret = malloc(sizeof(Scene));
@@ -34,8 +36,8 @@ Scene *createScene(void)
 		ENTITY_BUCKETS,
 		(ComparisonOp)&strcmp);
 
-	ret->physicsFrameSystems = createList(sizeof(System));
-	ret->renderFrameSystems = createList(sizeof(System));
+	ret->physicsFrameSystems = createList(sizeof(UUID));
+	ret->renderFrameSystems = createList(sizeof(UUID));
 	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
 	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
 
@@ -453,21 +455,7 @@ void freeScene(Scene **scene)
 {
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
-
-	for (ListIterator itr = listGetIterator(&(*scene)->physicsFrameSystems);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
-	}
 	listClear(&(*scene)->physicsFrameSystems);
-
-	for (ListIterator itr = listGetIterator(&(*scene)->renderFrameSystems);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		freeSystem(LIST_ITERATOR_GET_ELEMENT(System, itr));
-	}
 	listClear(&(*scene)->renderFrameSystems);
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
@@ -945,7 +933,7 @@ void exportEntity(const Scene *scene, UUID entity)
 inline
 void sceneAddRenderFrameSystem(
 	Scene *scene,
-	System system)
+	UUID system)
 {
 	listPushBack(&scene->renderFrameSystems, &system);
 }
@@ -953,7 +941,7 @@ void sceneAddRenderFrameSystem(
 inline
 void sceneAddPhysicsFrameSystem(
 	Scene *scene,
-	System system)
+	UUID system)
 {
 	listPushBack(&scene->physicsFrameSystems, &system);
 }
@@ -963,9 +951,12 @@ void sceneInitRenderFrameSystems(Scene *scene)
 	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (system->init != 0)
 		{
-			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+			system->init(scene);
 		}
 
 		listMoveIterator(&itr);
@@ -977,9 +968,12 @@ void sceneInitPhysicsFrameSystems(Scene *scene)
 	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->init != 0)
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (system->init != 0)
 		{
-			LIST_ITERATOR_GET_ELEMENT(System, itr)->init(scene);
+			system->init(scene);
 		}
 
 		listMoveIterator(&itr);
@@ -997,7 +991,12 @@ void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
+		systemRun(
+			scene,
+			hashMapGetKey(
+				systemRegistry,
+				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
+			dt);
 
 		listMoveIterator(&itr);
 	}
@@ -1008,7 +1007,12 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		systemRun(scene, LIST_ITERATOR_GET_ELEMENT(System, itr), dt);
+		systemRun(
+			scene,
+			hashMapGetKey(
+				systemRegistry,
+				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
+			dt);
 
 		listMoveIterator(&itr);
 	}
@@ -1019,9 +1023,12 @@ void sceneShutdownRenderFrameSystems(Scene *scene)
 	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (system->shutdown != 0)
 		{
-			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+			system->shutdown(scene);
 		}
 
 		listMoveIterator(&itr);
@@ -1033,9 +1040,12 @@ void sceneShutdownPhysicsFrameSystems(Scene *scene)
 	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
 	while (!listIteratorAtEnd(itr))
 	{
-		if (LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown != 0)
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (system->shutdown != 0)
 		{
-			LIST_ITERATOR_GET_ELEMENT(System, itr)->shutdown(scene);
+			system->shutdown(scene);
 		}
 
 		listMoveIterator(&itr);

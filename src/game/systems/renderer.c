@@ -214,7 +214,9 @@ System createRendererSystem(void)
 	renderer.componentTypes = componentList;
 
 	renderer.init = &initRendererSystem;
-	renderer.fn = &runRendererSystem;
+	renderer.begin = 0;
+	renderer.run = &runRendererSystem;
+	renderer.end = 0;
 	renderer.shutdown = &shutdownRendererSystem;
 
 	return renderer;

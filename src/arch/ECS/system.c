@@ -9,13 +9,17 @@ inline
 System createSystem(
 	List components,
 	InitSystem init,
-	SystemFn fn,
+	BeginSystem begin,
+	RunSystem run,
+	EndSystem end,
 	ShutdownSystem shutdown)
 {
 	System sys;
 	sys.componentTypes = components;
 	sys.init = init;
-	sys.fn = fn;
+	sys.begin = begin;
+	sys.run = run;
+	sys.end = end;
 	sys.shutdown = shutdown;
 	return sys;
 }
@@ -25,84 +29,91 @@ void systemRun(
 	System *system,
 	real64 dt)
 {
-	// Return if it's not a system which runs each frame
-	if (!system->fn)
+	if (system->begin)
 	{
-		return;
+		system->begin(scene, dt);
 	}
 
-	// Get the first component type
-	ComponentDataTable **firstComp = hashMapGetKey(
-		scene->componentTypes,
-		(UUID*)system->componentTypes.front->data);
-
-	// If there are no required components
-	if (!firstComp || !*firstComp)
+	if (system->run)
 	{
-		return;
-	}
+		// Get the first component type
+		ComponentDataTable **firstComp = hashMapGetKey(
+			scene->componentTypes,
+			(UUID*)system->componentTypes.front->data);
 
-	UUID emptyID = {};
-
-	// For each entity in the component table
-	for (uint32 i = 0; i < (*firstComp)->numEntries; ++i)
-	{
-		if (!strcmp(
-				emptyID.string,
-				// NOTE(Joshua): "Feels like pretty standard C to me"
-				((UUID *)((*firstComp)->data
-						  + i
-						  * ((*firstComp)->componentSize
-							 + sizeof(UUID))))->string))
+		// If there are no required components
+		if (!firstComp || !*firstComp)
 		{
-			continue;
+			return;
 		}
 
-		// Check to see if it has the other component types
-		int32 entityValid = 1;
+		UUID emptyID = {};
 
-		ListIterator itr = listGetIterator(&system->componentTypes);
-		for (listMoveIterator(&itr);
-			 !listIteratorAtEnd(itr);
-			 listMoveIterator(&itr))
+		// For each entity in the component table
+		for (uint32 i = 0; i < (*firstComp)->numEntries; ++i)
 		{
-			// Get the component to check
-			UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-			ComponentDataTable **table = hashMapGetKey(
-				scene->componentTypes,
-				componentID);
-
-			if (!table || !*table || !componentID)
+			if (!strcmp(
+					emptyID.string,
+					// NOTE(Joshua): "Feels like pretty standard C to me"
+					((UUID *)((*firstComp)->data
+							+ i
+							* ((*firstComp)->componentSize
+								+ sizeof(UUID))))->string))
 			{
 				continue;
 			}
 
-			// Check if the entity exists in the table
-			uint32 *entityIndex =
-				hashMapGetKey(
-					(*table)->idToIndex,
-					(*firstComp)->data
-					+ i
-					* ((*firstComp)->componentSize + sizeof(UUID)));
+			// Check to see if it has the other component types
+			int32 entityValid = 1;
 
-			if (!entityIndex)
+			ListIterator itr = listGetIterator(&system->componentTypes);
+			for (listMoveIterator(&itr);
+				!listIteratorAtEnd(itr);
+				listMoveIterator(&itr))
 			{
-				entityValid = 0;
-				break;
+				// Get the component to check
+				UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+				ComponentDataTable **table = hashMapGetKey(
+					scene->componentTypes,
+					componentID);
+
+				if (!table || !*table || !componentID)
+				{
+					continue;
+				}
+
+				// Check if the entity exists in the table
+				uint32 *entityIndex =
+					hashMapGetKey(
+						(*table)->idToIndex,
+						(*firstComp)->data
+						+ i
+						* ((*firstComp)->componentSize + sizeof(UUID)));
+
+				if (!entityIndex)
+				{
+					entityValid = 0;
+					break;
+				}
+			}
+
+			// Call the function
+			if (entityValid)
+			{
+				system->run(
+					scene,
+					*(UUID *)((*firstComp)->data
+							+ i
+							* ((*firstComp)->componentSize
+								+ sizeof(UUID))),
+					dt);
 			}
 		}
+	}
 
-		// Call the function
-		if (entityValid)
-		{
-			system->fn(
-				scene,
-				*(UUID *)((*firstComp)->data
-						  + i
-						  * ((*firstComp)->componentSize
-							 + sizeof(UUID))),
-				dt);
-		}
+	if (system->end)
+	{
+		system->end(scene, dt);
 	}
 }
 
@@ -110,6 +121,8 @@ void freeSystem(System *system)
 {
 	listClear(&system->componentTypes);
 	system->init = 0;
-	system->fn = 0;
+	system->begin = 0;
+	system->run = 0;
+	system->end = 0;
 	system->shutdown = 0;
 }

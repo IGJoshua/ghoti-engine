@@ -4,7 +4,9 @@
 System createSystem(
 	List components,
 	InitSystem init,
-	SystemFn fn,
+	BeginSystem begin,
+	RunSystem run,
+	EndSystem end,
 	ShutdownSystem shutdown);
 void systemRun(
 	Scene *scene,

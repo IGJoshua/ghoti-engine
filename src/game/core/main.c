@@ -573,6 +573,8 @@ int32 main()
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
+	initSystems();
+
 	// Init Lua
 	L = luaL_newstate();
 	luaL_openlibs(L);
@@ -599,8 +601,7 @@ int32 main()
 	// Add component types
 
 	// Add systems
-	System rendererSystem = createRendererSystem();
-	sceneAddRenderFrameSystem(scene, rendererSystem);
+	sceneAddRenderFrameSystem(scene, idFromName("renderer"));
 
 	// Create entities
 
@@ -731,6 +732,8 @@ int32 main()
 	{
 		lua_close(L);
 	}
+
+	freeSystems();
 
 	freeWindow(window);
 

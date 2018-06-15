@@ -27,10 +27,10 @@ void exportEntity(const Scene *scene, UUID entity);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,
-	System system);
+	UUID system);
 void sceneAddPhysicsFrameSystem(
 	Scene *scene,
-	System system);
+	UUID system);
 
 void sceneInitRenderFrameSystems(Scene *scene);
 void sceneInitPhysicsFrameSystems(Scene *scene);
