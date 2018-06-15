@@ -65,6 +65,9 @@ int32 loadScene(const char *name, Scene **scene)
 	{
 		*scene = createScene();
 
+		(*scene)->name = malloc(strlen(name) + 1);
+		strcpy((*scene)->name, name);
+
 		uint32 numSystemGroups;
 		fread(&numSystemGroups, sizeof(uint32), 1, file);
 
@@ -453,6 +456,8 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 void freeScene(Scene **scene)
 {
+	free((*scene)->name);
+
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
 	listClear(&(*scene)->physicsFrameSystems);
@@ -619,7 +624,7 @@ char* getDataTypeString(
 	return dataTypeString;
 }
 
-void exportEntity(const Scene *scene, UUID entity)
+void exportEntity(const Scene *scene, UUID entity, const char *filename)
 {
 	cJSON *json = cJSON_CreateObject();
 
@@ -926,8 +931,180 @@ void exportEntity(const Scene *scene, UUID entity)
 		}
 	}
 
-	writeJSON(json, "entity");
+	writeJSON(json, filename);
 	cJSON_Delete(json);
+}
+
+// TODO: Export scenes to live representation when being unloaded
+
+internal
+char** getSystemNames(List *list, uint32 *numSystemNames)
+{
+	*numSystemNames = listGetSize(list);
+	char **systemNames = malloc(*numSystemNames * sizeof(char*));
+
+	uint32 i = 0;
+	for (ListIterator itr = listGetIterator(list);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		char *systemName = *LIST_ITERATOR_GET_ELEMENT(char*, itr);
+		systemNames[i++] = malloc(strlen(systemName) + 1);
+		strcpy(systemNames[i++], systemName);
+	}
+
+	return systemNames;
+}
+
+internal
+void freeSystemNames(char **systemNames, uint32 numSystemNames)
+{
+	for (uint32 i = 0; i < numSystemNames; i++)
+	{
+		free(systemNames[i]);
+	}
+
+	free(systemNames);
+}
+
+void exportScene(const Scene *scene, const char *filename)
+{
+	printf("Exporting scene (%s)...\n", scene->name);
+
+	cJSON *json = cJSON_CreateObject();
+
+	cJSON *systems = cJSON_AddObjectToObject(json, "systems");
+
+	cJSON *updateSystems = cJSON_AddObjectToObject(systems, "update");
+
+	uint32 numSystemNames;
+	char **systemNames = getSystemNames(
+		(List*)&scene->luaPhysicsFrameSystemNames,
+		&numSystemNames);
+
+	cJSON *externalUpdateSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(updateSystems, "external", externalUpdateSystems);
+
+	// TODO: Internal system names
+	// systemNames = getSystemNames(
+	// 	(List*)&scene->physicsFrameSystemNames,
+	// 	&numSystemNames);
+
+	// cJSON *internalUpdateSystems = cJSON_CreateStringArray(
+	// 	(const char**)systemNames,
+	// 	numSystemNames);
+	// freeSystemNames(systemNames, numSystemNames);
+
+	// cJSON_AddItemToObject(updateSystems, "internal", internalUpdateSystems);
+
+	cJSON *drawSystems = cJSON_AddObjectToObject(systems, "draw");
+
+	systemNames = getSystemNames(
+		(List*)&scene->luaRenderFrameSystemNames,
+		&numSystemNames);
+
+	cJSON *externalDrawSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(drawSystems, "external", externalDrawSystems);
+
+	// TODO: Internal system names
+	// systemNames = getSystemNames(
+	// 	(List*)&scene->renderFrameSystemNames,
+	// 	&numSystemNames);
+
+	// cJSON *internalDrawSystems = cJSON_CreateStringArray(
+	// 	(const char**)systemNames,
+	// 	numSystemNames);
+	// freeSystemNames(systemNames, numSystemNames);
+
+	// cJSON_AddItemToObject(drawSystems, "internal", internalDrawSystems);
+
+	cJSON *componentLimits = cJSON_AddObjectToObject(json, "component_limits");
+
+	for (HashMapIterator itr = hashMapGetIterator(scene->componentTypes);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		UUID *componentUUID = (UUID*)hashMapIteratorGetKey(itr);
+		uint32 componentLimit =
+			((ComponentDataTable*)hashMapIteratorGetValue(itr))->numEntries;
+		cJSON_AddNumberToObject(
+			componentLimits,
+			componentUUID->string,
+			componentLimit);
+	}
+
+	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
+
+	writeJSON(json, filename);
+	cJSON_Delete(json);
+
+	printf("Successfully exported scene (%s)\n", scene->name);
+}
+
+void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
+{
+	char *saveName = malloc(128);
+	sprintf(saveName, "save_%d", slot);
+
+	printf("Exporting save file (%s)...\n", saveName);
+
+	char *saveFolder = malloc(512);
+	sprintf(saveFolder, "resources/saves/%s", saveName);
+	char *saveFilename = getFullFilename(saveName, "save", saveFolder);
+
+	MKDIR(saveFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+	char *sceneFolder = getFolderPath(scene->name, saveFolder);
+	char *sceneFilename = getFullFilename(scene->name, NULL, sceneFolder);
+	char *entitiesFolder = getFullFilename("entities", NULL, sceneFolder);
+
+	MKDIR(sceneFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	MKDIR(entitiesFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+	FILE *file = fopen(saveFilename, "wb");
+
+	writeString(scene->name, file);
+	fwrite(&size, sizeof(uint32), 1, file);
+	fwrite(data, size, 1, file);
+
+	fclose(file);
+
+	exportScene(scene, sceneFilename);
+
+	uint32 entityNumber = 0;
+	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		char *entityName = malloc(128);
+		sprintf(entityName, "entity_%d", entityNumber++);
+		char *entityFilename = getFullFilename(
+			entityName,
+			NULL,
+			entitiesFolder);
+		free(entityName);
+
+		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
+		exportEntity(scene, *entity, entityFilename);
+		free(entityFilename);
+	}
+
+	free(saveFolder);
+	free(saveFilename);
+	free(sceneFolder);
+	free(sceneFilename);
+	free(entitiesFolder);
+
+	printf("Successfully exported save file (%s)\n", saveName);
+	free(saveName);
 }
 
 inline

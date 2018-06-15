@@ -64,6 +64,13 @@ char* readString(FILE *file)
 	return string;
 }
 
+void writeString(const char *string, FILE *file)
+{
+	uint32 stringLength = strlen(string) + 1;
+	fwrite(&stringLength, sizeof(uint32), 1, file);
+	fwrite(string, stringLength, 1, file);
+}
+
 void writeJSON(const cJSON *json, const char *filename) {
 	char *jsonFilename = getFullFilename(filename, "json", NULL);
 	FILE *file = fopen(jsonFilename, "w");
