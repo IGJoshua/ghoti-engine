@@ -235,7 +235,9 @@ function engine.shutdownScene(pScene)
 	  end
 	end
 
-	C.listMoveIterator(itr)
+	local itrRef = ffi.new("ListIterator[1]", itr)
+	C.listMoveIterator(itrRef)
+	itr = itrRef[0]
   end
 
   itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
@@ -251,7 +253,9 @@ function engine.shutdownScene(pScene)
 	  end
 	end
 
-	C.listMoveIterator(itr)
+	local itrRef = ffi.new("ListIterator[1]", itr)
+	C.listMoveIterator(itrRef)
+	itr = itrRef[0]
   end
 end
 

@@ -98,7 +98,6 @@ int32 loadScene(const char *name, Scene **scene)
 			}
 
 			UUID systemName;
-			memset(&systemName, 0, sizeof(UUID));
 
 			if (!strcmp(systemGroup, "update"))
 			{
@@ -175,14 +174,11 @@ int32 loadScene(const char *name, Scene **scene)
 				componentLimitNumbers[i]);
 		}
 
+		(*scene)->numComponentLimitNames = numComponentLimits;
+		(*scene)->componentLimitNames = componentLimitNames;
+
 		loadSceneEntities(scene, name, true);
 
-		for (i = 0; i < numComponentLimits; i++)
-		{
-			free(componentLimitNames[i]);
-		}
-
-		free(componentLimitNames);
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
@@ -495,7 +491,16 @@ void freeScene(Scene **scene)
 	freeHashMap(&(*scene)->entities);
 	freeHashMap(&(*scene)->componentTypes);
 
-	for (uint32 i = 0; i < (*scene)->numComponentsDefinitions; i++)
+	uint32 i;
+
+	for (i = 0; i < (*scene)->numComponentLimitNames; i++)
+	{
+		free((*scene)->componentLimitNames[i]);
+	}
+
+	free((*scene)->componentLimitNames);
+
+	for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
 	{
 		freeComponentDefinition(&(*scene)->componentDefinitions[i]);
 	}
@@ -950,8 +955,6 @@ void exportEntity(const Scene *scene, UUID entity, const char *filename)
 	cJSON_Delete(json);
 }
 
-// TODO: Export scenes to live representation when being unloaded
-
 internal
 char** getSystemNames(List *list, uint32 *numSystemNames)
 {
@@ -963,8 +966,8 @@ char** getSystemNames(List *list, uint32 *numSystemNames)
 		!listIteratorAtEnd(itr);
 		listMoveIterator(&itr))
 	{
-		char *systemName = *LIST_ITERATOR_GET_ELEMENT(char*, itr);
-		systemNames[i++] = malloc(strlen(systemName) + 1);
+		char *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string;
+		systemNames[i] = malloc(strlen(systemName) + 1);
 		strcpy(systemNames[i++], systemName);
 	}
 
@@ -1004,17 +1007,16 @@ void exportScene(const Scene *scene, const char *filename)
 
 	cJSON_AddItemToObject(updateSystems, "external", externalUpdateSystems);
 
-	// TODO: Internal system names
-	// systemNames = getSystemNames(
-	// 	(List*)&scene->physicsFrameSystemNames,
-	// 	&numSystemNames);
+	systemNames = getSystemNames(
+		(List*)&scene->physicsFrameSystems,
+		&numSystemNames);
 
-	// cJSON *internalUpdateSystems = cJSON_CreateStringArray(
-	// 	(const char**)systemNames,
-	// 	numSystemNames);
-	// freeSystemNames(systemNames, numSystemNames);
+	cJSON *internalUpdateSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
 
-	// cJSON_AddItemToObject(updateSystems, "internal", internalUpdateSystems);
+	cJSON_AddItemToObject(updateSystems, "internal", internalUpdateSystems);
 
 	cJSON *drawSystems = cJSON_AddObjectToObject(systems, "draw");
 
@@ -1029,31 +1031,36 @@ void exportScene(const Scene *scene, const char *filename)
 
 	cJSON_AddItemToObject(drawSystems, "external", externalDrawSystems);
 
-	// TODO: Internal system names
-	// systemNames = getSystemNames(
-	// 	(List*)&scene->renderFrameSystemNames,
-	// 	&numSystemNames);
+	systemNames = getSystemNames(
+		(List*)&scene->renderFrameSystems,
+		&numSystemNames);
 
-	// cJSON *internalDrawSystems = cJSON_CreateStringArray(
-	// 	(const char**)systemNames,
-	// 	numSystemNames);
-	// freeSystemNames(systemNames, numSystemNames);
+	cJSON *internalDrawSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
 
-	// cJSON_AddItemToObject(drawSystems, "internal", internalDrawSystems);
+	cJSON_AddItemToObject(drawSystems, "internal", internalDrawSystems);
 
 	cJSON *componentLimits = cJSON_AddObjectToObject(json, "component_limits");
 
-	for (HashMapIterator itr = hashMapGetIterator(scene->componentTypes);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+	for (uint32 i = 0; i < scene->numComponentLimitNames; i++)
 	{
-		UUID *componentUUID = (UUID*)hashMapIteratorGetKey(itr);
-		uint32 componentLimit =
-			((ComponentDataTable*)hashMapIteratorGetValue(itr))->numEntries;
-		cJSON_AddNumberToObject(
-			componentLimits,
-			componentUUID->string,
-			componentLimit);
+		for (HashMapIterator itr = hashMapGetIterator(scene->componentTypes);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			UUID *componentUUID = (UUID*)hashMapIteratorGetKey(itr);
+			if (!strcmp(scene->componentLimitNames[i], componentUUID->string))
+			{
+				uint32 componentLimit =
+					(*(ComponentDataTable**)hashMapIteratorGetValue(itr))->numEntries;
+				cJSON_AddNumberToObject(
+					componentLimits,
+					componentUUID->string,
+					componentLimit);
+			}
+		}
 	}
 
 	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);

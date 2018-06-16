@@ -110,6 +110,8 @@ typedef struct scene_t
 	List renderFrameSystems;
 	List luaPhysicsFrameSystemNames;
 	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
 	uint32 numComponentsDefinitions;
 	ComponentDefinition *componentDefinitions;
 } Scene;

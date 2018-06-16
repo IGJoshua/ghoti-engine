@@ -205,7 +205,7 @@ int32 main()
 		glfwSwapBuffers(window);
 	}
 
-	// exportSave(NULL, 0, scene, 1);
+	exportSave(NULL, 0, scene, 1);
 
 	if (L)
 	{
