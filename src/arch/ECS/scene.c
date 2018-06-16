@@ -235,13 +235,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 		while (dirEntry)
 		{
-			char *a = strrchr(dirEntry->d_name, '.') + 1;
-			char *b = dirEntry->d_name + strlen(dirEntry->d_name);
-			char *extension = malloc(b - a + 1);
-
-			memcpy(extension, a, b - a);
-			extension[b - a] = '\0';
-
+			char *extension = getExtension(dirEntry->d_name);
 			if (strcmp(extension, "entity"))
 			{
 				free(extension);
@@ -990,9 +984,7 @@ void exportScene(const Scene *scene, const char *filename)
 	printf("Exporting scene (%s)...\n", scene->name);
 
 	cJSON *json = cJSON_CreateObject();
-
 	cJSON *systems = cJSON_AddObjectToObject(json, "systems");
-
 	cJSON *updateSystems = cJSON_AddObjectToObject(systems, "update");
 
 	uint32 numSystemNames;

@@ -2,7 +2,7 @@ ffi = require("ffi")
 
 engine = {}
 
--- io.output("log.txt")
+-- io.output("lua.log")
 
 io.write("Loaded cFFI\n")
 
