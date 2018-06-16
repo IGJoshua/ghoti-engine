@@ -7,18 +7,18 @@ engine = {}
 io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(
-	ffi.os == "Windows"
-		and "./monochrome.dll"
-		or "./monochrome.so")
+  ffi.os == "Windows"
+    and "./monochrome.dll"
+    or "./monochrome.so")
 
 local C = engine.C
 
 io.write("Loaded monochrome library\n")
 
 engine.kazmath = ffi.load(
-	ffi.os == "Windows"
-		and "./libkazmath.a"
-		or "lualib/libkazmath.so")
+  ffi.os == "Windows"
+    and "./libkazmath.a"
+    or "lualib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
 
@@ -40,14 +40,14 @@ engine.components = require("resources/scripts/components")
 
 -- iterate over every file in resources/scripts/components/ and require them
 local testFile = io.popen(
-	ffi.os == "Windows"
-		and 'dir /b resources\\scripts\\components'
-		or 'find resources/scripts/components -name "*.lua"')
+  ffi.os == "Windows"
+    and 'dir /b resources\\scripts\\components'
+    or 'find resources/scripts/components -name "*.lua"')
 for line in testFile:lines() do
-	if ffi.os == "Windows" then
-		line = 'resources/scripts/components/'..line
-	end
-	require(string.sub(line, 0, -5))
+  if ffi.os == "Windows" then
+    line = 'resources/scripts/components/'..line
+  end
+  require(string.sub(line, 0, -5))
 end
 
 engine.scenes = {}
@@ -55,227 +55,227 @@ engine.systems = {}
 
 io.write("Searching for systems\n")
 local systemsFile = io.popen(
-	ffi.os == "Windows"
-		and 'dir /b resources\\scripts\\systems'
-		or 'find resources/scripts/systems -name "*.lua"')
+  ffi.os == "Windows"
+    and 'dir /b resources\\scripts\\systems'
+    or 'find resources/scripts/systems -name "*.lua"')
 for line in systemsFile:lines() do
-	local systemName = string.sub(line, 0, -5)
-	if ffi.os == "Windows" then
-		line = 'resources/scripts/systems/'..line
-	end
-	local system = require(string.sub(line, 0, -5))
+  local systemName = string.sub(line, 0, -5)
+  if ffi.os == "Windows" then
+    line = 'resources/scripts/systems/'..line
+  end
+  local system = require(string.sub(line, 0, -5))
 
-	if system.init then
-		local err, message = pcall(system.init, scene)
-		if err == false then
-			io.write(string.format(
-						 "Error raised during physics init for system %s\n%s\n",
-						 line,
-						 message))
-		end
-	end
+  if system.init then
+    local err, message = pcall(system.init, scene)
+    if err == false then
+      io.write(string.format(
+                 "Error raised during physics init for system %s\n%s\n",
+                 line,
+                 message))
+    end
+  end
 
-	engine.systems[systemName] = system
+  engine.systems[systemName] = system
 end
 
 
 function engine.initScene(pScene)
-	local scene = Scene:new(pScene)
+  local scene = Scene:new(pScene)
 
-	-- Register all lua components into the scene
-	for name, component in pairs(engine.components) do
-		-- If the component does not exist in the scene
-		if type(component) == 'table' then
-			if C.hashMapGetKey(scene.ptr.componentTypes, C.idFromName(name))
-			== ffi.cast("ComponentDataTable **", 0) then
-				-- Register the component
-				io.write(string.format(
-							 "The component %s is being registered with %d entries\n",
-							 name,
-							 component.numEntries))
-				C.sceneAddComponentType(
-					scene.ptr,
-					C.idFromName(name),
-					ffi.sizeof(component.type),
-					component.numEntries)
-			end
-		end
-	end
+  -- Register all lua components into the scene
+  for name, component in pairs(engine.components) do
+    -- If the component does not exist in the scene
+    if type(component) == 'table' then
+      if C.hashMapGetKey(scene.ptr.componentTypes, C.idFromName(name))
+      == ffi.cast("ComponentDataTable **", 0) then
+        -- Register the component
+        io.write(string.format(
+                   "The component %s is being registered with %d entries\n",
+                   name,
+                   component.numEntries))
+        C.sceneAddComponentType(
+          scene.ptr,
+          C.idFromName(name),
+          ffi.sizeof(component.type),
+          component.numEntries)
+      end
+    end
+  end
 
-	engine.scenes[pScene] = scene
+  engine.scenes[pScene] = scene
 end
 
 function engine.runSystems(pScene, dt, physics)
-	local scene = engine.scenes[pScene]
+  local scene = engine.scenes[pScene]
 
-	local null = ffi.new("int64", 0)
-	local emptyUUID = ffi.new("UUID")
+  local null = ffi.new("int64", 0)
+  local emptyUUID = ffi.new("UUID")
 
-	local itr
+  local itr
 
-	if physics then
-		itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
-	else
-		itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
-	end
+  if physics then
+    itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
+  else
+    itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
+  end
 
-	while C.listIteratorAtEnd(itr) == 0 do
-		local system = engine.systems[
-			ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+  while C.listIteratorAtEnd(itr) == 0 do
+    local system = engine.systems[
+      ffi.string(ffi.cast("UUID *", itr[0].data).string)]
 
-		if system.begin then
-			local err, message = pcall(system.begin, scene, dt)
-			if err == false then
-				io.write(string.format(
-							 "Error while beginning a system\n%s\n",
-							 message))
-			end
-		end
+    if system.begin then
+      local err, message = pcall(system.begin, scene, dt)
+      if err == false then
+        io.write(string.format(
+                   "Error while beginning a system\n%s\n",
+                   message))
+      end
+    end
 
-		if system.run then
-			local componentName = ffi.new(
-				"UUID[1]",
-				C.idFromName(system.components[1]))
-			-- Loop over every entity which has the correct components
-			local firstComp = ffi.cast(
-				"ComponentDataTable **",
-				C.hashMapGetKey(
-					scene.ptr.componentTypes,
-					componentName))
+    if system.run then
+      local componentName = ffi.new(
+        "UUID[1]",
+        C.idFromName(system.components[1]))
+      -- Loop over every entity which has the correct components
+      local firstComp = ffi.cast(
+        "ComponentDataTable **",
+        C.hashMapGetKey(
+          scene.ptr.componentTypes,
+          componentName))
 
-			if ffi.cast("int64", firstComp) ~= null
-			and ffi.cast("int64", firstComp[0]) ~= null then
-				for j = 0,tonumber(firstComp[0].numEntries) - 1 do
-					if ffi.string(emptyUUID.string) ~= ffi.string(
-						ffi.cast("UUID *", firstComp[0].data + j
-									 * (firstComp[0].componentSize
-										+ ffi.sizeof("UUID"))).string) then
+      if ffi.cast("int64", firstComp) ~= null
+      and ffi.cast("int64", firstComp[0]) ~= null then
+        for j = 0,tonumber(firstComp[0].numEntries) - 1 do
+          if ffi.string(emptyUUID.string) ~= ffi.string(
+            ffi.cast("UUID *", firstComp[0].data + j
+                       * (firstComp[0].componentSize
+                          + ffi.sizeof("UUID"))).string) then
 
-						local valid = true
-						for k = 2,#system.components do
-							local componentID = C.idFromName(
-								system.components[k])
-							local componentTable = ffi.cast(
-								"ComponentDataTable **",
-								C.hashMapGetKey(
-									scene.ptr.componentTypes,
-									componentID))
+            local valid = true
+            for k = 2,#system.components do
+              local componentID = C.idFromName(
+                system.components[k])
+              local componentTable = ffi.cast(
+                "ComponentDataTable **",
+                C.hashMapGetKey(
+                  scene.ptr.componentTypes,
+                  componentID))
 
-							if ffi.cast("int64", componentTable) ~= null
-							and ffi.cast("int64", componentTable[0]) then
-								if ffi.cast(
-									"int64",
-									ffi.cast(
-										"uint32 *",
-										C.hashMapGetKey(
-											componentTable[0].idToIndex,
-											firstComp[0].data
-												+ j
-												* (firstComp[0].componentSize
-													   + ffi.sizeof("UUID")))))
-								== null then
-									valid = false
-									break
-								end
-							end
-						end
+              if ffi.cast("int64", componentTable) ~= null
+              and ffi.cast("int64", componentTable[0]) then
+                if ffi.cast(
+                  "int64",
+                  ffi.cast(
+                    "uint32 *",
+                    C.hashMapGetKey(
+                      componentTable[0].idToIndex,
+                      firstComp[0].data
+                        + j
+                        * (firstComp[0].componentSize
+                             + ffi.sizeof("UUID")))))
+                == null then
+                  valid = false
+                  break
+                end
+              end
+            end
 
-						if valid then
-							local err, message = pcall(
-								system.run,
-								scene,
-								ffi.cast("UUID *", firstComp[0].data
-											 + j
-											 * (firstComp[0].componentSize
-													+ ffi.sizeof("UUID")))[0],
-								dt)
-							if err == false then
-								io.write(string.format(
-											 "Error raised while running physics system\n%s\n",
-											 message))
-							end
-						end
-					end
-				end
-			end
+            if valid then
+              local err, message = pcall(
+                system.run,
+                scene,
+                ffi.cast("UUID *", firstComp[0].data
+                           + j
+                           * (firstComp[0].componentSize
+                                + ffi.sizeof("UUID")))[0],
+                dt)
+              if err == false then
+                io.write(string.format(
+                           "Error raised while running physics system\n%s\n",
+                           message))
+              end
+            end
+          end
+        end
+      end
 
-			if system.clean then
-				local err, message = pcall(system.clean, scene, dt)
-				if err == false then
-					io.write(string.format(
-								 "Error raised while calling the clean system\n%s\n",
-								 message))
-				end
-			end
-		end
+      if system.clean then
+        local err, message = pcall(system.clean, scene, dt)
+        if err == false then
+          io.write(string.format(
+                     "Error raised while calling the clean system\n%s\n",
+                     message))
+        end
+      end
+    end
 
-		C.listMoveIterator(itr)
-	end
+    C.listMoveIterator(itr)
+  end
 end
 
 function engine.runPhysicsSystems(pScene, dt)
-	engine.runSystems(pScene, dt, true)
+  engine.runSystems(pScene, dt, true)
 end
 
 function engine.runRenderSystems(pScene, dt)
-	engine.runSystems(pScene, dt, nil)
+  engine.runSystems(pScene, dt, nil)
 end
 
 function engine.shutdownScene(pScene)
-	local scene = engine.scenes[pScene]
+  local scene = engine.scenes[pScene]
 
-	local itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
-	while C.listIteratorAtEnd(itr) == 0 do
-		local physicsSystem = engine.systems[
-			ffi.string(ffi.cast("UUID *", itr[0].data).string)]
-		if physicsSystem.shutdown then
-			local err, message = pcall(physicsSystem.shutdown, scene)
-			if err == false then
-				io.write(string.format("Error raised during physics shutdown\n%s\n",
-									   message))
-			end
-		end
+  local itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
+  while C.listIteratorAtEnd(itr) == 0 do
+    local physicsSystem = engine.systems[
+      ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+    if physicsSystem.shutdown then
+      local err, message = pcall(physicsSystem.shutdown, scene)
+      if err == false then
+        io.write(string.format("Error raised during physics shutdown\n%s\n",
+                               message))
+      end
+    end
 
-		C.listMoveIterator(itr)
-	end
+    C.listMoveIterator(itr)
+  end
 
-	itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
-	while C.listIteratorAtEnd(itr) == 0 do
-		local renderSystem = engine.systems[
-			ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+  itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
+  while C.listIteratorAtEnd(itr) == 0 do
+    local renderSystem = engine.systems[
+      ffi.string(ffi.cast("UUID *", itr[0].data).string)]
 
-		if renderSystem.shutdown then
-			local err, message = pcall(renderSystem.shutdown, scene)
-			if err == false then
-				io.write(string.format("Error raised during render shutdown\n%s\n",
-									   message))
-			end
-		end
+    if renderSystem.shutdown then
+      local err, message = pcall(renderSystem.shutdown, scene)
+      if err == false then
+        io.write(string.format("Error raised during render shutdown\n%s\n",
+                               message))
+      end
+    end
 
-		C.listMoveIterator(itr)
-	end
+    C.listMoveIterator(itr)
+  end
 end
 
 function engine.cleanInput()
-	for key, value in pairs(engine.keyboard) do
-		if type(value) == "table" then
-			value.updated = false
-		end
-	end
-	for key, value in pairs(engine.mouse.buttons) do
-		if type(value) == "table" then
-			value.updated = false
-		end
-	end
+  for key, value in pairs(engine.keyboard) do
+    if type(value) == "table" then
+      value.updated = false
+    end
+  end
+  for key, value in pairs(engine.mouse.buttons) do
+    if type(value) == "table" then
+      value.updated = false
+    end
+  end
 
-	engine.mouse.scroll.x = 0
-	engine.mouse.scroll.y = 0
+  engine.mouse.scroll.x = 0
+  engine.mouse.scroll.y = 0
 
-	for name, button in pairs(engine.gamepad.buttons) do
-		button.updated = false
-	end
+  for name, button in pairs(engine.gamepad.buttons) do
+    button.updated = false
+  end
 
-	for name, dpad in pairs(engine.gamepad.dpad) do
-		dpad.updated = false
-	end
+  for name, dpad in pairs(engine.gamepad.dpad) do
+    dpad.updated = false
+  end
 end
