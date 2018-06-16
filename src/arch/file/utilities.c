@@ -55,14 +55,17 @@ char* getFullFilename(
 
 char* getExtension(const char *filename)
 {
-	const char *a = strrchr(filename, '.') + 1;
-	const char *b = filename + strlen(filename);
-	char *extension = malloc(b - a + 1);
+	const char *a = strrchr(filename, '.');
+	if (a)
+	{
+		const char *b = filename + strlen(filename);
 
-	memcpy(extension, a, b - a);
-	extension[b - a] = '\0';
+		char *extension = malloc(b - a);
+		memcpy(extension, a + 1, b - a);
+		return extension;
+	}
 
-	return extension;
+	return NULL;
 }
 
 char* readString(FILE *file)
