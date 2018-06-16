@@ -185,7 +185,7 @@ int32 loadScene(const char *name, Scene **scene)
 		free(componentLimitNames);
 		free(componentLimitNumbers);
 
-		UUID activeCamera;
+		UUID activeCamera = {};
 		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
 		(*scene)->mainCamera = activeCamera;
 
