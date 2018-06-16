@@ -9,6 +9,8 @@
 
 #include "cJSON/cJSON.h"
 
+#include "json-utilities/utilities.h"
+
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
@@ -54,7 +56,7 @@ int32 loadScene(const char *name, Scene **scene)
 	}
 
 	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	char *sceneFilename = getFullFilename(name, "scene", sceneFolder);
+	char *sceneFilename = getFullFilePath(name, "scene", sceneFolder);
 	free(sceneFolder);
 
 	printf("Loading scene (%s)...\n", name);
@@ -215,7 +217,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	}
 
 	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	char *entityFolder = getFullFilename("entities", NULL, sceneFolder);
+	char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 	free(sceneFolder);
 
 	DIR *dir = opendir(entityFolder);
@@ -245,7 +247,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 			free(extension);
 
-			char *entityFilename = getFullFilename(
+			char *entityFilename = getFullFilePath(
 				dirEntry->d_name,
 				NULL,
 				entityFolder);
@@ -638,7 +640,7 @@ char* getDataTypeString(
 	return dataTypeString;
 }
 
-void exportEntity(const Scene *scene, UUID entity, const char *filename)
+void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 {
 	cJSON *json = cJSON_CreateObject();
 
@@ -979,7 +981,7 @@ void freeSystemNames(char **systemNames, uint32 numSystemNames)
 	free(systemNames);
 }
 
-void exportScene(const Scene *scene, const char *filename)
+void exportSceneSnapshot(const Scene *scene, const char *filename)
 {
 	printf("Exporting scene (%s)...\n", scene->name);
 
@@ -1072,13 +1074,13 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	char *saveFolder = malloc(512);
 	sprintf(saveFolder, "resources/saves/%s", saveName);
-	char *saveFilename = getFullFilename(saveName, "save", saveFolder);
+	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
 
 	MKDIR(saveFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
 	char *sceneFolder = getFolderPath(scene->name, saveFolder);
-	char *sceneFilename = getFullFilename(scene->name, NULL, sceneFolder);
-	char *entitiesFolder = getFullFilename("entities", NULL, sceneFolder);
+	char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
+	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
 
 	MKDIR(sceneFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	MKDIR(entitiesFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -1091,7 +1093,7 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	fclose(file);
 
-	exportScene(scene, sceneFilename);
+	exportSceneSnapshot(scene, sceneFilename);
 
 	uint32 entityNumber = 0;
 	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
@@ -1100,14 +1102,15 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 	{
 		char *entityName = malloc(128);
 		sprintf(entityName, "entity_%d", entityNumber++);
-		char *entityFilename = getFullFilename(
+		char *entityFilename = getFullFilePath(
 			entityName,
 			NULL,
 			entitiesFolder);
 		free(entityName);
 
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
-		exportEntity(scene, *entity, entityFilename);
+		exportEntitySnapshot(scene, *entity, entityFilename);
+		exportEntity(entityFilename);
 		free(entityFilename);
 	}
 

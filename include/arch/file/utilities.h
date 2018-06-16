@@ -13,7 +13,7 @@
 #endif
 
 char* getFolderPath(const char *filename, const char *parentFolder);
-char* getFullFilename(
+char* getFullFilePath(
 	const char *filename,
 	const char *extension,
 	const char *folder);

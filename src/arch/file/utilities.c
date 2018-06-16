@@ -14,7 +14,7 @@ char* getFolderPath(const char *filename, const char *parentFolder)
 	return folderPath;
 }
 
-char* getFullFilename(
+char* getFullFilePath(
 	const char *filename,
 	const char *extension,
 	const char *folder)
@@ -87,7 +87,7 @@ void writeString(const char *string, FILE *file)
 }
 
 void writeJSON(const cJSON *json, const char *filename) {
-	char *jsonFilename = getFullFilename(filename, "json", NULL);
+	char *jsonFilename = getFullFilePath(filename, "json", NULL);
 	FILE *file = fopen(jsonFilename, "w");
 
 	char *jsonString = cJSON_Print(json);
