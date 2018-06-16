@@ -23,6 +23,12 @@ typedef struct component_data_table_t
 	uint8 data[];
 } ComponentDataTable;
 
+typedef struct
+{
+	uint32 index;
+	ComponentDataTable *table;
+} ComponentDataTableIterator;
+
 typedef enum data_type_e {
 	INVALID_DATA_TYPE = -1,
 	UINT8 = 0,

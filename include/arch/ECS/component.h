@@ -13,3 +13,9 @@ void freeComponentDataTable(ComponentDataTable **table);
 void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData);
 void cdtRemove(ComponentDataTable *table, UUID entityID);
 void *cdtGet(ComponentDataTable *table, UUID entityID);
+
+ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table);
+void cdtMoveIterator(ComponentDataTableIterator *itr);
+uint32 cdtIteratorAtEnd(ComponentDataTableIterator itr);
+UUID *cdtIteratorGetUUID(ComponentDataTableIterator itr) ;
+void *cdtIteratorGetData(ComponentDataTableIterator itr);
