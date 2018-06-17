@@ -56,7 +56,12 @@ int32 loadScene(const char *name, Scene **scene)
 	}
 
 	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	char *sceneFilename = getFullFilePath(name, "scene", sceneFolder);
+	char *sceneFilename = getFullFilePath(name, NULL, sceneFolder);
+
+	exportScene(sceneFilename);
+	free(sceneFilename);
+
+	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
 	free(sceneFolder);
 
 	printf("Loading scene (%s)...\n", name);
@@ -238,7 +243,32 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 		while (dirEntry)
 		{
 			char *extension = getExtension(dirEntry->d_name);
-			if (strcmp(extension, "entity"))
+			if (extension && !strcmp(extension, "json"))
+			{
+				char *entityFilename = removeExtension(dirEntry->d_name);
+				char *jsonEntityFilename = getFullFilePath(
+					entityFilename,
+					NULL,
+					entityFolder);
+				free(entityFilename);
+
+				exportEntity(jsonEntityFilename);
+				free(jsonEntityFilename);
+			}
+
+			free(extension);
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+		dir = opendir(entityFolder);
+		dirEntry = readdir(dir);
+
+		while (dirEntry)
+		{
+			char *extension = getExtension(dirEntry->d_name);
+			if (!extension || strcmp(extension, "entity"))
 			{
 				free(extension);
 				dirEntry = readdir(dir);
@@ -1095,6 +1125,14 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
+	exportScene(sceneFilename);
+	char *jsonSceneFilename = getFullFilePath(
+		sceneFilename,
+		"json",
+		NULL);
+	remove(jsonSceneFilename);
+	free(jsonSceneFilename);
+
 	uint32 entityNumber = 0;
 	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
 		 !hashMapIteratorAtEnd(itr);
@@ -1110,7 +1148,15 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
+
 		exportEntity(entityFilename);
+		char *jsonEntityFilename = getFullFilePath(
+			entityFilename,
+			"json",
+			NULL);
+		remove(jsonEntityFilename);
+
+		free(jsonEntityFilename);
 		free(entityFilename);
 	}
 

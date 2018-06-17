@@ -18,6 +18,7 @@ char* getFullFilePath(
 	const char *extension,
 	const char *folder);
 char* getExtension(const char *filename);
+char* removeExtension(const char *filename);
 char* readString(FILE *file);
 void writeString(const char *string, FILE *file);
 

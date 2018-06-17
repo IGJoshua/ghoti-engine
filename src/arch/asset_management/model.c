@@ -7,6 +7,8 @@
 
 #include "file/utilities.h"
 
+#include "json-utilities/utilities.h"
+
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -97,7 +99,12 @@ int32 loadMaterials(Model *model)
 	int32 error = 0;
 
 	char *assetFolder = getFolderPath(model->name, "resources/models");
-	char *assetFilename = getFullFilePath(model->name, "asset", assetFolder);
+	char *assetFilename = getFullFilePath(model->name, NULL, assetFolder);
+
+	exportAsset(assetFilename);
+	free(assetFilename);
+
+	assetFilename = getFullFilePath(model->name, "asset", assetFolder);
 	free(assetFolder);
 
 	FILE *file = fopen(assetFilename, "rb");

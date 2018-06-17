@@ -68,6 +68,17 @@ char* getExtension(const char *filename)
 	return NULL;
 }
 
+char* removeExtension(const char *filename)
+{
+	const char *extension = strrchr(filename, '.');
+
+	char *name = malloc(extension - filename + 1);
+	memcpy(name, filename, extension - filename);
+	name[extension - filename] = '\0';
+
+	return name;
+}
+
 char* readString(FILE *file)
 {
 	uint32 stringLength;
