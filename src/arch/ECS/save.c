@@ -7,6 +7,9 @@
 
 #include "json-utilities/utilities.h"
 
+#include <sys/stat.h>
+#include <malloc.h>
+
 void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 {
 	char *saveName = malloc(128);
@@ -103,14 +106,16 @@ int32 loadSave(uint32 slot, Scene **scene)
 		char *sceneFolder = getFolderPath(sceneName, saveFolder);
 
 		loadScene(sceneName, sceneFolder, scene);
+
+		free(sceneFolder);
 		free(sceneName);
 
 		uint32 size;
 		fread(&size, sizeof(uint32), 1, file);
 
 		// TODO: Pass global data from save to Lua
-		void *data;
-		fread(&size, size, 1, file);
+		// void *data;
+		// fread(&size, size, 1, file);
 	}
 	else
 	{
@@ -128,4 +133,26 @@ int32 loadSave(uint32 slot, Scene **scene)
 
 	free(saveName);
 	return -1;
+}
+
+bool getSaveSlotAvailability(uint32 slot)
+{
+	bool available = false;
+
+	char *saveName = malloc(128);
+	sprintf(saveName, "save_%d", slot);
+
+	char *saveFolder = malloc(512);
+	sprintf(saveFolder, "resources/saves/%s", saveName);
+	free(saveName);
+
+    struct stat info;
+	stat(saveFolder, &info);
+	if (info.st_mode & S_IFDIR)
+	{
+		available = true;
+	}
+
+	free(saveFolder);
+	return available;
 }

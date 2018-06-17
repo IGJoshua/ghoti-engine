@@ -86,18 +86,15 @@ int32 main()
 		return 1;
 	}
 
-
 	Scene *scene;
 
-	loadSave(1, &scene);
-
-	// char *sceneFolder = getFolderPath("scene_1", "resources/scenes");
-	// if (loadScene("scene_1", sceneFolder, &scene) == -1)
-	// {
-	// 	free(sceneFolder);
-	// 	return -1;
-	// }
-	// free(sceneFolder);
+	char *sceneFolder = getFolderPath("scene_1", "resources/scenes");
+	if (loadScene("scene_1", sceneFolder, &scene) == -1)
+	{
+		free(sceneFolder);
+		return -1;
+	}
+	free(sceneFolder);
 
 	// State previous
 	// State next
@@ -213,8 +210,6 @@ int32 main()
 
 		glfwSwapBuffers(window);
 	}
-
-	exportSave(NULL, 0, scene, 1);
 
 	if (L)
 	{

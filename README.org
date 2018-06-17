@@ -1,19 +1,10 @@
 #+AUTHOR: Joshua Suskalo
 #+AUTHOR: Pranav Sahani
 
-* Dependencies
+* Build Tools
 #+BEGIN_SRC
 clang
-glfw
-glew
-kazmath
-devil
-assimp
-pthread
 mingw-w64-clang
-mingw-w64-glfw
-mingw-w64-glew
-mingw-w64-winpthreads
 #+END_SRC
 * Rendering Engine
 * Scene Representation
