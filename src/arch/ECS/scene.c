@@ -5,6 +5,10 @@
 #include "data/hash_map.h"
 #include "data/list.h"
 
+#include "components/component_types.h"
+
+#include "asset_management/model.h"
+
 #include "file/utilities.h"
 
 #include "cJSON/cJSON.h"
@@ -508,10 +512,43 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
+	ComponentDataTable *modelComponents = NULL;
+	for (HashMapIterator componentsItr = hashMapGetIterator(
+			(*scene)->componentTypes);
+		!hashMapIteratorAtEnd(componentsItr);
+		hashMapMoveIterator(&componentsItr))
+	{
+		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
+		if (!strcmp(componentID->string, "model"))
+		{
+			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
+				componentsItr);
+			break;
+		}
+	}
+
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
 	{
+		for (ListIterator listItr = listGetIterator(
+				(List*)hashMapIteratorGetValue(itr));
+			!listIteratorAtEnd(listItr);
+			listMoveIterator(&listItr))
+		{
+			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
+			if (!strcmp(componentID->string, "model"))
+			{
+				ModelComponent *modelComponent =
+					(ModelComponent*)cdtGet(
+						modelComponents,
+						*(UUID*)hashMapIteratorGetKey(itr));
+
+				freeModel(modelComponent->name);
+				break;
+			}
+		}
+
 		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
 	}
 
@@ -1289,7 +1326,8 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 	while (!hashMapIteratorAtEnd(itr))
 	{
 		// Iterate over every component type in the entity
-		ListIterator litr = listGetIterator((List *)hashMapIteratorGetValue(itr));
+		ListIterator litr = listGetIterator(
+			(List *)hashMapIteratorGetValue(itr));
 		while (!listIteratorAtEnd(litr))
 		{
 			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
