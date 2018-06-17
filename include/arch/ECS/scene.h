@@ -9,7 +9,7 @@
 #define ENTITY_BUCKETS 97
 
 Scene *createScene(void);
-int32 loadScene(const char *name, Scene **scene);
+int32 loadScene(const char *name, const char *sceneFolder, Scene **scene);
 int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 void freeScene(Scene **scene);
 
@@ -28,7 +28,6 @@ void exportEntitySnapshot(
 	UUID entity,
 	const char *filename);
 void exportSceneSnapshot(const Scene *scene, const char *filename);
-void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,

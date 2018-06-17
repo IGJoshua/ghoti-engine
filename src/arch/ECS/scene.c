@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <unistd.h>
 
 extern HashMap systemRegistry;
 
@@ -46,7 +47,7 @@ Scene *createScene(void)
 	return ret;
 }
 
-int32 loadScene(const char *name, Scene **scene)
+int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 {
 	int32 error = 0;
 
@@ -55,14 +56,21 @@ int32 loadScene(const char *name, Scene **scene)
 		return -1;
 	}
 
-	char *sceneFolder = getFolderPath(name, "resources/scenes");
 	char *sceneFilename = getFullFilePath(name, NULL, sceneFolder);
+	char *jsonSceneFilename = getFullFilePath(
+		sceneFilename,
+		"json",
+		NULL);
 
-	exportScene(sceneFilename);
+	if (access(jsonSceneFilename, F_OK) != -1)
+	{
+		exportScene(sceneFilename);
+	}
+
+	free(jsonSceneFilename);
 	free(sceneFilename);
 
 	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
-	free(sceneFolder);
 
 	printf("Loading scene (%s)...\n", name);
 
@@ -1093,81 +1101,6 @@ void exportSceneSnapshot(const Scene *scene, const char *filename)
 	cJSON_Delete(json);
 
 	printf("Successfully exported scene (%s)\n", scene->name);
-}
-
-void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
-{
-	char *saveName = malloc(128);
-	sprintf(saveName, "save_%d", slot);
-
-	printf("Exporting save file (%s)...\n", saveName);
-
-	char *saveFolder = malloc(512);
-	sprintf(saveFolder, "resources/saves/%s", saveName);
-	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
-
-	MKDIR(saveFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-	char *sceneFolder = getFolderPath(scene->name, saveFolder);
-	char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
-	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
-
-	MKDIR(sceneFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	MKDIR(entitiesFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-	FILE *file = fopen(saveFilename, "wb");
-
-	writeString(scene->name, file);
-	fwrite(&size, sizeof(uint32), 1, file);
-	fwrite(data, size, 1, file);
-
-	fclose(file);
-
-	exportSceneSnapshot(scene, sceneFilename);
-
-	exportScene(sceneFilename);
-	char *jsonSceneFilename = getFullFilePath(
-		sceneFilename,
-		"json",
-		NULL);
-	remove(jsonSceneFilename);
-	free(jsonSceneFilename);
-
-	uint32 entityNumber = 0;
-	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		char *entityName = malloc(128);
-		sprintf(entityName, "entity_%d", entityNumber++);
-		char *entityFilename = getFullFilePath(
-			entityName,
-			NULL,
-			entitiesFolder);
-		free(entityName);
-
-		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
-		exportEntitySnapshot(scene, *entity, entityFilename);
-
-		exportEntity(entityFilename);
-		char *jsonEntityFilename = getFullFilePath(
-			entityFilename,
-			"json",
-			NULL);
-		remove(jsonEntityFilename);
-
-		free(jsonEntityFilename);
-		free(entityFilename);
-	}
-
-	free(saveFolder);
-	free(saveFilename);
-	free(sceneFolder);
-	free(sceneFilename);
-	free(entitiesFolder);
-
-	printf("Successfully exported save file (%s)\n", saveName);
-	free(saveName);
 }
 
 inline
