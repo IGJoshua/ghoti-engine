@@ -12,6 +12,9 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
 #include "ECS/system.h"
+#include "ECS/save.h"
+
+#include "file/utilities.h"
 
 #include "components/component_types.h"
 
@@ -83,19 +86,15 @@ int32 main()
 		return 1;
 	}
 
-	// TODO: Setup basic component state
 	Scene *scene;
-	if (loadScene("scene_1", &scene) == -1)
+
+	char *sceneFolder = getFolderPath("scene_1", "resources/scenes");
+	if (loadScene("scene_1", sceneFolder, &scene) == -1)
 	{
+		free(sceneFolder);
 		return -1;
 	}
-
-	// Add component types
-
-	// Add systems
-	sceneAddRenderFrameSystem(scene, idFromName("renderer"));
-
-	// Create entities
+	free(sceneFolder);
 
 	// State previous
 	// State next

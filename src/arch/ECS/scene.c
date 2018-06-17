@@ -9,6 +9,8 @@
 
 #include "cJSON/cJSON.h"
 
+#include "json-utilities/utilities.h"
+
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
@@ -16,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <unistd.h>
 
 extern HashMap systemRegistry;
 
@@ -44,7 +47,7 @@ Scene *createScene(void)
 	return ret;
 }
 
-int32 loadScene(const char *name, Scene **scene)
+int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 {
 	int32 error = 0;
 
@@ -53,9 +56,21 @@ int32 loadScene(const char *name, Scene **scene)
 		return -1;
 	}
 
-	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	char *sceneFilename = getFullFilename(name, "scene", sceneFolder);
-	free(sceneFolder);
+	char *sceneFilename = getFullFilePath(name, NULL, sceneFolder);
+	char *jsonSceneFilename = getFullFilePath(
+		sceneFilename,
+		"json",
+		NULL);
+
+	if (access(jsonSceneFilename, F_OK) != -1)
+	{
+		exportScene(sceneFilename);
+	}
+
+	free(jsonSceneFilename);
+	free(sceneFilename);
+
+	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
 
 	printf("Loading scene (%s)...\n", name);
 
@@ -64,6 +79,9 @@ int32 loadScene(const char *name, Scene **scene)
 	if (file)
 	{
 		*scene = createScene();
+
+		(*scene)->name = malloc(strlen(name) + 1);
+		strcpy((*scene)->name, name);
 
 		uint32 numSystemGroups;
 		fread(&numSystemGroups, sizeof(uint32), 1, file);
@@ -94,24 +112,38 @@ int32 loadScene(const char *name, Scene **scene)
 				internalSystems[j] = readString(file);
 			}
 
+			UUID systemName;
+
 			if (!strcmp(systemGroup, "update"))
 			{
 				for (j = 0; j < numExternalSystems; j++)
 				{
+					strcpy(systemName.string, externalSystems[j]);
 					listPushBack(
 						&(*scene)->luaPhysicsFrameSystemNames,
-						&externalSystems[j]);
-					// TODO: Internal system names
+						&systemName);
+				}
+
+				for (j = 0; j < numInternalSystems; j++)
+				{
+					strcpy(systemName.string, internalSystems[j]);
+					sceneAddPhysicsFrameSystem(*scene, systemName);
 				}
 			}
 			else if (!strcmp(systemGroup, "draw"))
 			{
 				for (j = 0; j < numExternalSystems; j++)
 				{
+					strcpy(systemName.string, externalSystems[j]);
 					listPushBack(
 						&(*scene)->luaRenderFrameSystemNames,
-						&externalSystems[j]);
-					// TODO: Internal system names
+						&systemName);
+				}
+
+				for (j = 0; j < numInternalSystems; j++)
+				{
+					strcpy(systemName.string, internalSystems[j]);
+					sceneAddRenderFrameSystem(*scene, systemName);
 				}
 			}
 
@@ -157,17 +189,14 @@ int32 loadScene(const char *name, Scene **scene)
 				componentLimitNumbers[i]);
 		}
 
+		(*scene)->numComponentLimitNames = numComponentLimits;
+		(*scene)->componentLimitNames = componentLimitNames;
+
 		loadSceneEntities(scene, name, true);
 
-		for (i = 0; i < numComponentLimits; i++)
-		{
-			free(componentLimitNames[i]);
-		}
-
-		free(componentLimitNames);
 		free(componentLimitNumbers);
 
-		UUID activeCamera;
+		UUID activeCamera = {};
 		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
 		(*scene)->mainCamera = activeCamera;
 
@@ -201,7 +230,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	}
 
 	char *sceneFolder = getFolderPath(name, "resources/scenes");
-	char *entityFolder = getFullFilename("entities", NULL, sceneFolder);
+	char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 	free(sceneFolder);
 
 	DIR *dir = opendir(entityFolder);
@@ -221,14 +250,33 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 		while (dirEntry)
 		{
-			char *a = strrchr(dirEntry->d_name, '.') + 1;
-			char *b = dirEntry->d_name + strlen(dirEntry->d_name);
-			char *extension = malloc(b - a + 1);
+			char *extension = getExtension(dirEntry->d_name);
+			if (extension && !strcmp(extension, "json"))
+			{
+				char *entityFilename = removeExtension(dirEntry->d_name);
+				char *jsonEntityFilename = getFullFilePath(
+					entityFilename,
+					NULL,
+					entityFolder);
+				free(entityFilename);
 
-			memcpy(extension, a, b - a);
-			extension[b - a] = '\0';
+				exportEntity(jsonEntityFilename);
+				free(jsonEntityFilename);
+			}
 
-			if (strcmp(extension, "entity"))
+			free(extension);
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+		dir = opendir(entityFolder);
+		dirEntry = readdir(dir);
+
+		while (dirEntry)
+		{
+			char *extension = getExtension(dirEntry->d_name);
+			if (!extension || strcmp(extension, "entity"))
 			{
 				free(extension);
 				dirEntry = readdir(dir);
@@ -237,7 +285,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 			free(extension);
 
-			char *entityFilename = getFullFilename(
+			char *entityFilename = getFullFilePath(
 				dirEntry->d_name,
 				NULL,
 				entityFolder);
@@ -453,6 +501,8 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 
 void freeScene(Scene **scene)
 {
+	free((*scene)->name);
+
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
 	listClear(&(*scene)->physicsFrameSystems);
@@ -475,7 +525,16 @@ void freeScene(Scene **scene)
 	freeHashMap(&(*scene)->entities);
 	freeHashMap(&(*scene)->componentTypes);
 
-	for (uint32 i = 0; i < (*scene)->numComponentsDefinitions; i++)
+	uint32 i;
+
+	for (i = 0; i < (*scene)->numComponentLimitNames; i++)
+	{
+		free((*scene)->componentLimitNames[i]);
+	}
+
+	free((*scene)->componentLimitNames);
+
+	for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
 	{
 		freeComponentDefinition(&(*scene)->componentDefinitions[i]);
 	}
@@ -619,7 +678,7 @@ char* getDataTypeString(
 	return dataTypeString;
 }
 
-void exportEntity(const Scene *scene, UUID entity)
+void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 {
 	cJSON *json = cJSON_CreateObject();
 
@@ -926,8 +985,122 @@ void exportEntity(const Scene *scene, UUID entity)
 		}
 	}
 
-	writeJSON(json, "entity");
+	writeJSON(json, filename);
 	cJSON_Delete(json);
+}
+
+internal
+char** getSystemNames(List *list, uint32 *numSystemNames)
+{
+	*numSystemNames = listGetSize(list);
+	char **systemNames = malloc(*numSystemNames * sizeof(char*));
+
+	uint32 i = 0;
+	for (ListIterator itr = listGetIterator(list);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		char *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string;
+		systemNames[i] = malloc(strlen(systemName) + 1);
+		strcpy(systemNames[i++], systemName);
+	}
+
+	return systemNames;
+}
+
+internal
+void freeSystemNames(char **systemNames, uint32 numSystemNames)
+{
+	for (uint32 i = 0; i < numSystemNames; i++)
+	{
+		free(systemNames[i]);
+	}
+
+	free(systemNames);
+}
+
+void exportSceneSnapshot(const Scene *scene, const char *filename)
+{
+	printf("Exporting scene (%s)...\n", scene->name);
+
+	cJSON *json = cJSON_CreateObject();
+	cJSON *systems = cJSON_AddObjectToObject(json, "systems");
+	cJSON *updateSystems = cJSON_AddObjectToObject(systems, "update");
+
+	uint32 numSystemNames;
+	char **systemNames = getSystemNames(
+		(List*)&scene->luaPhysicsFrameSystemNames,
+		&numSystemNames);
+
+	cJSON *externalUpdateSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(updateSystems, "external", externalUpdateSystems);
+
+	systemNames = getSystemNames(
+		(List*)&scene->physicsFrameSystems,
+		&numSystemNames);
+
+	cJSON *internalUpdateSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(updateSystems, "internal", internalUpdateSystems);
+
+	cJSON *drawSystems = cJSON_AddObjectToObject(systems, "draw");
+
+	systemNames = getSystemNames(
+		(List*)&scene->luaRenderFrameSystemNames,
+		&numSystemNames);
+
+	cJSON *externalDrawSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(drawSystems, "external", externalDrawSystems);
+
+	systemNames = getSystemNames(
+		(List*)&scene->renderFrameSystems,
+		&numSystemNames);
+
+	cJSON *internalDrawSystems = cJSON_CreateStringArray(
+		(const char**)systemNames,
+		numSystemNames);
+	freeSystemNames(systemNames, numSystemNames);
+
+	cJSON_AddItemToObject(drawSystems, "internal", internalDrawSystems);
+
+	cJSON *componentLimits = cJSON_AddObjectToObject(json, "component_limits");
+
+	for (uint32 i = 0; i < scene->numComponentLimitNames; i++)
+	{
+		for (HashMapIterator itr = hashMapGetIterator(scene->componentTypes);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			UUID *componentUUID = (UUID*)hashMapIteratorGetKey(itr);
+			if (!strcmp(scene->componentLimitNames[i], componentUUID->string))
+			{
+				uint32 componentLimit =
+					(*(ComponentDataTable**)hashMapIteratorGetValue(itr))->numEntries;
+				cJSON_AddNumberToObject(
+					componentLimits,
+					componentUUID->string,
+					componentLimit);
+			}
+		}
+	}
+
+	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
+
+	writeJSON(json, filename);
+	cJSON_Delete(json);
+
+	printf("Successfully exported scene (%s)\n", scene->name);
 }
 
 inline

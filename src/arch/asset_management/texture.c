@@ -29,7 +29,7 @@ int32 loadTexture(const char *name)
 		ilGenImages(1, &devilID);
 		ilBindImage(devilID);
 
-		char *filename = getFullFilename(name, "png", "resources/textures");
+		char *filename = getFullFilePath(name, "png", "resources/textures");
 		ilLoadImage(filename);
 
 		ILenum ilError = ilGetError();

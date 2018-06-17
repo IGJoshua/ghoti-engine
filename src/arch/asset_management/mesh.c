@@ -1,6 +1,7 @@
 #include "asset_management/mesh.h"
 #include "asset_management/asset_manager_types.h"
 
+#include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
 

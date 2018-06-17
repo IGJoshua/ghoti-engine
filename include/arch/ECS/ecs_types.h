@@ -64,6 +64,7 @@ typedef struct component_definition_t
 
 typedef struct scene_t
 {
+	char *name;
 	// Maps component UUIDs to pointers to component data tables
 	HashMap componentTypes;
 	// Maps entity UUIDs to lists of component UUIDs
@@ -73,6 +74,8 @@ typedef struct scene_t
 	List renderFrameSystems;
 	List luaPhysicsFrameSystemNames;
 	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
 	uint32 numComponentsDefinitions;
 	ComponentDefinition *componentDefinitions;
 } Scene;

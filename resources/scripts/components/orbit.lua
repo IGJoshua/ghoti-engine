@@ -8,8 +8,8 @@ typedef struct orbit_component_t
 } OrbitComponent;
 ]]
 
-io.write("Defined Orbit component for FFI\n")
+-- io.write("Defined Orbit component for FFI\n")
 
-local component = engine.components:register("orbit", "OrbitComponent")
+-- local component = engine.components:register("orbit", "OrbitComponent")
 
-io.write("Registered Orbit component\n")
+-- io.write("Registered Orbit component\n")

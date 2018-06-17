@@ -3,6 +3,7 @@
 
 #include "data/hash_map.h"
 
+#include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 

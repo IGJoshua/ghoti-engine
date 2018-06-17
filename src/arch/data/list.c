@@ -135,3 +135,18 @@ void listInsert(List *l, ListIterator itr, void *data)
 	node->next = *itr;
 	(*itr)->next = node;
 }
+
+inline
+uint32 listGetSize(List *l)
+{
+	uint32 size = 0;
+
+	for (ListIterator itr = listGetIterator(l);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		size++;
+	}
+
+	return size;
+}

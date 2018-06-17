@@ -67,15 +67,53 @@ typedef struct component_data_table_t
   uint8 data[];
 } ComponentDataTable;
 
+typedef enum data_type_e {
+	INVALID_DATA_TYPE = -1,
+	UINT8 = 0,
+	UINT16,
+	UINT32,
+	UINT64,
+	INT8,
+	INT16,
+	INT32,
+	INT64,
+	FLOAT32,
+	FLOAT64,
+	BOOL,
+	CHAR,
+	STRING
+} DataType;
+
+typedef struct component_value_definition_t
+{
+	char *name;
+	DataType type;
+	uint32 maxStringSize;
+	uint32 count;
+} ComponentValueDefinition;
+
+typedef struct component_definition_t
+{
+	char *name;
+	uint32 size;
+	uint32 numValues;
+	ComponentValueDefinition *values;
+} ComponentDefinition;
+
 typedef struct scene_t
 {
-  HashMap componentTypes;
-  HashMap entities;
-  UUID mainCamera;
-  List physicsFrameSystems;
-  List renderFrameSystems;
-  List luaPhysicsFrameSystemNames;
-  List luaRenderFrameSystemNames;
+	char *name;
+	HashMap componentTypes;
+	HashMap entities;
+	UUID mainCamera;
+	List physicsFrameSystems;
+	List renderFrameSystems;
+	List luaPhysicsFrameSystemNames;
+	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
+	uint32 numComponentsDefinitions;
+	ComponentDefinition *componentDefinitions;
 } Scene;
 
 void sceneRegisterEntity(Scene *s, UUID newEntity);
