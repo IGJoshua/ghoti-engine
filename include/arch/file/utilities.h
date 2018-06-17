@@ -1,4 +1,5 @@
 #pragma once
+#include "defines.h"
 
 #include "cJSON/cJSON.h"
 
@@ -19,6 +20,8 @@ char* getFullFilePath(
 	const char *folder);
 char* getExtension(const char *filename);
 char* removeExtension(const char *filename);
+void deleteFile(const char *filename, const char *folder);
+int32 deleteFolder(const char *folder);
 char* readString(FILE *file);
 void writeString(const char *string, FILE *file);
 

@@ -8,7 +8,9 @@
 #include "json-utilities/utilities.h"
 
 #include <sys/stat.h>
+
 #include <malloc.h>
+#include <dirent.h>
 
 void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 {
@@ -128,7 +130,7 @@ int32 loadSave(uint32 slot, Scene **scene)
 
 	if (error != -1)
 	{
-		printf("Successfully loaded save file (%s)...\n", saveName);
+		printf("Successfully loaded save file (%s)\n", saveName);
 	}
 
 	free(saveName);
@@ -148,11 +150,45 @@ bool getSaveSlotAvailability(uint32 slot)
 
     struct stat info;
 	stat(saveFolder, &info);
-	if (info.st_mode & S_IFDIR)
+	if (S_ISDIR(info.st_mode))
 	{
 		available = true;
 	}
 
 	free(saveFolder);
 	return available;
+}
+
+int32 deleteSave(uint32 slot)
+{
+	int32 error = 0;
+
+	char *saveName = malloc(128);
+	sprintf(saveName, "save_%d", slot);
+
+	printf("Deleting save file (%s)...\n", saveName);
+
+	if (!getSaveSlotAvailability(slot))
+	{
+		printf("Save file doesn't exist.\n");
+		error = -1;
+	}
+
+	if (error != -1)
+	{
+		char *saveFolder = malloc(512);
+		sprintf(saveFolder, "resources/saves/%s", saveName);
+
+		error = deleteFolder(saveFolder);
+		free(saveFolder);
+
+		if (error != -1)
+		{
+			printf("Successfully deleted save file (%s)\n", saveName);
+		}
+	}
+
+	free(saveName);
+
+	return error;
 }

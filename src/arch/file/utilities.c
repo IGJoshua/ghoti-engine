@@ -1,11 +1,13 @@
 #include "file/utilities.h"
 
-#include "defines.h"
-
 #include "frozen/frozen.h"
+
+#include <sys/stat.h>
 
 #include <malloc.h>
 #include <string.h>
+#include <dirent.h>
+#include <unistd.h>
 
 char* getFolderPath(const char *filename, const char *parentFolder)
 {
@@ -77,6 +79,63 @@ char* removeExtension(const char *filename)
 	name[extension - filename] = '\0';
 
 	return name;
+}
+
+void deleteFile(const char *filename, const char *folder)
+{
+	char *filepath = getFullFilePath(filename, NULL, folder);
+	remove(filepath);
+	free(filepath);
+}
+
+int32 deleteFolder(const char *folder)
+{
+	DIR *dir = opendir(folder);
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (deleteFolder(folderPath) == -1)
+					{
+						free(folderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					deleteFile(dirEntry->d_name, folder);
+				}
+
+				free(folderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		return -1;
+	}
+
+	closedir(dir);
+	rmdir(folder);
+
+	return 0;
 }
 
 char* readString(FILE *file)
