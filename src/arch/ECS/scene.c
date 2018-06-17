@@ -51,7 +51,7 @@ Scene *createScene(void)
 	return ret;
 }
 
-int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
+int32 loadScene(const char *name, Scene **scene)
 {
 	int32 error = 0;
 
@@ -61,6 +61,42 @@ int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 	}
 
 	printf("Loading scene (%s)...\n", name);
+
+	char *sceneFolder = NULL;
+	DIR *dir = opendir(RUNTIME_STATE_DIR);
+
+	bool found = false;
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (!strcmp(dirEntry->d_name, name))
+			{
+				found = true;
+				break;
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+
+	if (found)
+	{
+		sceneFolder = getFullFilePath(
+			name,
+			NULL,
+			RUNTIME_STATE_DIR);
+	}
+	else
+	{
+		sceneFolder = getFullFilePath(
+			name,
+			NULL,
+			"resources/scenes");
+	}
 
 	char *sceneFilename = getFullFilePath(name, NULL, sceneFolder);
 	char *jsonSceneFilename = getFullFilePath(
@@ -76,53 +112,8 @@ int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 	free(jsonSceneFilename);
 	free(sceneFilename);
 
-	char *sceneDirectory = NULL;
-	if (sceneFolder)
-	{
-		sceneDirectory = malloc(strlen(sceneFolder) + 1);
-		strcpy(sceneDirectory, sceneFolder);
-	}
-	else
-	{
-		DIR *dir = opendir("resources/.runtime-state");
-
-		bool found = false;
-		if (dir)
-		{
-			struct dirent *dirEntry = readdir(dir);
-
-			while (dirEntry)
-			{
-				if (!strcmp(dirEntry->d_name, name))
-				{
-					found = true;
-					break;
-				}
-
-				dirEntry = readdir(dir);
-			}
-
-			closedir(dir);
-		}
-
-		if (found)
-		{
-			sceneDirectory = getFullFilePath(
-				name,
-				NULL,
-				"resources/.runtime-state");
-		}
-		else
-		{
-			sceneDirectory = getFullFilePath(
-				name,
-				NULL,
-				"resources/scenes");
-		}
-	}
-
-	sceneFilename = getFullFilePath(name, "scene", sceneDirectory);
-	free(sceneDirectory);
+	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
+	free(sceneFolder);
 
 	FILE *file = fopen(sceneFilename, "rb");
 
@@ -279,7 +270,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 		return -1;
 	}
 
-	char *sceneFolder = getFolderPath(name, "resources/scenes");
+	char *sceneFolder = getFullFilePath(name, NULL, "resources/scenes");
 	char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 	free(sceneFolder);
 
@@ -552,14 +543,14 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 internal
 void unloadScene(const Scene *scene)
 {
-	MKDIR("resources/.runtime-state");
+	MKDIR(RUNTIME_STATE_DIR);
 
 	printf("Unloading scene (%s)...\n", scene->name);
 
 	char *sceneFolder = getFullFilePath(
 		scene->name,
 		NULL,
-		"resources/.runtime-state");
+		RUNTIME_STATE_DIR);
 	char *sceneFilename = getFullFilePath(
 		scene->name,
 		NULL,

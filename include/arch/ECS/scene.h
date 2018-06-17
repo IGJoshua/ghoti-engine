@@ -8,8 +8,10 @@
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
 
+#define RUNTIME_STATE_DIR "resources/.runtime-state"
+
 Scene *createScene(void);
-int32 loadScene(const char *name, const char *sceneFolder, Scene **scene);
+int32 loadScene(const char *name, Scene **scene);
 int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 void freeScene(Scene **scene);
 

@@ -10,9 +10,10 @@
 #include <sys/stat.h>
 
 #include <malloc.h>
+#include <string.h>
 #include <dirent.h>
 
-void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
+int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 {
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
@@ -25,7 +26,50 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	MKDIR(saveFolder);
 
-	char *sceneFolder = getFolderPath(scene->name, saveFolder);
+	DIR *dir = opendir(RUNTIME_STATE_DIR);
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".")
+			&& strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					RUNTIME_STATE_DIR);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					char *destinationFolderPath = getFullFilePath(
+						dirEntry->d_name,
+						NULL,
+						saveFolder);
+
+					if (copyFolder(folderPath, destinationFolderPath) == -1)
+					{
+						free(folderPath);
+						free(destinationFolderPath);
+						closedir(dir);
+						return -1;
+					}
+
+					free(folderPath);
+					free(destinationFolderPath);
+				}
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+
+	char *sceneFolder = getFullFilePath(scene->name, NULL, saveFolder);
 	char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
 	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
 
@@ -85,6 +129,8 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	printf("Successfully exported save file (%s)\n", saveName);
 	free(saveName);
+
+	return 0;
 }
 
 int32 loadSave(uint32 slot, Scene **scene)
@@ -105,9 +151,68 @@ int32 loadSave(uint32 slot, Scene **scene)
 	if (file)
 	{
 		char *sceneName = readString(file);
-		char *sceneFolder = getFolderPath(sceneName, saveFolder);
+		char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
 
-		loadScene(sceneName, sceneFolder, scene);
+		MKDIR(RUNTIME_STATE_DIR);
+		deleteFolder(RUNTIME_STATE_DIR);
+		MKDIR(RUNTIME_STATE_DIR);
+
+		DIR *dir = opendir(saveFolder);
+		if (dir)
+		{
+			struct dirent *dirEntry = readdir(dir);
+			while (dirEntry)
+			{
+				if (strcmp(dirEntry->d_name, ".")
+				&& strcmp(dirEntry->d_name, ".."))
+				{
+					char *folderPath = getFullFilePath(
+						dirEntry->d_name,
+						NULL,
+						saveFolder);
+
+					struct stat info;
+					stat(folderPath, &info);
+
+					if (S_ISDIR(info.st_mode))
+					{
+						char *destinationFolderPath = getFullFilePath(
+							dirEntry->d_name,
+							NULL,
+							RUNTIME_STATE_DIR);
+
+						if (copyFolder(folderPath, destinationFolderPath) == -1)
+						{
+							error = -1;
+						}
+
+						free(destinationFolderPath);
+
+						if (error == -1)
+						{
+							free(folderPath);
+							break;
+						}
+					}
+
+					free(folderPath);
+				}
+
+				dirEntry = readdir(dir);
+			}
+
+			closedir(dir);
+		}
+		else
+		{
+			printf("Failed to open %s\n", saveFolder);
+			error = -1;
+		}
+
+		if (error != -1)
+		{
+			loadScene(sceneName, scene);
+		}
 
 		free(sceneFolder);
 		free(sceneName);
@@ -134,7 +239,7 @@ int32 loadSave(uint32 slot, Scene **scene)
 	}
 
 	free(saveName);
-	return -1;
+	return 0;
 }
 
 bool getSaveSlotAvailability(uint32 slot)

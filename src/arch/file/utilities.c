@@ -9,13 +9,6 @@
 #include <dirent.h>
 #include <unistd.h>
 
-char* getFolderPath(const char *filename, const char *parentFolder)
-{
-	char *folderPath = malloc(strlen(parentFolder) + strlen(filename) + 2);
-	sprintf(folderPath, "%s/%s", parentFolder, filename);
-	return folderPath;
-}
-
 char* getFullFilePath(
 	const char *filename,
 	const char *extension,
@@ -134,6 +127,90 @@ int32 deleteFolder(const char *folder)
 
 	closedir(dir);
 	rmdir(folder);
+
+	return 0;
+}
+
+void copyFile(const char *filename, const char *destination)
+{
+	char *fileBuffer = NULL;
+	uint64 fileLength = 0;
+
+	FILE *file = fopen(filename, "rb");
+	if (file) {
+		fseek(file, 0, SEEK_END);
+		fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		fileBuffer = calloc(fileLength + 1, 1);
+
+		if (fileBuffer) {
+			fread(fileBuffer, 1, fileLength, file);
+		}
+
+		fclose(file);
+	}
+
+	if (fileBuffer) {
+		file = fopen(destination, "wb");
+		fwrite(fileBuffer, fileLength, 1, file);
+		fclose(file);
+		free(fileBuffer);
+	}
+}
+
+int32 copyFolder(const char *folder, const char *destination)
+{
+	MKDIR(destination);
+
+	DIR *dir = opendir(folder);
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+				char *destinationFolderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					destination);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (copyFolder(folderPath, destinationFolderPath) == -1)
+					{
+						free(folderPath);
+						free(destinationFolderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					copyFile(folderPath, destinationFolderPath);
+				}
+
+				free(folderPath);
+				free(destinationFolderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		return -1;
+	}
+
+	closedir(dir);
 
 	return 0;
 }

@@ -87,8 +87,7 @@ int32 main()
 	}
 
 	Scene *scene;
-
-	if (loadScene("scene_1", NULL, &scene) == -1)
+	if (loadScene("scene_1", &scene) == -1)
 	{
 		return -1;
 	}
@@ -214,7 +213,11 @@ int32 main()
 	}
 	sceneShutdownSystems(scene);
 	freeScene(&scene);
-	deleteFolder("resources/.runtime-state");
+
+	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
+	{
+		return -1;
+	}
 
 	if (L)
 	{
