@@ -503,8 +503,74 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	return error;
 }
 
+internal
+void unloadScene(const Scene *scene)
+{
+	MKDIR("resources/.runtime-state");
+
+	printf("Unloading scene (%s)...\n", scene->name);
+
+	char *sceneFolder = getFullFilePath(
+		scene->name,
+		NULL,
+		"resources/.runtime-state");
+	char *sceneFilename = getFullFilePath(
+		scene->name,
+		NULL,
+		sceneFolder);
+	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
+
+	MKDIR(sceneFolder);
+	MKDIR(entitiesFolder);
+
+	exportSceneSnapshot(scene, sceneFilename);
+
+	exportScene(sceneFilename);
+	char *jsonSceneFilename = getFullFilePath(
+		sceneFilename,
+		"json",
+		NULL);
+	remove(jsonSceneFilename);
+	free(jsonSceneFilename);
+
+	uint32 entityNumber = 0;
+	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		char *entityName = malloc(128);
+		sprintf(entityName, "entity_%d", entityNumber++);
+		char *entityFilename = getFullFilePath(
+			entityName,
+			NULL,
+			entitiesFolder);
+		free(entityName);
+
+		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
+		exportEntitySnapshot(scene, *entity, entityFilename);
+
+		exportEntity(entityFilename);
+		char *jsonEntityFilename = getFullFilePath(
+			entityFilename,
+			"json",
+			NULL);
+		remove(jsonEntityFilename);
+
+		free(jsonEntityFilename);
+		free(entityFilename);
+	}
+
+	free(sceneFolder);
+	free(sceneFilename);
+	free(entitiesFolder);
+
+	printf("Successfully unloaded scene (%s)\n", scene->name);
+}
+
 void freeScene(Scene **scene)
 {
+	unloadScene(*scene);
+
 	free((*scene)->name);
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);

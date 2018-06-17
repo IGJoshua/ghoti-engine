@@ -217,6 +217,7 @@ int32 main()
 	}
 	sceneShutdownSystems(scene);
 	freeScene(&scene);
+	deleteFolder("resources/.runtime-state");
 
 	if (L)
 	{

@@ -7,10 +7,10 @@
 
 #ifdef _WIN32
 #include <direct.h>
-#define MKDIR(file, mode) _mkdir(file)
+#define MKDIR(file) _mkdir(file)
 #else
 #include <sys/stat.h>
-#define MKDIR(file, mode) mkdir(file, mode)
+#define MKDIR(file) mkdir(file, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 #endif
 
 char* getFolderPath(const char *filename, const char *parentFolder);

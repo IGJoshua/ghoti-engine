@@ -23,14 +23,14 @@ void exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 	sprintf(saveFolder, "resources/saves/%s", saveName);
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
 
-	MKDIR(saveFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	MKDIR(saveFolder);
 
 	char *sceneFolder = getFolderPath(scene->name, saveFolder);
 	char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
 	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
 
-	MKDIR(sceneFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	MKDIR(entitiesFolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	MKDIR(sceneFolder);
+	MKDIR(entitiesFolder);
 
 	FILE *file = fopen(saveFilename, "wb");
 
