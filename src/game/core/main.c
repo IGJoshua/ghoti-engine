@@ -88,13 +88,10 @@ int32 main()
 
 	Scene *scene;
 
-	char *sceneFolder = getFolderPath("scene_1", "resources/scenes");
-	if (loadScene("scene_1", sceneFolder, &scene) == -1)
+	if (loadScene("scene_1", NULL, &scene) == -1)
 	{
-		free(sceneFolder);
 		return -1;
 	}
-	free(sceneFolder);
 
 	// State previous
 	// State next

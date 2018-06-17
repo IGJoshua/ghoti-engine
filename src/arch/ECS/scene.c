@@ -60,6 +60,8 @@ int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 		return -1;
 	}
 
+	printf("Loading scene (%s)...\n", name);
+
 	char *sceneFilename = getFullFilePath(name, NULL, sceneFolder);
 	char *jsonSceneFilename = getFullFilePath(
 		sceneFilename,
@@ -74,9 +76,53 @@ int32 loadScene(const char *name, const char *sceneFolder, Scene **scene)
 	free(jsonSceneFilename);
 	free(sceneFilename);
 
-	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
+	char *sceneDirectory = NULL;
+	if (sceneFolder)
+	{
+		sceneDirectory = malloc(strlen(sceneFolder) + 1);
+		strcpy(sceneDirectory, sceneFolder);
+	}
+	else
+	{
+		DIR *dir = opendir("resources/.runtime-state");
 
-	printf("Loading scene (%s)...\n", name);
+		bool found = false;
+		if (dir)
+		{
+			struct dirent *dirEntry = readdir(dir);
+
+			while (dirEntry)
+			{
+				if (!strcmp(dirEntry->d_name, name))
+				{
+					found = true;
+					break;
+				}
+
+				dirEntry = readdir(dir);
+			}
+
+			closedir(dir);
+		}
+
+		if (found)
+		{
+			sceneDirectory = getFullFilePath(
+				name,
+				NULL,
+				"resources/.runtime-state");
+		}
+		else
+		{
+			sceneDirectory = getFullFilePath(
+				name,
+				NULL,
+				"resources/scenes");
+		}
+	}
+
+	sceneFilename = getFullFilePath(name, "scene", sceneDirectory);
+	free(sceneDirectory);
 
 	FILE *file = fopen(sceneFilename, "rb");
 
