@@ -8,6 +8,8 @@
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
 
+#define RUNTIME_STATE_DIR "resources/.runtime-state"
+
 Scene *createScene(void);
 int32 loadScene(const char *name, Scene **scene);
 int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
@@ -19,12 +21,22 @@ void copyComponentDefinition(
 	ComponentDefinition *src);
 void freeComponentDefinition(ComponentDefinition *componentDefinition);
 
+uint32 getDataTypeSize(DataType type);
+char* getDataTypeString(
+	const ComponentValueDefinition *componentValueDefinition);
+
+void exportEntitySnapshot(
+	const Scene *scene,
+	UUID entity,
+	const char *filename);
+void exportSceneSnapshot(const Scene *scene, const char *filename);
+
 void sceneAddRenderFrameSystem(
 	Scene *scene,
-	System system);
+	UUID system);
 void sceneAddPhysicsFrameSystem(
 	Scene *scene,
-	System system);
+	UUID system);
 
 void sceneInitRenderFrameSystems(Scene *scene);
 void sceneInitPhysicsFrameSystems(Scene *scene);

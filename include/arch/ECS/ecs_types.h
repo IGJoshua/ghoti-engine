@@ -23,6 +23,12 @@ typedef struct component_data_table_t
 	uint8 data[];
 } ComponentDataTable;
 
+typedef struct
+{
+	uint32 index;
+	ComponentDataTable *table;
+} ComponentDataTableIterator;
+
 typedef enum data_type_e {
 	INVALID_DATA_TYPE = -1,
 	UINT8 = 0,
@@ -58,6 +64,7 @@ typedef struct component_definition_t
 
 typedef struct scene_t
 {
+	char *name;
 	// Maps component UUIDs to pointers to component data tables
 	HashMap componentTypes;
 	// Maps entity UUIDs to lists of component UUIDs
@@ -67,12 +74,16 @@ typedef struct scene_t
 	List renderFrameSystems;
 	List luaPhysicsFrameSystemNames;
 	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
 	uint32 numComponentsDefinitions;
 	ComponentDefinition *componentDefinitions;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
-typedef void(*SystemFn)(Scene *scene, UUID entityID, real64 dt);
+typedef void(*BeginSystem)(Scene *scene, real64 dt);
+typedef void(*RunSystem)(Scene *scene, UUID entityID, real64 dt);
+typedef void(*EndSystem)(Scene *scene, real64 dt);
 typedef void(*ShutdownSystem)(Scene *scene);
 
 typedef struct system_t
@@ -80,6 +91,8 @@ typedef struct system_t
 	List componentTypes;
 
 	InitSystem init;
-	SystemFn fn;
+	BeginSystem begin;
+	RunSystem run;
+	EndSystem end;
 	ShutdownSystem shutdown;
 } System;

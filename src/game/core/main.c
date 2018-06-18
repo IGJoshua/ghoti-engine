@@ -1,5 +1,7 @@
 #include "defines.h"
+
 #include "core/window.h"
+#include "core/input.h"
 
 #include "asset_management/model.h"
 
@@ -10,6 +12,9 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
 #include "ECS/system.h"
+#include "ECS/save.h"
+
+#include "file/utilities.h"
 
 #include "components/component_types.h"
 
@@ -19,14 +24,15 @@
 #include "data/list.h"
 #include "data/hash_map.h"
 
+#include <GL/glew.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
-
-#include <kazmath/mat4.h>
 
 #include <luajit-2.0/lua.h>
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
+
+#include <SDL2/SDL.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -35,25 +41,8 @@
 #include <time.h>
 #include <stdlib.h>
 
-void keyCallback(
-	GLFWwindow *window,
-	int key,
-	int scancode,
-	int action,
-	int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
-	}
-}
-
-typedef struct orbit_component_t
-{
-	kmVec3 origin;
-	float speed;
-	float radius;
-} OrbitComponent;
+lua_State *L;
+List activeScenes;
 
 int32 main()
 {
@@ -66,19 +55,30 @@ int32 main()
 		return -1;
 	}
 
+	int32 err = initInput(window);
+	if (err)
+	{
+		freeWindow(window);
+		return err;
+	}
+
+	activeScenes = createList(sizeof(Scene *));
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
-	glfwSetKeyCallback(window, &keyCallback);
 
 	glEnable(GL_DEPTH_TEST);
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
+	initSystems();
+
 	// Init Lua
-	lua_State *L = luaL_newstate();
+	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
+	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
+		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
 		printf("Lua Error: %s\n", lua_tostring(L, -1));
@@ -89,26 +89,23 @@ int32 main()
 		return 1;
 	}
 
-	// TODO: Setup basic component state
-	Scene *scene;
-	if (loadScene("scene_1", &scene) == -1)
-	{
-		return -1;
-	}
-
-	// Add component types
-
-	// Add systems
-	System rendererSystem = createRendererSystem();
-	sceneAddRenderFrameSystem(scene, rendererSystem);
-
-	// Create entities
+	Scene *initScene;
+	loadScene("scene_1", &initScene);
+	listPushFront(&activeScenes, &initScene);
 
 	// State previous
 	// State next
 
-	sceneInitSystems(scene);
-	sceneInitLua(&L, scene);
+	ListIterator itr = 0;
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		sceneInitSystems(scene);
+		sceneInitLua(&L, scene);
+	}
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
@@ -133,18 +130,40 @@ int32 main()
 
 		while (accumulator >= dt)
 		{
-			// TODO: Previous state = currentState
-			sceneRunPhysicsFrameSystems(scene, dt);
+			for (itr = listGetIterator(&activeScenes);
+				 !listIteratorAtEnd(itr);
+				 listMoveIterator(&itr))
+			{
+				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-			// Load the lua engine table and run its physics systems
+				// TODO: Previous state = currentState
+				sceneRunPhysicsFrameSystems(scene, dt);
+
+				// Load the lua engine table and run its physics systems
+				if (L)
+				{
+					lua_getglobal(L, "engine");
+					lua_getfield(L, -1, "runPhysicsSystems");
+					lua_remove(L, -2);
+					lua_pushlightuserdata(L, scene);
+					lua_pushnumber(L, dt);
+					luaError = lua_pcall(L, 2, 0, 0);
+					if (luaError)
+					{
+						printf("Lua error: %s\n", lua_tostring(L, -1));
+						lua_close(L);
+						L = 0;
+					}
+				}
+			}
+
+			// Clean input
 			if (L)
 			{
 				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "runPhysicsSystems");
+				lua_getfield(L, -1, "cleanInput");
 				lua_remove(L, -2);
-				lua_pushlightuserdata(L, scene);
-				lua_pushnumber(L, dt);
-				luaError = lua_pcall(L, 2, 0, 0);
+				luaError = lua_pcall(L, 0, 0, 0);
 				if (luaError)
 				{
 					printf("Lua error: %s\n", lua_tostring(L, -1));
@@ -156,6 +175,8 @@ int32 main()
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
+
+			inputHandleEvents();
 		}
 
 		// const real64 alpha = accumulator / dt;
@@ -171,47 +192,71 @@ int32 main()
 
 		real32 aspectRatio = (real32)width / (real32)height;
 
-		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, idFromName("camera"));
-		if (cam)
+		for (itr = listGetIterator(&activeScenes);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
 		{
-			cam->aspectRatio = aspectRatio;
-		}
+			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-		// Render
-		if (L)
-		{
-			lua_getglobal(L, "engine");
-			lua_getfield(L, -1, "runRenderSystems");
-			lua_remove(L, -2);
-			lua_pushlightuserdata(L, scene);
-			lua_pushnumber(L, frameTime);
-			luaError = lua_pcall(L, 2, 0, 0);
-			if (luaError)
+			CameraComponent *cam = sceneGetComponentFromEntity(
+				scene,
+				scene->mainCamera,
+				idFromName("camera"));
+			if (cam)
 			{
-				printf("Lua error: %s\n", lua_tostring(L, -1));
-				lua_close(L);
-				L = 0;
+				cam->aspectRatio = aspectRatio;
 			}
-		}
 
-		sceneRunRenderFrameSystems(scene, frameTime);
+			// Render
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "runRenderSystems");
+				lua_remove(L, -2);
+				lua_pushlightuserdata(L, scene);
+				lua_pushnumber(L, frameTime);
+				luaError = lua_pcall(L, 2, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
+
+			sceneRunRenderFrameSystems(scene, frameTime);
+		}
 
 		glfwSwapBuffers(window);
-
-		glfwPollEvents();
 	}
 
-	if (L)
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		sceneShutdownLua(&L, scene);
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		if (L)
+		{
+			sceneShutdownLua(&L, scene);
+		}
+		sceneShutdownSystems(scene);
+		freeScene(&scene);
 	}
-	sceneShutdownSystems(scene);
-	freeScene(&scene);
+
+	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
+	{
+		printf("Failed to delete runtime folder\n");
+	}
 
 	if (L)
 	{
 		lua_close(L);
 	}
+
+	freeSystems();
+
+	shutdownInput();
 
 	freeWindow(window);
 

@@ -7,6 +7,8 @@
 
 #include "file/utilities.h"
 
+#include "json-utilities/utilities.h"
+
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -96,8 +98,13 @@ int32 loadMaterials(Model *model)
 {
 	int32 error = 0;
 
-	char *assetFolder = getFolderPath(model->name, "resources/models");
-	char *assetFilename = getFullFilename(model->name, "asset", assetFolder);
+	char *assetFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *assetFilename = getFullFilePath(model->name, NULL, assetFolder);
+
+	exportAsset(assetFilename);
+	free(assetFilename);
+
+	assetFilename = getFullFilePath(model->name, "asset", assetFolder);
 	free(assetFolder);
 
 	FILE *file = fopen(assetFilename, "rb");
@@ -185,8 +192,8 @@ int32 loadTextures(Model *model)
 
 int32 loadSubsets(Model *model)
 {
-	char *modelFolder = getFolderPath(model->name, "resources/models");
-	char *modelFilename = getFullFilename(model->name, "dae", modelFolder);
+	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *modelFilename = getFullFilePath(model->name, "dae", modelFolder);
 	free(modelFolder);
 
 	const struct aiScene *scene = aiImportFile(

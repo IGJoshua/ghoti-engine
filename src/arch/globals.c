@@ -1,6 +1,10 @@
 #include "asset_management/asset_manager_types.h"
 #include "renderer/renderer_types.h"
 
+#include "data/data_types.h"
+
+// NOTE(Joshua): Rendering globals
+
 Model *models;
 uint32 numModels = 0;
 uint32 modelsCapacity = 0;
@@ -19,3 +23,10 @@ Uniform viewUniform;
 Uniform projectionUniform;
 
 Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
+
+bool rendererActive;
+
+// NOTE(Joshua): Globals for ECS
+
+// Maps from system names as UUIDs to System structures
+HashMap systemRegistry;

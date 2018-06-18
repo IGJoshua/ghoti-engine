@@ -67,11 +67,11 @@ typedef struct component_data_table_t
   uint8 data[];
 } ComponentDataTable;
 
-
 int32 closeWindow();
-
 ]]
 
 local kazmath = require("resources/scripts/cdefs/kazmath")
 local sceneDefs = require("resources/scripts/cdefs/sceneDefs")
 local glfwKeys = require("resources/scripts/cdefs/GLFW")
+local jsonUtil = require("resources/scripts/cdefs/jsonUtil")
+local name = require("resources/scripts/cdefs/saving")
