@@ -33,6 +33,12 @@ ListIterator listGetIterator(List *l);
 void listMoveIterator(ListIterator *itr);
 int32 listIteratorAtEnd(ListIterator itr);
 
+void listPushFront(List *l, void *data);
+void listPushBack(List *l, void *data);
+
+void listPopFront(List *l);
+void listClear(List *l);
+
 void listRemove(List *l, ListIterator itr);
 void listInsert(List *l, ListIterator itr, void *data);
 
@@ -280,6 +286,20 @@ typedef enum glfw_mouse_button_e
   GLFW_MOUSE_BUTTON_7 = 6,
   GLFW_MOUSE_BUTTON_8 = 7
 } GLFW_MOUSE_BUTTON;
+
+int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
+int32 loadSave(uint32 slot, Scene **scene);
+bool getSaveSlotAvailability(uint32 slot);
+int32 deleteSave(uint32 slot);
+
+int32 luaLoadScene(const char *name, Scene **scene);
+int32 shutdownScene(Scene **scene);
+
+void freeScene(Scene **scene);
+
+List activeScenes;
+uint32 changeScene;
+List unloadedScenes;
 ]]
 
 local kazmath = require("resources/scripts/cdefs/kazmath")

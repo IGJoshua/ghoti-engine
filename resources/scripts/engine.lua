@@ -222,6 +222,7 @@ end
 
 function engine.shutdownScene(pScene)
   local scene = engine.scenes[pScene]
+  engine.scenes[pScene] = nil
 
   local itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
   while C.listIteratorAtEnd(itr) == 0 do

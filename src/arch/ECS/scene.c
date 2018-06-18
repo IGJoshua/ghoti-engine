@@ -153,7 +153,7 @@ int32 loadScene(const char *name, Scene **scene)
 				internalSystems[j] = readString(file);
 			}
 
-			UUID systemName;
+			UUID systemName = {};
 
 			if (!strcmp(systemGroup, "update"))
 			{
@@ -730,6 +730,26 @@ void freeScene(Scene **scene)
 
 	free(*scene);
 	*scene = 0;
+}
+
+extern lua_State *L;
+
+int32 luaLoadScene(const char *name, Scene **scene)
+{
+	loadScene(name, scene);
+
+	sceneInitSystems(*scene);
+	sceneInitLua(&L, *scene);
+
+	return 0;
+}
+
+int32 shutdownScene(Scene **scene)
+{
+	sceneShutdownLua(&L, *scene);
+	sceneShutdownSystems(*scene);
+
+	return 0;
 }
 
 ComponentDefinition getComponentDefinition(

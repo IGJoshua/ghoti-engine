@@ -15,6 +15,9 @@ int32 loadScene(const char *name, Scene **scene);
 int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 void freeScene(Scene **scene);
 
+int32 luaLoadScene(const char *name, Scene **scene);
+int32 shutdownScene(Scene **scene);
+
 ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
 void copyComponentDefinition(
 	ComponentDefinition *dest,

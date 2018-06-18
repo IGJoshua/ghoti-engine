@@ -41,8 +41,10 @@
 #include <time.h>
 #include <stdlib.h>
 
-lua_State *L;
-List activeScenes;
+extern lua_State *L;
+extern List activeScenes;
+extern uint32 changeScene;
+extern List unloadedScenes;
 
 int32 main()
 {
@@ -63,6 +65,7 @@ int32 main()
 	}
 
 	activeScenes = createList(sizeof(Scene *));
+	unloadedScenes = createList(sizeof(Scene *));
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
@@ -90,7 +93,7 @@ int32 main()
 	}
 
 	Scene *initScene;
-	loadScene("scene_1", &initScene);
+	loadScene("scene_2", &initScene);
 	listPushFront(&activeScenes, &initScene);
 
 	// State previous
@@ -170,6 +173,24 @@ int32 main()
 					lua_close(L);
 					L = 0;
 				}
+			}
+
+			if (changeScene)
+			{
+				// TODO: unload all the unneeded scenes
+				for (ListIterator i = listGetIterator(&unloadedScenes);
+					 !listIteratorAtEnd(i);
+					 listMoveIterator(&i))
+				{
+					Scene **scene = ((Scene **)(&((*i)->data)));
+
+					sceneShutdownLua(&L, *scene);
+					sceneShutdownSystems(*scene);
+					freeScene(scene);
+				}
+				listClear(&unloadedScenes);
+
+				changeScene = 0;
 			}
 
 			// Integrate current state over t to dt (so, update)
