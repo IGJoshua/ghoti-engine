@@ -42,6 +42,7 @@
 #include <stdlib.h>
 
 lua_State *L;
+List activeScenes;
 
 int32 main()
 {
@@ -60,6 +61,8 @@ int32 main()
 		freeWindow(window);
 		return err;
 	}
+
+	activeScenes = createList(sizeof(Scene *));
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
@@ -86,17 +89,23 @@ int32 main()
 		return 1;
 	}
 
-	Scene *scene;
-	if (loadScene("scene_1", &scene) == -1)
-	{
-		return -1;
-	}
+	Scene *initScene;
+	loadScene("scene_1", &initScene);
+	listPushFront(&activeScenes, &initScene);
 
 	// State previous
 	// State next
 
-	sceneInitSystems(scene);
-	sceneInitLua(&L, scene);
+	ListIterator itr = 0;
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		sceneInitSystems(scene);
+		sceneInitLua(&L, scene);
+	}
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
@@ -108,21 +117,25 @@ int32 main()
 
 	while(!glfwWindowShouldClose(window))
 	{
-		if (t < 3)
+		// Start timestep
+		real64 newTime = glfwGetTime();
+		real64 frameTime = newTime - currentTime;
+		if (frameTime > 0.25)
 		{
-			// Start timestep
-			real64 newTime = glfwGetTime();
-			real64 frameTime = newTime - currentTime;
-			if (frameTime > 0.25)
-			{
-				frameTime = 0.25;
-			}
-			currentTime = newTime;
+			frameTime = 0.25;
+		}
+		currentTime = newTime;
 
-			accumulator += frameTime;
+		accumulator += frameTime;
 
-			while (accumulator >= dt)
+		while (accumulator >= dt)
+		{
+			for (itr = listGetIterator(&activeScenes);
+				 !listIteratorAtEnd(itr);
+				 listMoveIterator(&itr))
 			{
+				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
 				// TODO: Previous state = currentState
 				sceneRunPhysicsFrameSystems(scene, dt);
 
@@ -142,41 +155,48 @@ int32 main()
 						L = 0;
 					}
 				}
-
-				// Clean input
-				if (L)
-				{
-					lua_getglobal(L, "engine");
-					lua_getfield(L, -1, "cleanInput");
-					lua_remove(L, -2);
-					luaError = lua_pcall(L, 0, 0, 0);
-					if (luaError)
-					{
-						printf("Lua error: %s\n", lua_tostring(L, -1));
-						lua_close(L);
-						L = 0;
-					}
-				}
-
-				// Integrate current state over t to dt (so, update)
-				t += dt;
-				accumulator -= dt;
-
-				inputHandleEvents();
 			}
 
-			// const real64 alpha = accumulator / dt;
+			// Clean input
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "cleanInput");
+				lua_remove(L, -2);
+				luaError = lua_pcall(L, 0, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
 
-			// Lerp state between previous and next
+			// Integrate current state over t to dt (so, update)
+			t += dt;
+			accumulator -= dt;
 
-			int32 width, height;
-			glfwGetFramebufferSize(window, &width, &height);
+			inputHandleEvents();
+		}
 
-			glViewport(0, 0, width, height);
-			glClear(GL_COLOR_BUFFER_BIT);
-			glClear(GL_DEPTH_BUFFER_BIT);
+		// const real64 alpha = accumulator / dt;
 
-			real32 aspectRatio = (real32)width / (real32)height;
+		// Lerp state between previous and next
+
+		int32 width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+
+		glViewport(0, 0, width, height);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		real32 aspectRatio = (real32)width / (real32)height;
+
+		for (itr = listGetIterator(&activeScenes);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
 			CameraComponent *cam = sceneGetComponentFromEntity(
 				scene,
@@ -205,142 +225,28 @@ int32 main()
 			}
 
 			sceneRunRenderFrameSystems(scene, frameTime);
-
-			glfwSwapBuffers(window);
 		}
-		else
-		{
-			if (!strcmp(scene->name, "scene_1"))
-			{
-				Scene *nextScene;
-				if (loadScene("scene_2", &nextScene) == -1)
-				{
-					return -1;
-				}
 
-				sceneInitSystems(nextScene);
-				sceneInitLua(&L, nextScene);
-
-				if (L)
-				{
-					sceneShutdownLua(&L, scene);
-				}
-				sceneShutdownSystems(scene);
-				freeScene(&scene);
-
-				scene = nextScene;
-			}
-
-			// Start timestep
-			real64 newTime = glfwGetTime();
-			real64 frameTime = newTime - currentTime;
-			if (frameTime > 0.25)
-			{
-				frameTime = 0.25;
-			}
-			currentTime = newTime;
-
-			accumulator += frameTime;
-
-			while (accumulator >= dt)
-			{
-				// TODO: Previous state = currentState
-				sceneRunPhysicsFrameSystems(scene, dt);
-
-				// Load the lua engine table and run its physics systems
-				if (L)
-				{
-					lua_getglobal(L, "engine");
-					lua_getfield(L, -1, "runPhysicsSystems");
-					lua_remove(L, -2);
-					lua_pushlightuserdata(L, scene);
-					lua_pushnumber(L, dt);
-					luaError = lua_pcall(L, 2, 0, 0);
-					if (luaError)
-					{
-						printf("Lua error: %s\n", lua_tostring(L, -1));
-						lua_close(L);
-						L = 0;
-					}
-				}
-
-				// Clean input
-				if (L)
-				{
-					lua_getglobal(L, "engine");
-					lua_getfield(L, -1, "cleanInput");
-					lua_remove(L, -2);
-					luaError = lua_pcall(L, 0, 0, 0);
-					if (luaError)
-					{
-						printf("Lua error: %s\n", lua_tostring(L, -1));
-						lua_close(L);
-						L = 0;
-					}
-				}
-
-				// Integrate current state over t to dt (so, update)
-				t += dt;
-				accumulator -= dt;
-
-				inputHandleEvents();
-			}
-
-			// const real64 alpha = accumulator / dt;
-
-			// Lerp state between previous and next
-
-			int32 width, height;
-			glfwGetFramebufferSize(window, &width, &height);
-
-			glViewport(0, 0, width, height);
-			glClear(GL_COLOR_BUFFER_BIT);
-			glClear(GL_DEPTH_BUFFER_BIT);
-
-			real32 aspectRatio = (real32)width / (real32)height;
-
-			CameraComponent *cam = sceneGetComponentFromEntity(
-				scene,
-				scene->mainCamera,
-				idFromName("camera"));
-			if (cam)
-			{
-				cam->aspectRatio = aspectRatio;
-			}
-
-			// Render
-			if (L)
-			{
-				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "runRenderSystems");
-				lua_remove(L, -2);
-				lua_pushlightuserdata(L, scene);
-				lua_pushnumber(L, frameTime);
-				luaError = lua_pcall(L, 2, 0, 0);
-				if (luaError)
-				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
-					lua_close(L);
-					L = 0;
-				}
-			}
-
-			sceneRunRenderFrameSystems(scene, frameTime);
-
-			glfwSwapBuffers(window);
-		}
+		glfwSwapBuffers(window);
 	}
 
-	if (L)
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		sceneShutdownLua(&L, scene);
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		if (L)
+		{
+			sceneShutdownLua(&L, scene);
+		}
+		sceneShutdownSystems(scene);
+		freeScene(&scene);
 	}
-	sceneShutdownSystems(scene);
-	freeScene(&scene);
 
 	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
 	{
-		return -1;
+		printf("Failed to delete runtime folder\n");
 	}
 
 	if (L)
