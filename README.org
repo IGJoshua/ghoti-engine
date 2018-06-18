@@ -1,6 +1,16 @@
 #+AUTHOR: Joshua Suskalo
 #+AUTHOR: Pranav Sahani
 
+* Required Headers
+#+BEGIN_SRC
+glew
+glfw
+assimp
+kazmath
+glu
+luajit-5.1
+sdl2
+#+END_SRC
 * Build Tools
 #+BEGIN_SRC
 clang
