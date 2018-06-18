@@ -26,11 +26,11 @@ GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | so
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-DBFLAGS = -g -D_DEBUG -O0
+DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1
+_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -48,23 +48,24 @@ $(GAMEOBJDIR)/%.o : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
 
 .PHONY: build
 
-build : $(GAMEOBJ) $(BUILDDIR)/$(LIBNAME).so
+build : $(GAMEOBJ) $(LIBNAME).so
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) -o $(BUILDDIR)/$(PROJ) $^ $(LIBS)
 
 $(BUILDDIR)/$(LIBNAME).so : $(ARCHOBJ)
 	$(CC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(LIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(LIBS)
 
 $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
-	ln -s $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
+	ln -sf $(BUILDDIR)/$(LIBNAME).so $(LIBNAME).so
 
 .PHONY: arch
 
-arch : $(BUILDDIR)/$(LIBNAME)
+arch : $(LIBNAME).so
 
 .PHONY: clean
 
 clean:
-	rm -f -r {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
+	rm -rf release
+	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
 	mkdir {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
 	$(ARCHDIRS)
@@ -72,20 +73,20 @@ clean:
 
 .PHONY: run
 
-run : build $(LIBNAME).so
-	$(BUILDDIR)/$(PROJ)
+run : build
+	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
 SUPPRESSIONS = monochrome.supp
 
 .PHONY: leakcheck
 
 leakcheck : build
-	valgrind --leak-check=full --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 
 debug : build
-	$(CCDB) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib $(CCDB) $(BUILDDIR)/$(PROJ)
 
 .PHONY: rebuild
 
@@ -94,17 +95,18 @@ rebuild : clean build
 .PHONY: release
 
 release : clean
-	@make RELEASE=yes
+	@make RELEASE=yes$(if $(WINDOWS), windows,)
+	mkdir release/
+	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
+	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
+	cp -r resources/ release/
+	cp -r lualib/ release/
+	$(if $(WINDOWS),,cp -r lib/ release/)
+	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
-.PHONY: relrun
-
-relrun : release $(LIBNAME).so
-	$(BUILDDIR)/$(PROJ)
-
-# TODO: The rest of this file
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit
+_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
@@ -124,7 +126,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 
 .PHONY: windows
 
-windows : $(WINGAMEOBJ) $(BUILDDIR)/$(LIBNAME).dll
+windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 	cp winlib/* $(BUILDDIR)/
 	cp $(BUILDDIR)/libassimp.dll $(BUILDDIR)/assimp.dll

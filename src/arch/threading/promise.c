@@ -4,7 +4,7 @@
 
 #include <malloc.h>
 
-Promise *pCreate()
+Promise *pCreate(void)
 {
 	Promise *ret = malloc(sizeof(Promise));
 

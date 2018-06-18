@@ -1,19 +1,20 @@
 #+AUTHOR: Joshua Suskalo
 #+AUTHOR: Pranav Sahani
 
-* Dependencies
+* Required Headers
+#+BEGIN_SRC
+glew
+glfw
+assimp
+kazmath
+glu
+luajit-5.1
+sdl2
+#+END_SRC
+* Build Tools
 #+BEGIN_SRC
 clang
-glfw
-glew
-kazmath
-devil
-assimp
-pthread
 mingw-w64-clang
-mingw-w64-glfw
-mingw-w64-glew
-mingw-w64-winpthreads
 #+END_SRC
 * Rendering Engine
 * Scene Representation

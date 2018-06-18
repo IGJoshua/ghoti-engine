@@ -6,13 +6,14 @@
 
 typedef struct model_component_t
 {
-	char name[1024];
+	char name[1025];
+	bool visible;
 } ModelComponent;
 
 typedef struct transform_component_t
 {
-	kmQuaternion rotation;
 	kmVec3 position;
+	kmQuaternion rotation;
 	kmVec3 scale;
 } TransformComponent;
 

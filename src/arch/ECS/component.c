@@ -3,6 +3,7 @@
 
 #include "data/hash_map.h"
 
+#include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -131,4 +132,65 @@ void *cdtGet(ComponentDataTable *table, UUID entityID)
 	}
 
 	return 0;
+}
+
+ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table)
+{
+	ComponentDataTableIterator itr = {};
+
+	UUID emptyID = {};
+
+	itr.index = 0;
+	itr.table = table;
+
+	if (!strcmp((const char *)&emptyID, (const char *)table->data))
+	{
+		cdtMoveIterator(&itr);
+	}
+
+	return itr;
+}
+
+void cdtMoveIterator(ComponentDataTableIterator *itr)
+{
+	if (itr->index >= itr->table->numEntries)
+	{
+		return;
+	}
+
+	UUID emptyID = {};
+
+	while (!strcmp(
+			   emptyID.string,
+			   ((UUID *)(itr->table->data
+						 + ++itr->index
+						 * (itr->table->componentSize
+							+ sizeof(UUID))))->string)
+		   && itr->index < itr->table->numEntries)
+		;
+}
+
+inline
+uint32 cdtIteratorAtEnd(ComponentDataTableIterator itr)
+{
+	return itr.index >= itr.table->numEntries;
+}
+
+inline
+UUID *cdtIteratorGetUUID(ComponentDataTableIterator itr)
+{
+	return (UUID *)(itr.table->data
+					+ itr.index
+					* (itr.table->componentSize
+					   + sizeof(UUID)));
+}
+
+inline
+void *cdtIteratorGetData(ComponentDataTableIterator itr)
+{
+	return (itr.table->data
+			+ itr.index
+			* (itr.table->componentSize
+			   + sizeof(UUID)))
+		+ sizeof(UUID);
 }

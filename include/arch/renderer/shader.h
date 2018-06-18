@@ -20,7 +20,7 @@ void freeShader(Shader shader);
 void freeShaderPipeline(ShaderPipeline shader);
 
 void bindShaderPipeline(ShaderPipeline pipeline);
-void unbindShaderPipeline();
+void unbindShaderPipeline(void);
 
 int32 getUniform(
 	ShaderPipeline pipeline,

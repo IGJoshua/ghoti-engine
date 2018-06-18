@@ -1,7 +1,8 @@
 #include "defines.h"
-#include "core/window.h"
 
-#include "asset_management/scene.h"
+#include "core/window.h"
+#include "core/input.h"
+
 #include "asset_management/model.h"
 
 #include "renderer/renderer_types.h"
@@ -11,6 +12,9 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
 #include "ECS/system.h"
+#include "ECS/save.h"
+
+#include "file/utilities.h"
 
 #include "components/component_types.h"
 
@@ -20,89 +24,32 @@
 #include "data/list.h"
 #include "data/hash_map.h"
 
+#include <GL/glew.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
-
-#include <kazmath/mat4.h>
 
 #include <luajit-2.0/lua.h>
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <SDL2/SDL.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
-static lua_State *L;
-
-void keyCallback(
-	GLFWwindow *window,
-	int key,
-	int scancode,
-	int action,
-	int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, 1);
-	}
-
-	if (L)
-	{
-		lua_checkstack(L, 3);
-
-		// Get the keyboard
-		lua_getglobal(L, "engine");
-		lua_getfield(L, -1, "keyboard");
-		lua_remove(L, -2);
-
-		// Stack: keyboard
-
-		// Check if the field is nil
-		lua_pushnumber(L, key);
-		lua_gettable(L, -2);
-		int32 nil = lua_isnil(L, -1);
-		// stack: keyboard nil/keytable
-		if (nil)
-		{
-			lua_pop(L, 1);
-			// stack: keyboard
-
-			// Make a new table at the key
-			lua_pushnumber(L, key);
-			lua_createtable(L, 0, 2);
-			lua_settable(L, -3);
-			// stack: keyboard(with keynum set to table)
-			lua_pushnumber(L, key);
-			lua_gettable(L, -2);
-		}
-		// stack: keyboard keytable
-
-		// Set the correct values in the table
-		// The key is down (or not)
-		lua_pushboolean(L, action != GLFW_RELEASE ? 1 : 0);
-		// stack: keyboard keytable bool
-		lua_setfield(L, -2, "keydown");
-		// stack: keyboard keytable(with keydown set)
-
-		// The key has just been updated
-		lua_pushboolean(L, 1);
-		// stack: keyboard keytable bool
-		lua_setfield(L, -2, "updated");
-		// stack: keyboard keytable(with updated set)
-
-		lua_pop(L, 2);
-		// stack: cleaned
-	}
-	else
-	{
-		printf("No lua state exists, failing to register keypress\n");
-	}
-}
+extern lua_State *L;
+extern List activeScenes;
+extern uint32 changeScene;
+extern List unloadedScenes;
 
 int32 main()
 {
+	srand(time(0));
+
 	GLFWwindow *window = initWindow(640, 480, "Monochrome");
 
 	if (!window)
@@ -110,19 +57,31 @@ int32 main()
 		return -1;
 	}
 
+	int32 err = initInput(window);
+	if (err)
+	{
+		freeWindow(window);
+		return err;
+	}
+
+	activeScenes = createList(sizeof(Scene *));
+	unloadedScenes = createList(sizeof(Scene *));
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
-	glfwSetKeyCallback(window, &keyCallback);
 
 	glEnable(GL_DEPTH_TEST);
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
+	initSystems();
+
 	// Init Lua
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua") || lua_pcall(L, 0, 0, 0);
+	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
+		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
 		printf("Lua Error: %s\n", lua_tostring(L, -1));
@@ -133,30 +92,27 @@ int32 main()
 		return 1;
 	}
 
-	// TODO: Setup basic component state
-	Scene *scene = createScene();
-
-	// Add component types
-
-	// Add systems
-	System rendererSystem = createRendererSystem();
-
-	sceneAddRenderFrameSystem(scene, rendererSystem);
-
-	// Create entities
+	Scene *initScene;
+	loadScene("scene_2", &initScene);
+	listPushFront(&activeScenes, &initScene);
 
 	// State previous
 	// State next
 
-	// TODO: Make this thing work
-  	//loadScene("scene_1", &scene);
+	ListIterator itr = 0;
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-	sceneInitSystems(scene);
-	sceneInitLua(&L, scene);
+		sceneInitSystems(scene);
+		sceneInitLua(&L, scene);
+	}
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
-	// Fixed timesetep
+	// Fixed timestep
 	real64 dt = 1.0 / 60.0;
 
 	real64 currentTime = glfwGetTime();
@@ -177,23 +133,30 @@ int32 main()
 
 		while (accumulator >= dt)
 		{
-			// TODO: Previous state = currentState
-			sceneRunPhysicsFrameSystems(scene, dt);
-
-			// Load the lua engine table and run its physics systems
-			if (L)
+			for (itr = listGetIterator(&activeScenes);
+				 !listIteratorAtEnd(itr);
+				 listMoveIterator(&itr))
 			{
-				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "runPhysicsSystems");
-				lua_remove(L, -2);
-				lua_pushlightuserdata(L, scene);
-				lua_pushnumber(L, dt);
-				luaError = lua_pcall(L, 2, 0, 0);
-				if (luaError)
+				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+				// TODO: Previous state = currentState
+				sceneRunPhysicsFrameSystems(scene, dt);
+
+				// Load the lua engine table and run its physics systems
+				if (L)
 				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
-					lua_close(L);
-					L = 0;
+					lua_getglobal(L, "engine");
+					lua_getfield(L, -1, "runPhysicsSystems");
+					lua_remove(L, -2);
+					lua_pushlightuserdata(L, scene);
+					lua_pushnumber(L, dt);
+					luaError = lua_pcall(L, 2, 0, 0);
+					if (luaError)
+					{
+						printf("Lua error: %s\n", lua_tostring(L, -1));
+						lua_close(L);
+						L = 0;
+					}
 				}
 			}
 
@@ -212,12 +175,32 @@ int32 main()
 				}
 			}
 
+			if (changeScene)
+			{
+				// TODO: unload all the unneeded scenes
+				for (ListIterator i = listGetIterator(&unloadedScenes);
+					 !listIteratorAtEnd(i);
+					 listMoveIterator(&i))
+				{
+					Scene **scene = ((Scene **)(&((*i)->data)));
+
+					sceneShutdownLua(&L, *scene);
+					sceneShutdownSystems(*scene);
+					freeScene(scene);
+				}
+				listClear(&unloadedScenes);
+
+				changeScene = 0;
+			}
+
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
+
+			inputHandleEvents();
 		}
 
-		const real64 alpha = accumulator / dt;
+		// const real64 alpha = accumulator / dt;
 
 		// Lerp state between previous and next
 
@@ -230,47 +213,71 @@ int32 main()
 
 		real32 aspectRatio = (real32)width / (real32)height;
 
-		CameraComponent *cam = sceneGetComponentFromEntity(scene, scene->mainCamera, idFromName("camera"));
-		if (cam)
+		for (itr = listGetIterator(&activeScenes);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
 		{
-			cam->aspectRatio = aspectRatio;
-		}
+			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-		// Render
-		if (L)
-		{
-			lua_getglobal(L, "engine");
-			lua_getfield(L, -1, "runRenderSystems");
-			lua_remove(L, -2);
-			lua_pushlightuserdata(L, scene);
-			lua_pushnumber(L, frameTime);
-			luaError = lua_pcall(L, 2, 0, 0);
-			if (luaError)
+			CameraComponent *cam = sceneGetComponentFromEntity(
+				scene,
+				scene->mainCamera,
+				idFromName("camera"));
+			if (cam)
 			{
-				printf("Lua error: %s\n", lua_tostring(L, -1));
-				lua_close(L);
-				L = 0;
+				cam->aspectRatio = aspectRatio;
 			}
-		}
 
-		sceneRunRenderFrameSystems(scene, frameTime);
+			// Render
+			if (L)
+			{
+				lua_getglobal(L, "engine");
+				lua_getfield(L, -1, "runRenderSystems");
+				lua_remove(L, -2);
+				lua_pushlightuserdata(L, scene);
+				lua_pushnumber(L, frameTime);
+				luaError = lua_pcall(L, 2, 0, 0);
+				if (luaError)
+				{
+					printf("Lua error: %s\n", lua_tostring(L, -1));
+					lua_close(L);
+					L = 0;
+				}
+			}
+
+			sceneRunRenderFrameSystems(scene, frameTime);
+		}
 
 		glfwSwapBuffers(window);
-
-		glfwPollEvents();
 	}
 
-	if (L)
+	for (itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		sceneShutdownLua(&L, scene);
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		if (L)
+		{
+			sceneShutdownLua(&L, scene);
+		}
+		sceneShutdownSystems(scene);
+		freeScene(&scene);
 	}
-	sceneShutdownSystems(scene);
-	freeScene(&scene);
+
+	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
+	{
+		printf("Failed to delete runtime folder\n");
+	}
 
 	if (L)
 	{
 		lua_close(L);
 	}
+
+	freeSystems();
+
+	shutdownInput();
 
 	freeWindow(window);
 

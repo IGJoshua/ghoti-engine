@@ -9,10 +9,8 @@ typedef struct oscillator_component_t
 } OscillatorComponent;
 ]]
 
-io.write("Defined Oscillator component for FFI\n")
+-- io.write("Defined Oscillator component for FFI\n")
 
-local component = engine.components:register("oscillator", "OscillatorComponent")
+-- local component = engine.components:register("oscillator", "OscillatorComponent")
 
-component.numEntries = 4
-
-io.write("Registered Oscillator component\n")
+-- io.write("Registered Oscillator component\n")

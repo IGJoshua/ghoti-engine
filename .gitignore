@@ -1,10 +1,11 @@
 # Project: Monochrome
 # Company: Broken Dinosaur Studios
-# Author: Joshua Suskalo
+# Author: Joshua Suskalo, Pranav Sahani
 # Copyright: April 2018
 
 # Binary resources
 build/
+release/
 monochrome.so
 monochrome.dll
 
@@ -19,6 +20,10 @@ resources/*
 GTAGS
 GRTAGS
 GPATH
+.vscode
+*.cap
 
 # Other files
 log.txt
+vgcore.*
+*.json

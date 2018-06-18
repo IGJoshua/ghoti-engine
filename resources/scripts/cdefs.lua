@@ -33,6 +33,12 @@ ListIterator listGetIterator(List *l);
 void listMoveIterator(ListIterator *itr);
 int32 listIteratorAtEnd(ListIterator itr);
 
+void listPushFront(List *l, void *data);
+void listPushBack(List *l, void *data);
+
+void listPopFront(List *l);
+void listClear(List *l);
+
 void listRemove(List *l, ListIterator itr);
 void listInsert(List *l, ListIterator itr, void *data);
 
@@ -67,15 +73,53 @@ typedef struct component_data_table_t
   uint8 data[];
 } ComponentDataTable;
 
+typedef enum data_type_e {
+	INVALID_DATA_TYPE = -1,
+	UINT8 = 0,
+	UINT16,
+	UINT32,
+	UINT64,
+	INT8,
+	INT16,
+	INT32,
+	INT64,
+	FLOAT32,
+	FLOAT64,
+	BOOL,
+	CHAR,
+	STRING
+} DataType;
+
+typedef struct component_value_definition_t
+{
+	char *name;
+	DataType type;
+	uint32 maxStringSize;
+	uint32 count;
+} ComponentValueDefinition;
+
+typedef struct component_definition_t
+{
+	char *name;
+	uint32 size;
+	uint32 numValues;
+	ComponentValueDefinition *values;
+} ComponentDefinition;
+
 typedef struct scene_t
 {
-  HashMap componentTypes;
-  HashMap entities;
-  UUID mainCamera;
-  List physicsFrameSystems;
-  List renderFrameSystems;
-  List luaPhysicsFrameSystemNames;
-  List luaRenderFrameSystemNames;
+	char *name;
+	HashMap componentTypes;
+	HashMap entities;
+	UUID mainCamera;
+	List physicsFrameSystems;
+	List renderFrameSystems;
+	List luaPhysicsFrameSystemNames;
+	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
+	uint32 numComponentsDefinitions;
+	ComponentDefinition *componentDefinitions;
 } Scene;
 
 void sceneRegisterEntity(Scene *s, UUID newEntity);
@@ -103,34 +147,6 @@ void sceneAddComponentType(
   UUID componentID,
   uint32 componentSize,
   uint32 maxComponents);
-
-typedef float kmScalar;
-
-typedef struct kmVec3 {
-  kmScalar x;
-  kmScalar y;
-  kmScalar z;
-} kmVec3;
-
-kmVec3* kmVec3Zero(kmVec3* pOut);
-kmVec3* kmVec3Fill(kmVec3* pOut, kmScalar x, kmScalar y, kmScalar z);
-kmVec3* kmVec3Scale(kmVec3* pOut, const kmVec3* pIn, const kmScalar s);
-kmVec3* kmVec3Add(kmVec3* pOut, const kmVec3* pV1, const kmVec3* pV2);
-
-typedef struct kmQuaternion {
-  kmScalar x;
-  kmScalar y;
-  kmScalar z;
-  kmScalar w;
-} kmQuaternion;
-
-kmQuaternion* kmQuaternionIdentity(kmQuaternion* pOut);
-kmQuaternion* kmQuaternionRotationPitchYawRoll(kmQuaternion* pOut,
-  kmScalar pitch,
-  kmScalar yaw, kmScalar roll);
-
-kmScalar kmDegreesToRadians(kmScalar degrees);
-kmScalar kmRadiansToDegrees(kmScalar radians);
 
 typedef enum glfw_key_e
 {
@@ -256,4 +272,34 @@ typedef enum glfw_key_e
   GLFW_KEY_RIGHT_SUPER = 347,
   GLFW_KEY_MENU = 348
 } GLFW_KEY;
+
+int32 closeWindow();
+
+typedef enum glfw_mouse_button_e
+{
+  GLFW_MOUSE_BUTTON_1 = 0,
+  GLFW_MOUSE_BUTTON_2 = 1,
+  GLFW_MOUSE_BUTTON_3 = 2,
+  GLFW_MOUSE_BUTTON_4 = 3,
+  GLFW_MOUSE_BUTTON_5 = 4,
+  GLFW_MOUSE_BUTTON_6 = 5,
+  GLFW_MOUSE_BUTTON_7 = 6,
+  GLFW_MOUSE_BUTTON_8 = 7
+} GLFW_MOUSE_BUTTON;
+
+int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
+int32 loadSave(uint32 slot, Scene **scene);
+bool getSaveSlotAvailability(uint32 slot);
+int32 deleteSave(uint32 slot);
+
+int32 luaLoadScene(const char *name, Scene **scene);
+int32 shutdownScene(Scene **scene);
+
+void freeScene(Scene **scene);
+
+List activeScenes;
+uint32 changeScene;
+List unloadedScenes;
 ]]
+
+local kazmath = require("resources/scripts/cdefs/kazmath")

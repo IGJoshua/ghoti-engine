@@ -3,4 +3,9 @@
 
 #include "ECS/ecs_types.h"
 
-System createRendererSystem();
+#define SYSTEM_BUCKET_COUNT 31
+
+void initSystems(void);
+void freeSystems(void);
+
+System createRendererSystem(void);

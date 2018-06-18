@@ -3,7 +3,7 @@
 
 #include "threading_types.h"
 
-Promise *pCreate();
+Promise *pCreate(void);
 void freePromise(Promise **p);
 
 Promise *pReturn(void *pData);
