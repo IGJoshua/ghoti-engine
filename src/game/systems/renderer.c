@@ -29,93 +29,104 @@ extern Uniform projectionUniform;
 
 extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
+extern bool rendererActive;
+
 internal
 void initRendererSystem(Scene *scene)
 {
-	if (compileShaderFromFile(
-		"resources/shaders/base.vert",
-		SHADER_VERTEX,
-		&vertShader) == -1)
+	if (!rendererActive)
 	{
-		return;
-	}
+		if (compileShaderFromFile(
+			"resources/shaders/base.vert",
+			SHADER_VERTEX,
+			&vertShader) == -1)
+		{
+			return;
+		}
 
-	if (compileShaderFromFile(
-		"resources/shaders/color.frag",
-		SHADER_FRAGMENT,
-		&fragShader) == -1)
-	{
-		return;
-	}
+		if (compileShaderFromFile(
+			"resources/shaders/color.frag",
+			SHADER_FRAGMENT,
+			&fragShader) == -1)
+		{
+			return;
+		}
 
-	Shader *program[2];
-	program[0] = &vertShader;
-	program[1] = &fragShader;
+		Shader *program[2];
+		program[0] = &vertShader;
+		program[1] = &fragShader;
 
-	if (composeShaderPipeline(program, 2, &pipeline) == -1)
-	{
-		return;
-	}
+		if (composeShaderPipeline(program, 2, &pipeline) == -1)
+		{
+			return;
+		}
 
-	freeShader(vertShader);
-	freeShader(fragShader);
-	free(pipeline.shaders);
-	pipeline.shaderCount = 0;
+		freeShader(vertShader);
+		freeShader(fragShader);
+		free(pipeline.shaders);
+		pipeline.shaderCount = 0;
 
-	if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
-	{
-		return;
-	}
+		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
+		{
+			return;
+		}
 
-	if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
-	{
-		return;
-	}
+		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
+		{
+			return;
+		}
 
-	if (getUniform(pipeline, "projection", UNIFORM_MAT4, &projectionUniform) == -1)
-	{
-		return;
-	}
+		if (getUniform(
+			pipeline,
+			"projection",
+			UNIFORM_MAT4,
+			&projectionUniform) == -1)
+		{
+			return;
+		}
 
-	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		textureUniforms[i].type = UNIFORM_INVALID;
-	}
+		for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+		{
+			textureUniforms[i].type = UNIFORM_INVALID;
+		}
 
-	if (getUniform(
-		pipeline,
-		"diffuseTexture",
-		UNIFORM_TEXTURE_2D,
-		&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
-	{
-		return;
-	}
+		if (getUniform(
+			pipeline,
+			"diffuseTexture",
+			UNIFORM_TEXTURE_2D,
+			&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
+		{
+			return;
+		}
 
-	if (getUniform(
-		pipeline,
-		"specularTexture",
-		UNIFORM_TEXTURE_2D,
-		&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
-	{
-		return;
-	}
+		if (getUniform(
+			pipeline,
+			"specularTexture",
+			UNIFORM_TEXTURE_2D,
+			&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
+		{
+			return;
+		}
 
-	if (getUniform(
-		pipeline,
-		"normalTexture",
-		UNIFORM_TEXTURE_2D,
-		&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
-	{
-		return;
-	}
+		if (getUniform(
+			pipeline,
+			"normalTexture",
+			UNIFORM_TEXTURE_2D,
+			&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
+		{
+			return;
+		}
 
-	if (getUniform(
-		pipeline,
-		"emissiveTexture",
-		UNIFORM_TEXTURE_2D,
-		&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
-	{
-		return;
+		if (getUniform(
+			pipeline,
+			"emissiveTexture",
+			UNIFORM_TEXTURE_2D,
+			&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
+		{
+			return;
+		}
+
+		rendererActive = true;
 	}
 }
 
@@ -196,7 +207,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void shutdownRendererSystem(Scene *scene)
 {
-
+	rendererActive = false;
 }
 
 System createRendererSystem(void)

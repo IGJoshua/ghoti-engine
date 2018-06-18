@@ -251,6 +251,53 @@ int32 loadScene(const char *name, Scene **scene)
 
 	free(sceneFilename);
 
+	ComponentDataTable *modelComponents = NULL;
+	for (HashMapIterator componentsItr = hashMapGetIterator(
+			(*scene)->componentTypes);
+		!hashMapIteratorAtEnd(componentsItr);
+		hashMapMoveIterator(&componentsItr))
+	{
+		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
+		if (!strcmp(componentID->string, "model"))
+		{
+			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
+				componentsItr);
+			break;
+		}
+	}
+
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		for (ListIterator listItr = listGetIterator(
+				(List*)hashMapIteratorGetValue(itr));
+			!listIteratorAtEnd(listItr);
+			listMoveIterator(&listItr))
+		{
+			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
+			if (!strcmp(componentID->string, "model"))
+			{
+				ModelComponent *modelComponent =
+					(ModelComponent*)cdtGet(
+						modelComponents,
+						*(UUID*)hashMapIteratorGetKey(itr));
+
+				if (loadModel(modelComponent->name) == -1)
+				{
+					error = -1;
+				}
+
+				break;
+			}
+		}
+
+		if (error == -1)
+		{
+			break;
+		}
+	}
+
 	if (error != -1)
 	{
 		printf("Successfully loaded scene (%s)\n", name);

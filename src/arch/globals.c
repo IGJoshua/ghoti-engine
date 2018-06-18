@@ -24,6 +24,8 @@ Uniform projectionUniform;
 
 Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
+bool rendererActive;
+
 // NOTE(Joshua): Globals for ECS
 
 // Maps from system names as UUIDs to System structures
