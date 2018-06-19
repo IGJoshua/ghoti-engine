@@ -1,6 +1,7 @@
 #include "systems.h"
 
 #include "asset_management/model.h"
+#include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/shader.h"
@@ -45,7 +46,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_VERTEX,
 			&vertShader) == -1)
 		{
-			return;
+			printf("Unable to compile vertex shader from file\n");
 		}
 
 		if (compileShaderFromFile(
@@ -53,7 +54,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_FRAGMENT,
 			&fragShader) == -1)
 		{
-			return;
+			printf("Unable to compile fragment shader from file\n");
 		}
 
 		Shader *program[2];
@@ -62,7 +63,7 @@ void initRendererSystem(Scene *scene)
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
-			return;
+			printf("Unable to compose shader program\n");
 		}
 
 		freeShader(vertShader);
@@ -72,12 +73,12 @@ void initRendererSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			return;
+			printf("Unable to get model component uniform\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			return;
+			printf("Unable to get view component uniform\n");
 		}
 
 		if (getUniform(
@@ -86,7 +87,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_MAT4,
 			&projectionUniform) == -1)
 		{
-			return;
+			printf("Unable to get projection component uniform\n");
 		}
 
 		for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
@@ -100,7 +101,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
 		{
-			return;
+			printf("Unable to get diffuse texture uniform\n");
 		}
 
 		if (getUniform(
@@ -109,7 +110,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
 		{
-			return;
+			printf("Unable to get specular texture uniform\n");
 		}
 
 		if (getUniform(
@@ -118,7 +119,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
 		{
-			return;
+			printf("Unable to get normal texture uniform\n");
 		}
 
 		if (getUniform(
@@ -127,7 +128,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
 		{
-			return;
+			printf("Unable to get emissive texture uniform\n");
 		}
 
 		rendererActive = true;
@@ -163,25 +164,51 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		camera->aspectRatio,
 		camera->nearPlane,
 		camera->farPlane);
+
+	bindShaderPipeline(pipeline);
+
+	if (setUniform(viewUniform, &view) == -1)
+	{
+		printf("Unable to set view uniform\n");
+	}
+
+	if (setUniform(projectionUniform, &projection) == -1)
+	{
+		printf("Unable to set projection uniform\n");
+	}
+
+	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		if (textureUniforms[i].type != UNIFORM_INVALID)
+		{
+			if (setUniform(textureUniforms[i], &i) == -1)
+			{
+				printf("Unable to set texture uniform %d\n", i);
+			}
+		}
+	}
 }
+
+extern real64 alpha;
 
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	ModelComponent *model = sceneGetComponentFromEntity(
+	ModelComponent *modelComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
 		modelComponentID);
 
-	if (!getModel(model->name))
+	Model *model = getModel(modelComponent->name);
+	if (!model)
 	{
-		if (loadModel(model->name) == -1)
+		if (loadModel(modelComponent->name) == -1)
 		{
 			return;
 		}
 	}
 
-	if (!model->visible)
+	if (!modelComponent->visible)
 	{
 		return;
 	}
@@ -204,16 +231,75 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
-	if (renderModel(model->name, &worldMatrix, &view, &projection) == -1)
+	if (setUniform(modelUniform, &worldMatrix) == -1)
 	{
+		printf("Unable to set model uniform\n");
 		return;
+	}
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Mesh *mesh = &model->meshes[i];
+
+		glBindVertexArray(mesh->vertexArray);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glEnableVertexAttribArray(j);
+		}
+
+		Material *material = &model->materials[i];
+
+		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
+		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
+
+		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			textures[j] = getTexture(material->components[j].texture);
+
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, textures[j]->id);
+			}
+		}
+
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			printf(
+				"Error in Draw Subset %s in Model (%s): %s\n",
+				material->name,
+				modelComponent->name,
+				gluErrorString(glError));
+		}
 	}
 }
 
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
+	for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+	{
+		glActiveTexture(GL_TEXTURE0 + j);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	{
+		glDisableVertexAttribArray(j);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
 }
 
 internal

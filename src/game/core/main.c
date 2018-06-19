@@ -3,16 +3,8 @@
 #include "core/window.h"
 #include "core/input.h"
 
-#include "asset_management/model.h"
-
-#include "renderer/renderer_types.h"
-#include "renderer/shader.h"
-
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
-#include "ECS/component.h"
-#include "ECS/system.h"
-#include "ECS/save.h"
 
 #include "file/utilities.h"
 
@@ -34,10 +26,6 @@
 
 #include <SDL2/SDL.h>
 
-#include <stdio.h>
-#include <math.h>
-#include <malloc.h>
-#include <string.h>
 #include <time.h>
 #include <stdlib.h>
 
