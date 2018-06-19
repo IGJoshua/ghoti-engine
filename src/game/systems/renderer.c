@@ -31,6 +31,10 @@ extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
 extern bool rendererActive;
 
+internal UUID transformComponentID = {};
+internal UUID modelComponentID = {};
+internal UUID cameraComponentID = {};
+
 internal
 void initRendererSystem(Scene *scene)
 {
@@ -130,10 +134,40 @@ void initRendererSystem(Scene *scene)
 	}
 }
 
+internal CameraComponent *camera = 0;
+internal TransformComponent *cameraTransform = 0;
+internal kmMat4 view = {};
+internal kmMat4 projection = {};
+
+internal
+void beginRendererSystem(Scene *scene, real64 dt)
+{
+	camera = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID);
+	cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	kmMat3 cameraRotation;
+	kmMat3FromRotationQuaternion(&cameraRotation, &cameraTransform->rotation);
+
+	kmMat4RotationTranslation(&view, &cameraRotation, &cameraTransform->position);
+	kmMat4Inverse(&view, &view);
+
+	kmMat4PerspectiveProjection(
+		&projection,
+		camera->fov,
+		camera->aspectRatio,
+		camera->nearPlane,
+		camera->farPlane);
+}
+
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	UUID modelComponentID = idFromName("model");
 	ModelComponent *model = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -152,7 +186,6 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -171,37 +204,16 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		transform->scale.z);
 	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
 
-	UUID cameraComponentID = idFromName("camera");
-	CameraComponent *camera =
-		sceneGetComponentFromEntity(
-			scene,
-			scene->mainCamera,
-			cameraComponentID);
-	TransformComponent *cameraTransform =
-		sceneGetComponentFromEntity(
-			scene,
-			scene->mainCamera,
-			transformComponentID);
-
-	kmMat3 cameraRotation;
-	kmMat3FromRotationQuaternion(&cameraRotation, &cameraTransform->rotation);
-
-	kmMat4 view;
-	kmMat4RotationTranslation(&view, &cameraRotation, &cameraTransform->position);
-	kmMat4Inverse(&view, &view);
-
-	kmMat4 projection;
-	kmMat4PerspectiveProjection(
-		&projection,
-		camera->fov,
-		camera->aspectRatio,
-		camera->nearPlane,
-		camera->farPlane);
-
 	if (renderModel(model->name, &worldMatrix, &view, &projection) == -1)
 	{
 		return;
 	}
+}
+
+internal
+void endRendererSystem(Scene *scene, real64 dt)
+{
+
 }
 
 internal
@@ -214,10 +226,11 @@ System createRendererSystem(void)
 {
 	System renderer = {};
 
-	UUID transformComponentID = idFromName("transform");
-	UUID modelComponentID = idFromName("model");
-
 	List componentList = createList(sizeof(UUID));
+
+	transformComponentID = idFromName("transform");
+	modelComponentID = idFromName("model");
+	cameraComponentID = idFromName("camera");
 
 	listPushFront(&componentList, &transformComponentID);
 	listPushFront(&componentList, &modelComponentID);
@@ -225,9 +238,9 @@ System createRendererSystem(void)
 	renderer.componentTypes = componentList;
 
 	renderer.init = &initRendererSystem;
-	renderer.begin = 0;
+	renderer.begin = &beginRendererSystem;
 	renderer.run = &runRendererSystem;
-	renderer.end = 0;
+	renderer.end = &endRendererSystem;
 	renderer.shutdown = &shutdownRendererSystem;
 
 	return renderer;
