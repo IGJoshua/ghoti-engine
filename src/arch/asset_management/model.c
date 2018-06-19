@@ -9,11 +9,8 @@
 
 #include "json-utilities/utilities.h"
 
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-
 #include <malloc.h>
+#include <string.h>
 
 extern Model *models;
 extern uint32 numModels;
