@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <malloc.h>
+#include <stdio.h>
 
 extern Shader vertShader;
 extern Shader fragShader;
