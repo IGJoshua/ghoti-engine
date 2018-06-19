@@ -1,183 +1,155 @@
 #include "asset_management/mesh.h"
 #include "asset_management/asset_manager_types.h"
 
+#include "file/utilities.h"
+
 #include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
+#include <string.h>
 
-int32 loadMesh(
-	const struct aiMesh *meshData,
-	const Material *material,
-	Mesh *mesh)
+int32 loadMesh(Model *model)
 {
-	uint32 numVertices = 0;
-	Vertex *vertices = calloc(meshData->mNumVertices, sizeof(Vertex));
-	uint32 numIndices = 0;
-	uint32 *indices = calloc(meshData->mNumFaces * 3, sizeof(uint32));
+	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *meshFilename = getFullFilePath(model->name, "mesh", modelFolder);
+	free(modelFolder);
 
-	uint32 i, j;
+	FILE *file = fopen(meshFilename, "rb");
+	free(meshFilename);
 
-	printf("Loading subset mesh data...\n");
-
-	for (i = 0; i < meshData->mNumVertices; i++, numVertices++)
+	if (file)
 	{
-		Vertex *vertex = &vertices[numVertices];
+		uint32 numSubsets;
+		fread(&numSubsets, sizeof(uint32), 1, file);
 
-		const struct aiVector3D *positions = meshData->mVertices;
+		model->meshes = calloc(numSubsets, sizeof(Mesh));
 
-		vertex->position.x = positions[i].x;
-		vertex->position.y = positions[i].y;
-		vertex->position.z = positions[i].z;
-
-		const struct aiColor4D *colors = meshData->mColors[0];
-
-		if (colors)
+		for (uint32 i = 0; i < numSubsets; i++)
 		{
-			vertex->color.x = colors[i].r;
-			vertex->color.y = colors[i].g;
-			vertex->color.z = colors[i].b;
-			vertex->color.w = colors[i].a;
-		}
-		else
-		{
-			vertex->color.x = 0.0f;
-			vertex->color.y = 0.0f;
-			vertex->color.z = 0.0f;
-			vertex->color.w = 1.0f;
-		}
+			char *subsetName = readString(file);
+			printf("Loading subset mesh (%s)...\n", subsetName);
+			printf("Loading subset mesh data...\n");
 
-		const struct aiVector3D *normals = meshData->mNormals;
+			uint32 numVertices;
+			fread(&numVertices, sizeof(uint32), 1, file);
 
-		vertex->normal.x = normals[i].x;
-		vertex->normal.y = normals[i].y;
-		vertex->normal.z = normals[i].z;
+			Vertex *vertices = calloc(numVertices, sizeof(Vertex));
+			fread(vertices, numVertices, sizeof(Vertex), file);
 
-		const struct aiVector3D *tangents = meshData->mTangents;
+			uint32 numIndices;
+			fread(&numIndices, sizeof(uint32), 1, file);
 
-		vertex->tangent.x = tangents[i].x;
-		vertex->tangent.y = tangents[i].y;
-		vertex->tangent.z = tangents[i].z;
+			uint32 *indices = calloc(numIndices, sizeof(uint32));
+			fread(indices, numIndices, sizeof(uint32), file);
 
-		const struct aiVector3D *bitangents = meshData->mBitangents;
+			printf("Successfully loaded subset mesh data\n");
+			printf("Loading subset mesh onto GPU...\n");
 
-		vertex->bitangent.x = bitangents[i].x;
-		vertex->bitangent.y = bitangents[i].y;
-		vertex->bitangent.z = bitangents[i].z;
+			Mesh *mesh = &model->meshes[i];
 
-		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-		{
-			const struct aiVector3D *uvs =
-				meshData->mTextureCoords[material->components[j].uvMap];
-
-			switch ((MaterialComponentType)j)
+			for (uint32 j = 0; j < model->numSubsets; j++)
 			{
-				case MATERIAL_COMPONENT_TYPE_DIFFUSE:
-				case MATERIAL_COMPONENT_TYPE_SPECULAR:
-				case MATERIAL_COMPONENT_TYPE_NORMAL:
-				case MATERIAL_COMPONENT_TYPE_EMISSIVE:
-					vertex->uv[j].x = uvs[i].x;
-					vertex->uv[j].y = 1.0f - uvs[i].y;
+				if (!strcmp(model->materials[j].name, subsetName))
+				{
+					mesh->materialIndex = j;
 					break;
-				default:
-					break;
+				}
 			}
+
+			glGenBuffers(1, &mesh->vertexBuffer);
+			glGenVertexArrays(1, &mesh->vertexArray);
+
+			uint32 bufferIndex = 0;
+
+			glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexBuffer);
+			glBufferData(
+				GL_ARRAY_BUFFER,
+				sizeof(Vertex) * numVertices,
+				vertices,
+				GL_STATIC_DRAW);
+
+			glBindVertexArray(mesh->vertexArray);
+			glVertexAttribPointer(
+				bufferIndex++,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				sizeof(Vertex),
+				(GLvoid*)offsetof(Vertex, position));
+			glVertexAttribPointer(
+				bufferIndex++,
+				4,
+				GL_FLOAT,
+				GL_FALSE,
+				sizeof(Vertex),
+				(GLvoid*)offsetof(Vertex, color));
+			glVertexAttribPointer(
+				bufferIndex++,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				sizeof(Vertex),
+				(GLvoid*)offsetof(Vertex, normal));
+			glVertexAttribPointer(
+				bufferIndex++,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				sizeof(Vertex),
+				(GLvoid*)offsetof(Vertex, tangent));
+			glVertexAttribPointer(
+				bufferIndex++,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				sizeof(Vertex),
+				(GLvoid*)offsetof(Vertex, bitangent));
+
+			for (uint32 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+			{
+				glVertexAttribPointer(
+					bufferIndex++,
+					2,
+					GL_FLOAT,
+					GL_FALSE,
+					sizeof(Vertex),
+					(GLvoid*)offsetof(Vertex, uv[j]));
+			}
+
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
+
+			glGenBuffers(1, &mesh->indexBuffer);
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+			glBufferData(
+				GL_ELEMENT_ARRAY_BUFFER,
+				sizeof(uint32) * numIndices,
+				indices,
+				GL_STATIC_DRAW);
+
+			mesh->numIndices = numIndices;
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+			free(vertices);
+			free(indices);
+
+			printf("Successfully loaded subset mesh onto GPU\n");
+			printf("Vertex Count: %d\n", numVertices);
+			printf("Index Count: %d\n", numIndices);
+			printf("Successfully loaded subset mesh (%s)\n", subsetName);
+			free(subsetName);
 		}
 	}
-
-	for (i = 0; i < meshData->mNumFaces; ++i)
+	else
 	{
-		for (j = 0; j < 3; ++j)
-		{
-			indices[numIndices++] =
-				meshData->mFaces[i].mIndices[j];
-		}
+		printf("Failed to open %s\n", meshFilename);
+		fclose(file);
+		return -1;
 	}
 
-	printf("Successfully loaded subset mesh data\n");
-	printf("Loading subset mesh onto GPU...\n");
-
-	glGenBuffers(1, &mesh->vertexBuffer);
-	glGenVertexArrays(1, &mesh->vertexArray);
-
-	uint32 bufferIndex = 0;
-
-	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexBuffer);
-	glBufferData(
-		GL_ARRAY_BUFFER,
-		sizeof(Vertex) * numVertices,
-		vertices,
-		GL_STATIC_DRAW);
-
-	glBindVertexArray(mesh->vertexArray);
-	glVertexAttribPointer(
-		bufferIndex++,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(Vertex),
-		(GLvoid*)offsetof(Vertex, position));
-	glVertexAttribPointer(
-		bufferIndex++,
-		4,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(Vertex),
-		(GLvoid*)offsetof(Vertex, color));
-	glVertexAttribPointer(
-		bufferIndex++,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(Vertex),
-		(GLvoid*)offsetof(Vertex, normal));
-	glVertexAttribPointer(
-		bufferIndex++,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(Vertex),
-		(GLvoid*)offsetof(Vertex, tangent));
-	glVertexAttribPointer(
-		bufferIndex++,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(Vertex),
-		(GLvoid*)offsetof(Vertex, bitangent));
-
-	for (i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		glVertexAttribPointer(
-			bufferIndex++,
-			2,
-			GL_FLOAT,
-			GL_FALSE,
-			sizeof(Vertex),
-			(GLvoid*)offsetof(Vertex, uv[i]));
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	glGenBuffers(1, &mesh->indexBuffer);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
-	glBufferData(
-		GL_ELEMENT_ARRAY_BUFFER,
-		sizeof(uint32) * numIndices,
-		indices,
-		GL_STATIC_DRAW);
-
-	mesh->numIndices = numIndices;
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	free(vertices);
-	free(indices);
-
-	printf("Successfully loaded subset mesh onto GPU\n");
-	printf("Vertex Count: %d\n", numVertices);
-	printf("Index Count: %d\n", numIndices);
+	fclose(file);
 
 	return 0;
 }

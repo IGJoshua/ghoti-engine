@@ -24,7 +24,6 @@ extern uint32 texturesCapacity;
 
 internal int32 loadMaterials(Model *model);
 internal int32 loadTextures(Model *model);
-internal int32 loadSubsets(Model *model);
 
 int32 loadModel(const char *name)
 {
@@ -49,7 +48,7 @@ int32 loadModel(const char *name)
 			return -1;
 		}
 
-		if (loadSubsets(model) == -1)
+		if (loadMesh(model) == -1)
 		{
 			return -1;
 		}
@@ -156,8 +155,8 @@ int32 loadTextures(Model *model)
 		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
 		{
 			MaterialComponent *materialComponent = &material->components[j];
-			if (
-				materialComponent->texture &&
+			if (materialComponent->texture &&
+				strlen(materialComponent->texture) > 0 &&
 				!getTexture(materialComponent->texture))
 			{
 				numUniqueTextures++;
@@ -177,7 +176,9 @@ int32 loadTextures(Model *model)
 		{
 			MaterialComponent *materialComponent = &material->components[j];
 
-			if (loadTexture(materialComponent->texture) == -1)
+			if (materialComponent->texture &&
+				strlen(materialComponent->texture) > 0 &&
+				loadTexture(materialComponent->texture) == -1)
 			{
 				return -1;
 			}
@@ -186,58 +187,6 @@ int32 loadTextures(Model *model)
 
 	printf("Texture Count: %d\n", numTextures);
 	printf("Textures Capacity: %d\n", texturesCapacity);
-
-	return 0;
-}
-
-int32 loadSubsets(Model *model)
-{
-	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
-	char *modelFilename = getFullFilePath(model->name, "dae", modelFolder);
-	free(modelFolder);
-
-	const struct aiScene *scene = aiImportFile(
-		modelFilename,
-		aiProcessPreset_TargetRealtime_Quality &
-		~aiProcess_SplitLargeMeshes);
-
-	if (!scene) {
-		printf("Failed to open %s\n", modelFilename);
-		free(modelFilename);
-		return -1;
-	}
-
-	free(modelFilename);
-
-	model->meshes = calloc(model->numSubsets, sizeof(Mesh));
-
-	for (uint32 i = 0; i < model->numSubsets; i++)
-	{
-		Material *material = &model->materials[i];
-
-		for (uint32 j = 0; j < scene->mNumMeshes; j++)
-		{
-			struct aiMesh *mesh = scene->mMeshes[j];
-			if (!strcmp(material->name, mesh->mName.data))
-			{
-				printf("Loading subset mesh (%s)...\n", material->name);
-				if (loadMesh(mesh,
-					&model->materials[i],
-					&model->meshes[i]) == -1)
-				{
-					aiReleaseImport(scene);
-					return -1;
-				}
-				printf(
-					"Successfully loaded subset mesh (%s)\n",
-					material->name);
-
-				break;
-			}
-		}
-	}
-
-	aiReleaseImport(scene);
 
 	return 0;
 }
@@ -398,7 +347,7 @@ int32 renderModel(
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
 
-		Material *material = &model->materials[i];
+		Material *material = &model->materials[mesh->materialIndex];
 
 		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
 		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);

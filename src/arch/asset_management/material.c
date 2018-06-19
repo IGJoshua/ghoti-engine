@@ -48,12 +48,19 @@ int32 loadMaterial(Material *material, FILE *file)
 				fread(&materialComponent->uvMap, sizeof(uint32), 1, file);
 				break;
 			default:
-				return -1;
+				break;
 		}
 
-		fread(&materialComponent->value.x, sizeof(real32), 1, file);
-		fread(&materialComponent->value.y, sizeof(real32), 1, file);
-		fread(&materialComponent->value.z, sizeof(real32), 1, file);
+		switch ((MaterialComponentType)materialComponentType)
+		{
+			case MATERIAL_COMPONENT_TYPE_NORMAL:
+				break;
+			default:
+				fread(&materialComponent->value.x, sizeof(real32), 1, file);
+				fread(&materialComponent->value.y, sizeof(real32), 1, file);
+				fread(&materialComponent->value.z, sizeof(real32), 1, file);
+				break;
+		}
 
 		switch ((MaterialComponentType)materialComponentType)
 		{
@@ -64,8 +71,7 @@ int32 loadMaterial(Material *material, FILE *file)
 				break;
 		}
 
-		printf(
-			"Successfully loaded %s material component\n",
+		printf("Successfully loaded %s material component\n",
 			materialComponentName);
 	}
 
