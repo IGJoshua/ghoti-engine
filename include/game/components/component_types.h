@@ -18,6 +18,8 @@ typedef struct transform_component_t
 	kmQuaternion rotation;
 	kmVec3 scale;
 	UUID parent;
+	UUID firstChild;
+	UUID nextSibling;
 	bool dirty;
 	kmVec3 globalPosition;
 	kmQuaternion globalRotation;

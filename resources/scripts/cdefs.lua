@@ -300,6 +300,8 @@ void freeScene(Scene **scene);
 List activeScenes;
 uint32 changeScene;
 List unloadedScenes;
+
+int32 strcmp(const char *str1, const char *str2);
 ]]
 
 local kazmath = require("resources/scripts/cdefs/kazmath")

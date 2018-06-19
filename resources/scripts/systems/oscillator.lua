@@ -28,6 +28,8 @@ function system.run(scene, uuid, dt)
   kazmath.kmVec3Add(transform.position,
 					pos,
 					oscillator.position)
+
+  transform:markDirty(scene)
 end
 
 io.write("Finished loading the Oscillator system\n")
