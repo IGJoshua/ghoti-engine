@@ -6,7 +6,7 @@
 
 typedef struct model_component_t
 {
-	char name[1025];
+	char name[1024];
 	bool visible;
 } ModelComponent;
 

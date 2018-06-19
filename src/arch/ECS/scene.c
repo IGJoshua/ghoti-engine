@@ -905,7 +905,7 @@ char* getDataTypeString(
 			sprintf(
 				dataTypeString,
 				"char(%d)",
-				componentValueDefinition->maxStringSize - 1);
+				componentValueDefinition->maxStringSize);
 			break;
 		case DATA_TYPE_UUID:
 			strcpy(dataTypeString, "uuid");
