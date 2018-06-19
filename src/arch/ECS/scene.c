@@ -1328,35 +1328,45 @@ void sceneAddPhysicsFrameSystem(
 
 void sceneInitRenderFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->init != 0)
 		{
 			system->init(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
 void sceneInitPhysicsFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->init != 0)
 		{
 			system->init(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
@@ -1368,67 +1378,83 @@ void sceneInitSystems(Scene *scene)
 
 void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		systemRun(
-			scene,
-			hashMapGetKey(
-				systemRegistry,
-				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
-			dt);
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
 
-		listMoveIterator(&itr);
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
+
+		systemRun(scene, system, dt);
 	}
 }
 
 void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		systemRun(
-			scene,
-			hashMapGetKey(
-				systemRegistry,
-				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
-			dt);
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
 
-		listMoveIterator(&itr);
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
+
+		systemRun(scene, system, dt);
 	}
 }
 
 void sceneShutdownRenderFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->shutdown != 0)
 		{
 			system->shutdown(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
 void sceneShutdownPhysicsFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->shutdown != 0)
 		{
 			system->shutdown(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
