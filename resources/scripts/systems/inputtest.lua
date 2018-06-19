@@ -45,20 +45,6 @@ function system.begin(scene, dt)
   if input.attack.updated and input.attack.keydown then
 	io.write("Pressed X\n")
   end
-
-  if input.scene.keydown and input.scene.updated then
-    C.changeScene = 1
-
-    local oldScene = ffi.cast("Scene **", C.activeScenes.front.data)
-    C.listPushFront(C.unloadedScenes, oldScene);
-    C.listPopFront(C.activeScenes)
-
-    local newScene = ffi.new("Scene *", ffi.cast("Scene *", 0))
-    local newSceneOut = ffi.new("Scene *[1]", newScene)
-    C.luaLoadScene("scene_1", newSceneOut)
-    C.listPushFront(C.activeScenes, newSceneOut)
-    newScene = newSceneOut[0]
-  end
 end
 
 return system
