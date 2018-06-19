@@ -283,3 +283,9 @@ function engine.cleanInput()
     dpad.updated = false
   end
 end
+
+io.write("Running init script\n")
+
+require("resources/scripts/init")
+
+io.write("Finished init script\n")

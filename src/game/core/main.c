@@ -92,10 +92,6 @@ int32 main()
 		return 1;
 	}
 
-	Scene *initScene;
-	loadScene("scene_2", &initScene);
-	listPushFront(&activeScenes, &initScene);
-
 	// State previous
 	// State next
 
