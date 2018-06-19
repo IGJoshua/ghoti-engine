@@ -74,7 +74,7 @@ int32 loadMaterial(Material *material, FILE *file)
 	return 0;
 }
 
-internal const char *getMaterialComponentName(
+const char *getMaterialComponentName(
 	MaterialComponentType materialComponentType)
 {
 	switch (materialComponentType)
