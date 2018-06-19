@@ -1,6 +1,8 @@
 #include "asset_management/mesh.h"
 #include "asset_management/asset_manager_types.h"
 
+#include "model-utility/mesh_exporter.h"
+
 #include "file/utilities.h"
 
 #include <stdio.h>
@@ -11,6 +13,17 @@
 int32 loadMesh(Model *model)
 {
 	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
+
+	if (exportMesh(modelFilename) == -1)
+	{
+		free(modelFilename);
+		free(modelFolder);
+		return -1;
+	}
+
+	free(modelFilename);
+
 	char *meshFilename = getFullFilePath(model->name, "mesh", modelFolder);
 	free(modelFolder);
 

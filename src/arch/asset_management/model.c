@@ -9,6 +9,8 @@
 
 #include "json-utilities/utilities.h"
 
+#include "model-utility/material_exporter.h"
+
 #include <malloc.h>
 #include <string.h>
 
@@ -94,14 +96,31 @@ int32 loadMaterials(Model *model)
 {
 	int32 error = 0;
 
-	char *assetFolder = getFullFilePath(model->name, NULL, "resources/models");
-	char *assetFilename = getFullFilePath(model->name, NULL, assetFolder);
+	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
 
-	exportAsset(assetFilename);
+	if (exportMaterials(modelFilename) == -1)
+	{
+		free(modelFilename);
+		free(modelFolder);
+		return -1;
+	}
+
+	free(modelFilename);
+
+	char *assetFilename = getFullFilePath(model->name, NULL, modelFolder);
+
+	if (exportAsset(assetFilename) == -1)
+	{
+		free(assetFilename);
+		free(modelFolder);
+		return -1;
+	}
+
 	free(assetFilename);
 
-	assetFilename = getFullFilePath(model->name, "asset", assetFolder);
-	free(assetFolder);
+	assetFilename = getFullFilePath(model->name, "asset", modelFolder);
+	free(modelFolder);
 
 	FILE *file = fopen(assetFilename, "rb");
 

@@ -86,7 +86,16 @@ int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
-	exportScene(sceneFilename);
+	if (exportScene(sceneFilename) == -1)
+	{
+		free(saveFolder);
+		free(saveFilename);
+		free(sceneFolder);
+		free(sceneFilename);
+		free(entitiesFolder);
+		return -1;
+	}
+
 	char *jsonSceneFilename = getFullFilePath(
 		sceneFilename,
 		"json",
@@ -110,7 +119,17 @@ int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
 
-		exportEntity(entityFilename);
+		if (exportEntity(entityFilename) == -1)
+		{
+			free(saveFolder);
+			free(saveFilename);
+			free(sceneFolder);
+			free(sceneFilename);
+			free(entitiesFolder);
+			free(entityFilename);
+			return -1;
+		}
+
 		char *jsonEntityFilename = getFullFilePath(
 			entityFilename,
 			"json",

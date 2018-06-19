@@ -106,7 +106,13 @@ int32 loadScene(const char *name, Scene **scene)
 
 	if (access(jsonSceneFilename, F_OK) != -1)
 	{
-		exportScene(sceneFilename);
+		if (exportScene(sceneFilename) == -1)
+		{
+			free(jsonSceneFilename);
+			free(sceneFilename);
+			free(sceneFolder);
+			return -1;
+		}
 	}
 
 	free(jsonSceneFilename);
@@ -348,7 +354,14 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 					entityFolder);
 				free(entityFilename);
 
-				exportEntity(jsonEntityFilename);
+				if (exportEntity(jsonEntityFilename) == -1)
+				{
+					free(jsonEntityFilename);
+					free(entityFolder);
+					closedir(dir);
+					return -1;
+				}
+
 				free(jsonEntityFilename);
 			}
 
@@ -609,7 +622,14 @@ void unloadScene(const Scene *scene)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
-	exportScene(sceneFilename);
+	if (exportScene(sceneFilename) == -1)
+	{
+		free(sceneFolder);
+		free(sceneFilename);
+		free(entitiesFolder);
+		return;
+	}
+
 	char *jsonSceneFilename = getFullFilePath(
 		sceneFilename,
 		"json",
@@ -633,7 +653,15 @@ void unloadScene(const Scene *scene)
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
 
-		exportEntity(entityFilename);
+		if (exportEntity(entityFilename) == -1)
+		{
+			free(entityFilename);
+			free(sceneFolder);
+			free(sceneFilename);
+			free(entitiesFolder);
+			return;
+		}
+
 		char *jsonEntityFilename = getFullFilePath(
 			entityFilename,
 			"json",
