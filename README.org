@@ -5,7 +5,6 @@
 #+BEGIN_SRC
 glew
 glfw
-assimp
 kazmath
 glu
 luajit-5.1

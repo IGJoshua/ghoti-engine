@@ -9,11 +9,10 @@
 
 #include "json-utilities/utilities.h"
 
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
+#include "model-utility/material_exporter.h"
 
 #include <malloc.h>
+#include <string.h>
 
 extern Model *models;
 extern uint32 numModels;
@@ -24,7 +23,6 @@ extern uint32 texturesCapacity;
 
 internal int32 loadMaterials(Model *model);
 internal int32 loadTextures(Model *model);
-internal int32 loadSubsets(Model *model);
 
 int32 loadModel(const char *name)
 {
@@ -49,7 +47,7 @@ int32 loadModel(const char *name)
 			return -1;
 		}
 
-		if (loadSubsets(model) == -1)
+		if (loadMesh(model) == -1)
 		{
 			return -1;
 		}
@@ -98,14 +96,31 @@ int32 loadMaterials(Model *model)
 {
 	int32 error = 0;
 
-	char *assetFolder = getFullFilePath(model->name, NULL, "resources/models");
-	char *assetFilename = getFullFilePath(model->name, NULL, assetFolder);
+	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
+	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
 
-	exportAsset(assetFilename);
+	if (exportMaterials(modelFilename) == -1)
+	{
+		free(modelFilename);
+		free(modelFolder);
+		return -1;
+	}
+
+	free(modelFilename);
+
+	char *assetFilename = getFullFilePath(model->name, NULL, modelFolder);
+
+	if (exportAsset(assetFilename) == -1)
+	{
+		free(assetFilename);
+		free(modelFolder);
+		return -1;
+	}
+
 	free(assetFilename);
 
-	assetFilename = getFullFilePath(model->name, "asset", assetFolder);
-	free(assetFolder);
+	assetFilename = getFullFilePath(model->name, "asset", modelFolder);
+	free(modelFolder);
 
 	FILE *file = fopen(assetFilename, "rb");
 
@@ -156,8 +171,8 @@ int32 loadTextures(Model *model)
 		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
 		{
 			MaterialComponent *materialComponent = &material->components[j];
-			if (
-				materialComponent->texture &&
+			if (materialComponent->texture &&
+				strlen(materialComponent->texture) > 0 &&
 				!getTexture(materialComponent->texture))
 			{
 				numUniqueTextures++;
@@ -177,7 +192,9 @@ int32 loadTextures(Model *model)
 		{
 			MaterialComponent *materialComponent = &material->components[j];
 
-			if (loadTexture(materialComponent->texture) == -1)
+			if (materialComponent->texture &&
+				strlen(materialComponent->texture) > 0 &&
+				loadTexture(materialComponent->texture) == -1)
 			{
 				return -1;
 			}
@@ -186,58 +203,6 @@ int32 loadTextures(Model *model)
 
 	printf("Texture Count: %d\n", numTextures);
 	printf("Textures Capacity: %d\n", texturesCapacity);
-
-	return 0;
-}
-
-int32 loadSubsets(Model *model)
-{
-	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
-	char *modelFilename = getFullFilePath(model->name, "dae", modelFolder);
-	free(modelFolder);
-
-	const struct aiScene *scene = aiImportFile(
-		modelFilename,
-		aiProcessPreset_TargetRealtime_Quality &
-		~aiProcess_SplitLargeMeshes);
-
-	if (!scene) {
-		printf("Failed to open %s\n", modelFilename);
-		free(modelFilename);
-		return -1;
-	}
-
-	free(modelFilename);
-
-	model->meshes = calloc(model->numSubsets, sizeof(Mesh));
-
-	for (uint32 i = 0; i < model->numSubsets; i++)
-	{
-		Material *material = &model->materials[i];
-
-		for (uint32 j = 0; j < scene->mNumMeshes; j++)
-		{
-			struct aiMesh *mesh = scene->mMeshes[j];
-			if (!strcmp(material->name, mesh->mName.data))
-			{
-				printf("Loading subset mesh (%s)...\n", material->name);
-				if (loadMesh(mesh,
-					&model->materials[i],
-					&model->meshes[i]) == -1)
-				{
-					aiReleaseImport(scene);
-					return -1;
-				}
-				printf(
-					"Successfully loaded subset mesh (%s)\n",
-					material->name);
-
-				break;
-			}
-		}
-	}
-
-	aiReleaseImport(scene);
 
 	return 0;
 }
@@ -333,6 +298,122 @@ int32 freeModel(const char *name)
 			name,
 			model->refCount);
 	}
+
+	return 0;
+}
+
+extern Shader vertShader;
+extern Shader fragShader;
+
+extern ShaderPipeline pipeline;
+
+extern Uniform modelUniform;
+extern Uniform viewUniform;
+extern Uniform projectionUniform;
+
+extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
+
+int32 renderModel(
+	const char *name,
+	kmMat4 *world,
+	kmMat4 *view,
+	kmMat4 *projection)
+{
+	Model *model = getModel(name);
+
+	bindShaderPipeline(pipeline);
+
+	if (setUniform(modelUniform, world) == -1)
+	{
+		return -1;
+	}
+
+	if (setUniform(viewUniform, view) == -1)
+	{
+		return -1;
+	}
+
+	if (setUniform(projectionUniform, projection) == -1)
+	{
+		return -1;
+	}
+
+	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		if (textureUniforms[i].type != UNIFORM_INVALID)
+		{
+			if (setUniform(textureUniforms[i], &i) == -1)
+			{
+				return -1;
+			}
+		}
+	}
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Mesh *mesh = &model->meshes[i];
+
+		glBindVertexArray(mesh->vertexArray);
+
+		uint8 j;
+		for (j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glEnableVertexAttribArray(j);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+		Material *material = &model->materials[mesh->materialIndex];
+
+		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
+		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
+
+		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			textures[j] = getTexture(material->components[j].texture);
+
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, textures[j]->id);
+			}
+		}
+
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			printf(
+				"Draw Subset %s in Model (%s): %s\n",
+				material->name,
+				name,
+				gluErrorString(glError));
+			return -1;
+		}
+
+		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+
+		for (j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glDisableVertexAttribArray(j);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+	glUseProgram(0);
 
 	return 0;
 }
