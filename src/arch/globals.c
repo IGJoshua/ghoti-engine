@@ -36,6 +36,9 @@ bool rendererActive;
 // Lua
 lua_State *L;
 
+// Physics globals
+real64 alpha;
+
 // Maps from system names as UUIDs to System structures
 HashMap systemRegistry;
 

@@ -10,6 +10,10 @@
 
 #include <string.h>
 
+System createRendererSystem(void);
+System createCleanGlobalTransformsSystem(void);
+System createApplyParentTransformsSystem();
+
 extern HashMap systemRegistry;
 
 void initSystems(void)
@@ -25,6 +29,14 @@ void initSystems(void)
 	System renderer = createRendererSystem();
 	key = idFromName("renderer");
 	hashMapInsert(systemRegistry, &key, &renderer);
+
+	System cleanGlobalTransforms = createCleanGlobalTransformsSystem();
+	key = idFromName("clean_global_transforms");
+	hashMapInsert(systemRegistry, &key, &cleanGlobalTransforms);
+
+	System applyParentTransforms = createApplyParentTransformsSystem();
+	key = idFromName("apply_parent_transforms");
+	hashMapInsert(systemRegistry, &key, &applyParentTransforms);
 }
 
 void freeSystems(void)

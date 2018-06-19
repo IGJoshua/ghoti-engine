@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 extern lua_State *L;
+extern real64 alpha;
 extern List activeScenes;
 extern uint32 changeScene;
 extern List unloadedScenes;
@@ -184,7 +185,7 @@ int32 main()
 			inputHandleEvents();
 		}
 
-		// const real64 alpha = accumulator / dt;
+		alpha = accumulator / dt;
 
 		// Lerp state between previous and next
 

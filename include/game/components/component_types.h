@@ -1,6 +1,8 @@
 #pragma once
 #include "defines.h"
 
+#include "ECS/ecs_types.h"
+
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -15,6 +17,14 @@ typedef struct transform_component_t
 	kmVec3 position;
 	kmQuaternion rotation;
 	kmVec3 scale;
+	UUID parent;
+	bool dirty;
+	kmVec3 globalPosition;
+	kmQuaternion globalRotation;
+	kmVec3 globalScale;
+	kmVec3 lastGlobalPosition;
+	kmQuaternion lastGlobalRotation;
+	kmVec3 lastGlobalScale;
 } TransformComponent;
 
 typedef enum camera_projection_type_e

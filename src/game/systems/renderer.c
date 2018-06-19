@@ -1,15 +1,18 @@
-#include "systems.h"
+#include "defines.h"
 
+#include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/shader.h"
 
+#include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
 #include "components/component_types.h"
 
+#include "data/data_types.h"
 #include "data/list.h"
 
 #include <kazmath/mat4.h>
@@ -140,6 +143,8 @@ internal TransformComponent *cameraTransform = 0;
 internal kmMat4 view = {};
 internal kmMat4 projection = {};
 
+extern real64 alpha;
+
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
@@ -152,10 +157,27 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		scene->mainCamera,
 		transformComponentID);
 
-	kmMat3 cameraRotation;
-	kmMat3FromRotationQuaternion(&cameraRotation, &cameraTransform->rotation);
+	kmQuaternion cameraRotationQuat;
+	kmQuaternionSlerp(
+		&cameraRotationQuat,
+		&cameraTransform->lastGlobalRotation,
+		&cameraTransform->globalRotation,
+		alpha);
 
-	kmMat4RotationTranslation(&view, &cameraRotation, &cameraTransform->position);
+	kmMat3 cameraRotation;
+	kmMat3FromRotationQuaternion(&cameraRotation, &cameraRotationQuat);
+
+	kmVec3 cameraPosition;
+	kmVec3Lerp(
+		&cameraPosition,
+		&cameraTransform->lastGlobalPosition,
+		&cameraTransform->globalPosition,
+		alpha);
+
+	kmMat4RotationTranslation(
+		&view,
+		&cameraRotation,
+		&cameraPosition);
 	kmMat4Inverse(&view, &view);
 
 	kmMat4PerspectiveProjection(
@@ -218,18 +240,48 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		transformComponentID);
 
-	kmMat3 rotation;
-	kmMat3FromRotationQuaternion(&rotation, &transform->rotation);
+	kmQuaternion rotationQuat = transform->globalRotation;
+	kmQuaternionNormalize(&transform->globalRotation, &transform->globalRotation);
+	kmQuaternionNormalize(&transform->lastGlobalRotation, &transform->lastGlobalRotation);
+	kmQuaternionSlerp(
+		&rotationQuat,
+		&transform->lastGlobalRotation,
+		&transform->globalRotation,
+		alpha);
+
+	kmVec3 position = transform->globalPosition;
+	kmVec3Lerp(
+		&position,
+		&transform->lastGlobalPosition,
+		&transform->globalPosition,
+		alpha);
+
+	kmVec3 scale = transform->globalScale;
+	kmVec3Lerp(
+		&scale,
+		&transform->lastGlobalScale,
+		&transform->globalScale,
+		alpha);
+
+	kmMat4 rotationMatrix;
+	kmMat4RotationQuaternion(&rotationMatrix, &rotationQuat);
+
+	kmMat4 positionMatrix;
+	kmMat4Translation(
+		&positionMatrix,
+		position.x,
+		position.y,
+		position.z);
+
+	kmMat4 scaleMatrix;
+	kmMat4Scaling(
+		&scaleMatrix,
+		scale.x,
+		scale.y,
+		scale.z);
 
 	kmMat4 worldMatrix;
-	kmMat4RotationTranslation(&worldMatrix, &rotation, &transform->position);
-	kmMat4 scalingMatrix;
-	kmMat4Scaling(
-		&scalingMatrix,
-		transform->scale.x,
-		transform->scale.y,
-		transform->scale.z);
-	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
+	kmMat4Multiply(&worldMatrix, &positionMatrix, kmMat4Multiply(&worldMatrix, &rotationMatrix, &scaleMatrix));
 
 	if (setUniform(modelUniform, &worldMatrix) == -1)
 	{
