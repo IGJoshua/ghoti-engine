@@ -86,8 +86,7 @@ void increaseModelsCapacity()
 			newBufferSize - previousBufferSize);
 	}
 
-	printf(
-		"Increased models capacity to %d to hold 1 new model\n",
+	printf("Increased models capacity to %d to hold 1 new model\n",
 		modelsCapacity);
 }
 

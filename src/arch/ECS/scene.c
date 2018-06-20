@@ -471,8 +471,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 						calloc(componentDefinition->numValues,
 							sizeof(ComponentValueDefinition));
 
-					for (
-						uint32 j = 0;
+					for (uint32 j = 0;
 						j < componentDefinition->numValues;
 						j++)
 					{
@@ -489,7 +488,7 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 							file);
 						componentValueDefinition->type = (DataType)dataType;
 
-						if (componentValueDefinition->type == STRING)
+						if (componentValueDefinition->type == DATA_TYPE_STRING)
 						{
 							fread(
 								&componentValueDefinition->maxStringSize,
@@ -835,22 +834,24 @@ void freeComponentDefinition(ComponentDefinition *componentDefinition)
 uint32 getDataTypeSize(DataType type)
 {
 	switch (type) {
-		case UINT8:
-		case INT8:
-		case CHAR:
+		case DATA_TYPE_UINT8:
+		case DATA_TYPE_INT8:
+		case DATA_TYPE_CHAR:
 			return 1;
-		case UINT16:
-		case INT16:
+		case DATA_TYPE_UINT16:
+		case DATA_TYPE_INT16:
 			return 2;
-		case UINT32:
-		case INT32:
-		case FLOAT32:
-		case BOOL:
+		case DATA_TYPE_UINT32:
+		case DATA_TYPE_INT32:
+		case DATA_TYPE_FLOAT32:
+		case DATA_TYPE_BOOL:
 			return 4;
-		case UINT64:
-		case INT64:
-		case FLOAT64:
+		case DATA_TYPE_UINT64:
+		case DATA_TYPE_INT64:
+		case DATA_TYPE_FLOAT64:
 			return 8;
+		case DATA_TYPE_UUID:
+			return UUID_LENGTH + 1;
 		default:
 			break;
 	}
@@ -864,47 +865,50 @@ char* getDataTypeString(
 	char *dataTypeString = malloc(256);
 
 	switch (componentValueDefinition->type) {
-		case UINT8:
+		case DATA_TYPE_UINT8:
 			strcpy(dataTypeString, "uint8");
 			break;
-		case UINT16:
+		case DATA_TYPE_UINT16:
 			strcpy(dataTypeString, "uint16");
 			break;
-		case UINT32:
+		case DATA_TYPE_UINT32:
 			strcpy(dataTypeString, "uint32");
 			break;
-		case UINT64:
+		case DATA_TYPE_UINT64:
 			strcpy(dataTypeString, "uint64");
 			break;
-		case INT8:
+		case DATA_TYPE_INT8:
 			strcpy(dataTypeString, "int8");
 			break;
-		case INT16:
+		case DATA_TYPE_INT16:
 			strcpy(dataTypeString, "int16");
 			break;
-		case INT32:
+		case DATA_TYPE_INT32:
 			strcpy(dataTypeString, "int32");
 			break;
-		case INT64:
+		case DATA_TYPE_INT64:
 			strcpy(dataTypeString, "int64");
 			break;
-		case FLOAT32:
+		case DATA_TYPE_FLOAT32:
 			strcpy(dataTypeString, "float32");
 			break;
-		case FLOAT64:
+		case DATA_TYPE_FLOAT64:
 			strcpy(dataTypeString, "float64");
 			break;
-		case BOOL:
+		case DATA_TYPE_BOOL:
 			strcpy(dataTypeString, "bool");
 			break;
-		case CHAR:
+		case DATA_TYPE_CHAR:
 			strcpy(dataTypeString, "char");
 			break;
-		case STRING:
+		case DATA_TYPE_STRING:
 			sprintf(
 				dataTypeString,
 				"char(%d)",
-				componentValueDefinition->maxStringSize - 1);
+				componentValueDefinition->maxStringSize);
+			break;
+		case DATA_TYPE_UUID:
+			strcpy(dataTypeString, "uuid");
 			break;
 		default:
 			break;
@@ -949,7 +953,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				&componentDefinition.values[i];
 
 			uint32 size = 0;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING)
 			{
 				size = componentValueDefinition->maxStringSize;
 			}
@@ -959,7 +963,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			}
 
 			uint32 paddingSize = size;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING ||
+				componentValueDefinition->type == DATA_TYPE_UUID)
 			{
 				paddingSize = 1;
 			}
@@ -978,7 +983,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				&componentDefinition.values[i];
 
 			uint32 size = 0;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING)
 			{
 				size = componentValueDefinition->maxStringSize;
 			}
@@ -988,7 +993,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			}
 
 			uint32 paddingSize = size;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING ||
+				componentValueDefinition->type == DATA_TYPE_UUID)
 			{
 				paddingSize = 1;
 			}
@@ -1038,84 +1044,84 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				if (componentValueDefinition->count == 1)
 				{
 					switch (componentValueDefinition->type) {
-						case UINT8:
+						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint8Data);
 							break;
-						case UINT16:
+						case DATA_TYPE_UINT16:
 							uint16Data = *(uint16*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint16Data);
 							break;
-						case UINT32:
+						case DATA_TYPE_UINT32:
 							uint32Data = *(uint32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint32Data);
 							break;
-						case UINT64:
+						case DATA_TYPE_UINT64:
 							uint64Data = *(uint64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint64Data);
 							break;
-						case INT8:
+						case DATA_TYPE_INT8:
 							int8Data = *(int8*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int8Data);
 							break;
-						case INT16:
+						case DATA_TYPE_INT16:
 							int16Data = *(int16*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int16Data);
 							break;
-						case INT32:
+						case DATA_TYPE_INT32:
 							int32Data = *(int32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int32Data);
 							break;
-						case INT64:
+						case DATA_TYPE_INT64:
 							int64Data = *(int64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int64Data);
 							break;
-						case FLOAT32:
+						case DATA_TYPE_FLOAT32:
 							real32Data = *(real32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)real32Data);
 							break;
-						case FLOAT64:
+						case DATA_TYPE_FLOAT64:
 							real64Data = *(real64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)real64Data);
 							break;
-						case BOOL:
+						case DATA_TYPE_BOOL:
 							boolData = *(bool*)valueData;
 							cJSON_AddBoolToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(cJSON_bool)boolData);
 							break;
-						case CHAR:
+						case DATA_TYPE_CHAR:
 							charData[0] = *(char*)valueData;
 							charData[1] = '\0';
 							cJSON_AddStringToObject(
@@ -1123,7 +1129,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 								dataTypeString,
 								charData);
 							break;
-						case STRING:
+						case DATA_TYPE_STRING:
+						case DATA_TYPE_UUID:
 							cJSON_AddStringToObject(
 								jsonComponentValue,
 								dataTypeString,
@@ -1138,68 +1145,69 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 					cJSON *jsonComponentValueDataArrayItem = NULL;
 
 					switch (componentValueDefinition->type) {
-						case UINT8:
+						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint8Data);
 							break;
-						case UINT16:
+						case DATA_TYPE_UINT16:
 							uint16Data = *(uint16*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint16Data);
 							break;
-						case UINT32:
+						case DATA_TYPE_UINT32:
 							uint32Data = *(uint32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint32Data);
 							break;
-						case UINT64:
+						case DATA_TYPE_UINT64:
 							uint64Data = *(uint64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint64Data);
 							break;
-						case INT8:
+						case DATA_TYPE_INT8:
 							int8Data = *(int8*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int8Data);
 							break;
-						case INT16:
+						case DATA_TYPE_INT16:
 							int16Data = *(int16*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int16Data);
 							break;
-						case INT32:
+						case DATA_TYPE_INT32:
 							int32Data = *(int32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int32Data);
 							break;
-						case INT64:
+						case DATA_TYPE_INT64:
 							int64Data = *(int64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int64Data);
 							break;
-						case FLOAT32:
+						case DATA_TYPE_FLOAT32:
 							real32Data = *(real32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)real32Data);
 							break;
-						case FLOAT64:
+						case DATA_TYPE_FLOAT64:
 							real64Data = *(real64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)real64Data);
 							break;
-						case BOOL:
+						case DATA_TYPE_BOOL:
 							boolData = *(bool*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateBool((cJSON_bool)boolData);
 							break;
-						case CHAR:
+						case DATA_TYPE_CHAR:
 							charData[0] = *(char*)valueData;
 							charData[1] = '\0';
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateString(charData);
 							break;
-						case STRING:
+						case DATA_TYPE_STRING:
+						case DATA_TYPE_UUID:
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateString((char*)valueData);
 							break;
