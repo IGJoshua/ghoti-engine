@@ -42,5 +42,5 @@ HashMap systemRegistry;
 // List of scene pointers which will have systems run on them
 List activeScenes;
 
-uint32 changeScene;
+bool changeScene;
 List unloadedScenes;

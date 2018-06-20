@@ -25,6 +25,9 @@
 #include <unistd.h>
 
 extern HashMap systemRegistry;
+extern List activeScenes;
+extern bool changeScene;
+extern List unloadedScenes;
 
 Scene *createScene(void)
 {
@@ -599,6 +602,22 @@ int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
 	return error;
 }
 
+Scene *getScene(const char *name)
+{
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (!strcmp(name, scene->name))
+		{
+			return scene;
+		}
+	}
+
+	return NULL;
+}
+
 internal
 void unloadScene(const Scene *scene)
 {
@@ -761,14 +780,81 @@ void freeScene(Scene **scene)
 
 extern lua_State *L;
 
-int32 luaLoadScene(const char *name, Scene **scene)
+int32 luaLoadScene(const char *name)
 {
-	loadScene(name, scene);
+	if (!getScene(name))
+	{
+		Scene *scene;
+		if (loadScene(name, &scene) == -1)
+		{
+			return -1;
+		}
 
-	sceneInitSystems(*scene);
-	sceneInitLua(&L, *scene);
+		sceneInitSystems(scene);
+		sceneInitLua(&L, scene);
+
+		listPushFront(&activeScenes, &scene);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int32 luaReloadScene(const char *name)
+{
+	if (luaUnloadScene(name) == -1)
+	{
+		return -1;
+	}
+
+	if (luaLoadScene(name) == -1)
+	{
+		return -1;
+	}
 
 	return 0;
+}
+
+int32 luaReloadAllScenes(void)
+{
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (luaUnloadScene(scene->name) == -1)
+		{
+			return -1;
+		}
+
+		if (luaLoadScene(scene->name) == -1)
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int32 luaUnloadScene(const char *name)
+{
+	Scene *scene = getScene(name);
+
+	if (scene)
+	{
+		if (deactivateScene(&scene) == -1)
+		{
+			return -1;
+		}
+
+		changeScene = true;
+		listPushFront(&unloadedScenes, &scene);
+
+		return 0;
+	}
+
+	return -1;
 }
 
 int32 shutdownScene(Scene **scene)
@@ -777,6 +863,23 @@ int32 shutdownScene(Scene **scene)
 	sceneShutdownSystems(*scene);
 
 	return 0;
+}
+
+int32 deactivateScene(Scene **scene)
+{
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		Scene *activeScene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (activeScene == *scene)
+		{
+			listRemove(&activeScenes, itr);
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 ComponentDefinition getComponentDefinition(

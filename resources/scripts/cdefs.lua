@@ -287,15 +287,15 @@ typedef enum glfw_mouse_button_e
   GLFW_MOUSE_BUTTON_8 = 7
 } GLFW_MOUSE_BUTTON;
 
-int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
-int32 loadSave(uint32 slot, Scene **scene);
+int32 exportSave(void *data, uint32 size, uint32 slot);
+int32 loadSave(uint32 slot, void **data);
 bool getSaveSlotAvailability(uint32 slot);
 int32 deleteSave(uint32 slot);
 
-int32 luaLoadScene(const char *name, Scene **scene);
-int32 shutdownScene(Scene **scene);
-
-void freeScene(Scene **scene);
+int32 luaLoadScene(const char *name);
+int32 luaReloadScene(const char *name);
+int32 luaReloadAllScenes(void);
+int32 luaUnloadScene(const char *name);
 
 List activeScenes;
 uint32 changeScene;
