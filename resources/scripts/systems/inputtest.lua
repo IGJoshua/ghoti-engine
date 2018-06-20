@@ -47,7 +47,7 @@ function system.begin(scene, dt)
   end
 
   if input.reload.updated and input.reload.keydown then
-	C.luaReloadAllScenes()
+	C.reloadAllScenes()
   end
 end
 

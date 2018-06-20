@@ -11,15 +11,15 @@
 #define RUNTIME_STATE_DIR "resources/.runtime-state"
 
 Scene *createScene(void);
-int32 loadScene(const char *name, Scene **scene);
+int32 loadSceneFile(const char *name, Scene **scene);
 int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 Scene *getScene(const char *name);
 void freeScene(Scene **scene);
 
-int32 luaLoadScene(const char *name);
-int32 luaReloadScene(const char *name);
-int32 luaReloadAllScenes(void);
-int32 luaUnloadScene(const char *name);
+int32 loadScene(const char *name);
+int32 reloadScene(const char *name);
+int32 reloadAllScenes(void);
+int32 unloadScene(const char *name);
 int32 shutdownScene(Scene **scene);
 int32 deactivateScene(Scene **scene);
 

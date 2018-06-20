@@ -2,4 +2,4 @@
 
 local C = engine.C
 
-C.luaLoadScene("scene_1")
+C.loadScene("scene_1")

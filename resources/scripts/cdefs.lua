@@ -292,10 +292,10 @@ int32 loadSave(uint32 slot, void **data);
 bool getSaveSlotAvailability(uint32 slot);
 int32 deleteSave(uint32 slot);
 
-int32 luaLoadScene(const char *name);
-int32 luaReloadScene(const char *name);
-int32 luaReloadAllScenes(void);
-int32 luaUnloadScene(const char *name);
+int32 loadScene(const char *name);
+int32 reloadScene(const char *name);
+int32 reloadAllScenes(void);
+int32 unloadScene(const char *name);
 
 List activeScenes;
 uint32 changeScene;

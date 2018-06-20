@@ -54,7 +54,7 @@ Scene *createScene(void)
 	return ret;
 }
 
-int32 loadScene(const char *name, Scene **scene)
+int32 loadSceneFile(const char *name, Scene **scene)
 {
 	int32 error = 0;
 
@@ -619,11 +619,9 @@ Scene *getScene(const char *name)
 }
 
 internal
-void unloadScene(const Scene *scene)
+void exportRuntimeScene(const Scene *scene)
 {
 	MKDIR(RUNTIME_STATE_DIR);
-
-	printf("Unloading scene (%s)...\n", scene->name);
 
 	char *sceneFolder = getFullFilePath(
 		scene->name,
@@ -693,15 +691,13 @@ void unloadScene(const Scene *scene)
 	free(sceneFolder);
 	free(sceneFilename);
 	free(entitiesFolder);
-
-	printf("Successfully unloaded scene (%s)\n", scene->name);
 }
 
 void freeScene(Scene **scene)
 {
-	unloadScene(*scene);
+	printf("Unloading scene (%s)...\n", (*scene)->name);
 
-	free((*scene)->name);
+	exportRuntimeScene(*scene);
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
@@ -774,18 +770,21 @@ void freeScene(Scene **scene)
 
 	free((*scene)->componentDefinitions);
 
+	printf("Successfully unloaded scene (%s)\n", (*scene)->name);
+	free((*scene)->name);
+
 	free(*scene);
 	*scene = 0;
 }
 
 extern lua_State *L;
 
-int32 luaLoadScene(const char *name)
+int32 loadScene(const char *name)
 {
 	if (!getScene(name))
 	{
 		Scene *scene;
-		if (loadScene(name, &scene) == -1)
+		if (loadSceneFile(name, &scene) == -1)
 		{
 			return -1;
 		}
@@ -801,14 +800,14 @@ int32 luaLoadScene(const char *name)
 	return -1;
 }
 
-int32 luaReloadScene(const char *name)
+int32 reloadScene(const char *name)
 {
-	if (luaUnloadScene(name) == -1)
+	if (unloadScene(name) == -1)
 	{
 		return -1;
 	}
 
-	if (luaLoadScene(name) == -1)
+	if (loadScene(name) == -1)
 	{
 		return -1;
 	}
@@ -816,19 +815,19 @@ int32 luaReloadScene(const char *name)
 	return 0;
 }
 
-int32 luaReloadAllScenes(void)
+int32 reloadAllScenes(void)
 {
 	for (ListIterator itr = listGetIterator(&activeScenes);
 		!listIteratorAtEnd(itr);
 		listMoveIterator(&itr))
 	{
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
-		if (luaUnloadScene(scene->name) == -1)
+		if (unloadScene(scene->name) == -1)
 		{
 			return -1;
 		}
 
-		if (luaLoadScene(scene->name) == -1)
+		if (loadScene(scene->name) == -1)
 		{
 			return -1;
 		}
@@ -837,7 +836,7 @@ int32 luaReloadAllScenes(void)
 	return 0;
 }
 
-int32 luaUnloadScene(const char *name)
+int32 unloadScene(const char *name)
 {
 	Scene *scene = getScene(name);
 

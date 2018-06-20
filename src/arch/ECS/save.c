@@ -253,7 +253,7 @@ int32 loadSave(uint32 slot, void **data)
 
 			if (error != -1)
 			{
-				luaLoadScene(sceneName);
+				loadScene(sceneName);
 			}
 
 			free(sceneFolder);
