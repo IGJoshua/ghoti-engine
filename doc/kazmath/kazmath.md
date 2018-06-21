@@ -1,6 +1,29 @@
 ### [Table of Contents](../Lua.md) -> Kazmath  
 # Kazmath  
+A C Math library targeted for use in games.
 ## Kazmath Types  
+
+### kmScalar
+A 32 bit floating point value.
+
+### kmEpsilon
+
+### kmBool
+An unsigned 8 bit integer value used for `true` or `false` statements
+
+### kmUchar
+An unsigned 8 bit character
+
+### kmEnum
+An unsigned 32 bit integer used for enumerations
+
+### kmUint
+An unsigned 32 bit integer
+
+### kmInt
+A signed 32 bit integer
+
+
 ## Kazmath Structures  
 #### [kmAABB2](aabb2.md)  
 A structure that represents a two dimensional axis-aligned bounding box.  
