@@ -194,7 +194,7 @@ int32 loadSave(uint32 slot, void **data)
 			char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
 
 			MKDIR(RUNTIME_STATE_DIR);
-			deleteFolder(RUNTIME_STATE_DIR);
+			deleteFolder(RUNTIME_STATE_DIR, true);
 			MKDIR(RUNTIME_STATE_DIR);
 
 			DIR *dir = opendir(saveFolder);
@@ -326,7 +326,7 @@ int32 deleteSave(uint32 slot)
 	{
 		char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
 
-		error = deleteFolder(saveFolder);
+		error = deleteFolder(saveFolder, true);
 		free(saveFolder);
 
 		if (error != -1)

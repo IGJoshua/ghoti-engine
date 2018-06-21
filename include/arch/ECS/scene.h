@@ -12,7 +12,6 @@
 
 Scene *createScene(void);
 int32 loadSceneFile(const char *name, Scene **scene);
-int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
 Scene *getScene(const char *name);
 void freeScene(Scene **scene);
 

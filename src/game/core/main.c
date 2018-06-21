@@ -234,10 +234,7 @@ int32 main()
 		freeScene(&scene);
 	}
 
-	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
-	{
-		printf("Failed to delete runtime folder\n");
-	}
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	if (L)
 	{

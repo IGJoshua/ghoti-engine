@@ -54,6 +54,359 @@ Scene *createScene(void)
 	return ret;
 }
 
+internal
+int32 exportSceneJSONEntities(const char *folder)
+{
+	int32 error = 0;
+
+	DIR *dir = opendir(folder);
+
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (exportSceneJSONEntities(folderPath) == -1)
+					{
+						free(folderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					char *extension = getExtension(dirEntry->d_name);
+					if (extension && !strcmp(extension, "json"))
+					{
+						char *entityFilename = removeExtension(
+							dirEntry->d_name);
+						char *jsonEntityFilename = getFullFilePath(
+							entityFilename,
+							NULL,
+							folder);
+						free(entityFilename);
+
+						if (exportEntity(jsonEntityFilename) == -1)
+						{
+							free(jsonEntityFilename);
+							free(folderPath);
+							free(extension);
+							closedir(dir);
+							return -1;
+						}
+
+						free(jsonEntityFilename);
+					}
+
+					free(extension);
+				}
+
+				free(folderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		error = -1;
+	}
+
+	return error;
+}
+
+#define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
+
+internal
+int32 loadSceneEntities(
+	Scene **scene,
+	bool loadData,
+	bool recursive,
+	const char *folder)
+{
+	int32 error = 0;
+
+	if (!scene)
+	{
+		return -1;
+	}
+
+	DIR *dir = opendir(folder);
+
+	if (dir)
+	{
+		uint32 i;
+
+		struct dirent *dirEntry = readdir(dir);
+
+		if (!loadData && !recursive)
+		{
+			(*scene)->numComponentsDefinitions = 0;
+			(*scene)->componentDefinitionsCapacity = 0;
+		}
+
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (loadSceneEntities(
+						scene,
+						loadData,
+						true,
+						folderPath) == -1)
+					{
+						free(folderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					char *extension = getExtension(dirEntry->d_name);
+					if (extension && !strcmp(extension, "entity"))
+					{
+						FILE *file = fopen(folderPath, "rb");
+
+						if (file)
+						{
+							UUID uuid;
+							fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
+
+							if (loadData)
+							{
+								sceneRegisterEntity(*scene, uuid);
+							}
+
+							uint32 numComponents;
+							fread(&numComponents, sizeof(uint32), 1, file);
+
+							if (!loadData)
+							{
+								if ((*scene)->numComponentsDefinitions + numComponents
+									> (*scene)->componentDefinitionsCapacity)
+								{
+									while (
+										(*scene)->numComponentsDefinitions + numComponents
+										>
+										(*scene)->componentDefinitionsCapacity)
+									{
+										(*scene)->componentDefinitionsCapacity
+											+=
+											COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
+									}
+
+									uint32 previousBufferSize =
+										(*scene)->numComponentsDefinitions
+										* sizeof(ComponentDefinition);
+									uint32 newBufferSize =
+									(*scene)->componentDefinitionsCapacity
+										* sizeof(ComponentDefinition);
+
+									if (previousBufferSize == 0)
+									{
+										(*scene)->componentDefinitions =
+											calloc(newBufferSize, 1);
+									}
+									else
+									{
+										(*scene)->componentDefinitions =
+											realloc(
+												(*scene)->componentDefinitions,
+												newBufferSize);
+										memset(
+											(*scene)->componentDefinitions
+												+ previousBufferSize,
+											0,
+											newBufferSize - previousBufferSize);
+									}
+								}
+							}
+
+							for (i = 0; i < numComponents; i++)
+							{
+								ComponentDefinition *componentDefinition = calloc(1, sizeof(ComponentDefinition));
+
+								if (!loadData)
+								{
+									freeComponentDefinition(
+										componentDefinition);
+									free(componentDefinition);
+
+									componentDefinition =
+										&(*scene)->componentDefinitions[
+										(*scene)->numComponentsDefinitions++];
+								}
+
+								componentDefinition->name = readString(file);
+
+								fread(&componentDefinition->numValues,
+									sizeof(uint32),
+									1,
+									file);
+
+								componentDefinition->values =
+									calloc(componentDefinition->numValues,
+										sizeof(ComponentValueDefinition));
+
+								for (uint32 j = 0;
+									j < componentDefinition->numValues;
+									j++)
+								{
+									ComponentValueDefinition *componentValueDefinition =
+										&componentDefinition->values[j];
+
+									componentValueDefinition->name = readString(file);
+
+									int8 dataType;
+									fread(
+										&dataType,
+										sizeof(int8),
+										1,
+										file);
+									componentValueDefinition->type = (DataType)dataType;
+
+									if (componentValueDefinition->type == DATA_TYPE_STRING)
+									{
+										fread(
+											&componentValueDefinition->maxStringSize,
+											sizeof(uint32),
+											1,
+											file);
+									}
+
+									fread(
+										&componentValueDefinition->count,
+										sizeof(uint32),
+										1,
+										file);
+								}
+
+								fread(
+									&componentDefinition->size,
+									sizeof(uint32),
+									1,
+									file);
+
+								void *data = malloc(componentDefinition->size);
+								fread(data, componentDefinition->size, 1, file);
+
+								if (loadData)
+								{
+									sceneAddComponentToEntity(
+										*scene,
+										uuid,
+										idFromName(componentDefinition->name),
+										data);
+
+									freeComponentDefinition(
+										componentDefinition);
+									free(componentDefinition);
+								}
+
+								free(data);
+							}
+
+							fclose(file);
+						}
+						else
+						{
+							printf("Failed to open %s\n", folderPath);
+							free(folderPath);
+							free(extension);
+							closedir(dir);
+							return -1;
+						}
+					}
+
+					free(extension);
+				}
+
+				free(folderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		error = -1;
+	}
+
+	return error;
+}
+
+internal void removeDuplicateComponentDefinitions(Scene **scene)
+{
+	uint32 numUniqueComponentDefinitions = 0;
+	ComponentDefinition *uniqueComponentDefinitions = calloc(
+		(*scene)->numComponentsDefinitions,
+		sizeof(ComponentDefinition));
+
+	for (uint32 i = 0; i < (*scene)->numComponentsDefinitions; i++)
+	{
+		ComponentDefinition *componentDefinition =
+			&(*scene)->componentDefinitions[i];
+
+		bool unique = true;
+		for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
+		{
+			if (!strcmp(
+				componentDefinition->name,
+				uniqueComponentDefinitions[j].name))
+			{
+				unique = false;
+				break;
+			}
+		}
+
+		if (unique)
+		{
+			copyComponentDefinition(
+				&uniqueComponentDefinitions[
+					numUniqueComponentDefinitions++],
+				componentDefinition);
+		}
+
+		freeComponentDefinition(componentDefinition);
+	}
+
+	free((*scene)->componentDefinitions);
+	uniqueComponentDefinitions = realloc(
+		uniqueComponentDefinitions,
+		numUniqueComponentDefinitions * sizeof(ComponentDefinition));
+
+	(*scene)->componentDefinitions = uniqueComponentDefinitions;
+	(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
+}
+
 int32 loadSceneFile(const char *name, Scene **scene)
 {
 	int32 error = 0;
@@ -122,7 +475,6 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	free(sceneFilename);
 
 	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
-	free(sceneFolder);
 
 	FILE *file = fopen(sceneFilename, "rb");
 
@@ -227,7 +579,28 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			fread(&componentLimitNumbers[i], sizeof(uint32), 1, file);
 		}
 
-		loadSceneEntities(scene, name, false);
+		char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
+		if (exportSceneJSONEntities(entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
+
+		if (loadSceneEntities(scene, false, false, entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
+
+		removeDuplicateComponentDefinitions(scene);
 
 		for (i = 0; i < numComponentLimits; i++)
 		{
@@ -242,8 +615,18 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		(*scene)->numComponentLimitNames = numComponentLimits;
 		(*scene)->componentLimitNames = componentLimitNames;
 
-		loadSceneEntities(scene, name, true);
+		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
 
+		free(entityFolder);
+		free(sceneFolder);
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
@@ -276,8 +659,8 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
 	{
 		for (ListIterator listItr = listGetIterator(
 				(List*)hashMapIteratorGetValue(itr));
@@ -311,293 +694,6 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	{
 		printf("Successfully loaded scene (%s)\n", name);
 	}
-
-	return error;
-}
-
-#define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
-
-int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
-{
-	int32 error = 0;
-
-	if (!scene)
-	{
-		return -1;
-	}
-
-	char *sceneFolder = getFullFilePath(name, NULL, "resources/scenes");
-	char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
-	free(sceneFolder);
-
-	DIR *dir = opendir(entityFolder);
-
-	if (dir)
-	{
-		uint32 i;
-
-		struct dirent *dirEntry = readdir(dir);
-
-		if (!loadData)
-		{
-			(*scene)->numComponentsDefinitions = 0;
-		}
-
-		uint32 componentDefinitionsCapacity = 0;
-
-		while (dirEntry)
-		{
-			char *extension = getExtension(dirEntry->d_name);
-			if (extension && !strcmp(extension, "json"))
-			{
-				char *entityFilename = removeExtension(dirEntry->d_name);
-				char *jsonEntityFilename = getFullFilePath(
-					entityFilename,
-					NULL,
-					entityFolder);
-				free(entityFilename);
-
-				if (exportEntity(jsonEntityFilename) == -1)
-				{
-					free(jsonEntityFilename);
-					free(entityFolder);
-					closedir(dir);
-					return -1;
-				}
-
-				free(jsonEntityFilename);
-			}
-
-			free(extension);
-
-			dirEntry = readdir(dir);
-		}
-
-		closedir(dir);
-		dir = opendir(entityFolder);
-		dirEntry = readdir(dir);
-
-		while (dirEntry)
-		{
-			char *extension = getExtension(dirEntry->d_name);
-			if (!extension || strcmp(extension, "entity"))
-			{
-				free(extension);
-				dirEntry = readdir(dir);
-				continue;
-			}
-
-			free(extension);
-
-			char *entityFilename = getFullFilePath(
-				dirEntry->d_name,
-				NULL,
-				entityFolder);
-
-			FILE *file = fopen(entityFilename, "rb");
-
-			if (file)
-			{
-				UUID uuid;
-				fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
-
-				if (loadData)
-				{
-					sceneRegisterEntity(*scene, uuid);
-				}
-
-				uint32 numComponents;
-				fread(&numComponents, sizeof(uint32), 1, file);
-
-				if (!loadData)
-				{
-					if ((*scene)->numComponentsDefinitions + numComponents
-						> componentDefinitionsCapacity)
-					{
-						while (
-							(*scene)->numComponentsDefinitions + numComponents
-							> componentDefinitionsCapacity)
-						{
-							componentDefinitionsCapacity +=
-								COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
-						}
-
-						uint32 previousBufferSize =
-							(*scene)->numComponentsDefinitions
-							* sizeof(ComponentDefinition);
-						uint32 newBufferSize = componentDefinitionsCapacity
-							* sizeof(ComponentDefinition);
-
-						if (previousBufferSize == 0)
-						{
-							(*scene)->componentDefinitions =
-								calloc(newBufferSize, 1);
-						}
-						else
-						{
-							(*scene)->componentDefinitions = realloc(
-								(*scene)->componentDefinitions,
-								newBufferSize);
-							memset(
-								(*scene)->componentDefinitions + previousBufferSize,
-								0,
-								newBufferSize - previousBufferSize);
-						}
-					}
-				}
-
-				for (i = 0; i < numComponents; i++)
-				{
-					ComponentDefinition *componentDefinition = calloc(
-						1,
-						sizeof(ComponentDefinition));
-
-					if (!loadData)
-					{
-						freeComponentDefinition(componentDefinition);
-						free(componentDefinition);
-
-						componentDefinition =
-							&(*scene)->componentDefinitions[
-							(*scene)->numComponentsDefinitions++];
-					}
-
-					componentDefinition->name = readString(file);
-
-					fread(
-						&componentDefinition->numValues,
-						sizeof(uint32),
-						1,
-						file);
-
-					componentDefinition->values =
-						calloc(componentDefinition->numValues,
-							sizeof(ComponentValueDefinition));
-
-					for (uint32 j = 0;
-						j < componentDefinition->numValues;
-						j++)
-					{
-						ComponentValueDefinition *componentValueDefinition =
-							&componentDefinition->values[j];
-
-						componentValueDefinition->name = readString(file);
-
-						int8 dataType;
-						fread(
-							&dataType,
-							sizeof(int8),
-							1,
-							file);
-						componentValueDefinition->type = (DataType)dataType;
-
-						if (componentValueDefinition->type == DATA_TYPE_STRING)
-						{
-							fread(
-								&componentValueDefinition->maxStringSize,
-								sizeof(uint32),
-								1,
-								file);
-						}
-
-						fread(
-							&componentValueDefinition->count,
-							sizeof(uint32),
-							1,
-							file);
-					}
-
-					fread(
-						&componentDefinition->size,
-						sizeof(uint32),
-						1,
-						file);
-
-					void *data = malloc(componentDefinition->size);
-					fread(data, componentDefinition->size, 1, file);
-
-					if (loadData)
-					{
-						sceneAddComponentToEntity(
-							*scene,
-							uuid,
-							idFromName(componentDefinition->name),
-							data);
-
-						freeComponentDefinition(componentDefinition);
-						free(componentDefinition);
-					}
-
-					free(data);
-				}
-
-				fclose(file);
-			}
-			else
-			{
-				printf("Failed to open %s\n", entityFilename);
-				error = -1;
-				break;
-			}
-
-			free(entityFilename);
-
-			dirEntry = readdir(dir);
-		}
-
-		closedir(dir);
-
-		if (!loadData)
-		{
-			uint32 numUniqueComponentDefinitions = 0;
-			ComponentDefinition *uniqueComponentDefinitions = calloc(
-				(*scene)->numComponentsDefinitions,
-				sizeof(ComponentDefinition));
-
-			for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
-			{
-				ComponentDefinition *componentDefinition =
-					&(*scene)->componentDefinitions[i];
-
-				bool unique = true;
-				for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
-				{
-					if (!strcmp(
-						componentDefinition->name,
-						uniqueComponentDefinitions[j].name))
-					{
-						unique = false;
-						break;
-					}
-				}
-
-				if (unique)
-				{
-					copyComponentDefinition(
-						&uniqueComponentDefinitions[
-							numUniqueComponentDefinitions++],
-						componentDefinition);
-				}
-
-				freeComponentDefinition(componentDefinition);
-			}
-
-			free((*scene)->componentDefinitions);
-			uniqueComponentDefinitions = realloc(
-				uniqueComponentDefinitions,
-				numUniqueComponentDefinitions * sizeof(ComponentDefinition));
-
-			(*scene)->componentDefinitions = uniqueComponentDefinitions;
-			(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
-		}
-	}
-	else
-	{
-		printf("Failed to open %s\n", entityFolder);
-		error = -1;
-	}
-
-	free(entityFolder);
 
 	return error;
 }
