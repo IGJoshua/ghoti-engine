@@ -18,6 +18,8 @@
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <sys/stat.h>
+
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
