@@ -2,7 +2,7 @@
 
 A large set of C defined functions for Lua to interface with Kazmath, input, audio, JSON, game saves, and scene loading used in the monochrome project.
 
-##1. [Kazmath](kazmath/kazmath.md)
+## 1. [Kazmath](kazmath/kazmath.md)
 C Math library targeted for use in games.
 * [kmAABB2](kazmath/aabb2.md)
 * [kmAABB3](kazmath/aabb3.md)
@@ -16,9 +16,8 @@ C Math library targeted for use in games.
 * [kmVec3](kazmath/vec3.md)
 * [kmVec4](kazmath/vec4.md)
 
-##2. [GLFW Input](glfwInput.md)
-
-##3. [OpenAL](openAL.md)
-##4. [JSON Utility System](jsonUtility.md)
-##5. [Game Saving](saving.md)
-##6. [Scene Loading](sceneLoading.md)
+## 2. [GLFW Input](glfwInput.md)
+## 3. [OpenAL](openAL.md)
+## 4. [JSON Utility System](jsonUtility.md)
+## 5. [Game Saving](saving.md)
+## 6. [Scene Loading](sceneLoading.md)
