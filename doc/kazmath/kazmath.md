@@ -1,7 +1,7 @@
 ### [Table of Contents](../Lua.md) -> Kazmath  
 # Kazmath  
 A C Math library targeted for use in games.
-## Kazmath Types  
+## Types  
 
 ### kmScalar
 A 32 bit floating point value.
@@ -23,7 +23,28 @@ An unsigned 32 bit integer
 ### kmInt
 A signed 32 bit integer
 
+## Helper Functions
+```c
+//Squares a scalar
+kmScalar kmSQR(kmScalar s);
 
+//Converts Degrees to Radians or vice versa
+kmScalar kmDegreesToRadians(kmScalar degrees);
+kmScalar kmRadiansToDegrees(kmScalar radians);
+
+//Returns the min or max
+kmScalar kmMin(kmScalar lhs, kmScalar rhs);
+kmScalar kmMax(kmScalar lhs, kmScalar rhs);
+
+//Checks if the two values are within Epsilon of each other
+kmBool kmAlmostEqual(kmScalar lhs, kmScalar rhs);
+
+//Clamps x within min and max 
+kmScalar kmClamp(kmScalar x, kmScalar min, kmScalar max);
+
+//Linearly interpolates
+kmScalar kmLerp(kmScalar x, kmScalar y, kmScalar factor);
+```
 ## Kazmath Structures  
 #### [kmAABB2](aabb2.md)  
 A structure that represents a two dimensional axis-aligned bounding box.  
