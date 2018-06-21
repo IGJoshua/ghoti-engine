@@ -16,13 +16,6 @@
 internal UUID transformComponentID = {};
 internal UUID emptyID = {};
 
-typedef struct simple_transform_t
-{
-	kmVec3 position;
-	kmQuaternion rotation;
-	kmVec3 scale;
-} SimpleTransform;
-
 internal
 void applyParentTransform(Scene *scene, TransformComponent *outTransform)
 {

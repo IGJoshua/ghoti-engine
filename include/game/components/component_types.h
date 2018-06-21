@@ -44,3 +44,36 @@ typedef struct camera_component_t
 	float fov;
 	CameraProjectionType projectionType;
 } CameraComponent;
+
+typedef struct collision_component_t
+{
+	UUID collisionTree;
+	UUID hitList;
+	UUID lastHitList;
+} CollisionComponent;
+
+typedef enum bounding_volume_type_e
+{
+	BOUNDING_VOLUME_TYPE_AABB = 0,
+	BOUNDING_VOLUME_TYPE_COUNT
+} BoundingVolumeType;
+
+typedef struct collision_tree_node_component_t
+{
+	UUID parent;
+	UUID nextSibling;
+	UUID firstChild;
+	BoundingVolumeType volumeType;
+} CollisionTreeNodeComponent;
+
+typedef struct aabb_component_t
+{
+	UUID collisionVolume;
+	kmVec3 bounds;
+} AABBComponent;
+
+typedef struct hit_information_component_t
+{
+	UUID otherObject;
+	UUID nextHit;
+} HitInformationComponent;

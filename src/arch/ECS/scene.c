@@ -1852,7 +1852,7 @@ void sceneAddComponentToEntity(
 	UUID componentType,
 	void *componentData)
 {
-	printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
+	// printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
 
 	// Get the data table
 	ComponentDataTable **dataTable = hashMapGetKey(

@@ -23,18 +23,18 @@
 #include <malloc.h>
 #include <stdio.h>
 
-extern Shader vertShader;
-extern Shader fragShader;
+internal Shader vertShader;
+internal Shader fragShader;
 
-extern ShaderPipeline pipeline;
+internal ShaderPipeline pipeline;
 
-extern Uniform modelUniform;
-extern Uniform viewUniform;
-extern Uniform projectionUniform;
+internal Uniform modelUniform;
+internal Uniform viewUniform;
+internal Uniform projectionUniform;
 
-extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
+internal Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
-extern bool rendererActive;
+internal bool rendererActive;
 
 internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
@@ -303,7 +303,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glEnableVertexAttribArray(j);
 		}
 
-		Material *material = &model->materials[i];
+		Material *material = &model->materials[mesh->materialIndex];
 
 		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
 		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
