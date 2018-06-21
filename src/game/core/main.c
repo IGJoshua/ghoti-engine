@@ -85,15 +85,6 @@ int32 main()
 	// State next
 
 	ListIterator itr = 0;
-	for (itr = listGetIterator(&activeScenes);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
-
-		sceneInitSystems(scene);
-		sceneInitLua(&L, scene);
-	}
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
@@ -162,20 +153,18 @@ int32 main()
 
 			if (changeScene)
 			{
-				// TODO: unload all the unneeded scenes
 				for (ListIterator i = listGetIterator(&unloadedScenes);
 					 !listIteratorAtEnd(i);
 					 listMoveIterator(&i))
 				{
-					Scene **scene = ((Scene **)(&((*i)->data)));
+					Scene **scene = LIST_ITERATOR_GET_ELEMENT(Scene*, i);
 
-					sceneShutdownLua(&L, *scene);
-					sceneShutdownSystems(*scene);
+					shutdownScene(scene);
 					freeScene(scene);
 				}
 				listClear(&unloadedScenes);
 
-				changeScene = 0;
+				changeScene = false;
 			}
 
 			// Integrate current state over t to dt (so, update)
@@ -242,18 +231,11 @@ int32 main()
 	{
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-		if (L)
-		{
-			sceneShutdownLua(&L, scene);
-		}
-		sceneShutdownSystems(scene);
+		shutdownScene(&scene);
 		freeScene(&scene);
 	}
 
-	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
-	{
-		printf("Failed to delete runtime folder\n");
-	}
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	if (L)
 	{

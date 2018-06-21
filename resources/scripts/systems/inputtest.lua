@@ -14,7 +14,7 @@ function system.init(scene)
   input:register("trigger", input.AXIS(nil, nil, gamepad.lefttrigger))
   input:register("horizontal", input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
   input:register("horizontallook", input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
-  input:register("scene", input.BUTTON(keyboard.ENTER))
+  input:register("reload", input.BUTTON(keyboard.R))
 end
 
 function system.begin(scene, dt)
@@ -44,6 +44,10 @@ function system.begin(scene, dt)
 
   if input.attack.updated and input.attack.keydown then
 	io.write("Pressed X\n")
+  end
+
+  if input.reload.updated and input.reload.keydown then
+	C.reloadAllScenes()
   end
 end
 

@@ -78,6 +78,7 @@ typedef struct scene_t
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
 	uint32 numComponentsDefinitions;
+	uint32 componentDefinitionsCapacity;
 	ComponentDefinition *componentDefinitions;
 } Scene;
 
