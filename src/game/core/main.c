@@ -38,7 +38,7 @@ int32 main()
 {
 	srand(time(0));
 
-	GLFWwindow *window = initWindow(640, 480, "Monochrome");
+	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
 	if (!window)
 	{
