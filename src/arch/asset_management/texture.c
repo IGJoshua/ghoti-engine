@@ -135,7 +135,7 @@ void increaseTexturesCapacity(uint32 amount)
 
 Texture* getTexture(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numTextures; i++)
 		{
@@ -151,7 +151,7 @@ Texture* getTexture(const char *name)
 
 uint32 getTextureIndex(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numTextures; i++)
 		{
