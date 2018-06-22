@@ -192,10 +192,12 @@ int32 loadTextures(Model *model)
 			MaterialComponent *materialComponent = &material->components[j];
 
 			if (materialComponent->texture &&
-				strlen(materialComponent->texture) > 0 &&
-				loadTexture(materialComponent->texture) == -1)
+				strlen(materialComponent->texture) > 0)
 			{
-				return -1;
+				if (loadTexture(materialComponent->texture) == -1)
+				{
+					return -1;
+				}
 			}
 		}
 	}
