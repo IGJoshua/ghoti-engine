@@ -1,7 +1,13 @@
-#+AUTHOR: Joshua Suskalo
-#+AUTHOR: Pranav Sahani
+#+AUTHOR: Joshua Suskalo, Pranav Sahani
 
-* Required Headers
+[[./ghoti.png]]
+
+* Ghoti Engine
+An OpenGL Voxel Cone Tracing PBR engine using pure C, and an ECS implemented with a Lua JIT.
+
+** Build Requirements
+
+*** Headers
 #+BEGIN_SRC
 glew
 glfw
@@ -10,11 +16,15 @@ glu
 luajit-5.1
 sdl2
 #+END_SRC
-* Build Tools
+
+*** Tools
 #+BEGIN_SRC
 clang
 mingw-w64-clang
 #+END_SRC
-* Rendering Engine
-* Scene Representation
-* LUA Integration
+
+** Rendering Engine
+
+** Scene Representation
+
+** Lua Scripting

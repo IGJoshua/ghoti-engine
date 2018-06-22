@@ -173,7 +173,7 @@ int32 freeTexture(const char *name)
 
 	if (!texture)
 	{
-		printf("Could not find texture\n");
+		printf("Could not find texture (%s)\n", name);
 		return -1;
 	}
 

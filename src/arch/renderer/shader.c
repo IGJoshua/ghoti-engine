@@ -179,9 +179,9 @@ int32 setUniform(Uniform uniform, void *data)
 	}
 
 	GLenum glError = glGetError();
-	printf("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
+		printf("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
 		return -1;
 	}
 

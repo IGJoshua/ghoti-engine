@@ -76,7 +76,7 @@ clean:
 run : build
 	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
-SUPPRESSIONS = ghoti.supp
+SUPPRESSIONS = $(PROJ).supp
 
 .PHONY: leakcheck
 
