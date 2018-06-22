@@ -1,4 +1,38 @@
 {
+   NOUVEAU_LIBRARY
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:drmIoctl
+   fun:drmCommandWriteRead
+   obj:/usr/lib/libdrm_nouveau.so.2.0.0
+   fun:nouveau_device_new
+   fun:nouveau_drm_screen_create
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/libGLX_mesa.so.0.0.0
+}
+{
+   NOUVEAU_DRIVER
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:drmIoctl
+   fun:drmCommandWriteRead
+   fun:nouveau_object_mthd
+   fun:nouveau_device_new
+   fun:nouveau_drm_screen_create
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/dri/nouveau_dri.so
+   obj:/usr/lib/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/libGLX_mesa.so.0.0.0
+}
+{
    GL_GENMIPMAPS
    Memcheck:Leak
    match-leak-kinds: definite
