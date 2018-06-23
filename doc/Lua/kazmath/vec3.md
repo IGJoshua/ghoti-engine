@@ -1,4 +1,4 @@
-### [Table of Contents](../Lua.md) -> [Kazmath](kazmath.md) -> kmVec3
+### [Table of Contents](../../main.md) -> [Lua](../Lua.md) -> [Kazmath](kazmath.md) -> kmVec3
 
 # kmVec3
 A structure that represents a vector with 3 elements

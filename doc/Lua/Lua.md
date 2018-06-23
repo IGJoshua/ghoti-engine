@@ -1,3 +1,5 @@
+### [Table of Contents](../main.md) -> Lua
+
 # Project Monochrome Lua API - Table of Contents
 
 A large set of C defined functions for Lua to interface with Kazmath, input, audio, JSON, game saves, and scene loading used in the monochrome project.

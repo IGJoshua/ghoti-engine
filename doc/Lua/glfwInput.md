@@ -1,6 +1,18 @@
-###[Table of Contents](Lua.md) -> GLFW Input
+### [Table of Contents](Lua.md) -> GLFW Input
 
 # GLFW Key Codes
+
+## GLFW_MOUSE_BUTTON
+| Key                  | Code |
+| :------------------- | ---: |
+| GLFW_MOUSE_BUTTON_1  |    0 |
+| GLFW_MOUSE_BUTTON_2  |    1 |
+| GLFW_MOUSE_BUTTON_3  |    2 |
+| GLFW_MOUSE_BUTTON_4  |    3 |
+| GLFW_MOUSE_BUTTON_5  |    4 |
+| GLFW_MOUSE_BUTTON_6  |    5 |
+| GLFW_MOUSE_BUTTON_7  |    6 |
+| GLFW_MOUSE_BUTTON_8  |    7 |
 
 ## GLFW_KEY
 
@@ -154,15 +166,3 @@
 | GLFW_KEY_KP_ADD      |  334 |
 | GLFW_KEY_KP_ENTER    |  335 |
 | GLFW_KEY_KP_EQUAL    |  336 |
-
-## GLFW_MOUSE_BUTTON
-| Key                  | Code |
-| :------------------- | ---: |
-| GLFW_MOUSE_BUTTON_1  |    0 |
-| GLFW_MOUSE_BUTTON_2  |    1 |
-| GLFW_MOUSE_BUTTON_3  |    2 |
-| GLFW_MOUSE_BUTTON_4  |    3 |
-| GLFW_MOUSE_BUTTON_5  |    4 |
-| GLFW_MOUSE_BUTTON_6  |    5 |
-| GLFW_MOUSE_BUTTON_7  |    6 |
-| GLFW_MOUSE_BUTTON_8  |    7 |

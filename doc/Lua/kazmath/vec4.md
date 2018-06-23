@@ -1,4 +1,4 @@
-### [Table of Contents](../Lua.md) -> [Kazmath](kazmath.md) -> kmVec4
+### [Table of Contents](../../main.md) -> [Lua](../Lua.md) -> [Kazmath](kazmath.md) -> kmVec4
 
 # kmVec4
 A structure that represents a vector with 4 elements
@@ -94,7 +94,7 @@ matrix.
 ```c
 kmVec4* kmVec4TransformArray(kmVec4* pOut, unsigned int outStride,
                             const kmVec4* pV, unsigned int vStride,
-                            const struct kmMat4* pM, unsigned int count); 
+                            const struct kmMat4* pM, unsigned int count);
 ```
 ## int kmVec4AreEqual
 Returns `KM_TRUE` if the 2 vectors are approximately equal

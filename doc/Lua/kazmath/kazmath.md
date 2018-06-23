@@ -1,4 +1,4 @@
-### [Table of Contents](../Lua.md) -> Kazmath  
+### [Table of Contents](../../main.md) -> [Lua](../Lua.md)  -> Kazmath  
 # Kazmath  
 A C Math library targeted for use in games.
 ## Types  
@@ -39,7 +39,7 @@ kmScalar kmMax(kmScalar lhs, kmScalar rhs);
 //Checks if the two values are within Epsilon of each other
 kmBool kmAlmostEqual(kmScalar lhs, kmScalar rhs);
 
-//Clamps x within min and max 
+//Clamps x within min and max
 kmScalar kmClamp(kmScalar x, kmScalar min, kmScalar max);
 
 //Linearly interpolates

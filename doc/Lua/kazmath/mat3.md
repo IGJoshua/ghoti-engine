@@ -1,4 +1,4 @@
-### [Table of Contents](../Lua.md) -> [Kazmath](kazmath.md) -> kmMat3
+### [Table of Contents](../../main.md) -> [Lua](../Lua.md) -> [Kazmath](kazmath.md) -> kmMat3
 
 # kmMat3
 
