@@ -1,4 +1,4 @@
-### [Table of Contents](Lua.md) -> GLFW Input
+### [Table of Contents](../main.md) -> [Lua](Lua.md) -> GLFW Input
 
 # GLFW Key Codes
 
