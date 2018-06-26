@@ -160,7 +160,7 @@ int32 loadSceneEntities(
 
 		if (!loadData && !recursive)
 		{
-			(*scene)->numComponentsDefinitions = 0;
+			(*scene)->numComponentDefinitions = 0;
 			(*scene)->componentDefinitionsCapacity = 0;
 		}
 
@@ -199,6 +199,7 @@ int32 loadSceneEntities(
 						if (file)
 						{
 							UUID uuid;
+							memset(uuid.bytes, 0, UUID_LENGTH + 1);
 							fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
 
 							if (loadData)
@@ -211,11 +212,11 @@ int32 loadSceneEntities(
 
 							if (!loadData)
 							{
-								if ((*scene)->numComponentsDefinitions + numComponents
+								if ((*scene)->numComponentDefinitions + 				numComponents
 									> (*scene)->componentDefinitionsCapacity)
 								{
 									while (
-										(*scene)->numComponentsDefinitions + numComponents
+										(*scene)->numComponentDefinitions + 		numComponents
 										>
 										(*scene)->componentDefinitionsCapacity)
 									{
@@ -225,10 +226,10 @@ int32 loadSceneEntities(
 									}
 
 									uint32 previousBufferSize =
-										(*scene)->numComponentsDefinitions
+										(*scene)->numComponentDefinitions
 										* sizeof(ComponentDefinition);
 									uint32 newBufferSize =
-									(*scene)->componentDefinitionsCapacity
+										(*scene)->componentDefinitionsCapacity
 										* sizeof(ComponentDefinition);
 
 									if (previousBufferSize == 0)
@@ -242,11 +243,14 @@ int32 loadSceneEntities(
 											realloc(
 												(*scene)->componentDefinitions,
 												newBufferSize);
-										memset(
-											(*scene)->componentDefinitions
-												+ previousBufferSize,
-											0,
-											newBufferSize - previousBufferSize);
+
+										// This is an invalid write somehow?!?!
+
+										// memset(
+										// 	(*scene)->componentDefinitions
+										// 		+ previousBufferSize,
+										// 	0,
+										// 	newBufferSize - previousBufferSize);
 									}
 								}
 							}
@@ -263,7 +267,7 @@ int32 loadSceneEntities(
 
 									componentDefinition =
 										&(*scene)->componentDefinitions[
-										(*scene)->numComponentsDefinitions++];
+										((*scene)->numComponentDefinitions)++];
 								}
 
 								componentDefinition->name = readString(file);
@@ -371,10 +375,10 @@ internal void removeDuplicateComponentDefinitions(Scene **scene)
 {
 	uint32 numUniqueComponentDefinitions = 0;
 	ComponentDefinition *uniqueComponentDefinitions = calloc(
-		(*scene)->numComponentsDefinitions,
+		(*scene)->numComponentDefinitions,
 		sizeof(ComponentDefinition));
 
-	for (uint32 i = 0; i < (*scene)->numComponentsDefinitions; i++)
+	for (uint32 i = 0; i < (*scene)->numComponentDefinitions; i++)
 	{
 		ComponentDefinition *componentDefinition =
 			&(*scene)->componentDefinitions[i];
@@ -408,7 +412,7 @@ internal void removeDuplicateComponentDefinitions(Scene **scene)
 		numUniqueComponentDefinitions * sizeof(ComponentDefinition));
 
 	(*scene)->componentDefinitions = uniqueComponentDefinitions;
-	(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
+	(*scene)->numComponentDefinitions = numUniqueComponentDefinitions;
 }
 
 int32 loadSceneFile(const char *name, Scene **scene)
@@ -870,7 +874,7 @@ void freeScene(Scene **scene)
 
 	free((*scene)->componentLimitNames);
 
-	for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
+	for (i = 0; i < (*scene)->numComponentDefinitions; i++)
 	{
 		freeComponentDefinition(&(*scene)->componentDefinitions[i]);
 	}
@@ -991,7 +995,7 @@ ComponentDefinition getComponentDefinition(
 	ComponentDefinition componentDefinition;
 	memset(&componentDefinition, 0, sizeof(ComponentDefinition));
 
-	for (uint32 i = 0; i < scene->numComponentsDefinitions; i++)
+	for (uint32 i = 0; i < scene->numComponentDefinitions; i++)
 	{
 		if (!strcmp(scene->componentDefinitions[i].name, name.string))
 		{

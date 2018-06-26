@@ -18,6 +18,7 @@ function system.init(scene)
   input:register("load_cool_thing", input.BUTTON(keyboard.L))
   input:register("unload_cool_thing", input.BUTTON(keyboard.U))
   input:register("switch_to_cool_thing", input.BUTTON(keyboard.C))
+  input:register("switch_to_cool_scene", input.BUTTON(keyboard.V))
   input:register("save", input.BUTTON(keyboard.S))
 end
 
@@ -62,8 +63,15 @@ function system.begin(scene, dt)
 	C.unloadScene("cool_thing")
   end
 
-  if input.switch_to_cool_thing.updated and input.switch_to_cool_thing.keydown then
+  if input.switch_to_cool_thing.updated and
+  	input.switch_to_cool_thing.keydown then
 	C.loadScene("cool_thing")
+	C.unloadScene("cool_scene")
+  end
+
+  if input.switch_to_cool_scene.updated and
+  	input.switch_to_cool_scene.keydown then
+	C.loadScene("cool_scene")
 	C.unloadScene("cool_thing")
   end
 
