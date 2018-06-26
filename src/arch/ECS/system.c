@@ -56,9 +56,9 @@ void systemRun(
 					emptyID.string,
 					// NOTE(Joshua): "Feels like pretty standard C to me"
 					((UUID *)((*firstComp)->data
-							+ i
-							* ((*firstComp)->componentSize
-								+ sizeof(UUID))))->string))
+							  + i
+							  * ((*firstComp)->componentSize
+								 + sizeof(UUID))))->string))
 			{
 				continue;
 			}

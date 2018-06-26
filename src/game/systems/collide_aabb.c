@@ -10,10 +10,9 @@
 
 #include "components/component_types.h"
 
-#include <kazmath/aabb3.h>
-
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 internal UUID transformComponentID = {};
 internal UUID aabbComponentID = {};
@@ -32,29 +31,11 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		collisionComponentID);
 
-	kmAABB3 AABB;
 	AABBComponent *thisAABBComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
 		aabbComponentID);
-	kmAABB3Initialize(
-		&AABB,
-		&transform->globalPosition,
-		thisAABBComponent->bounds.x * transform->globalScale.x * 2,
-		thisAABBComponent->bounds.y * transform->globalScale.y * 2,
-		thisAABBComponent->bounds.z * transform->globalScale.z * 2);
 
-	printf("Testing entity %s\n", entityID.string);
-	kmVec3 center = {};
-	kmAABB3Centre(&AABB, &center);
-	kmVec3 extents = {};
-	extents.x = kmAABB3DiameterX(&AABB);
-	extents.y = kmAABB3DiameterY(&AABB);
-	extents.z = kmAABB3DiameterZ(&AABB);
-	printf("Center %f, %f, %f\n", center.x, center.y, center.z);
-	printf("Extents %f, %f, %f\n", extents.x / 2, extents.y / 2, extents.z / 2);
-
-	kmAABB3 otherAABB;
 	TransformComponent *otherTransform;
 	AABBComponent *otherAABBComponent;
 	// Loop over every AABB in the scene
@@ -79,23 +60,30 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			// Check for collision
 			otherAABBComponent = cdtIteratorGetData(itr);
-			kmAABB3Initialize(
-				&otherAABB,
-				&otherTransform->globalPosition,
-				otherAABBComponent->bounds.x * otherTransform->globalScale.x * 2,
-				otherAABBComponent->bounds.y * otherTransform->globalScale.y * 2,
-				otherAABBComponent->bounds.z * otherTransform->globalScale.z * 2);
-
-			printf("Other AABB %s\n", cdtIteratorGetUUID(itr)->string);
-			kmAABB3Centre(&otherAABB, &center);
-			printf("Center %f, %f, %f\n", center.x, center.y, center.z);
-			extents.x = kmAABB3DiameterX(&AABB);
-			extents.y = kmAABB3DiameterY(&AABB);
-			extents.z = kmAABB3DiameterZ(&AABB);
-			printf("Extents %f, %f, %f\n", extents.x / 2, extents.y / 2, extents.z / 2);
 
 			// On a collision, create a new hit entity and push it to the front of the list
-			if (kmAABB3IntersectsAABB(&AABB, &otherAABB))
+			bool collided = 1;
+
+			if (fabsf(transform->globalPosition.x - otherTransform->globalPosition.x)
+				> thisAABBComponent->bounds.x * transform->globalScale.x
+				+ otherAABBComponent->bounds.x * otherTransform->globalScale.x)
+			{
+				collided = 0;
+			}
+			if (fabsf(transform->globalPosition.y - otherTransform->globalPosition.y)
+				> thisAABBComponent->bounds.y * transform->globalScale.y
+				+ otherAABBComponent->bounds.y * otherTransform->globalScale.y)
+			{
+				collided = 0;
+			}
+			if (fabsf(transform->globalPosition.z - otherTransform->globalPosition.z)
+				> thisAABBComponent->bounds.z * transform->globalScale.z
+				+ otherAABBComponent->bounds.z * otherTransform->globalScale.z)
+			{
+				collided = 0;
+			}
+
+			if (collided)
 			{
 				UUID hitInformation = sceneCreateEntity(scene);
 				HitInformationComponent hitInformationComponent = {};
