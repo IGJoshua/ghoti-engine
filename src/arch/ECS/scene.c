@@ -212,11 +212,13 @@ int32 loadSceneEntities(
 
 							if (!loadData)
 							{
-								if ((*scene)->numComponentDefinitions + 				numComponents
+								if ((*scene)->numComponentDefinitions +
+									numComponents
 									> (*scene)->componentDefinitionsCapacity)
 								{
 									while (
-										(*scene)->numComponentDefinitions + 		numComponents
+										(*scene)->numComponentDefinitions +
+											numComponents
 										>
 										(*scene)->componentDefinitionsCapacity)
 									{
