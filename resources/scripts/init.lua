@@ -2,4 +2,5 @@
 
 local C = engine.C
 
-C.loadScene("scene_1")
+C.loadScene("cool_scene")
+-- C.loadSave(2, nil)
