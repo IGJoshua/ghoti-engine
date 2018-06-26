@@ -15,6 +15,10 @@ function system.init(scene)
   input:register("horizontal", input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
   input:register("horizontallook", input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
   input:register("reload", input.BUTTON(keyboard.R))
+  input:register("load_cool_thing", input.BUTTON(keyboard.L))
+  input:register("unload_cool_thing", input.BUTTON(keyboard.U))
+  input:register("switch_to_cool_thing", input.BUTTON(keyboard.C))
+  input:register("save", input.BUTTON(keyboard.S))
 end
 
 function system.begin(scene, dt)
@@ -48,6 +52,23 @@ function system.begin(scene, dt)
 
   if input.reload.updated and input.reload.keydown then
 	C.reloadAllScenes()
+  end
+
+  if input.load_cool_thing.updated and input.load_cool_thing.keydown then
+	C.loadScene("cool_thing")
+  end
+
+  if input.unload_cool_thing.updated and input.unload_cool_thing.keydown then
+	C.unloadScene("cool_thing")
+  end
+
+  if input.switch_to_cool_thing.updated and input.switch_to_cool_thing.keydown then
+	C.loadScene("cool_thing")
+	C.unloadScene("cool_thing")
+  end
+
+  if input.save.updated and input.save.keydown then
+	C.exportSave(nil, 0, 2)
   end
 end
 

@@ -28,10 +28,19 @@ void runCleanHitInformationSystem(Scene *scene, UUID entityID, real64 dt)
 		 strcmp(itr.string, emptyID.string);
 		 itr = nextHit)
 	{
-		nextHit = ((HitInformationComponent *)sceneGetComponentFromEntity(
-					   scene,
-					   itr,
-					   hitInformationComponentID))->nextHit;
+		HitInformationComponent *hitInfoComponent =
+			(HitInformationComponent *)sceneGetComponentFromEntity(
+				scene,
+				itr,
+				hitInformationComponentID);
+
+		if (!hitInfoComponent)
+		{
+			break;
+		}
+
+		nextHit = hitInfoComponent->nextHit;
+
 		sceneRemoveEntity(scene, itr);
 	}
 
