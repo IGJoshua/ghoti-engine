@@ -160,14 +160,19 @@ void cdtMoveIterator(ComponentDataTableIterator *itr)
 
 	UUID emptyID = {};
 
-	while (!strcmp(
-			   emptyID.string,
-			   ((UUID *)(itr->table->data
-						 + ++itr->index
-						 * (itr->table->componentSize
-							+ sizeof(UUID))))->string)
-		   && itr->index < itr->table->numEntries)
-		;
+	// If the UUID is empty, move again
+	// If the index >= numEntries, stop moving
+
+	++itr->index;
+	for (; itr->index < itr->table->numEntries; ++itr->index)
+	{
+		if (strcmp(
+				emptyID.string,
+				cdtIteratorGetUUID(*itr)->string))
+		{
+			break;
+		}
+	}
 }
 
 inline
