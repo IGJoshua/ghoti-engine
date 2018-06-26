@@ -154,15 +154,14 @@ int32 loadMesh(Model *model)
 			printf("Successfully loaded subset mesh (%s)\n", subsetName);
 			free(subsetName);
 		}
+
+		fclose(file);
 	}
 	else
 	{
 		printf("Failed to open %s\n", meshFilename);
-		fclose(file);
 		return -1;
 	}
-
-	fclose(file);
 
 	return 0;
 }

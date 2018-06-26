@@ -29,7 +29,9 @@
 extern HashMap systemRegistry;
 extern List activeScenes;
 extern bool changeScene;
+extern bool reloadingScene;
 extern List unloadedScenes;
+
 
 Scene *createScene(void)
 {
@@ -421,24 +423,28 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	printf("Loading scene (%s)...\n", name);
 
 	char *sceneFolder = NULL;
-	DIR *dir = opendir(RUNTIME_STATE_DIR);
 
 	bool found = false;
-	if (dir)
+
+	if (!reloadingScene)
 	{
-		struct dirent *dirEntry = readdir(dir);
-		while (dirEntry)
+		DIR *dir = opendir(RUNTIME_STATE_DIR);
+		if (dir)
 		{
-			if (!strcmp(dirEntry->d_name, name))
+			struct dirent *dirEntry = readdir(dir);
+			while (dirEntry)
 			{
-				found = true;
-				break;
+				if (!strcmp(dirEntry->d_name, name))
+				{
+					found = true;
+					break;
+				}
+
+				dirEntry = readdir(dir);
 			}
 
-			dirEntry = readdir(dir);
+			closedir(dir);
 		}
-
-		closedir(dir);
 	}
 
 	if (found)
@@ -795,7 +801,10 @@ void freeScene(Scene **scene)
 {
 	printf("Unloading scene (%s)...\n", (*scene)->name);
 
-	exportRuntimeScene(*scene);
+	if (!reloadingScene)
+	{
+		exportRuntimeScene(*scene);
+	}
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
@@ -900,13 +909,11 @@ int32 loadScene(const char *name)
 
 int32 reloadScene(const char *name)
 {
+	reloadingScene = true;
+
 	if (unloadScene(name) == -1)
 	{
-		return -1;
-	}
-
-	if (loadScene(name) == -1)
-	{
+		reloadingScene = false;
 		return -1;
 	}
 
@@ -915,6 +922,8 @@ int32 reloadScene(const char *name)
 
 int32 reloadAllScenes(void)
 {
+	reloadingScene = true;
+
 	for (ListIterator itr = listGetIterator(&activeScenes);
 		!listIteratorAtEnd(itr);
 		listMoveIterator(&itr))
@@ -922,11 +931,7 @@ int32 reloadAllScenes(void)
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
 		if (unloadScene(scene->name) == -1)
 		{
-			return -1;
-		}
-
-		if (loadScene(scene->name) == -1)
-		{
+			reloadingScene = false;
 			return -1;
 		}
 	}

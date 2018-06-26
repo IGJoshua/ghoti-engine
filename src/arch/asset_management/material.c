@@ -104,23 +104,29 @@ const char *getMaterialComponentName(
 
 int32 freeMaterial(Material *material)
 {
+	int32 error = 0;
+
 	free(material->name);
 
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		if (material->components[i].texture)
+		char *texture = material->components[i].texture;
+
+		if (texture)
 		{
-			if (strlen(material->components[i].texture) > 0)
+			if (strlen(texture) > 0)
 			{
-				if (freeTexture(material->components[i].texture) == -1)
-				{
-					return -1;
-				}
+				error = freeTexture(texture);
 			}
 
-			free(material->components[i].texture);
+			free(texture);
+
+			if (error == -1)
+			{
+				break;
+			}
 		}
 	}
 
-	return 0;
+	return error;
 }

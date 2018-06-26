@@ -33,4 +33,5 @@ HashMap systemRegistry;
 List activeScenes;
 
 bool changeScene;
+bool reloadingScene;
 List unloadedScenes;

@@ -1,5 +1,5 @@
-PROJ = monochrome
-LIBNAME = monochrome
+PROJ = ghoti
+LIBNAME = ghoti
 
 IDIRS = include/arch include/game vendor
 
@@ -76,7 +76,7 @@ clean:
 run : build
 	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
-SUPPRESSIONS = monochrome.supp
+SUPPRESSIONS = $(PROJ).supp
 
 .PHONY: leakcheck
 

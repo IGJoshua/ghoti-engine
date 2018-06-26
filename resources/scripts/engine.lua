@@ -8,12 +8,12 @@ io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(
   ffi.os == "Windows"
-    and "./monochrome.dll"
-    or "./monochrome.so")
+    and "./ghoti.dll"
+    or "./ghoti.so")
 
 local C = engine.C
 
-io.write("Loaded monochrome library\n")
+io.write("Loaded ghoti library\n")
 
 engine.kazmath = ffi.load(
   ffi.os == "Windows"

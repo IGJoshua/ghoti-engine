@@ -32,14 +32,15 @@
 extern lua_State *L;
 extern real64 alpha;
 extern List activeScenes;
-extern uint32 changeScene;
+extern bool changeScene;
+extern bool reloadingScene;
 extern List unloadedScenes;
 
 int32 main()
 {
 	srand(time(0));
 
-	GLFWwindow *window = initWindow(640, 480, "Monochrome");
+	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
 	if (!window)
 	{
@@ -80,6 +81,8 @@ int32 main()
 		freeWindow(window);
 		return 1;
 	}
+
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	// State previous
 	// State next
@@ -159,8 +162,21 @@ int32 main()
 				{
 					Scene **scene = LIST_ITERATOR_GET_ELEMENT(Scene*, i);
 
+					char *name = NULL;
+					if (reloadingScene)
+					{
+						name = malloc(strlen((*scene)->name) + 1);
+						strcpy(name, (*scene)->name);
+					}
+
 					shutdownScene(scene);
 					freeScene(scene);
+
+					if (reloadingScene)
+					{
+						loadScene(name);
+						free(name);
+					}
 				}
 				listClear(&unloadedScenes);
 
@@ -193,13 +209,13 @@ int32 main()
 		{
 			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-			CameraComponent *cam = sceneGetComponentFromEntity(
+			CameraComponent *camera = sceneGetComponentFromEntity(
 				scene,
 				scene->mainCamera,
 				idFromName("camera"));
-			if (cam)
+			if (camera)
 			{
-				cam->aspectRatio = aspectRatio;
+				camera->aspectRatio = aspectRatio;
 			}
 
 			// Render

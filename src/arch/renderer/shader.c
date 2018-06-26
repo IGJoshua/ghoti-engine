@@ -24,11 +24,11 @@ int32 compileShaderFromFile(char *filename, ShaderType type, Shader *shader)
 
 		fclose(file);
 
-		printf("Loaded %s.\n", filename);
+		printf("Loaded %s\n", filename);
 	}
 	else
 	{
-		printf("Unable to open %s.\n", filename);
+		printf("Unable to open %s\n", filename);
 		return -1;
 	}
 
@@ -176,13 +176,13 @@ int32 setUniform(Uniform uniform, void *data)
 		{
 
 		} break;
+	}
 
-		GLenum glError = glGetError();
+	GLenum glError = glGetError();
+	if (glError != GL_NO_ERROR)
+	{
 		printf("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
-		if (glError != GL_NO_ERROR)
-		{
-			return -1;
-		}
+		return -1;
 	}
 
 	return 0;

@@ -192,10 +192,12 @@ int32 loadTextures(Model *model)
 			MaterialComponent *materialComponent = &material->components[j];
 
 			if (materialComponent->texture &&
-				strlen(materialComponent->texture) > 0 &&
-				loadTexture(materialComponent->texture) == -1)
+				strlen(materialComponent->texture) > 0)
 			{
-				return -1;
+				if (loadTexture(materialComponent->texture) == -1)
+				{
+					return -1;
+				}
 			}
 		}
 	}
@@ -208,7 +210,7 @@ int32 loadTextures(Model *model)
 
 Model* getModel(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numModels; i++)
 		{
@@ -224,7 +226,7 @@ Model* getModel(const char *name)
 
 uint32 getModelIndex(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numModels; i++)
 		{
