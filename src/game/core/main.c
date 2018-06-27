@@ -175,6 +175,8 @@ int32 main()
 					{
 						loadScene(name);
 						free(name);
+
+						reloadingScene = false;
 					}
 				}
 				listClear(&unloadedScenes);
