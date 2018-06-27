@@ -121,7 +121,7 @@ function engine.runSystems(pScene, dt, physics)
 
   while C.listIteratorAtEnd(itr) == 0 do
 	local system = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
 	if not system then
 	  error("Unable to load system, panic")
@@ -227,7 +227,7 @@ function engine.shutdownScene(pScene)
   local itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
   while C.listIteratorAtEnd(itr) == 0 do
 	local physicsSystem = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 	if physicsSystem.shutdown then
 	  local err, message = pcall(physicsSystem.shutdown, scene)
 	  if err == false then
@@ -244,7 +244,7 @@ function engine.shutdownScene(pScene)
   itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
   while C.listIteratorAtEnd(itr) == 0 do
 	local renderSystem = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
 	if renderSystem.shutdown then
 	  local err, message = pcall(renderSystem.shutdown, scene)

@@ -14,7 +14,11 @@ typedef struct list_t
 	uint32 dataSize;
 } List;
 
-typedef ListNode **ListIterator;
+typedef struct list_iterator_t
+{
+	ListNode *prev;
+	ListNode *curr;
+} ListIterator;
 
 typedef struct binary_search_tree_node_t
 {

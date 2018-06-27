@@ -2,6 +2,7 @@
 #include "ECS/component.h"
 #include "ECS/system.h"
 
+#include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
 
@@ -745,13 +746,13 @@ void freeScene(Scene **scene)
 	if (modelComponents)
 	{
 		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			for (ListIterator listItr = listGetIterator(
-					(List*)hashMapIteratorGetValue(itr));
-				!listIteratorAtEnd(listItr);
-				listMoveIterator(&listItr))
+					 (List*)hashMapIteratorGetValue(itr));
+				 !listIteratorAtEnd(listItr);
+				 listMoveIterator(&listItr))
 			{
 				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
 				if (!strcmp(componentID->string, "model"))
@@ -766,7 +767,8 @@ void freeScene(Scene **scene)
 				}
 			}
 
-			sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+			sceneRemoveEntityComponents(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+			hashMapDeleteAtIterator(&itr);
 		}
 	}
 
@@ -775,15 +777,17 @@ void freeScene(Scene **scene)
 		 hashMapMoveIterator(&itr))
 	{
 		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		hashMapDeleteAtIterator(&itr);
 	}
 
 	for (HashMapIterator itr =
-		hashMapGetIterator((*scene)->componentDefinitions);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+			 hashMapGetIterator((*scene)->componentDefinitions);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		freeComponentDefinition(
 			(ComponentDefinition*)hashMapIteratorGetValue(itr));
+		hashMapDeleteAtIterator(&itr);
 	}
 
 	freeHashMap(&(*scene)->entities);
@@ -810,6 +814,20 @@ int32 loadScene(const char *name)
 {
 	if (!getScene(name))
 	{
+		for (ListIterator itr = listGetIterator(&unloadedScenes);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+			if (!strcmp(name, scene->name))
+			{
+				listRemove(&unloadedScenes, &itr);
+				listPushFront(&activeScenes, &scene);
+
+				return 0;
+			}
+		}
+
 		Scene *scene;
 		if (loadSceneFile(name, &scene) == -1)
 		{
@@ -896,7 +914,7 @@ int32 deactivateScene(Scene **scene)
 		Scene *activeScene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
 		if (activeScene == *scene)
 		{
-			listRemove(&activeScenes, itr);
+			listRemove(&activeScenes, &itr);
 			return 0;
 		}
 	}
@@ -1666,9 +1684,10 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 			(List *)hashMapIteratorGetValue(itr));
 		while (!listIteratorAtEnd(litr))
 		{
+			// Remove this component from that entity
 			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
 			{
-				listRemove((List *)hashMapIteratorGetValue(itr), litr);
+				listRemove((List *)hashMapIteratorGetValue(itr), &litr);
 			}
 			listMoveIterator(&litr);
 		}
@@ -1676,6 +1695,7 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 		hashMapMoveIterator(&itr);
 	}
 
+	// Delete the component data table
 	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
 		scene->componentTypes,
 		&componentID);
@@ -1718,7 +1738,7 @@ UUID sceneCreateEntity(Scene *s)
 	return newEntity;
 }
 
-void sceneRemoveEntity(Scene *s, UUID entity)
+void sceneRemoveEntityComponents(Scene *s, UUID entity)
 {
 	List *entityComponentList = hashMapGetKey(s->entities, &entity);
 
@@ -1747,6 +1767,11 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 
 	// Clear component list
 	listClear(entityComponentList);
+}
+
+void sceneRemoveEntity(Scene *s, UUID entity)
+{
+	sceneRemoveEntityComponents(s, entity);
 	hashMapDeleteKey(s->entities, &entity);
 }
 
@@ -1812,7 +1837,7 @@ void sceneRemoveComponentFromEntity(
 	{
 		if (strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string, componentType.string))
 		{
-			listRemove(componentTypeList, itr);
+			listRemove(componentTypeList, &itr);
 		}
 	}
 }

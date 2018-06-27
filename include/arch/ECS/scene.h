@@ -67,6 +67,7 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID);
 void sceneRegisterEntity(Scene *s, UUID newEntity);
 UUID sceneCreateEntity(Scene *s);
 void sceneRemoveEntity(Scene *s, UUID entity);
+void sceneRemoveEntityComponents(Scene *s, UUID entity);
 
 int32 sceneAddComponentToEntity(
 	Scene *s,

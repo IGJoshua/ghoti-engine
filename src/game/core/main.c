@@ -87,7 +87,7 @@ int32 main()
 	// State previous
 	// State next
 
-	ListIterator itr = 0;
+	ListIterator itr = {};
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;

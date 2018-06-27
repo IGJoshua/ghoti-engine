@@ -27,7 +27,12 @@ typedef struct list_t
   ListNode *back;
 } List;
 
-typedef ListNode **ListIterator;
+typedef struct list_iterator_t
+{
+  ListNode *prev;
+  ListNode *curr;
+} ListIterator;
+
 
 ListIterator listGetIterator(List *l);
 void listMoveIterator(ListIterator *itr);
@@ -39,8 +44,8 @@ void listPushBack(List *l, void *data);
 void listPopFront(List *l);
 void listClear(List *l);
 
-void listRemove(List *l, ListIterator itr);
-void listInsert(List *l, ListIterator itr, void *data);
+void listRemove(List *l, ListIterator *itr);
+void listInsert(List *l, ListIterator *itr, void *data);
 
 typedef List HashMapBucket;
 
