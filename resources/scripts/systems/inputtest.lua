@@ -65,13 +65,13 @@ function system.begin(scene, dt)
   end
 
   if input.switch_to_cool_thing.updated and
-  	input.switch_to_cool_thing.keydown then
+	input.switch_to_cool_thing.keydown then
 	C.loadScene("cool_thing")
 	C.unloadScene("cool_scene")
   end
 
   if input.switch_to_cool_scene.updated and
-  	input.switch_to_cool_scene.keydown then
+	input.switch_to_cool_scene.keydown then
 	C.loadScene("cool_scene")
 	C.unloadScene("cool_thing")
   end
