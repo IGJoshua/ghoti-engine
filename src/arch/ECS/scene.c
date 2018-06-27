@@ -723,6 +723,36 @@ void exportRuntimeScene(const Scene *scene)
 	free(entitiesFolder);
 }
 
+internal
+void freeEntityResources(UUID entity, Scene *scene)
+{
+	UUID componentUUID = idFromName("model");
+
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+		scene->componentTypes, &componentUUID);
+
+	if (modelComponents)
+	{
+		for (ListIterator itr = listGetIterator(
+				hashMapGetKey(scene->entities, &entity));
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
+		{
+			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+			if (!strcmp(componentID->string, "model"))
+			{
+				ModelComponent *modelComponent =
+					(ModelComponent*)cdtGet(
+						*modelComponents,
+						entity);
+
+				freeModel(modelComponent->name);
+				break;
+			}
+		}
+	}
+}
+
 void freeScene(Scene **scene)
 {
 	printf("Unloading scene (%s)...\n", (*scene)->name);
@@ -737,37 +767,13 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
-	UUID componentUUID = idFromName("model");
-
-	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
-		(*scene)->componentTypes, &componentUUID);
-
-	if (modelComponents)
+	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
 	{
-		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
-		{
-			for (ListIterator listItr = listGetIterator(
-					(List*)hashMapIteratorGetValue(itr));
-				!listIteratorAtEnd(listItr);
-				listMoveIterator(&listItr))
-			{
-				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
-				if (!strcmp(componentID->string, "model"))
-				{
-					ModelComponent *modelComponent =
-						(ModelComponent*)cdtGet(
-							*modelComponents,
-							*(UUID*)hashMapIteratorGetKey(itr));
-
-					freeModel(modelComponent->name);
-					break;
-				}
-			}
-
-			sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
-		}
+		UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
+		freeEntityResources(entity, *scene);
+		sceneRemoveEntity(*scene, entity);
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
@@ -1726,6 +1732,8 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	{
 		return;
 	}
+
+	freeEntityResources(entity, s);
 
 	// For each component type
 	for (ListIterator listIterator = listGetIterator(entityComponentList);
