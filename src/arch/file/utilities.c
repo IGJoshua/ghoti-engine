@@ -74,14 +74,7 @@ char* removeExtension(const char *filename)
 	return name;
 }
 
-void deleteFile(const char *filename, const char *folder)
-{
-	char *filepath = getFullFilePath(filename, NULL, folder);
-	remove(filepath);
-	free(filepath);
-}
-
-int32 deleteFolder(const char *folder)
+int32 deleteFolder(const char *folder, bool errors)
 {
 	DIR *dir = opendir(folder);
 	if (dir)
@@ -101,7 +94,7 @@ int32 deleteFolder(const char *folder)
 
 				if (S_ISDIR(info.st_mode))
 				{
-					if (deleteFolder(folderPath) == -1)
+					if (deleteFolder(folderPath, errors) == -1)
 					{
 						free(folderPath);
 						closedir(dir);
@@ -110,7 +103,7 @@ int32 deleteFolder(const char *folder)
 				}
 				else if (S_ISREG(info.st_mode))
 				{
-					deleteFile(dirEntry->d_name, folder);
+					remove(folderPath);
 				}
 
 				free(folderPath);
@@ -118,14 +111,18 @@ int32 deleteFolder(const char *folder)
 
 			dirEntry = readdir(dir);
 		}
+
+		closedir(dir);
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		if (errors)
+		{
+			printf("Failed to open %s\n", folder);
+		}
 		return -1;
 	}
 
-	closedir(dir);
 	rmdir(folder);
 
 	return 0;
@@ -203,14 +200,14 @@ int32 copyFolder(const char *folder, const char *destination)
 
 			dirEntry = readdir(dir);
 		}
+
+		closedir(dir);
 	}
 	else
 	{
 		printf("Failed to open %s\n", folder);
 		return -1;
 	}
-
-	closedir(dir);
 
 	return 0;
 }

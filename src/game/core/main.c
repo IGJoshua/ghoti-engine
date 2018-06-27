@@ -3,16 +3,8 @@
 #include "core/window.h"
 #include "core/input.h"
 
-#include "asset_management/model.h"
-
-#include "renderer/renderer_types.h"
-#include "renderer/shader.h"
-
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
-#include "ECS/component.h"
-#include "ECS/system.h"
-#include "ECS/save.h"
 
 #include "file/utilities.h"
 
@@ -34,21 +26,21 @@
 
 #include <SDL2/SDL.h>
 
-#include <stdio.h>
-#include <math.h>
-#include <malloc.h>
-#include <string.h>
 #include <time.h>
 #include <stdlib.h>
 
-lua_State *L;
-List activeScenes;
+extern lua_State *L;
+extern real64 alpha;
+extern List activeScenes;
+extern bool changeScene;
+extern bool reloadingScene;
+extern List unloadedScenes;
 
 int32 main()
 {
 	srand(time(0));
 
-	GLFWwindow *window = initWindow(640, 480, "Monochrome");
+	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
 	if (!window)
 	{
@@ -63,6 +55,7 @@ int32 main()
 	}
 
 	activeScenes = createList(sizeof(Scene *));
+	unloadedScenes = createList(sizeof(Scene *));
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
@@ -89,23 +82,12 @@ int32 main()
 		return 1;
 	}
 
-	Scene *initScene;
-	loadScene("scene_1", &initScene);
-	listPushFront(&activeScenes, &initScene);
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	// State previous
 	// State next
 
-	ListIterator itr = 0;
-	for (itr = listGetIterator(&activeScenes);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
-
-		sceneInitSystems(scene);
-		sceneInitLua(&L, scene);
-	}
+	ListIterator itr = {};
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
@@ -136,7 +118,6 @@ int32 main()
 			{
 				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-				// TODO: Previous state = currentState
 				sceneRunPhysicsFrameSystems(scene, dt);
 
 				// Load the lua engine table and run its physics systems
@@ -172,6 +153,37 @@ int32 main()
 				}
 			}
 
+			if (changeScene)
+			{
+				for (ListIterator i = listGetIterator(&unloadedScenes);
+					 !listIteratorAtEnd(i);
+					 listMoveIterator(&i))
+				{
+					Scene **scene = LIST_ITERATOR_GET_ELEMENT(Scene*, i);
+
+					char *name = NULL;
+					if (reloadingScene)
+					{
+						name = malloc(strlen((*scene)->name) + 1);
+						strcpy(name, (*scene)->name);
+					}
+
+					shutdownScene(scene);
+					freeScene(scene);
+
+					if (reloadingScene)
+					{
+						loadScene(name);
+						free(name);
+
+						reloadingScene = false;
+					}
+				}
+				listClear(&unloadedScenes);
+
+				changeScene = false;
+			}
+
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
@@ -179,7 +191,7 @@ int32 main()
 			inputHandleEvents();
 		}
 
-		// const real64 alpha = accumulator / dt;
+		alpha = accumulator / dt;
 
 		// Lerp state between previous and next
 
@@ -198,13 +210,13 @@ int32 main()
 		{
 			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-			CameraComponent *cam = sceneGetComponentFromEntity(
+			CameraComponent *camera = sceneGetComponentFromEntity(
 				scene,
 				scene->mainCamera,
 				idFromName("camera"));
-			if (cam)
+			if (camera)
 			{
-				cam->aspectRatio = aspectRatio;
+				camera->aspectRatio = aspectRatio;
 			}
 
 			// Render
@@ -236,18 +248,11 @@ int32 main()
 	{
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-		if (L)
-		{
-			sceneShutdownLua(&L, scene);
-		}
-		sceneShutdownSystems(scene);
+		shutdownScene(&scene);
 		freeScene(&scene);
 	}
 
-	if (deleteFolder(RUNTIME_STATE_DIR) == -1)
-	{
-		printf("Failed to delete runtime folder\n");
-	}
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	if (L)
 	{

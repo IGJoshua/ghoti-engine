@@ -8,12 +8,12 @@ io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(
   ffi.os == "Windows"
-    and "./monochrome.dll"
-    or "./monochrome.so")
+    and "./ghoti.dll"
+    or "./ghoti.so")
 
 local C = engine.C
 
-io.write("Loaded monochrome library\n")
+io.write("Loaded ghoti library\n")
 
 engine.kazmath = ffi.load(
   ffi.os == "Windows"
@@ -121,7 +121,7 @@ function engine.runSystems(pScene, dt, physics)
 
   while C.listIteratorAtEnd(itr) == 0 do
 	local system = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
 	if not system then
 	  error("Unable to load system, panic")
@@ -222,11 +222,12 @@ end
 
 function engine.shutdownScene(pScene)
   local scene = engine.scenes[pScene]
+  engine.scenes[pScene] = nil
 
   local itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
   while C.listIteratorAtEnd(itr) == 0 do
 	local physicsSystem = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 	if physicsSystem.shutdown then
 	  local err, message = pcall(physicsSystem.shutdown, scene)
 	  if err == false then
@@ -243,7 +244,7 @@ function engine.shutdownScene(pScene)
   itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
   while C.listIteratorAtEnd(itr) == 0 do
 	local renderSystem = engine.systems[
-	  ffi.string(ffi.cast("UUID *", itr[0].data).string)]
+	  ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
 	if renderSystem.shutdown then
 	  local err, message = pcall(renderSystem.shutdown, scene)
@@ -282,3 +283,9 @@ function engine.cleanInput()
     dpad.updated = false
   end
 end
+
+io.write("Running init script\n")
+
+require("resources/scripts/init")
+
+io.write("Finished init script\n")

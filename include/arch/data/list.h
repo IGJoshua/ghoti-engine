@@ -3,7 +3,7 @@
 
 #include "data_types.h"
 
-#define LIST_ITERATOR_GET_ELEMENT(type, itr) ((type *)(*(itr))->data)
+#define LIST_ITERATOR_GET_ELEMENT(type, itr) ((type *)(itr.curr)->data)
 
 List createList(uint32 dataSize);
 
@@ -17,7 +17,7 @@ ListIterator listGetIterator(List *l);
 void listMoveIterator(ListIterator *itr);
 int32 listIteratorAtEnd(ListIterator itr);
 
-void listRemove(List *l, ListIterator itr);
-void listInsert(List *l, ListIterator itr, void *data);
+void listRemove(List *l, ListIterator *itr);
+void listInsert(List *l, ListIterator *itr, void *data);
 
 uint32 listGetSize(List *l);

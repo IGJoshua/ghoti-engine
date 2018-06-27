@@ -13,6 +13,7 @@ typedef struct mesh_t
 	GLuint vertexArray;
 	GLuint indexBuffer;
 	uint32 numIndices;
+	uint32 materialIndex;
 } Mesh;
 
 typedef enum material_type_e

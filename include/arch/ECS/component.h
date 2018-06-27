@@ -10,7 +10,7 @@ ComponentDataTable *createComponentDataTable(
 	uint32 componentSize);
 void freeComponentDataTable(ComponentDataTable **table);
 
-void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData);
+int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData);
 void cdtRemove(ComponentDataTable *table, UUID entityID);
 void *cdtGet(ComponentDataTable *table, UUID entityID);
 

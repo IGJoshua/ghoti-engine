@@ -2,6 +2,7 @@
 #include "ECS/component.h"
 #include "ECS/system.h"
 
+#include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
 
@@ -18,6 +19,8 @@
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <sys/stat.h>
+
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +28,11 @@
 #include <unistd.h>
 
 extern HashMap systemRegistry;
+extern List activeScenes;
+extern bool changeScene;
+extern bool reloadingScene;
+extern List unloadedScenes;
+
 
 Scene *createScene(void)
 {
@@ -51,7 +59,293 @@ Scene *createScene(void)
 	return ret;
 }
 
-int32 loadScene(const char *name, Scene **scene)
+internal
+int32 exportSceneJSONEntities(const char *folder)
+{
+	int32 error = 0;
+
+	DIR *dir = opendir(folder);
+
+	if (dir)
+	{
+		struct dirent *dirEntry = readdir(dir);
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (exportSceneJSONEntities(folderPath) == -1)
+					{
+						free(folderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					char *extension = getExtension(dirEntry->d_name);
+					if (extension && !strcmp(extension, "json"))
+					{
+						char *entityFilename = removeExtension(
+							dirEntry->d_name);
+						char *jsonEntityFilename = getFullFilePath(
+							entityFilename,
+							NULL,
+							folder);
+						free(entityFilename);
+
+						if (exportEntity(jsonEntityFilename) == -1)
+						{
+							free(jsonEntityFilename);
+							free(folderPath);
+							free(extension);
+							closedir(dir);
+							return -1;
+						}
+
+						free(jsonEntityFilename);
+					}
+
+					free(extension);
+				}
+
+				free(folderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		error = -1;
+	}
+
+	return error;
+}
+
+#define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
+
+internal
+int32 loadSceneEntities(
+	Scene **scene,
+	bool loadData,
+	bool recursive,
+	const char *folder)
+{
+	int32 error = 0;
+
+	if (!scene)
+	{
+		return -1;
+	}
+
+	DIR *dir = opendir(folder);
+
+	if (dir)
+	{
+		uint32 i;
+
+		struct dirent *dirEntry = readdir(dir);
+
+		if (!loadData && !recursive)
+		{
+			(*scene)->componentDefinitions = createHashMap(
+				sizeof(UUID),
+				sizeof(ComponentDefinition),
+				COMPONENT_DEFINITION_BUCKETS,
+				(ComparisonOp)&strcmp);
+		}
+
+		while (dirEntry)
+		{
+			if (strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, ".."))
+			{
+				char *folderPath = getFullFilePath(
+					dirEntry->d_name,
+					NULL,
+					folder);
+
+				struct stat info;
+				stat(folderPath, &info);
+
+				if (S_ISDIR(info.st_mode))
+				{
+					if (loadSceneEntities(
+						scene,
+						loadData,
+						true,
+						folderPath) == -1)
+					{
+						free(folderPath);
+						closedir(dir);
+						return -1;
+					}
+				}
+				else if (S_ISREG(info.st_mode))
+				{
+					char *extension = getExtension(dirEntry->d_name);
+					if (extension && !strcmp(extension, "entity"))
+					{
+						FILE *file = fopen(folderPath, "rb");
+
+						if (file)
+						{
+							UUID uuid;
+							memset(uuid.bytes, 0, UUID_LENGTH + 1);
+							fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
+
+							if (loadData)
+							{
+								sceneRegisterEntity(*scene, uuid);
+							}
+
+							uint32 numComponents;
+							fread(&numComponents, sizeof(uint32), 1, file);
+
+							for (i = 0; i < numComponents; i++)
+							{
+								ComponentDefinition *componentDefinition =
+									calloc(1, sizeof(ComponentDefinition));
+
+								componentDefinition->name = readString(file);
+
+								fread(&componentDefinition->numValues,
+									sizeof(uint32),
+									1,
+									file);
+
+								componentDefinition->values =
+									calloc(componentDefinition->numValues,
+										sizeof(ComponentValueDefinition));
+
+								for (uint32 j = 0;
+									j < componentDefinition->numValues;
+									j++)
+								{
+									ComponentValueDefinition *componentValueDefinition =
+										&componentDefinition->values[j];
+
+									componentValueDefinition->name =
+										readString(file);
+
+									int8 dataType;
+									fread(
+										&dataType,
+										sizeof(int8),
+										1,
+										file);
+									componentValueDefinition->type = (DataType)dataType;
+
+									if (componentValueDefinition->type == DATA_TYPE_STRING)
+									{
+										fread(
+											&componentValueDefinition->maxStringSize,
+											sizeof(uint32),
+											1,
+											file);
+									}
+
+									fread(
+										&componentValueDefinition->count,
+										sizeof(uint32),
+										1,
+										file);
+								}
+
+								fread(
+									&componentDefinition->size,
+									sizeof(uint32),
+									1,
+									file);
+
+								void *data = malloc(componentDefinition->size);
+								fread(data, componentDefinition->size, 1, file);
+
+								if (!loadData)
+								{
+									UUID componentID =
+										idFromName(componentDefinition->name);
+
+									ComponentDefinition
+										*existingComponentDefinition =
+											(ComponentDefinition*)hashMapGetKey(
+												(*scene)->componentDefinitions,
+												&componentID);
+
+									if (!existingComponentDefinition)
+									{
+										hashMapInsert(
+											(*scene)->componentDefinitions,
+											&componentID,
+											componentDefinition);
+									}
+									else
+									{
+										freeComponentDefinition(
+											componentDefinition);
+									}
+								}
+								else
+								{
+									sceneAddComponentToEntity(
+										*scene,
+										uuid,
+										idFromName(componentDefinition->name),
+										data);
+
+									freeComponentDefinition(
+										componentDefinition);
+								}
+
+								free(componentDefinition);
+								free(data);
+							}
+
+							fclose(file);
+						}
+						else
+						{
+							printf("Failed to open %s\n", folderPath);
+							free(folderPath);
+							free(extension);
+							closedir(dir);
+							return -1;
+						}
+					}
+
+					free(extension);
+				}
+
+				free(folderPath);
+			}
+
+			dirEntry = readdir(dir);
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		printf("Failed to open %s\n", folder);
+		error = -1;
+	}
+
+	return error;
+}
+
+int32 loadSceneFile(const char *name, Scene **scene)
 {
 	int32 error = 0;
 
@@ -63,24 +357,28 @@ int32 loadScene(const char *name, Scene **scene)
 	printf("Loading scene (%s)...\n", name);
 
 	char *sceneFolder = NULL;
-	DIR *dir = opendir(RUNTIME_STATE_DIR);
 
 	bool found = false;
-	if (dir)
+
+	if (!reloadingScene)
 	{
-		struct dirent *dirEntry = readdir(dir);
-		while (dirEntry)
+		DIR *dir = opendir(RUNTIME_STATE_DIR);
+		if (dir)
 		{
-			if (!strcmp(dirEntry->d_name, name))
+			struct dirent *dirEntry = readdir(dir);
+			while (dirEntry)
 			{
-				found = true;
-				break;
+				if (!strcmp(dirEntry->d_name, name))
+				{
+					found = true;
+					break;
+				}
+
+				dirEntry = readdir(dir);
 			}
 
-			dirEntry = readdir(dir);
+			closedir(dir);
 		}
-
-		closedir(dir);
 	}
 
 	if (found)
@@ -106,14 +404,19 @@ int32 loadScene(const char *name, Scene **scene)
 
 	if (access(jsonSceneFilename, F_OK) != -1)
 	{
-		exportScene(sceneFilename);
+		if (exportScene(sceneFilename) == -1)
+		{
+			free(jsonSceneFilename);
+			free(sceneFilename);
+			free(sceneFolder);
+			return -1;
+		}
 	}
 
 	free(jsonSceneFilename);
 	free(sceneFilename);
 
 	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
-	free(sceneFolder);
 
 	FILE *file = fopen(sceneFilename, "rb");
 
@@ -153,7 +456,7 @@ int32 loadScene(const char *name, Scene **scene)
 				internalSystems[j] = readString(file);
 			}
 
-			UUID systemName;
+			UUID systemName = {};
 
 			if (!strcmp(systemGroup, "update"))
 			{
@@ -218,7 +521,26 @@ int32 loadScene(const char *name, Scene **scene)
 			fread(&componentLimitNumbers[i], sizeof(uint32), 1, file);
 		}
 
-		loadSceneEntities(scene, name, false);
+		char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
+		if (exportSceneJSONEntities(entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
+
+		if (loadSceneEntities(scene, false, false, entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
 
 		for (i = 0; i < numComponentLimits; i++)
 		{
@@ -233,8 +555,18 @@ int32 loadScene(const char *name, Scene **scene)
 		(*scene)->numComponentLimitNames = numComponentLimits;
 		(*scene)->componentLimitNames = componentLimitNames;
 
-		loadSceneEntities(scene, name, true);
+		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
+		{
+			free(sceneFilename);
+			free(entityFolder);
+			free(sceneFolder);
+			free(componentLimitNumbers);
+			fclose(file);
+			return -1;
+		}
 
+		free(entityFolder);
+		free(sceneFolder);
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
@@ -251,50 +583,45 @@ int32 loadScene(const char *name, Scene **scene)
 
 	free(sceneFilename);
 
-	ComponentDataTable *modelComponents = NULL;
-	for (HashMapIterator componentsItr = hashMapGetIterator(
-			(*scene)->componentTypes);
-		!hashMapIteratorAtEnd(componentsItr);
-		hashMapMoveIterator(&componentsItr))
-	{
-		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
-		if (!strcmp(componentID->string, "model"))
-		{
-			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
-				componentsItr);
-			break;
-		}
-	}
+	UUID componentUUID = idFromName("model");
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+		(*scene)->componentTypes, &componentUUID);
+
+	if (modelComponents)
 	{
-		for (ListIterator listItr = listGetIterator(
-				(List*)hashMapIteratorGetValue(itr));
-			!listIteratorAtEnd(listItr);
-			listMoveIterator(&listItr))
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
 		{
-			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
-			if (!strcmp(componentID->string, "model"))
+			for (ListIterator listItr = listGetIterator(
+					(List*)hashMapIteratorGetValue(itr));
+				!listIteratorAtEnd(listItr);
+				listMoveIterator(&listItr))
 			{
-				ModelComponent *modelComponent =
-					(ModelComponent*)cdtGet(
-						modelComponents,
-						*(UUID*)hashMapIteratorGetKey(itr));
-
-				if (loadModel(modelComponent->name) == -1)
+				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(
+					UUID,
+					listItr);
+				if (!strcmp(componentID->string, "model"))
 				{
-					error = -1;
-				}
+					ModelComponent *modelComponent =
+						(ModelComponent*)cdtGet(
+							*modelComponents,
+							*(UUID*)hashMapIteratorGetKey(itr));
 
+					if (loadModel(modelComponent->name) == -1)
+					{
+						error = -1;
+					}
+
+					break;
+				}
+			}
+
+			if (error == -1)
+			{
 				break;
 			}
-		}
-
-		if (error == -1)
-		{
-			break;
 		}
 	}
 
@@ -306,293 +633,26 @@ int32 loadScene(const char *name, Scene **scene)
 	return error;
 }
 
-#define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
-
-int32 loadSceneEntities(Scene **scene, const char *name, bool loadData)
+Scene *getScene(const char *name)
 {
-	int32 error = 0;
-
-	if (!scene)
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
 	{
-		return -1;
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (!strcmp(name, scene->name))
+		{
+			return scene;
+		}
 	}
 
-	char *sceneFolder = getFullFilePath(name, NULL, "resources/scenes");
-	char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
-	free(sceneFolder);
-
-	DIR *dir = opendir(entityFolder);
-
-	if (dir)
-	{
-		uint32 i;
-
-		struct dirent *dirEntry = readdir(dir);
-
-		if (!loadData)
-		{
-			(*scene)->numComponentsDefinitions = 0;
-		}
-
-		uint32 componentDefinitionsCapacity = 0;
-
-		while (dirEntry)
-		{
-			char *extension = getExtension(dirEntry->d_name);
-			if (extension && !strcmp(extension, "json"))
-			{
-				char *entityFilename = removeExtension(dirEntry->d_name);
-				char *jsonEntityFilename = getFullFilePath(
-					entityFilename,
-					NULL,
-					entityFolder);
-				free(entityFilename);
-
-				exportEntity(jsonEntityFilename);
-				free(jsonEntityFilename);
-			}
-
-			free(extension);
-
-			dirEntry = readdir(dir);
-		}
-
-		closedir(dir);
-		dir = opendir(entityFolder);
-		dirEntry = readdir(dir);
-
-		while (dirEntry)
-		{
-			char *extension = getExtension(dirEntry->d_name);
-			if (!extension || strcmp(extension, "entity"))
-			{
-				free(extension);
-				dirEntry = readdir(dir);
-				continue;
-			}
-
-			free(extension);
-
-			char *entityFilename = getFullFilePath(
-				dirEntry->d_name,
-				NULL,
-				entityFolder);
-
-			FILE *file = fopen(entityFilename, "rb");
-
-			if (file)
-			{
-				UUID uuid;
-				fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
-
-				if (loadData)
-				{
-					sceneRegisterEntity(*scene, uuid);
-				}
-
-				uint32 numComponents;
-				fread(&numComponents, sizeof(uint32), 1, file);
-
-				if (!loadData)
-				{
-					if ((*scene)->numComponentsDefinitions + numComponents
-						> componentDefinitionsCapacity)
-					{
-						while (
-							(*scene)->numComponentsDefinitions + numComponents
-							> componentDefinitionsCapacity)
-						{
-							componentDefinitionsCapacity +=
-								COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
-						}
-
-						uint32 previousBufferSize =
-							(*scene)->numComponentsDefinitions
-							* sizeof(ComponentDefinition);
-						uint32 newBufferSize = componentDefinitionsCapacity
-							* sizeof(ComponentDefinition);
-
-						if (previousBufferSize == 0)
-						{
-							(*scene)->componentDefinitions =
-								calloc(newBufferSize, 1);
-						}
-						else
-						{
-							(*scene)->componentDefinitions = realloc(
-								(*scene)->componentDefinitions,
-								newBufferSize);
-							memset(
-								(*scene)->componentDefinitions + previousBufferSize,
-								0,
-								newBufferSize - previousBufferSize);
-						}
-					}
-				}
-
-				for (i = 0; i < numComponents; i++)
-				{
-					ComponentDefinition *componentDefinition = calloc(
-						1,
-						sizeof(ComponentDefinition));
-
-					if (!loadData)
-					{
-						freeComponentDefinition(componentDefinition);
-						free(componentDefinition);
-
-						componentDefinition =
-							&(*scene)->componentDefinitions[
-							(*scene)->numComponentsDefinitions++];
-					}
-
-					componentDefinition->name = readString(file);
-
-					fread(
-						&componentDefinition->numValues,
-						sizeof(uint32),
-						1,
-						file);
-
-					componentDefinition->values =
-						calloc(componentDefinition->numValues,
-							sizeof(ComponentValueDefinition));
-
-					for (
-						uint32 j = 0;
-						j < componentDefinition->numValues;
-						j++)
-					{
-						ComponentValueDefinition *componentValueDefinition =
-							&componentDefinition->values[j];
-
-						componentValueDefinition->name = readString(file);
-
-						int8 dataType;
-						fread(
-							&dataType,
-							sizeof(int8),
-							1,
-							file);
-						componentValueDefinition->type = (DataType)dataType;
-
-						if (componentValueDefinition->type == STRING)
-						{
-							fread(
-								&componentValueDefinition->maxStringSize,
-								sizeof(uint32),
-								1,
-								file);
-						}
-
-						fread(
-							&componentValueDefinition->count,
-							sizeof(uint32),
-							1,
-							file);
-					}
-
-					fread(
-						&componentDefinition->size,
-						sizeof(uint32),
-						1,
-						file);
-
-					void *data = malloc(componentDefinition->size);
-					fread(data, componentDefinition->size, 1, file);
-
-					if (loadData)
-					{
-						sceneAddComponentToEntity(
-							*scene,
-							uuid,
-							idFromName(componentDefinition->name),
-							data);
-
-						freeComponentDefinition(componentDefinition);
-						free(componentDefinition);
-					}
-
-					free(data);
-				}
-
-				fclose(file);
-			}
-			else
-			{
-				printf("Failed to open %s\n", entityFilename);
-				error = -1;
-				break;
-			}
-
-			free(entityFilename);
-
-			dirEntry = readdir(dir);
-		}
-
-		closedir(dir);
-
-		if (!loadData)
-		{
-			uint32 numUniqueComponentDefinitions = 0;
-			ComponentDefinition *uniqueComponentDefinitions = calloc(
-				(*scene)->numComponentsDefinitions,
-				sizeof(ComponentDefinition));
-
-			for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
-			{
-				ComponentDefinition *componentDefinition =
-					&(*scene)->componentDefinitions[i];
-
-				bool unique = true;
-				for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
-				{
-					if (!strcmp(
-						componentDefinition->name,
-						uniqueComponentDefinitions[j].name))
-					{
-						unique = false;
-						break;
-					}
-				}
-
-				if (unique)
-				{
-					copyComponentDefinition(
-						&uniqueComponentDefinitions[
-							numUniqueComponentDefinitions++],
-						componentDefinition);
-				}
-
-				freeComponentDefinition(componentDefinition);
-			}
-
-			free((*scene)->componentDefinitions);
-			uniqueComponentDefinitions = realloc(
-				uniqueComponentDefinitions,
-				numUniqueComponentDefinitions * sizeof(ComponentDefinition));
-
-			(*scene)->componentDefinitions = uniqueComponentDefinitions;
-			(*scene)->numComponentsDefinitions = numUniqueComponentDefinitions;
-		}
-	}
-	else
-	{
-		printf("Failed to open %s\n", entityFolder);
-		error = -1;
-	}
-
-	free(entityFolder);
-
-	return error;
+	return NULL;
 }
 
 internal
-void unloadScene(const Scene *scene)
+void exportRuntimeScene(const Scene *scene)
 {
 	MKDIR(RUNTIME_STATE_DIR);
-
-	printf("Unloading scene (%s)...\n", scene->name);
 
 	char *sceneFolder = getFullFilePath(
 		scene->name,
@@ -609,7 +669,14 @@ void unloadScene(const Scene *scene)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
-	exportScene(sceneFilename);
+	if (exportScene(sceneFilename) == -1)
+	{
+		free(sceneFolder);
+		free(sceneFilename);
+		free(entitiesFolder);
+		return;
+	}
+
 	char *jsonSceneFilename = getFullFilePath(
 		sceneFilename,
 		"json",
@@ -633,7 +700,15 @@ void unloadScene(const Scene *scene)
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
 
-		exportEntity(entityFilename);
+		if (exportEntity(entityFilename) == -1)
+		{
+			free(entityFilename);
+			free(sceneFolder);
+			free(sceneFilename);
+			free(entitiesFolder);
+			return;
+		}
+
 		char *jsonEntityFilename = getFullFilePath(
 			entityFilename,
 			"json",
@@ -647,59 +722,59 @@ void unloadScene(const Scene *scene)
 	free(sceneFolder);
 	free(sceneFilename);
 	free(entitiesFolder);
+}
 
-	printf("Successfully unloaded scene (%s)\n", scene->name);
+internal
+void freeEntityResources(UUID entity, Scene *scene)
+{
+	UUID componentUUID = idFromName("model");
+
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+		scene->componentTypes, &componentUUID);
+
+	if (modelComponents)
+	{
+		for (ListIterator itr = listGetIterator(
+				hashMapGetKey(scene->entities, &entity));
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
+		{
+			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+			if (!strcmp(componentID->string, "model"))
+			{
+				ModelComponent *modelComponent =
+					(ModelComponent*)cdtGet(
+						*modelComponents,
+						entity);
+
+				freeModel(modelComponent->name);
+				break;
+			}
+		}
+	}
 }
 
 void freeScene(Scene **scene)
 {
-	unloadScene(*scene);
+	printf("Unloading scene (%s)...\n", (*scene)->name);
 
-	free((*scene)->name);
+	if (!reloadingScene)
+	{
+		exportRuntimeScene(*scene);
+	}
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
-	ComponentDataTable *modelComponents = NULL;
-	for (HashMapIterator componentsItr = hashMapGetIterator(
-			(*scene)->componentTypes);
-		!hashMapIteratorAtEnd(componentsItr);
-		hashMapMoveIterator(&componentsItr))
-	{
-		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
-		if (!strcmp(componentID->string, "model"))
-		{
-			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
-				componentsItr);
-			break;
-		}
-	}
-
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
 	{
-		for (ListIterator listItr = listGetIterator(
-				(List*)hashMapIteratorGetValue(itr));
-			!listIteratorAtEnd(listItr);
-			listMoveIterator(&listItr))
-		{
-			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
-			if (!strcmp(componentID->string, "model"))
-			{
-				ModelComponent *modelComponent =
-					(ModelComponent*)cdtGet(
-						modelComponents,
-						*(UUID*)hashMapIteratorGetKey(itr));
-
-				freeModel(modelComponent->name);
-				break;
-			}
-		}
-
-		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
+		sceneRemoveEntityComponents(*scene, entity);
+		hashMapDeleteAtIterator(&itr);
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
@@ -707,69 +782,168 @@ void freeScene(Scene **scene)
 		 hashMapMoveIterator(&itr))
 	{
 		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		hashMapDeleteAtIterator(&itr);
+	}
+
+	for (HashMapIterator itr =
+			 hashMapGetIterator((*scene)->componentDefinitions);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		freeComponentDefinition(
+			(ComponentDefinition*)hashMapIteratorGetValue(itr));
+		hashMapDeleteAtIterator(&itr);
 	}
 
 	freeHashMap(&(*scene)->entities);
 	freeHashMap(&(*scene)->componentTypes);
+	freeHashMap(&(*scene)->componentDefinitions);
 
-	uint32 i;
-
-	for (i = 0; i < (*scene)->numComponentLimitNames; i++)
+	for (uint32 i = 0; i < (*scene)->numComponentLimitNames; i++)
 	{
 		free((*scene)->componentLimitNames[i]);
 	}
 
 	free((*scene)->componentLimitNames);
 
-	for (i = 0; i < (*scene)->numComponentsDefinitions; i++)
-	{
-		freeComponentDefinition(&(*scene)->componentDefinitions[i]);
-	}
-
-	free((*scene)->componentDefinitions);
+	printf("Successfully unloaded scene (%s)\n", (*scene)->name);
+	free((*scene)->name);
 
 	free(*scene);
 	*scene = 0;
+}
+
+extern lua_State *L;
+
+int32 loadScene(const char *name)
+{
+	if (!getScene(name))
+	{
+		for (ListIterator itr = listGetIterator(&unloadedScenes);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+			if (!strcmp(name, scene->name))
+			{
+				listRemove(&unloadedScenes, &itr);
+				listPushFront(&activeScenes, &scene);
+
+				return 0;
+			}
+		}
+
+		Scene *scene;
+		if (loadSceneFile(name, &scene) == -1)
+		{
+			return -1;
+		}
+
+		sceneInitSystems(scene);
+		sceneInitLua(&L, scene);
+
+		listPushFront(&activeScenes, &scene);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int32 reloadScene(const char *name)
+{
+	reloadingScene = true;
+
+	if (unloadScene(name) == -1)
+	{
+		reloadingScene = false;
+		return -1;
+	}
+
+	return 0;
+}
+
+int32 reloadAllScenes(void)
+{
+	reloadingScene = true;
+
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (unloadScene(scene->name) == -1)
+		{
+			reloadingScene = false;
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int32 unloadScene(const char *name)
+{
+	Scene *scene = getScene(name);
+
+	if (scene)
+	{
+		if (deactivateScene(&scene) == -1)
+		{
+			return -1;
+		}
+
+		changeScene = true;
+		listPushFront(&unloadedScenes, &scene);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int32 shutdownScene(Scene **scene)
+{
+	sceneShutdownLua(&L, *scene);
+	sceneShutdownSystems(*scene);
+
+	return 0;
+}
+
+int32 deactivateScene(Scene **scene)
+{
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		!listIteratorAtEnd(itr);
+		listMoveIterator(&itr))
+	{
+		Scene *activeScene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (activeScene == *scene)
+		{
+			listRemove(&activeScenes, &itr);
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 ComponentDefinition getComponentDefinition(
 	const Scene *scene,
 	UUID name)
 {
-	ComponentDefinition componentDefinition;
-	memset(&componentDefinition, 0, sizeof(ComponentDefinition));
+	ComponentDefinition *componentDefinition =
+		(ComponentDefinition*)hashMapGetKey(
+			scene->componentDefinitions,
+			&name);
 
-	for (uint32 i = 0; i < scene->numComponentsDefinitions; i++)
+	if (componentDefinition)
 	{
-		if (!strcmp(scene->componentDefinitions[i].name, name.string))
-		{
-			return scene->componentDefinitions[i];
-		}
+		return *componentDefinition;
 	}
 
-	return componentDefinition;
-}
-
-void copyComponentDefinition(
-	ComponentDefinition *dest,
-	ComponentDefinition *src)
-{
-	dest->name = malloc(strlen(src->name) + 1);
-	strcpy(dest->name, src->name);
-
-	dest->size = src->size;
-	dest->numValues = src->numValues;
-
-	dest->values = malloc(src->numValues * sizeof(ComponentValueDefinition));
-	for (uint32 i = 0; i < src->numValues; i++)
-	{
-		dest->values[i].name = malloc(strlen(src->values[i].name) + 1);
-		strcpy(dest->values[i].name, src->values[i].name);
-
-		dest->values[i].type = src->values[i].type;
-		dest->values[i].maxStringSize = src->values[i].maxStringSize;
-		dest->values[i].count = src->values[i].count;
-	}
+	ComponentDefinition blankComponentDefinition;
+	memset(&blankComponentDefinition, 0, sizeof(ComponentDefinition));
+	return blankComponentDefinition;
 }
 
 void freeComponentDefinition(ComponentDefinition *componentDefinition)
@@ -787,22 +961,24 @@ void freeComponentDefinition(ComponentDefinition *componentDefinition)
 uint32 getDataTypeSize(DataType type)
 {
 	switch (type) {
-		case UINT8:
-		case INT8:
-		case CHAR:
+		case DATA_TYPE_UINT8:
+		case DATA_TYPE_INT8:
+		case DATA_TYPE_CHAR:
 			return 1;
-		case UINT16:
-		case INT16:
+		case DATA_TYPE_UINT16:
+		case DATA_TYPE_INT16:
 			return 2;
-		case UINT32:
-		case INT32:
-		case FLOAT32:
-		case BOOL:
+		case DATA_TYPE_UINT32:
+		case DATA_TYPE_INT32:
+		case DATA_TYPE_FLOAT32:
+		case DATA_TYPE_BOOL:
 			return 4;
-		case UINT64:
-		case INT64:
-		case FLOAT64:
+		case DATA_TYPE_UINT64:
+		case DATA_TYPE_INT64:
+		case DATA_TYPE_FLOAT64:
 			return 8;
+		case DATA_TYPE_UUID:
+			return UUID_LENGTH + 1;
 		default:
 			break;
 	}
@@ -816,47 +992,50 @@ char* getDataTypeString(
 	char *dataTypeString = malloc(256);
 
 	switch (componentValueDefinition->type) {
-		case UINT8:
+		case DATA_TYPE_UINT8:
 			strcpy(dataTypeString, "uint8");
 			break;
-		case UINT16:
+		case DATA_TYPE_UINT16:
 			strcpy(dataTypeString, "uint16");
 			break;
-		case UINT32:
+		case DATA_TYPE_UINT32:
 			strcpy(dataTypeString, "uint32");
 			break;
-		case UINT64:
+		case DATA_TYPE_UINT64:
 			strcpy(dataTypeString, "uint64");
 			break;
-		case INT8:
+		case DATA_TYPE_INT8:
 			strcpy(dataTypeString, "int8");
 			break;
-		case INT16:
+		case DATA_TYPE_INT16:
 			strcpy(dataTypeString, "int16");
 			break;
-		case INT32:
+		case DATA_TYPE_INT32:
 			strcpy(dataTypeString, "int32");
 			break;
-		case INT64:
+		case DATA_TYPE_INT64:
 			strcpy(dataTypeString, "int64");
 			break;
-		case FLOAT32:
+		case DATA_TYPE_FLOAT32:
 			strcpy(dataTypeString, "float32");
 			break;
-		case FLOAT64:
+		case DATA_TYPE_FLOAT64:
 			strcpy(dataTypeString, "float64");
 			break;
-		case BOOL:
+		case DATA_TYPE_BOOL:
 			strcpy(dataTypeString, "bool");
 			break;
-		case CHAR:
+		case DATA_TYPE_CHAR:
 			strcpy(dataTypeString, "char");
 			break;
-		case STRING:
+		case DATA_TYPE_STRING:
 			sprintf(
 				dataTypeString,
 				"char(%d)",
-				componentValueDefinition->maxStringSize - 1);
+				componentValueDefinition->maxStringSize);
+			break;
+		case DATA_TYPE_UUID:
+			strcpy(dataTypeString, "uuid");
 			break;
 		default:
 			break;
@@ -901,7 +1080,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				&componentDefinition.values[i];
 
 			uint32 size = 0;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING)
 			{
 				size = componentValueDefinition->maxStringSize;
 			}
@@ -911,7 +1090,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			}
 
 			uint32 paddingSize = size;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING ||
+				componentValueDefinition->type == DATA_TYPE_UUID)
 			{
 				paddingSize = 1;
 			}
@@ -930,7 +1110,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				&componentDefinition.values[i];
 
 			uint32 size = 0;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING)
 			{
 				size = componentValueDefinition->maxStringSize;
 			}
@@ -940,7 +1120,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			}
 
 			uint32 paddingSize = size;
-			if (componentValueDefinition->type == STRING)
+			if (componentValueDefinition->type == DATA_TYPE_STRING ||
+				componentValueDefinition->type == DATA_TYPE_UUID)
 			{
 				paddingSize = 1;
 			}
@@ -990,84 +1171,84 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				if (componentValueDefinition->count == 1)
 				{
 					switch (componentValueDefinition->type) {
-						case UINT8:
+						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint8Data);
 							break;
-						case UINT16:
+						case DATA_TYPE_UINT16:
 							uint16Data = *(uint16*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint16Data);
 							break;
-						case UINT32:
+						case DATA_TYPE_UINT32:
 							uint32Data = *(uint32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint32Data);
 							break;
-						case UINT64:
+						case DATA_TYPE_UINT64:
 							uint64Data = *(uint64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)uint64Data);
 							break;
-						case INT8:
+						case DATA_TYPE_INT8:
 							int8Data = *(int8*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int8Data);
 							break;
-						case INT16:
+						case DATA_TYPE_INT16:
 							int16Data = *(int16*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int16Data);
 							break;
-						case INT32:
+						case DATA_TYPE_INT32:
 							int32Data = *(int32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int32Data);
 							break;
-						case INT64:
+						case DATA_TYPE_INT64:
 							int64Data = *(int64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)int64Data);
 							break;
-						case FLOAT32:
+						case DATA_TYPE_FLOAT32:
 							real32Data = *(real32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)real32Data);
 							break;
-						case FLOAT64:
+						case DATA_TYPE_FLOAT64:
 							real64Data = *(real64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(double)real64Data);
 							break;
-						case BOOL:
+						case DATA_TYPE_BOOL:
 							boolData = *(bool*)valueData;
 							cJSON_AddBoolToObject(
 								jsonComponentValue,
 								dataTypeString,
 								(cJSON_bool)boolData);
 							break;
-						case CHAR:
+						case DATA_TYPE_CHAR:
 							charData[0] = *(char*)valueData;
 							charData[1] = '\0';
 							cJSON_AddStringToObject(
@@ -1075,7 +1256,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 								dataTypeString,
 								charData);
 							break;
-						case STRING:
+						case DATA_TYPE_STRING:
+						case DATA_TYPE_UUID:
 							cJSON_AddStringToObject(
 								jsonComponentValue,
 								dataTypeString,
@@ -1090,68 +1272,69 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 					cJSON *jsonComponentValueDataArrayItem = NULL;
 
 					switch (componentValueDefinition->type) {
-						case UINT8:
+						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint8Data);
 							break;
-						case UINT16:
+						case DATA_TYPE_UINT16:
 							uint16Data = *(uint16*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint16Data);
 							break;
-						case UINT32:
+						case DATA_TYPE_UINT32:
 							uint32Data = *(uint32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint32Data);
 							break;
-						case UINT64:
+						case DATA_TYPE_UINT64:
 							uint64Data = *(uint64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint64Data);
 							break;
-						case INT8:
+						case DATA_TYPE_INT8:
 							int8Data = *(int8*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int8Data);
 							break;
-						case INT16:
+						case DATA_TYPE_INT16:
 							int16Data = *(int16*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int16Data);
 							break;
-						case INT32:
+						case DATA_TYPE_INT32:
 							int32Data = *(int32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int32Data);
 							break;
-						case INT64:
+						case DATA_TYPE_INT64:
 							int64Data = *(int64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int64Data);
 							break;
-						case FLOAT32:
+						case DATA_TYPE_FLOAT32:
 							real32Data = *(real32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)real32Data);
 							break;
-						case FLOAT64:
+						case DATA_TYPE_FLOAT64:
 							real64Data = *(real64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)real64Data);
 							break;
-						case BOOL:
+						case DATA_TYPE_BOOL:
 							boolData = *(bool*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateBool((cJSON_bool)boolData);
 							break;
-						case CHAR:
+						case DATA_TYPE_CHAR:
 							charData[0] = *(char*)valueData;
 							charData[1] = '\0';
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateString(charData);
 							break;
-						case STRING:
+						case DATA_TYPE_STRING:
+						case DATA_TYPE_UUID:
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateString((char*)valueData);
 							break;
@@ -1308,35 +1491,45 @@ void sceneAddPhysicsFrameSystem(
 
 void sceneInitRenderFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->init != 0)
 		{
 			system->init(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
 void sceneInitPhysicsFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->init != 0)
 		{
 			system->init(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
@@ -1348,67 +1541,83 @@ void sceneInitSystems(Scene *scene)
 
 void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		systemRun(
-			scene,
-			hashMapGetKey(
-				systemRegistry,
-				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
-			dt);
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
 
-		listMoveIterator(&itr);
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
+
+		systemRun(scene, system, dt);
 	}
 }
 
 void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		systemRun(
-			scene,
-			hashMapGetKey(
-				systemRegistry,
-				LIST_ITERATOR_GET_ELEMENT(UUID, itr)),
-			dt);
+		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+		System *system = hashMapGetKey(systemRegistry, systemName);
 
-		listMoveIterator(&itr);
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
+
+		systemRun(scene, system, dt);
 	}
 }
 
 void sceneShutdownRenderFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->renderFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->renderFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->shutdown != 0)
 		{
 			system->shutdown(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
 void sceneShutdownPhysicsFrameSystems(Scene *scene)
 {
-	ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
-	while (!listIteratorAtEnd(itr))
+	for (ListIterator itr = listGetIterator(&scene->physicsFrameSystems);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
 		System *system = hashMapGetKey(systemRegistry, systemName);
+
+		if (!system)
+		{
+			printf("System %s doesn't exist in system registry\n", systemName->string);
+			continue;
+		}
 
 		if (system->shutdown != 0)
 		{
 			system->shutdown(scene);
 		}
-
-		listMoveIterator(&itr);
 	}
 }
 
@@ -1480,9 +1689,10 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 			(List *)hashMapIteratorGetValue(itr));
 		while (!listIteratorAtEnd(litr))
 		{
+			// Remove this component from that entity
 			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
 			{
-				listRemove((List *)hashMapIteratorGetValue(itr), litr);
+				listRemove((List *)hashMapIteratorGetValue(itr), &litr);
 			}
 			listMoveIterator(&litr);
 		}
@@ -1490,6 +1700,7 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 		hashMapMoveIterator(&itr);
 	}
 
+	// Delete the component data table
 	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
 		scene->componentTypes,
 		&componentID);
@@ -1532,7 +1743,7 @@ UUID sceneCreateEntity(Scene *s)
 	return newEntity;
 }
 
-void sceneRemoveEntity(Scene *s, UUID entity)
+void sceneRemoveEntityComponents(Scene *s, UUID entity)
 {
 	List *entityComponentList = hashMapGetKey(s->entities, &entity);
 
@@ -1540,6 +1751,8 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	{
 		return;
 	}
+
+	freeEntityResources(entity, s);
 
 	// For each component type
 	for (ListIterator listIterator = listGetIterator(entityComponentList);
@@ -1561,16 +1774,21 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 
 	// Clear component list
 	listClear(entityComponentList);
+}
+
+void sceneRemoveEntity(Scene *s, UUID entity)
+{
+	sceneRemoveEntityComponents(s, entity);
 	hashMapDeleteKey(s->entities, &entity);
 }
 
-void sceneAddComponentToEntity(
+int32 sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType,
 	void *componentData)
 {
-	printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
+	// printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
 
 	// Get the data table
 	ComponentDataTable **dataTable = hashMapGetKey(
@@ -1579,16 +1797,22 @@ void sceneAddComponentToEntity(
 
 	if (!dataTable || !*dataTable)
 	{
-		return;
+		return -1;
 	}
 
 	// Add the component to the data table
-	cdtInsert(
-		*dataTable,
-		entity,
-		componentData);
+	if(cdtInsert(
+		   *dataTable,
+		   entity,
+		   componentData))
+	{
+		return -1;
+	}
+
 	// Add the component type to the list
 	listPushBack(hashMapGetKey(s->entities, &entity), &componentType);
+
+	return 0;
 }
 
 void sceneRemoveComponentFromEntity(
@@ -1620,7 +1844,7 @@ void sceneRemoveComponentFromEntity(
 	{
 		if (strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string, componentType.string))
 		{
-			listRemove(componentTypeList, itr);
+			listRemove(componentTypeList, &itr);
 		}
 	}
 }
