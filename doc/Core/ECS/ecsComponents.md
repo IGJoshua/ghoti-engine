@@ -1,4 +1,4 @@
-### [Table of Contents](../../main.md) -> [Core Engine](../core.md) -> [Entity Component System](ecsMain.md) -> List of Components
+### [Table of Contents](../../main.md) -> [Core Engine](../coreIndex.md) -> [Entity Component System](ecsMain.md) -> List of Components
 
 # List of Component Types
 

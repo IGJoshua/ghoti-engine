@@ -2,6 +2,8 @@
 
 # Saving
 
+More information on saving can be found [here](../Core/saving.md).
+
 ## bool getSaveSlotAvailability
 Returns `true` if a save slot is available, else returns `false`
 ```c
