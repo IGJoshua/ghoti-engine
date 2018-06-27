@@ -118,7 +118,6 @@ int32 main()
 			{
 				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
-				// TODO: Previous state = currentState
 				sceneRunPhysicsFrameSystems(scene, dt);
 
 				// Load the lua engine table and run its physics systems

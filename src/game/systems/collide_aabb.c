@@ -18,7 +18,9 @@ internal UUID transformComponentID = {};
 internal UUID aabbComponentID = {};
 internal UUID collisionTreeNodeComponentID = {};
 internal UUID collisionComponentID = {};
+internal UUID hitInformationComponentID = {};
 
+internal
 void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	TransformComponent *transform = sceneGetComponentFromEntity(
@@ -89,8 +91,12 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 				HitInformationComponent hitInformationComponent = {};
 				hitInformationComponent.otherObject = *cdtIteratorGetUUID(itr);
 				hitInformationComponent.nextHit = collision->hitList;
+				if (sceneAddComponentToEntity(scene, hitInformation, hitInformationComponentID, &hitInformationComponent))
+				{
+					sceneRemoveEntity(scene, hitInformation);
+					return;
+				}
 				collision->hitList = hitInformation;
-				sceneAddComponentToEntity(scene, hitInformation, idFromName("hit_information"), &hitInformationComponent);
 			}
 		}
 	}
@@ -102,6 +108,7 @@ System createCollideAABBSystem(void)
 	aabbComponentID = idFromName("aabb");
 	collisionComponentID = idFromName("collision");
 	collisionTreeNodeComponentID = idFromName("collision_tree_node");
+	hitInformationComponentID = idFromName("hit_information");
 
 	System ret = {};
 
