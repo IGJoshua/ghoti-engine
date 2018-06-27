@@ -277,26 +277,13 @@ int32 loadSceneEntities(
 									UUID componentID =
 										idFromName(componentDefinition->name);
 
-									bool duplicate = false;
-									for (HashMapIterator itr =
-										hashMapGetIterator
-											((*scene)->componentDefinitions);
-										!hashMapIteratorAtEnd(itr);
-										hashMapMoveIterator(&itr))
-									{
-										UUID componentUUID =
-											*(UUID*)hashMapIteratorGetKey(itr);
+									ComponentDefinition
+										*existingComponentDefinition =
+											(ComponentDefinition*)hashMapGetKey(
+												(*scene)->componentDefinitions,
+												&componentID);
 
-										if (!strcmp(
-											componentUUID.string,
-											componentID.string))
-										{
-											duplicate = true;
-											break;
-										}
-									}
-
-									if (!duplicate)
+									if (!existingComponentDefinition)
 									{
 										hashMapInsert(
 											(*scene)->componentDefinitions,
