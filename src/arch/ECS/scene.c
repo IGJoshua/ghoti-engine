@@ -259,7 +259,8 @@ int32 loadSceneEntities(
 
 							for (i = 0; i < numComponents; i++)
 							{
-								ComponentDefinition *componentDefinition = calloc(1, sizeof(ComponentDefinition));
+								ComponentDefinition *componentDefinition =
+									calloc(1, sizeof(ComponentDefinition));
 
 								if (!loadData)
 								{
@@ -1857,7 +1858,7 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	hashMapDeleteKey(s->entities, &entity);
 }
 
-void sceneAddComponentToEntity(
+int32 sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType,
@@ -1872,16 +1873,22 @@ void sceneAddComponentToEntity(
 
 	if (!dataTable || !*dataTable)
 	{
-		return;
+		return -1;
 	}
 
 	// Add the component to the data table
-	cdtInsert(
-		*dataTable,
-		entity,
-		componentData);
+	if(cdtInsert(
+		   *dataTable,
+		   entity,
+		   componentData))
+	{
+		return -1;
+	}
+
 	// Add the component type to the list
 	listPushBack(hashMapGetKey(s->entities, &entity), &componentType);
+
+	return 0;
 }
 
 void sceneRemoveComponentFromEntity(

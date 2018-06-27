@@ -42,7 +42,7 @@ void freeComponentDataTable(ComponentDataTable **table)
 	*table = 0;
 }
 
-void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
+int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
@@ -63,7 +63,7 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 
 		if (i >= table->numEntries)
 		{
-			return;
+			return -1;
 		}
 
 		// Associate the UUID with the index in the map
@@ -95,6 +95,8 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		+ sizeof(UUID),
 		componentData,
 		table->componentSize);
+
+	return 0;
 }
 
 void cdtRemove(
