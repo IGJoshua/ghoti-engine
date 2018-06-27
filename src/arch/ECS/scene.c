@@ -160,8 +160,11 @@ int32 loadSceneEntities(
 
 		if (!loadData && !recursive)
 		{
-			(*scene)->numComponentDefinitions = 0;
-			(*scene)->componentDefinitionsCapacity = 0;
+			(*scene)->componentDefinitions = createHashMap(
+				sizeof(UUID),
+				sizeof(ComponentDefinition),
+				COMPONENT_DEFINITION_BUCKETS,
+				(ComparisonOp)&strcmp);
 		}
 
 		while (dirEntry)
@@ -210,68 +213,10 @@ int32 loadSceneEntities(
 							uint32 numComponents;
 							fread(&numComponents, sizeof(uint32), 1, file);
 
-							if (!loadData)
-							{
-								if ((*scene)->numComponentDefinitions +
-									numComponents
-									> (*scene)->componentDefinitionsCapacity)
-								{
-									while (
-										(*scene)->numComponentDefinitions +
-											numComponents
-										>
-										(*scene)->componentDefinitionsCapacity)
-									{
-										(*scene)->componentDefinitionsCapacity
-											+=
-											COMPONENT_DEFINITON_REALLOCATION_AMOUNT;
-									}
-
-									uint32 previousBufferSize =
-										(*scene)->numComponentDefinitions
-										* sizeof(ComponentDefinition);
-									uint32 newBufferSize =
-										(*scene)->componentDefinitionsCapacity
-										* sizeof(ComponentDefinition);
-
-									if (previousBufferSize == 0)
-									{
-										(*scene)->componentDefinitions =
-											calloc(newBufferSize, 1);
-									}
-									else
-									{
-										(*scene)->componentDefinitions =
-											realloc(
-												(*scene)->componentDefinitions,
-												newBufferSize);
-
-										// This is an invalid write somehow?!?!
-
-										// memset(
-										// 	(*scene)->componentDefinitions
-										// 		+ previousBufferSize,
-										// 	0,
-										// 	newBufferSize - previousBufferSize);
-									}
-								}
-							}
-
 							for (i = 0; i < numComponents; i++)
 							{
 								ComponentDefinition *componentDefinition =
 									calloc(1, sizeof(ComponentDefinition));
-
-								if (!loadData)
-								{
-									freeComponentDefinition(
-										componentDefinition);
-									free(componentDefinition);
-
-									componentDefinition =
-										&(*scene)->componentDefinitions[
-										((*scene)->numComponentDefinitions)++];
-								}
 
 								componentDefinition->name = readString(file);
 
@@ -291,7 +236,8 @@ int32 loadSceneEntities(
 									ComponentValueDefinition *componentValueDefinition =
 										&componentDefinition->values[j];
 
-									componentValueDefinition->name = readString(file);
+									componentValueDefinition->name =
+										readString(file);
 
 									int8 dataType;
 									fread(
@@ -326,7 +272,44 @@ int32 loadSceneEntities(
 								void *data = malloc(componentDefinition->size);
 								fread(data, componentDefinition->size, 1, file);
 
-								if (loadData)
+								if (!loadData)
+								{
+									UUID componentID =
+										idFromName(componentDefinition->name);
+
+									bool duplicate = false;
+									for (HashMapIterator itr =
+										hashMapGetIterator
+											((*scene)->componentDefinitions);
+										!hashMapIteratorAtEnd(itr);
+										hashMapMoveIterator(&itr))
+									{
+										UUID componentUUID =
+											*(UUID*)hashMapIteratorGetKey(itr);
+
+										if (!strcmp(
+											componentUUID.string,
+											componentID.string))
+										{
+											duplicate = true;
+											break;
+										}
+									}
+
+									if (!duplicate)
+									{
+										hashMapInsert(
+											(*scene)->componentDefinitions,
+											&componentID,
+											componentDefinition);
+									}
+									else
+									{
+										freeComponentDefinition(
+											componentDefinition);
+									}
+								}
+								else
 								{
 									sceneAddComponentToEntity(
 										*scene,
@@ -336,9 +319,9 @@ int32 loadSceneEntities(
 
 									freeComponentDefinition(
 										componentDefinition);
-									free(componentDefinition);
 								}
 
+								free(componentDefinition);
 								free(data);
 							}
 
@@ -372,50 +355,6 @@ int32 loadSceneEntities(
 	}
 
 	return error;
-}
-
-internal void removeDuplicateComponentDefinitions(Scene **scene)
-{
-	uint32 numUniqueComponentDefinitions = 0;
-	ComponentDefinition *uniqueComponentDefinitions = calloc(
-		(*scene)->numComponentDefinitions,
-		sizeof(ComponentDefinition));
-
-	for (uint32 i = 0; i < (*scene)->numComponentDefinitions; i++)
-	{
-		ComponentDefinition *componentDefinition =
-			&(*scene)->componentDefinitions[i];
-
-		bool unique = true;
-		for (uint32 j = 0; j < numUniqueComponentDefinitions; j++)
-		{
-			if (!strcmp(
-				componentDefinition->name,
-				uniqueComponentDefinitions[j].name))
-			{
-				unique = false;
-				break;
-			}
-		}
-
-		if (unique)
-		{
-			copyComponentDefinition(
-				&uniqueComponentDefinitions[
-					numUniqueComponentDefinitions++],
-				componentDefinition);
-		}
-
-		freeComponentDefinition(componentDefinition);
-	}
-
-	free((*scene)->componentDefinitions);
-	uniqueComponentDefinitions = realloc(
-		uniqueComponentDefinitions,
-		numUniqueComponentDefinitions * sizeof(ComponentDefinition));
-
-	(*scene)->componentDefinitions = uniqueComponentDefinitions;
-	(*scene)->numComponentDefinitions = numUniqueComponentDefinitions;
 }
 
 int32 loadSceneFile(const char *name, Scene **scene)
@@ -614,8 +553,6 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			fclose(file);
 			return -1;
 		}
-
-		removeDuplicateComponentDefinitions(scene);
 
 		for (i = 0; i < numComponentLimits; i++)
 		{
@@ -865,24 +802,25 @@ void freeScene(Scene **scene)
 		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
 	}
 
+	for (HashMapIterator itr =
+		hashMapGetIterator((*scene)->componentDefinitions);
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
+	{
+		freeComponentDefinition(
+			(ComponentDefinition*)hashMapIteratorGetValue(itr));
+	}
+
 	freeHashMap(&(*scene)->entities);
 	freeHashMap(&(*scene)->componentTypes);
+	freeHashMap(&(*scene)->componentDefinitions);
 
-	uint32 i;
-
-	for (i = 0; i < (*scene)->numComponentLimitNames; i++)
+	for (uint32 i = 0; i < (*scene)->numComponentLimitNames; i++)
 	{
 		free((*scene)->componentLimitNames[i]);
 	}
 
 	free((*scene)->componentLimitNames);
-
-	for (i = 0; i < (*scene)->numComponentDefinitions; i++)
-	{
-		freeComponentDefinition(&(*scene)->componentDefinitions[i]);
-	}
-
-	free((*scene)->componentDefinitions);
 
 	printf("Successfully unloaded scene (%s)\n", (*scene)->name);
 	free((*scene)->name);
@@ -995,40 +933,19 @@ ComponentDefinition getComponentDefinition(
 	const Scene *scene,
 	UUID name)
 {
-	ComponentDefinition componentDefinition;
-	memset(&componentDefinition, 0, sizeof(ComponentDefinition));
+	ComponentDefinition *componentDefinition =
+		(ComponentDefinition*)hashMapGetKey(
+			scene->componentDefinitions,
+			&name);
 
-	for (uint32 i = 0; i < scene->numComponentDefinitions; i++)
+	if (componentDefinition)
 	{
-		if (!strcmp(scene->componentDefinitions[i].name, name.string))
-		{
-			return scene->componentDefinitions[i];
-		}
+		return *componentDefinition;
 	}
 
-	return componentDefinition;
-}
-
-void copyComponentDefinition(
-	ComponentDefinition *dest,
-	ComponentDefinition *src)
-{
-	dest->name = malloc(strlen(src->name) + 1);
-	strcpy(dest->name, src->name);
-
-	dest->size = src->size;
-	dest->numValues = src->numValues;
-
-	dest->values = malloc(src->numValues * sizeof(ComponentValueDefinition));
-	for (uint32 i = 0; i < src->numValues; i++)
-	{
-		dest->values[i].name = malloc(strlen(src->values[i].name) + 1);
-		strcpy(dest->values[i].name, src->values[i].name);
-
-		dest->values[i].type = src->values[i].type;
-		dest->values[i].maxStringSize = src->values[i].maxStringSize;
-		dest->values[i].count = src->values[i].count;
-	}
+	ComponentDefinition blankComponentDefinition;
+	memset(&blankComponentDefinition, 0, sizeof(ComponentDefinition));
+	return blankComponentDefinition;
 }
 
 void freeComponentDefinition(ComponentDefinition *componentDefinition)

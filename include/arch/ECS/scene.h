@@ -7,6 +7,7 @@
 
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
+#define COMPONENT_DEFINITION_BUCKETS 97
 
 #define RUNTIME_STATE_DIR "resources/.runtime-state"
 
@@ -23,9 +24,6 @@ int32 shutdownScene(Scene **scene);
 int32 deactivateScene(Scene **scene);
 
 ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
-void copyComponentDefinition(
-	ComponentDefinition *dest,
-	ComponentDefinition *src);
 void freeComponentDefinition(ComponentDefinition *componentDefinition);
 
 uint32 getDataTypeSize(DataType type);

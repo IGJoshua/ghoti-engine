@@ -77,9 +77,8 @@ typedef struct scene_t
 	List luaRenderFrameSystemNames;
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
-	uint32 numComponentDefinitions;
-	uint32 componentDefinitionsCapacity;
-	ComponentDefinition *componentDefinitions;
+	// Maps component UUIDs to component definitions
+	HashMap componentDefinitions;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
