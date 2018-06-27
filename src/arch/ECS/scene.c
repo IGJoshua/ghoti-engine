@@ -582,50 +582,45 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 	free(sceneFilename);
 
-	ComponentDataTable *modelComponents = NULL;
-	for (HashMapIterator componentsItr = hashMapGetIterator(
-			(*scene)->componentTypes);
-		!hashMapIteratorAtEnd(componentsItr);
-		hashMapMoveIterator(&componentsItr))
-	{
-		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
-		if (!strcmp(componentID->string, "model"))
-		{
-			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
-				componentsItr);
-			break;
-		}
-	}
+	UUID componentUUID = idFromName("model");
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+		(*scene)->componentTypes, &componentUUID);
+
+	if (modelComponents)
 	{
-		for (ListIterator listItr = listGetIterator(
-				(List*)hashMapIteratorGetValue(itr));
-			!listIteratorAtEnd(listItr);
-			listMoveIterator(&listItr))
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
 		{
-			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
-			if (!strcmp(componentID->string, "model"))
+			for (ListIterator listItr = listGetIterator(
+					(List*)hashMapIteratorGetValue(itr));
+				!listIteratorAtEnd(listItr);
+				listMoveIterator(&listItr))
 			{
-				ModelComponent *modelComponent =
-					(ModelComponent*)cdtGet(
-						modelComponents,
-						*(UUID*)hashMapIteratorGetKey(itr));
-
-				if (loadModel(modelComponent->name) == -1)
+				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(
+					UUID,
+					listItr);
+				if (!strcmp(componentID->string, "model"))
 				{
-					error = -1;
-				}
+					ModelComponent *modelComponent =
+						(ModelComponent*)cdtGet(
+							*modelComponents,
+							*(UUID*)hashMapIteratorGetKey(itr));
 
+					if (loadModel(modelComponent->name) == -1)
+					{
+						error = -1;
+					}
+
+					break;
+				}
+			}
+
+			if (error == -1)
+			{
 				break;
 			}
-		}
-
-		if (error == -1)
-		{
-			break;
 		}
 	}
 
@@ -742,44 +737,37 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
-	ComponentDataTable *modelComponents = NULL;
-	for (HashMapIterator componentsItr = hashMapGetIterator(
-			(*scene)->componentTypes);
-		!hashMapIteratorAtEnd(componentsItr);
-		hashMapMoveIterator(&componentsItr))
-	{
-		UUID *componentID = (UUID*)hashMapIteratorGetKey(componentsItr);
-		if (!strcmp(componentID->string, "model"))
-		{
-			modelComponents = *(ComponentDataTable**)hashMapIteratorGetValue(
-				componentsItr);
-			break;
-		}
-	}
+	UUID componentUUID = idFromName("model");
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+		(*scene)->componentTypes, &componentUUID);
+
+	if (modelComponents)
 	{
-		for (ListIterator listItr = listGetIterator(
-				(List*)hashMapIteratorGetValue(itr));
-			!listIteratorAtEnd(listItr);
-			listMoveIterator(&listItr))
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
 		{
-			UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
-			if (!strcmp(componentID->string, "model"))
+			for (ListIterator listItr = listGetIterator(
+					(List*)hashMapIteratorGetValue(itr));
+				!listIteratorAtEnd(listItr);
+				listMoveIterator(&listItr))
 			{
-				ModelComponent *modelComponent =
-					(ModelComponent*)cdtGet(
-						modelComponents,
-						*(UUID*)hashMapIteratorGetKey(itr));
+				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(UUID, listItr);
+				if (!strcmp(componentID->string, "model"))
+				{
+					ModelComponent *modelComponent =
+						(ModelComponent*)cdtGet(
+							*modelComponents,
+							*(UUID*)hashMapIteratorGetKey(itr));
 
-				freeModel(modelComponent->name);
-				break;
+					freeModel(modelComponent->name);
+					break;
+				}
 			}
-		}
 
-		sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+			sceneRemoveEntity(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+		}
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
