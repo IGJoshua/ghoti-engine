@@ -24,7 +24,7 @@ Scene *createScene(void);
 ## int32 loadScene
 Loads a scene by name
 ```c
-int32 loadScene(const char *name, Scene **scene);
+int32 loadScene(const char *name);
 ```
 
 ## void freeScene
@@ -73,7 +73,7 @@ void *sceneGetComponentFromEntity(
   UUID componentType);
 ```
 ## void sceneAddComponentType
-Adds a component type to the scene. 
+Adds a component type to the scene.
 ```c
 void sceneAddComponentType(
   Scene *scene,

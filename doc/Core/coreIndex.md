@@ -4,4 +4,4 @@
 ## [List of Components](ECS/ecsComponents.md)
 # [Input](input.md)
 # [Saving](saving.md)
-# [Scene loading](sceneLoading.md)
+# [Scenes](sceneLoading.md)
