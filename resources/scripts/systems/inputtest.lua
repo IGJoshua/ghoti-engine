@@ -20,7 +20,6 @@ function system.init(scene)
   input:register("switch_to_cool_thing", input.BUTTON(keyboard.C))
   input:register("switch_to_cool_scene", input.BUTTON(keyboard.V))
   input:register("save", input.BUTTON(keyboard.S))
-  input:register("load_save", input.BUTTON(keyboard.Z))
 end
 
 function system.begin(scene, dt)
@@ -78,10 +77,6 @@ function system.begin(scene, dt)
 
   if input.save.updated and input.save.keydown then
 	C.exportSave(nil, 0, 2)
-  end
-
-  if input.load_save.updated and input.load_save.keydown then
-	C.loadSave(2, nil)
   end
 end
 

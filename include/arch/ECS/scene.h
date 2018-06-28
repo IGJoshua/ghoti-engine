@@ -21,7 +21,7 @@ int32 reloadScene(const char *name);
 int32 reloadAllScenes(void);
 int32 unloadScene(const char *name);
 int32 shutdownScene(Scene **scene);
-int32 deactivateScene(Scene **scene);
+int32 deactivateScene(Scene *scene);
 
 ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
 void freeComponentDefinition(ComponentDefinition *componentDefinition);

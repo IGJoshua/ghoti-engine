@@ -168,8 +168,14 @@ int32 main()
 						strcpy(name, (*scene)->name);
 					}
 
+					if (deactivateScene(*scene))
+					{
+						continue;
+					}
+
 					shutdownScene(scene);
 					freeScene(scene);
+					listRemove(&unloadedScenes, &i);
 
 					if (reloadingScene)
 					{
@@ -179,7 +185,6 @@ int32 main()
 						reloadingScene = false;
 					}
 				}
-				listClear(&unloadedScenes);
 
 				changeScene = false;
 			}

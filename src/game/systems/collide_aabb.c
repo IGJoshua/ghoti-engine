@@ -63,22 +63,26 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 			// Check for collision
 			otherAABBComponent = cdtIteratorGetData(itr);
 
-			// On a collision, create a new hit entity and push it to the front of the list
+			// On a collision, create a new hit entity and
+			// push it to the front of the list
 			bool collided = 1;
 
-			if (fabsf(transform->globalPosition.x - otherTransform->globalPosition.x)
+			if (fabsf(transform->globalPosition.x
+					  - otherTransform->globalPosition.x)
 				> thisAABBComponent->bounds.x * transform->globalScale.x
 				+ otherAABBComponent->bounds.x * otherTransform->globalScale.x)
 			{
 				collided = 0;
 			}
-			if (fabsf(transform->globalPosition.y - otherTransform->globalPosition.y)
+			if (fabsf(transform->globalPosition.y
+					  - otherTransform->globalPosition.y)
 				> thisAABBComponent->bounds.y * transform->globalScale.y
 				+ otherAABBComponent->bounds.y * otherTransform->globalScale.y)
 			{
 				collided = 0;
 			}
-			if (fabsf(transform->globalPosition.z - otherTransform->globalPosition.z)
+			if (fabsf(transform->globalPosition.z
+					  - otherTransform->globalPosition.z)
 				> thisAABBComponent->bounds.z * transform->globalScale.z
 				+ otherAABBComponent->bounds.z * otherTransform->globalScale.z)
 			{
@@ -91,7 +95,11 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 				HitInformationComponent hitInformationComponent = {};
 				hitInformationComponent.otherObject = *cdtIteratorGetUUID(itr);
 				hitInformationComponent.nextHit = collision->hitList;
-				if (sceneAddComponentToEntity(scene, hitInformation, hitInformationComponentID, &hitInformationComponent))
+				if (sceneAddComponentToEntity(
+						scene,
+						hitInformation,
+						hitInformationComponentID,
+						&hitInformationComponent))
 				{
 					sceneRemoveEntity(scene, hitInformation);
 					return;
