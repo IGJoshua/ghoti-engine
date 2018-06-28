@@ -71,6 +71,7 @@ typedef struct scene_t
 	// Maps entity UUIDs to lists of component UUIDs
 	HashMap entities;
 	UUID mainCamera;
+	UUID player;
 	List physicsFrameSystems;
 	List renderFrameSystems;
 	List luaPhysicsFrameSystemNames;
