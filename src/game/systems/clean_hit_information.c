@@ -17,6 +17,12 @@ internal UUID emptyID = {};
 internal
 void runCleanHitInformationSystem(Scene *scene, UUID entityID, real64 dt)
 {
+	// NOTE(Joshua): This is somehow causing memory leaks
+	//               but only when things stop colliding. Notably
+	//               this memory is leaked from objects with on
+	//               average 4 components (the scene which is leaking
+	//               has only objects with 2 and 6 components)
+
 	CollisionComponent *collision = sceneGetComponentFromEntity(
 		scene,
 		entityID,
