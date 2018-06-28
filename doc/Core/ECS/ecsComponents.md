@@ -1,7 +1,7 @@
 ### [Table of Contents](../../main.md) -> [Core Engine](../coreIndex.md) -> [Entity Component System](ecsMain.md) -> List of Components
 
 # List of Component Types
-
+<head>
 <style>
     th#t01 {
         width: 15%;
@@ -16,6 +16,8 @@
     }
 
 </style>
+</head>
+
 <table>
     <tr>
         <th id="t01">Component
