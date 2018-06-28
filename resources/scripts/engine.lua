@@ -78,7 +78,6 @@ for line in systemsFile:lines() do
   engine.systems[systemName] = system
 end
 
-
 function engine.initScene(pScene)
   local scene = Scene:new(pScene)
 

@@ -769,12 +769,11 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->renderFrameSystems);
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
 		sceneRemoveEntityComponents(*scene, entity);
-		hashMapDeleteAtIterator(&itr);
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
@@ -782,7 +781,6 @@ void freeScene(Scene **scene)
 		 hashMapMoveIterator(&itr))
 	{
 		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
-		hashMapDeleteAtIterator(&itr);
 	}
 
 	for (HashMapIterator itr =
@@ -792,7 +790,6 @@ void freeScene(Scene **scene)
 	{
 		freeComponentDefinition(
 			(ComponentDefinition*)hashMapIteratorGetValue(itr));
-		hashMapDeleteAtIterator(&itr);
 	}
 
 	freeHashMap(&(*scene)->entities);
@@ -852,47 +849,64 @@ int32 loadScene(const char *name)
 
 int32 reloadScene(const char *name)
 {
-	reloadingScene = true;
+	int32 error = unloadScene(name);
 
-	if (unloadScene(name) == -1)
+	if (!error)
 	{
-		reloadingScene = false;
-		return -1;
+		reloadingScene = true;
+		return 0;
 	}
 
-	return 0;
+	return error;
 }
 
 int32 reloadAllScenes(void)
 {
-	reloadingScene = true;
+	int32 error = 0;
 
 	for (ListIterator itr = listGetIterator(&activeScenes);
-		!listIteratorAtEnd(itr);
-		listMoveIterator(&itr))
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
-		if (unloadScene(scene->name) == -1)
+		error = reloadScene((*LIST_ITERATOR_GET_ELEMENT(Scene*, itr))->name);
+
+		if (error)
 		{
-			reloadingScene = false;
-			return -1;
+			break;
 		}
 	}
 
-	return 0;
+	if (!error)
+	{
+		reloadingScene = true;
+	}
+
+	return error;
+}
+
+internal
+bool isSceneUnloaded(const char *name)
+{
+	for (ListIterator itr = listGetIterator(&unloadedScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		if (!strcmp(name, scene->name))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 int32 unloadScene(const char *name)
 {
 	Scene *scene = getScene(name);
 
-	if (scene)
+	if (scene && !isSceneUnloaded(name))
 	{
-		if (deactivateScene(&scene) == -1)
-		{
-			return -1;
-		}
-
 		changeScene = true;
 		listPushFront(&unloadedScenes, &scene);
 
@@ -910,14 +924,14 @@ int32 shutdownScene(Scene **scene)
 	return 0;
 }
 
-int32 deactivateScene(Scene **scene)
+int32 deactivateScene(Scene *scene)
 {
 	for (ListIterator itr = listGetIterator(&activeScenes);
 		!listIteratorAtEnd(itr);
 		listMoveIterator(&itr))
 	{
 		Scene *activeScene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
-		if (activeScene == *scene)
+		if (activeScene == scene)
 		{
 			listRemove(&activeScenes, &itr);
 			return 0;
