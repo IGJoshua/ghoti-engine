@@ -2,7 +2,7 @@
 
 # List of Component Types
 
-<style color=FFFFFF>
+<style color=#FFFFFF>
     th#t01 {
         width: 15%;
     }
