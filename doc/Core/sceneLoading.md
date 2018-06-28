@@ -1,4 +1,4 @@
-### [Table of Contents](../main.md) -> [Core Engine](core.md) -> Scenes
+### [Table of Contents](../main.md) -> [Core Engine](coreIndex.md) -> Scenes
 
 # Scenes
 
