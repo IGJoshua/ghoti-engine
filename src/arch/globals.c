@@ -8,7 +8,7 @@
 
 #include <luajit-2.0/lua.h>
 
-// NOTE(Joshua): Rendering globals
+// NOTE(Joshua): Asset Management globals
 
 Model *models;
 uint32 numModels = 0;
@@ -18,23 +18,13 @@ Texture *textures;
 uint32 numTextures = 0;
 uint32 texturesCapacity = 0;
 
-Shader vertShader;
-Shader fragShader;
-
-ShaderPipeline pipeline;
-
-Uniform modelUniform;
-Uniform viewUniform;
-Uniform projectionUniform;
-
-Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
-
-bool rendererActive;
-
 // NOTE(Joshua): Globals for ECS
 
 // Lua
 lua_State *L;
+
+// Physics globals
+real64 alpha;
 
 // Maps from system names as UUIDs to System structures
 HashMap systemRegistry;
@@ -42,5 +32,6 @@ HashMap systemRegistry;
 // List of scene pointers which will have systems run on them
 List activeScenes;
 
-uint32 changeScene;
+bool changeScene;
+bool reloadingScene;
 List unloadedScenes;

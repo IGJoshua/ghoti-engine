@@ -27,7 +27,12 @@ typedef struct list_t
   ListNode *back;
 } List;
 
-typedef ListNode **ListIterator;
+typedef struct list_iterator_t
+{
+  ListNode *prev;
+  ListNode *curr;
+} ListIterator;
+
 
 ListIterator listGetIterator(List *l);
 void listMoveIterator(ListIterator *itr);
@@ -39,8 +44,8 @@ void listPushBack(List *l, void *data);
 void listPopFront(List *l);
 void listClear(List *l);
 
-void listRemove(List *l, ListIterator itr);
-void listInsert(List *l, ListIterator itr, void *data);
+void listRemove(List *l, ListIterator *itr);
+void listInsert(List *l, ListIterator *itr, void *data);
 
 typedef List HashMapBucket;
 
@@ -118,7 +123,8 @@ typedef struct scene_t
 	List luaRenderFrameSystemNames;
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
-	uint32 numComponentsDefinitions;
+	uint32 numComponentDefinitions;
+	uint32 componentDefinitionsCapacity;
 	ComponentDefinition *componentDefinitions;
 } Scene;
 
@@ -287,19 +293,21 @@ typedef enum glfw_mouse_button_e
   GLFW_MOUSE_BUTTON_8 = 7
 } GLFW_MOUSE_BUTTON;
 
-int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot);
-int32 loadSave(uint32 slot, Scene **scene);
+int32 exportSave(void *data, uint32 size, uint32 slot);
+int32 loadSave(uint32 slot, void **data);
 bool getSaveSlotAvailability(uint32 slot);
 int32 deleteSave(uint32 slot);
 
-int32 luaLoadScene(const char *name, Scene **scene);
-int32 shutdownScene(Scene **scene);
-
-void freeScene(Scene **scene);
+int32 loadScene(const char *name);
+int32 reloadScene(const char *name);
+int32 reloadAllScenes(void);
+int32 unloadScene(const char *name);
 
 List activeScenes;
 uint32 changeScene;
 List unloadedScenes;
+
+int32 strcmp(const char *str1, const char *str2);
 ]]
 
 local kazmath = require("resources/scripts/cdefs/kazmath")

@@ -10,6 +10,13 @@
 
 #include <string.h>
 
+System createRendererSystem(void);
+System createCleanGlobalTransformsSystem(void);
+System createApplyParentTransformsSystem(void);
+System createCollideAABBSystem(void);
+System createRenderAABBSystem(void);
+System createCleanHitInformationSystem(void);
+
 extern HashMap systemRegistry;
 
 void initSystems(void)
@@ -25,6 +32,26 @@ void initSystems(void)
 	System renderer = createRendererSystem();
 	key = idFromName("renderer");
 	hashMapInsert(systemRegistry, &key, &renderer);
+
+	System cleanGlobalTransforms = createCleanGlobalTransformsSystem();
+	key = idFromName("clean_global_transforms");
+	hashMapInsert(systemRegistry, &key, &cleanGlobalTransforms);
+
+	System applyParentTransforms = createApplyParentTransformsSystem();
+	key = idFromName("apply_parent_transforms");
+	hashMapInsert(systemRegistry, &key, &applyParentTransforms);
+
+	System collideAABB = createCollideAABBSystem();
+	key = idFromName("collide_aabb");
+	hashMapInsert(systemRegistry, &key, &collideAABB);
+
+	System renderAABB = createRenderAABBSystem();
+	key = idFromName("render_aabb");
+	hashMapInsert(systemRegistry, &key, &renderAABB);
+
+	System cleanHitInformation = createCleanHitInformationSystem();
+	key = idFromName("clean_hit_information");
+	hashMapInsert(systemRegistry, &key, &cleanHitInformation);
 }
 
 void freeSystems(void)

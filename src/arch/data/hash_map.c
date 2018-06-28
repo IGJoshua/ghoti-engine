@@ -99,9 +99,12 @@ void *hashMapGetKey(HashMap map, void *key)
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
+		if (!map->comparison(
+				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+				key))
 		{
-			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data + map->keySizeBytes;
+			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
+				+ map->keySizeBytes;
 		}
 	}
 
@@ -119,7 +122,7 @@ void hashMapPopKey(HashMap map, void *key)
 	{
 		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
 		{
-			listRemove(&map->buckets[bucketIndex], itr);
+			listRemove(&map->buckets[bucketIndex], &itr);
 			break;
 		}
 	}
@@ -135,7 +138,7 @@ void hashMapDeleteKey(HashMap map, void *key)
 	{
 		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
 		{
-			listRemove(&map->buckets[bucketIndex], itr);
+			listRemove(&map->buckets[bucketIndex], &itr);
 		}
 		else
 		{
@@ -195,20 +198,17 @@ void hashMapMoveIterator(HashMapIterator *itr)
 	 * If the iterator has to go to the next bucket,
 	 * find the next non-empty bucket
 	 */
-	if (listIteratorAtEnd(itr->itr))
+	while (listIteratorAtEnd(itr->itr))
 	{
-		while (listIteratorAtEnd(itr->itr))
+		// move the iterator if the iterator is at a valid bucket index
+		if (++itr->bucket < itr->map->bucketCount)
 		{
-			// move the iterator if the iterator is at a valid bucket index
-			if (++itr->bucket < itr->map->bucketCount)
-			{
-				itr->itr = listGetIterator(&itr->map->buckets[itr->bucket]);
-			}
-			// break the loop if the iterator is past the end of the hashmap
-			else
-			{
-				break;
-			}
+			itr->itr = listGetIterator(&itr->map->buckets[itr->bucket]);
+		}
+		// break the loop if the iterator is past the end of the hashmap
+		else
+		{
+			break;
 		}
 	}
 }
@@ -229,4 +229,29 @@ inline
 void *hashMapIteratorGetValue(HashMapIterator itr)
 {
 	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data + itr.map->keySizeBytes;
+}
+
+void hashMapDeleteAtIterator(HashMapIterator *itr)
+{
+	ASSERT(false && "Hash map delete iterator not yet implemented.");
+
+	listRemove(&itr->map->buckets[itr->bucket], &itr->itr);
+
+	/*
+	 * If the iterator has to go to the next bucket,
+	 * find the next non-empty bucket
+	 */
+	while (listIteratorAtEnd(itr->itr))
+	{
+		// move the iterator if the iterator is at a valid bucket index
+		if (++itr->bucket < itr->map->bucketCount)
+		{
+			itr->itr = listGetIterator(&itr->map->buckets[itr->bucket]);
+		}
+		// break the loop if the iterator is past the end of the hashmap
+		else
+		{
+			break;
+		}
+	}
 }

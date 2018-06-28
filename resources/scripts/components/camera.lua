@@ -8,10 +8,10 @@ typedef enum camera_projection_type_e
 
 typedef struct camera_component_t
 {
-  float nearPlane;
-  float farPlane;
-  float aspectRatio;
-  float fov;
+  real32 nearPlane;
+  real32 farPlane;
+  real32 aspectRatio;
+  real32 fov;
   CameraProjectionType projectionType;
 } CameraComponent;
 ]]

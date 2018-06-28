@@ -29,7 +29,7 @@ int32 loadTexture(const char *name)
 		ilGenImages(1, &devilID);
 		ilBindImage(devilID);
 
-		char *filename = getFullFilePath(name, "png", "resources/textures");
+		char *filename = getFullFilePath(name, NULL, "resources/textures");
 		ilLoadImage(filename);
 
 		ILenum ilError = ilGetError();
@@ -135,7 +135,7 @@ void increaseTexturesCapacity(uint32 amount)
 
 Texture* getTexture(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numTextures; i++)
 		{
@@ -151,7 +151,7 @@ Texture* getTexture(const char *name)
 
 uint32 getTextureIndex(const char *name)
 {
-	if (name)
+	if (name && strlen(name) > 0)
 	{
 		for (uint32 i = 0; i < numTextures; i++)
 		{
@@ -173,7 +173,7 @@ int32 freeTexture(const char *name)
 
 	if (!texture)
 	{
-		printf("Could not find texture\n");
+		printf("Could not find texture (%s)\n", name);
 		return -1;
 	}
 

@@ -7,21 +7,23 @@
 
 #define COMPONENT_TYPE_BUCKETS 97
 #define ENTITY_BUCKETS 97
+#define COMPONENT_DEFINITION_BUCKETS 97
 
 #define RUNTIME_STATE_DIR "resources/.runtime-state"
 
 Scene *createScene(void);
-int32 loadScene(const char *name, Scene **scene);
-int32 loadSceneEntities(Scene **scene, const char *name, bool loadData);
+int32 loadSceneFile(const char *name, Scene **scene);
+Scene *getScene(const char *name);
 void freeScene(Scene **scene);
 
-int32 luaLoadScene(const char *name, Scene **scene);
+int32 loadScene(const char *name);
+int32 reloadScene(const char *name);
+int32 reloadAllScenes(void);
+int32 unloadScene(const char *name);
 int32 shutdownScene(Scene **scene);
+int32 deactivateScene(Scene *scene);
 
 ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
-void copyComponentDefinition(
-	ComponentDefinition *dest,
-	ComponentDefinition *src);
 void freeComponentDefinition(ComponentDefinition *componentDefinition);
 
 uint32 getDataTypeSize(DataType type);
@@ -65,8 +67,9 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID);
 void sceneRegisterEntity(Scene *s, UUID newEntity);
 UUID sceneCreateEntity(Scene *s);
 void sceneRemoveEntity(Scene *s, UUID entity);
+void sceneRemoveEntityComponents(Scene *s, UUID entity);
 
-void sceneAddComponentToEntity(
+int32 sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType,

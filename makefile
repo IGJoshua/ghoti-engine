@@ -1,5 +1,5 @@
-PROJ = monochrome
-LIBNAME = monochrome
+PROJ = ghoti
+LIBNAME = ghoti
 
 IDIRS = include/arch include/game vendor
 
@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m assimp kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities
+_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -76,7 +76,7 @@ clean:
 run : build
 	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
-SUPPRESSIONS = monochrome.supp
+SUPPRESSIONS = $(PROJ).supp
 
 .PHONY: leakcheck
 
@@ -106,7 +106,7 @@ release : clean
 
 WINCC = x86_64-w64-mingw32-clang
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 assimp kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities
+_WINLIBS = glew32 glfw3dll opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
@@ -129,7 +129,6 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 	cp winlib/* $(BUILDDIR)/
-	cp $(BUILDDIR)/libassimp.dll $(BUILDDIR)/assimp.dll
 
 .PHONY: wine
 

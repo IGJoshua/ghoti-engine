@@ -19,8 +19,7 @@ char* getFullFilePath(
 	const char *folder);
 char* getExtension(const char *filename);
 char* removeExtension(const char *filename);
-void deleteFile(const char *filename, const char *folder);
-int32 deleteFolder(const char *folder);
+int32 deleteFolder(const char *folder, bool errors);
 void copyFile(const char *filename, const char *destination);
 int32 copyFolder(const char *folder, const char *destination);
 char* readString(FILE *file);
