@@ -35,3 +35,5 @@ List activeScenes;
 bool changeScene;
 bool reloadingScene;
 List unloadedScenes;
+bool loadingSave;
+List savedScenes;

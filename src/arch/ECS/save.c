@@ -15,6 +15,8 @@
 #include <dirent.h>
 
 extern List activeScenes;
+extern bool loadingSave;
+extern List savedScenes;
 
 int32 exportSave(void *data, uint32 size, uint32 slot)
 {
@@ -24,6 +26,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 	printf("Exporting save file (%s)...\n", saveName);
 
 	char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
+	deleteFolder(saveFolder, false);
 	MKDIR(saveFolder);
 
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
@@ -221,12 +224,9 @@ int32 loadSave(uint32 slot, void **data)
 								NULL,
 								RUNTIME_STATE_DIR);
 
-							if (copyFolder(
+							error = copyFolder(
 								folderPath,
-								destinationFolderPath) == -1)
-							{
-								error = -1;
-							}
+								destinationFolderPath);
 
 							free(destinationFolderPath);
 
@@ -253,11 +253,14 @@ int32 loadSave(uint32 slot, void **data)
 
 			if (error != -1)
 			{
-				loadScene(sceneName);
+				listPushBack(&savedScenes, &sceneName);
+			}
+			else
+			{
+				free(sceneName);
 			}
 
 			free(sceneFolder);
-			free(sceneName);
 		}
 
 		uint32 size;
@@ -279,6 +282,7 @@ int32 loadSave(uint32 slot, void **data)
 
 	if (error != -1)
 	{
+		loadingSave = true;
 		printf("Successfully loaded save file (%s)\n", saveName);
 	}
 

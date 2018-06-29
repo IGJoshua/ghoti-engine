@@ -35,6 +35,8 @@ extern List activeScenes;
 extern bool changeScene;
 extern bool reloadingScene;
 extern List unloadedScenes;
+extern bool loadingSave;
+extern List savedScenes;
 
 int32 main()
 {
@@ -56,6 +58,7 @@ int32 main()
 
 	activeScenes = createList(sizeof(Scene *));
 	unloadedScenes = createList(sizeof(Scene *));
+	savedScenes = createList(sizeof(char*));
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
@@ -153,7 +156,41 @@ int32 main()
 				}
 			}
 
-			if (changeScene)
+			if (loadingSave)
+			{
+				bool isReloadingScene = reloadingScene;
+
+				for (ListIterator i = listGetIterator(&activeScenes);
+					 !listIteratorAtEnd(i);
+					 listMoveIterator(&i))
+				{
+					Scene **scene = LIST_ITERATOR_GET_ELEMENT(Scene*, i);
+
+					shutdownScene(scene);
+
+					reloadingScene = true;
+					freeScene(scene);
+					reloadingScene = false;
+				}
+
+				listClear(&activeScenes);
+
+				reloadingScene = isReloadingScene;
+
+				for (ListIterator i = listGetIterator(&savedScenes);
+					 !listIteratorAtEnd(i);
+					 listMoveIterator(&i))
+				{
+					char *name = *LIST_ITERATOR_GET_ELEMENT(char*, i);
+					loadScene(name);
+					free(name);
+				}
+
+				listClear(&savedScenes);
+
+				loadingSave = false;
+			}
+			else if (changeScene)
 			{
 				for (ListIterator i = listGetIterator(&unloadedScenes);
 					 !listIteratorAtEnd(i);
