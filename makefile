@@ -67,7 +67,8 @@ clean:
 	rm -rf release
 	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
 	rm -f $(LIBNAME).{so,dll}
-	mkdir -p {$(BUILDDIR),$(OBJDIR),$(ARCHOBJDIR),$(GAMEOBJDIR)}
+	mkdir -p $(ARCHOBJDIR)
+	mkdir -p $(GAMEOBJDIR)
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 
