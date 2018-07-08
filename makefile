@@ -20,12 +20,12 @@ LUALIBDIR = lualib
 _WINLIBDIRS = winlib
 WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 
-ARCHDIRS = $(foreach DIR,$(shell find $(ARCHDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir -p $(ARCHOBJDIR)/$(DIR) &&) :
-GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir -p $(GAMEOBJDIR)/$(DIR) &&) :
+ARCHDIRS = $(foreach DIR,$(shell find $(ARCHDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(ARCHOBJDIR)/$(DIR) &&) :
+GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(GAMEOBJDIR)/$(DIR) &&) :
 
 CC = clang
 CCDB = lldb
-CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
+CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR)) -fPIC
 DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
@@ -65,7 +65,7 @@ arch : $(LIBNAME).so
 
 clean:
 	rm -rf release
-	rm -rf {$(ARCHOBJDIR),$(GAMEOBJDIR),$(OBJDIR),$(BUILDDIR)}
+	rm -rf $(BUILDDIR)
 	rm -f $(LIBNAME).{so,dll}
 	mkdir -p $(ARCHOBJDIR)
 	mkdir -p $(GAMEOBJDIR)
@@ -106,6 +106,7 @@ release : clean
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
 WINCC = x86_64-w64-mingw32-clang
+WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
 _WINLIBS = glew32 glfw3dll opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
@@ -114,13 +115,13 @@ WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
 WINGAMEOBJ = $(patsubst %.o,%.obj,$(GAMEOBJ))
 
 $(ARCHOBJDIR)/%.obj : $(ARCHDIR)/%.c $(ARCHDEPS) $(VENDORDEPS)
-	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) -c -o $@ $<
+	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) -c -o $@ $<
 
 $(GAMEOBJDIR)/%.obj : $(GAMEDIR)/%.c $(GAMEDEPS) $(ARCHDEPS) $(VENDORDEPS)
-	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) -c -o $@ $<
+	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) -c -o $@ $<
 
 $(BUILDDIR)/$(LIBNAME).dll : $(WINARCHOBJ)
-	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(WINLIBS)
+	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(WINLIBS)
 
 $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 	ln -s $(BUILDDIR)/$(LIBNAME).dll $(LIBNAME).dll
@@ -128,7 +129,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 .PHONY: windows
 
 windows : $(WINGAMEOBJ) $(LIBNAME).dll
-	$(WINCC) $(CFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
+	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
 	cp winlib/* $(BUILDDIR)/
 
 .PHONY: wine
