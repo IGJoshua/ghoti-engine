@@ -108,7 +108,7 @@ release : clean
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3dll opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility
+_WINLIBS = glew32 glfw3 opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
@@ -124,7 +124,7 @@ $(BUILDDIR)/$(LIBNAME).dll : $(WINARCHOBJ)
 	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) $(SHAREDFLAGS) -o $@ $^ $(WINLIBS)
 
 $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
-	ln -s $(BUILDDIR)/$(LIBNAME).dll $(LIBNAME).dll
+	ln -sf $(BUILDDIR)/$(LIBNAME).dll $(LIBNAME).dll
 
 .PHONY: windows
 
