@@ -38,7 +38,11 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
+#ifdef _WIN32
+int32 WinMain()
+#else
 int32 main()
+#endif
 {
 	srand(time(0));
 

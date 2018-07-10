@@ -16,7 +16,7 @@ void errorCallback(
 	int error,
 	const char *description)
 {
-	fprintf(stderr, "Error code %d: %s\n", error, description);
+	printf("GLFW Error %d: %s\n", error, description);
 }
 
 GLFWwindow *initWindow(
