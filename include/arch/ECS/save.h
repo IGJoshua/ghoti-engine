@@ -3,6 +3,8 @@
 
 #include "ECS/ecs_types.h"
 
+#define SAVE_FOLDER "resources/saves"
+
 int32 exportSave(void *data, uint32 size, uint32 slot);
 int32 loadSave(uint32 slot, void **data);
 bool getSaveSlotAvailability(uint32 slot);

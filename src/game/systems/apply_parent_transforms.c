@@ -36,7 +36,10 @@ void applyParentTransform(Scene *scene, TransformComponent *outTransform)
 			&tempPos,
 			&outTransform->position,
 			&parentTransform->globalScale);
-		kmQuaternionMultiplyVec3(&tempPos, &parentTransform->globalRotation, &tempPos);
+		kmQuaternionMultiplyVec3(
+			&tempPos,
+			&parentTransform->globalRotation,
+			&tempPos);
 		kmVec3Add(
 			&outTransform->globalPosition,
 			&parentTransform->globalPosition,
@@ -52,7 +55,10 @@ void applyParentTransform(Scene *scene, TransformComponent *outTransform)
 			&tempScale,
 			&parentTransform->globalRotation,
 			&outTransform->scale);
-		kmVec3Mul(&outTransform->globalScale, &parentTransform->globalScale, &tempScale);
+		kmVec3Mul(
+			&outTransform->globalScale,
+			&parentTransform->globalScale,
+			&tempScale);
 	}
 	else
 	{
