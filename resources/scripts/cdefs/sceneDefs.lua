@@ -13,22 +13,18 @@ typedef struct scene_t
 	List luaRenderFrameSystemNames;
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
-	uint32 numComponentDefinitions;
-	uint32 componentDefinitionsCapacity;
-	ComponentDefinition *componentDefinitions;
+	HashMap componentDefinitions;
 } Scene;
 
 Scene *createScene(void);
 int32 loadScene(const char *name);
-void freeScene(Scene **scene);
-
-
 int32 reloadScene(const char *name);
 int32 reloadAllScenes(void);
 int32 unloadScene(const char *name);
 
 List activeScenes;
-uint32 changeScene;
+bool changeScene;
+bool reloadingScene;
 List unloadedScenes;
 
 void sceneRegisterEntity(Scene *s, UUID newEntity);

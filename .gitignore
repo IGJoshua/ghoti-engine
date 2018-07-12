@@ -17,6 +17,7 @@ resources/*
 # Editor specific files
 .dir-locals.el
 .clang_complete
+local-ghoti.supp
 GTAGS
 GRTAGS
 GPATH
