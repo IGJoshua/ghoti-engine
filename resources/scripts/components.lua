@@ -12,7 +12,7 @@ function components:register(n, t)
   t = string.format("%s *", t)
 
   function prototype:new(cdata)
-	return ffi.cast(t, cdata)
+    return ffi.cast(t, cdata)
   end
 
   return prototype

@@ -65,16 +65,6 @@ for line in systemsFile:lines() do
   local system = require(string.sub(line, 0, -5))
   local systemName = string.sub(line, 27, -5)
 
-  if system.init then
-    local err, message = pcall(system.init, scene)
-    if err == false then
-      io.write(string.format(
-                 "Error raised during physics init for system %s\n%s\n",
-                 line,
-                 message))
-    end
-  end
-
   engine.systems[systemName] = system
 end
 
@@ -99,6 +89,36 @@ function engine.initScene(pScene)
           component.numEntries)
       end
     end
+  end
+
+  local itr
+
+  if physics then
+    itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
+  else
+    itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
+  end
+
+  while C.listIteratorAtEnd(itr) == 0 do
+    local system = engine.systems[
+      ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
+
+    if not system then
+      error("Unable to load system, panic")
+    end
+
+    if system.init then
+      local err, message = pcall(system.init, scene)
+      if err == false then
+        io.write(string.format(
+                   "Error while initializing a system\n%s\n",
+                   message))
+      end
+    end
+
+    local itrRef = ffi.new("ListIterator[1]", itr)
+    C.listMoveIterator(itrRef)
+    itr = itrRef[0]
   end
 
   engine.scenes[pScene] = scene

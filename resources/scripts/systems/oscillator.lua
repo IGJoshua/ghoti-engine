@@ -25,13 +25,13 @@ function system.run(scene, uuid, dt)
   pos = ffi.new("kmVec3[1]")
 
   kazmath.kmVec3Scale(pos,
-					  oscillator.direction,
-					  oscillator.distance
-						* math.sin(oscillator.time * oscillator.speed))
+                      oscillator.direction,
+                      oscillator.distance
+                        * math.sin(oscillator.time * oscillator.speed))
 
   kazmath.kmVec3Add(transform.position,
-					pos,
-					oscillator.position)
+                    pos,
+                    oscillator.position)
 
   transform:markDirty(scene)
 end
