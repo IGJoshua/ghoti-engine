@@ -71,26 +71,6 @@ end
 function engine.initScene(pScene)
   local scene = Scene:new(pScene)
 
-  -- Register all lua components into the scene
-  for name, component in pairs(engine.components) do
-    -- If the component does not exist in the scene
-    if type(component) == 'table' then
-      if C.hashMapGetKey(scene.ptr.componentTypes, C.idFromName(name))
-      == ffi.cast("ComponentDataTable **", 0) then
-        -- Register the component
-        io.write(string.format(
-                   "The component %s is being registered with %d entries\n",
-                   name,
-                   component.numEntries))
-        C.sceneAddComponentType(
-          scene.ptr,
-          C.idFromName(name),
-          ffi.sizeof(component.type),
-          component.numEntries)
-      end
-    end
-  end
-
   local itr
   local physics = true
 
