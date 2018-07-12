@@ -25,7 +25,9 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 
 	printf("Exporting save file (%s)...\n", saveName);
 
-	char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
+	MKDIR(SAVE_FOLDER);
+
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	deleteFolder(saveFolder, false);
 	MKDIR(saveFolder);
 
@@ -181,7 +183,7 @@ int32 loadSave(uint32 slot, void **data)
 
 	printf("Loading save file (%s)...\n", saveName);
 
-	char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
 
 	FILE *file = fopen(saveFilename, "rb");
@@ -297,7 +299,7 @@ bool getSaveSlotAvailability(uint32 slot)
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
-	char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	free(saveName);
 
     struct stat info;
@@ -328,7 +330,7 @@ int32 deleteSave(uint32 slot)
 
 	if (error != -1)
 	{
-		char *saveFolder = getFullFilePath(saveName, NULL, "resources/saves");
+		char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 
 		error = deleteFolder(saveFolder, true);
 		free(saveFolder);

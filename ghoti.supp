@@ -79,7 +79,7 @@
    fun:main
 }
 {
-   SDL_INIT
+   SDL_INIT_CONTROLLER
    Memcheck:Leak
    match-leak-kinds: definite
    fun:malloc
