@@ -92,33 +92,37 @@ function engine.initScene(pScene)
   end
 
   local itr
+  local physics = true
 
-  if physics then
-    itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
-  else
-    itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
-  end
-
-  while C.listIteratorAtEnd(itr) == 0 do
-    local system = engine.systems[
-      ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
-
-    if not system then
-      error("Unable to load system, panic")
+  for _=1,2 do
+    if physics then
+      itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
+      physics = false
+    else
+      itr = C.listGetIterator(scene.ptr.luaRenderFrameSystemNames)
     end
 
-    if system.init then
-      local err, message = pcall(system.init, scene)
-      if err == false then
-        io.write(string.format(
-                   "Error while initializing a system\n%s\n",
-                   message))
+    while C.listIteratorAtEnd(itr) == 0 do
+      local system = engine.systems[
+        ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
+
+      if not system then
+        error("Unable to load system, panic")
       end
-    end
 
-    local itrRef = ffi.new("ListIterator[1]", itr)
-    C.listMoveIterator(itrRef)
-    itr = itrRef[0]
+      if system.init then
+        local err, message = pcall(system.init, scene)
+        if err == false then
+          io.write(string.format(
+                     "Error while initializing a system\n%s\n",
+                     message))
+        end
+      end
+
+      local itrRef = ffi.new("ListIterator[1]", itr)
+      C.listMoveIterator(itrRef)
+      itr = itrRef[0]
+    end
   end
 
   engine.scenes[pScene] = scene
