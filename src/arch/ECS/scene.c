@@ -85,6 +85,7 @@ int32 exportSceneJSONEntities(const char *folder)
 				{
 					if (exportSceneJSONEntities(folderPath) == -1)
 					{
+						printf("Failed recursive export scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -105,6 +106,7 @@ int32 exportSceneJSONEntities(const char *folder)
 
 						if (exportEntity(jsonEntityFilename) == -1)
 						{
+							printf("Failed to export entity\n");
 							free(jsonEntityFilename);
 							free(folderPath);
 							free(extension);
@@ -188,6 +190,7 @@ int32 loadSceneEntities(
 						true,
 						folderPath) == -1)
 					{
+						printf("Failed to load scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -406,6 +409,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	{
 		if (exportScene(sceneFilename) == -1)
 		{
+			printf("Failed to export scene.\n");
 			free(jsonSceneFilename);
 			free(sceneFilename);
 			free(sceneFolder);
@@ -524,6 +528,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 		if (exportSceneJSONEntities(entityFolder) == -1)
 		{
+			printf("Failed to export scene JSON entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -534,6 +539,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, false, false, entityFolder) == -1)
 		{
+			printf("Failed to load scene entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -557,6 +563,8 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
 		{
+			printf("Failed to load scene entities\n");
+
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -713,7 +721,7 @@ void exportRuntimeScene(const Scene *scene)
 			entityFilename,
 			"json",
 			NULL);
-		remove(jsonEntityFilename);
+		//remove(jsonEntityFilename);
 
 		free(jsonEntityFilename);
 		free(entityFilename);
@@ -833,6 +841,7 @@ int32 loadScene(const char *name)
 		Scene *scene;
 		if (loadSceneFile(name, &scene) == -1)
 		{
+			printf("Failed to load scene file\n");
 			return -1;
 		}
 
@@ -844,6 +853,7 @@ int32 loadScene(const char *name)
 		return 0;
 	}
 
+	printf("Scene to load doesn't exist\n");
 	return -1;
 }
 

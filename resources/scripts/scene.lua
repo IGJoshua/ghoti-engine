@@ -15,12 +15,12 @@ end
 
 function Scene:getComponent(component, entity)
   if engine.components[component] then
-	local componentID = C.idFromName(component)
-	local componentData = C.sceneGetComponentFromEntity(self.ptr, entity, componentID)
-	return engine.components[component]:new(componentData)
+    local componentID = C.idFromName(component)
+    local componentData = C.sceneGetComponentFromEntity(self.ptr, entity, componentID)
+    return engine.components[component]:new(componentData)
   else
-	io.write(string.format("Attempting to get undefined component type %s\n", component))
-	return nil
+    io.write(string.format("Attempting to get undefined component type %s\n", component))
+    return nil
   end
 end
 
