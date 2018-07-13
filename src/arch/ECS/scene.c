@@ -721,7 +721,7 @@ void exportRuntimeScene(const Scene *scene)
 			entityFilename,
 			"json",
 			NULL);
-		//remove(jsonEntityFilename);
+		remove(jsonEntityFilename);
 
 		free(jsonEntityFilename);
 		free(entityFilename);
