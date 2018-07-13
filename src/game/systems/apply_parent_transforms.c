@@ -2,9 +2,11 @@
 
 #include "data/data_types.h"
 #include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
+#include "ECS/component.h"
 
 #include "components/component_types.h"
 
@@ -70,6 +72,24 @@ void applyParentTransform(Scene *scene, TransformComponent *outTransform)
 }
 
 internal
+void initApplyParentTransformsSystem(Scene *scene)
+{
+	ComponentDataTable **table = hashMapGetKey(scene->componentTypes, &transformComponentID);
+
+	for (ComponentDataTableIterator itr = cdtGetIterator(*table);
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+	{
+		TransformComponent *transform = cdtIteratorGetData(itr);
+
+		if (transform->dirty)
+		{
+			applyParentTransform(scene, transform);
+		}
+	}
+}
+
+internal
 void runApplyParentTransformsSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	// Get the parent
@@ -96,7 +116,7 @@ System createApplyParentTransformsSystem(void)
 	applyParentTransforms.componentTypes = createList(sizeof(UUID));
 	listPushFront(&applyParentTransforms.componentTypes, &transformComponentID);
 
-	applyParentTransforms.init = 0;
+	applyParentTransforms.init = &initApplyParentTransformsSystem;
 	applyParentTransforms.begin = 0;
 	applyParentTransforms.run = &runApplyParentTransformsSystem;
 	applyParentTransforms.end = 0;

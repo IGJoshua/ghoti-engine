@@ -2,13 +2,34 @@
 
 #include "data/data_types.h"
 #include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
+#include "ECS/component.h"
 
 #include "components/component_types.h"
 
 internal UUID transformComponentID = {};
+
+internal
+void initCleanGlobalTransformsSystem(Scene *scene)
+{
+	ComponentDataTable **table = hashMapGetKey(scene->componentTypes, &transformComponentID);
+
+	for(ComponentDataTableIterator itr = cdtGetIterator(*table);
+		!cdtIteratorAtEnd(itr);
+		cdtMoveIterator(&itr))
+	{
+		TransformComponent *transform = cdtIteratorGetData(itr);
+
+		transform->lastGlobalPosition = transform->globalPosition;
+		transform->lastGlobalRotation = transform->globalRotation;
+		transform->lastGlobalScale = transform->globalScale;
+		kmQuaternionNormalize(&transform->globalRotation, &transform->globalRotation);
+		kmQuaternionNormalize(&transform->lastGlobalRotation, &transform->lastGlobalRotation);
+	}
+}
 
 internal
 void runCleanGlobalTransformsSystem(Scene *scene, UUID entityID, real64 dt)
@@ -34,7 +55,7 @@ System createCleanGlobalTransformsSystem(void)
 	cleanGlobalTransforms.componentTypes = createList(sizeof(UUID));
 	listPushFront(&cleanGlobalTransforms.componentTypes, &transformComponentID);
 
-	cleanGlobalTransforms.init = 0;
+	cleanGlobalTransforms.init = &initCleanGlobalTransformsSystem;
 	cleanGlobalTransforms.begin = 0;
 	cleanGlobalTransforms.run = &runCleanGlobalTransformsSystem;
 	cleanGlobalTransforms.end = 0;
