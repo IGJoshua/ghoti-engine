@@ -108,7 +108,7 @@ void *hashMapGetKey(HashMap map, void *key)
 		}
 	}
 
-	return 0;
+	return NULL;
 }
 
 void hashMapPopKey(HashMap map, void *key)

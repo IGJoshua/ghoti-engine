@@ -33,7 +33,6 @@ extern bool changeScene;
 extern bool reloadingScene;
 extern List unloadedScenes;
 
-
 Scene *createScene(void)
 {
 	Scene *ret = malloc(sizeof(Scene));
@@ -1822,7 +1821,7 @@ int32 sceneAddComponentToEntity(
 	if(cdtInsert(
 		   *dataTable,
 		   entity,
-		   componentData))
+		   componentData) == -1)
 	{
 		return -1;
 	}

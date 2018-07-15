@@ -65,28 +65,28 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 
 			// On a collision, create a new hit entity and
 			// push it to the front of the list
-			bool collided = 1;
+			bool collided = true;
 
 			if (fabsf(transform->globalPosition.x
 					  - otherTransform->globalPosition.x)
 				> thisAABBComponent->bounds.x * transform->globalScale.x
 				+ otherAABBComponent->bounds.x * otherTransform->globalScale.x)
 			{
-				collided = 0;
+				collided = false;
 			}
 			if (fabsf(transform->globalPosition.y
 					  - otherTransform->globalPosition.y)
 				> thisAABBComponent->bounds.y * transform->globalScale.y
 				+ otherAABBComponent->bounds.y * otherTransform->globalScale.y)
 			{
-				collided = 0;
+				collided = false;
 			}
 			if (fabsf(transform->globalPosition.z
 					  - otherTransform->globalPosition.z)
 				> thisAABBComponent->bounds.z * transform->globalScale.z
 				+ otherAABBComponent->bounds.z * otherTransform->globalScale.z)
 			{
-				collided = 0;
+				collided = false;
 			}
 
 			if (collided)
@@ -99,7 +99,7 @@ void runCollideAABBSystem(Scene *scene, UUID entityID, real64 dt)
 						scene,
 						hitInformation,
 						hitInformationComponentID,
-						&hitInformationComponent))
+						&hitInformationComponent) == -1)
 				{
 					sceneRemoveEntity(scene, hitInformation);
 					return;
