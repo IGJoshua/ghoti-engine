@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility
+_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility assimp
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
