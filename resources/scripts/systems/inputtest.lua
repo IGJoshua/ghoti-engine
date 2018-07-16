@@ -14,50 +14,74 @@ function system.init(scene)
   input:register("trigger", input.AXIS(nil, nil, gamepad.lefttrigger))
   input:register("horizontal", input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
   input:register("horizontallook", input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
-  input:register("scene", input.BUTTON(keyboard.ENTER))
+  input:register("reload", input.BUTTON(keyboard.R))
+  input:register("load_cool_thing", input.BUTTON(keyboard.L))
+  input:register("unload_cool_thing", input.BUTTON(keyboard.U))
+  input:register("switch_to_cool_thing", input.BUTTON(keyboard.C))
+  input:register("switch_to_cool_scene", input.BUTTON(keyboard.V))
+  input:register("save", input.BUTTON(keyboard.S))
+  input:register("load_save", input.BUTTON(keyboard.Z))
 end
 
 function system.begin(scene, dt)
   if input.close.keydown then
-	engine.C.closeWindow()
+    engine.C.closeWindow()
   end
 
   if input.mouseclick.updated and input.mouseclick.keydown then
-	io.write("Mouse click!\n")
+    io.write("Mouse click!\n")
   end
 
   if input.scroll.value ~= 0 then
-	io.write(string.format("Mouse scrolled! %s\n", input.scroll.value))
+    io.write(string.format("Mouse scrolled! %s\n", input.scroll.value))
   end
 
   if input.trigger.value ~= 0 then
-	io.write(string.format("Left trigger value: %f\n", input.trigger.value))
+    io.write(string.format("Left trigger value: %f\n", input.trigger.value))
   end
 
   if input.horizontal.value ~= 0 then
-	io.write(string.format("Left stick x value: %f\n", input.horizontal.value))
+    io.write(string.format("Left stick x value: %f\n", input.horizontal.value))
   end
 
   if input.horizontallook.value ~= 0 then
-	io.write(string.format("Right stick x value: %f\n", input.horizontallook.value))
+    io.write(string.format("Right stick x value: %f\n", input.horizontallook.value))
   end
 
   if input.attack.updated and input.attack.keydown then
-	io.write("Pressed X\n")
+    io.write("Pressed X\n")
   end
 
-  if input.scene.keydown and input.scene.updated then
-    C.changeScene = 1
+  if input.reload.updated and input.reload.keydown then
+    C.reloadAllScenes()
+  end
 
-    local oldScene = ffi.cast("Scene **", C.activeScenes.front.data)
-    C.listPushFront(C.unloadedScenes, oldScene);
-    C.listPopFront(C.activeScenes)
+  if input.load_cool_thing.updated and input.load_cool_thing.keydown then
+    C.loadScene("cool_thing")
+  end
 
-    local newScene = ffi.new("Scene *", ffi.cast("Scene *", 0))
-    local newSceneOut = ffi.new("Scene *[1]", newScene)
-    C.luaLoadScene("scene_1", newSceneOut)
-    C.listPushFront(C.activeScenes, newSceneOut)
-    newScene = newSceneOut[0]
+  if input.unload_cool_thing.updated and input.unload_cool_thing.keydown then
+    C.unloadScene("cool_thing")
+  end
+
+  if input.switch_to_cool_thing.updated and
+    input.switch_to_cool_thing.keydown then
+    C.loadScene("cool_thing")
+    C.unloadScene("cool_scene")
+  end
+
+  if input.switch_to_cool_scene.updated and
+    input.switch_to_cool_scene.keydown then
+    C.loadScene("cool_scene")
+    C.unloadScene("cool_thing")
+  end
+
+  if input.save.updated and input.save.keydown then
+    C.exportSave(nil, 0, 2)
+  end
+
+  if input.load_save.updated and input.load_save.keydown then
+    C.loadSave(2, nil)
   end
 end
 

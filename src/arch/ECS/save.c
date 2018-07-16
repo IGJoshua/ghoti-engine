@@ -2,6 +2,7 @@
 #include "ECS/scene.h"
 
 #include "data/hash_map.h"
+#include "data/list.h"
 
 #include "file/utilities.h"
 
@@ -13,18 +14,42 @@
 #include <string.h>
 #include <dirent.h>
 
-int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
+extern List activeScenes;
+extern bool loadingSave;
+extern List savedScenes;
+
+int32 exportSave(void *data, uint32 size, uint32 slot)
 {
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
 	printf("Exporting save file (%s)...\n", saveName);
 
-	char *saveFolder = malloc(512);
-	sprintf(saveFolder, "resources/saves/%s", saveName);
-	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
+	MKDIR(SAVE_FOLDER);
 
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
+	deleteFolder(saveFolder, false);
 	MKDIR(saveFolder);
+
+	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
+	FILE *file = fopen(saveFilename, "wb");
+	free(saveFilename);
+
+	uint32 numActiveScenes = listGetSize(&activeScenes);
+	fwrite(&numActiveScenes, sizeof(uint32), 1, file);
+
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+		writeString(scene->name, file);
+	}
+
+	fwrite(&size, sizeof(uint32), 1, file);
+	fwrite(data, size, 1, file);
+
+	fclose(file);
 
 	DIR *dir = opendir(RUNTIME_STATE_DIR);
 	if (dir)
@@ -69,63 +94,79 @@ int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 		closedir(dir);
 	}
 
-	char *sceneFolder = getFullFilePath(scene->name, NULL, saveFolder);
-	char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
-	char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
-
-	MKDIR(sceneFolder);
-	MKDIR(entitiesFolder);
-
-	FILE *file = fopen(saveFilename, "wb");
-
-	writeString(scene->name, file);
-	fwrite(&size, sizeof(uint32), 1, file);
-	fwrite(data, size, 1, file);
-
-	fclose(file);
-
-	exportSceneSnapshot(scene, sceneFilename);
-
-	exportScene(sceneFilename);
-	char *jsonSceneFilename = getFullFilePath(
-		sceneFilename,
-		"json",
-		NULL);
-	remove(jsonSceneFilename);
-	free(jsonSceneFilename);
-
-	uint32 entityNumber = 0;
-	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+	for (ListIterator itr = listGetIterator(&activeScenes);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		char *entityName = malloc(128);
-		sprintf(entityName, "entity_%d", entityNumber++);
-		char *entityFilename = getFullFilePath(
-			entityName,
-			NULL,
-			entitiesFolder);
-		free(entityName);
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
 
-		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
-		exportEntitySnapshot(scene, *entity, entityFilename);
+		char *sceneFolder = getFullFilePath(scene->name, NULL, saveFolder);
+		char *sceneFilename = getFullFilePath(scene->name, NULL, sceneFolder);
+		char *entitiesFolder = getFullFilePath("entities", NULL, sceneFolder);
 
-		exportEntity(entityFilename);
-		char *jsonEntityFilename = getFullFilePath(
-			entityFilename,
+		MKDIR(sceneFolder);
+		MKDIR(entitiesFolder);
+
+		exportSceneSnapshot(scene, sceneFilename);
+
+		if (exportScene(sceneFilename) == -1)
+		{
+			free(saveFolder);
+			free(sceneFolder);
+			free(sceneFilename);
+			free(entitiesFolder);
+			return -1;
+		}
+
+		char *jsonSceneFilename = getFullFilePath(
+			sceneFilename,
 			"json",
 			NULL);
-		remove(jsonEntityFilename);
+		remove(jsonSceneFilename);
+		free(jsonSceneFilename);
 
-		free(jsonEntityFilename);
-		free(entityFilename);
+		uint32 entityNumber = 0;
+		for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			char *entityName = malloc(128);
+			sprintf(entityName, "entity_%d", entityNumber++);
+			char *entityFilename = getFullFilePath(
+				entityName,
+				NULL,
+				entitiesFolder);
+			free(entityName);
+
+			UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
+			exportEntitySnapshot(scene, *entity, entityFilename);
+
+			if (exportEntity(entityFilename) == -1)
+			{
+				free(saveFolder);
+				free(sceneFolder);
+				free(sceneFilename);
+				free(entitiesFolder);
+				free(entityFilename);
+				return -1;
+			}
+
+			char *jsonEntityFilename = getFullFilePath(
+				entityFilename,
+				"json",
+				NULL);
+			remove(jsonEntityFilename);
+
+			free(jsonEntityFilename);
+			free(entityFilename);
+		}
+
+		free(sceneFolder);
+		free(sceneFilename);
+		free(entitiesFolder);
 	}
 
 	free(saveFolder);
-	free(saveFilename);
-	free(sceneFolder);
-	free(sceneFilename);
-	free(entitiesFolder);
 
 	printf("Successfully exported save file (%s)\n", saveName);
 	free(saveName);
@@ -133,7 +174,7 @@ int32 exportSave(void *data, uint32 size, const Scene *scene, uint32 slot)
 	return 0;
 }
 
-int32 loadSave(uint32 slot, Scene **scene)
+int32 loadSave(uint32 slot, void **data)
 {
 	int32 error = 0;
 
@@ -142,87 +183,95 @@ int32 loadSave(uint32 slot, Scene **scene)
 
 	printf("Loading save file (%s)...\n", saveName);
 
-	char *saveFolder = malloc(512);
-	sprintf(saveFolder, "resources/saves/%s", saveName);
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
 
 	FILE *file = fopen(saveFilename, "rb");
 
 	if (file)
 	{
-		char *sceneName = readString(file);
-		char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
+		uint32 numActiveScenes;
+		fread(&numActiveScenes, sizeof(uint32), 1, file);
 
-		MKDIR(RUNTIME_STATE_DIR);
-		deleteFolder(RUNTIME_STATE_DIR);
-		MKDIR(RUNTIME_STATE_DIR);
-
-		DIR *dir = opendir(saveFolder);
-		if (dir)
+		for (uint32 i = 0; i < numActiveScenes; i++)
 		{
-			struct dirent *dirEntry = readdir(dir);
-			while (dirEntry)
+			char *sceneName = readString(file);
+			char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
+
+			MKDIR(RUNTIME_STATE_DIR);
+			deleteFolder(RUNTIME_STATE_DIR, true);
+			MKDIR(RUNTIME_STATE_DIR);
+
+			DIR *dir = opendir(saveFolder);
+			if (dir)
 			{
-				if (strcmp(dirEntry->d_name, ".")
-				&& strcmp(dirEntry->d_name, ".."))
+				struct dirent *dirEntry = readdir(dir);
+				while (dirEntry)
 				{
-					char *folderPath = getFullFilePath(
-						dirEntry->d_name,
-						NULL,
-						saveFolder);
-
-					struct stat info;
-					stat(folderPath, &info);
-
-					if (S_ISDIR(info.st_mode))
+					if (strcmp(dirEntry->d_name, ".")
+					&& strcmp(dirEntry->d_name, ".."))
 					{
-						char *destinationFolderPath = getFullFilePath(
+						char *folderPath = getFullFilePath(
 							dirEntry->d_name,
 							NULL,
-							RUNTIME_STATE_DIR);
+							saveFolder);
 
-						if (copyFolder(folderPath, destinationFolderPath) == -1)
+						struct stat info;
+						stat(folderPath, &info);
+
+						if (S_ISDIR(info.st_mode))
 						{
-							error = -1;
+							char *destinationFolderPath = getFullFilePath(
+								dirEntry->d_name,
+								NULL,
+								RUNTIME_STATE_DIR);
+
+							error = copyFolder(
+								folderPath,
+								destinationFolderPath);
+
+							free(destinationFolderPath);
+
+							if (error == -1)
+							{
+								free(folderPath);
+								break;
+							}
 						}
 
-						free(destinationFolderPath);
-
-						if (error == -1)
-						{
-							free(folderPath);
-							break;
-						}
+						free(folderPath);
 					}
 
-					free(folderPath);
+					dirEntry = readdir(dir);
 				}
 
-				dirEntry = readdir(dir);
+				closedir(dir);
+			}
+			else
+			{
+				printf("Failed to open %s\n", saveFolder);
+				error = -1;
 			}
 
-			closedir(dir);
-		}
-		else
-		{
-			printf("Failed to open %s\n", saveFolder);
-			error = -1;
-		}
+			if (error != -1)
+			{
+				listPushBack(&savedScenes, &sceneName);
+			}
+			else
+			{
+				free(sceneName);
+			}
 
-		if (error != -1)
-		{
-			loadScene(sceneName, scene);
+			free(sceneFolder);
 		}
-
-		free(sceneFolder);
-		free(sceneName);
 
 		uint32 size;
 		fread(&size, sizeof(uint32), 1, file);
 
-		// TODO: Pass global data from save to Lua
-		// void *data;
-		// fread(&size, size, 1, file);
+		if (data)
+		{
+			fread(*data, size, 1, file);
+		}
 	}
 	else
 	{
@@ -235,6 +284,7 @@ int32 loadSave(uint32 slot, Scene **scene)
 
 	if (error != -1)
 	{
+		loadingSave = true;
 		printf("Successfully loaded save file (%s)\n", saveName);
 	}
 
@@ -249,8 +299,7 @@ bool getSaveSlotAvailability(uint32 slot)
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
-	char *saveFolder = malloc(512);
-	sprintf(saveFolder, "resources/saves/%s", saveName);
+	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	free(saveName);
 
     struct stat info;
@@ -281,10 +330,9 @@ int32 deleteSave(uint32 slot)
 
 	if (error != -1)
 	{
-		char *saveFolder = malloc(512);
-		sprintf(saveFolder, "resources/saves/%s", saveName);
+		char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 
-		error = deleteFolder(saveFolder);
+		error = deleteFolder(saveFolder, true);
 		free(saveFolder);
 
 		if (error != -1)

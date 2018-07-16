@@ -252,7 +252,6 @@ void handleSDLEvents()
 				}
 				else
 				{
-					// TODO: Implement a proper dead zone
 					switch (event.caxis.axis)
 					{
 					case SDL_CONTROLLER_AXIS_LEFTX:

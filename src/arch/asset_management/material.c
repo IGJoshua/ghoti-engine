@@ -48,12 +48,19 @@ int32 loadMaterial(Material *material, FILE *file)
 				fread(&materialComponent->uvMap, sizeof(uint32), 1, file);
 				break;
 			default:
-				return -1;
+				break;
 		}
 
-		fread(&materialComponent->value.x, sizeof(real32), 1, file);
-		fread(&materialComponent->value.y, sizeof(real32), 1, file);
-		fread(&materialComponent->value.z, sizeof(real32), 1, file);
+		switch ((MaterialComponentType)materialComponentType)
+		{
+			case MATERIAL_COMPONENT_TYPE_NORMAL:
+				break;
+			default:
+				fread(&materialComponent->value.x, sizeof(real32), 1, file);
+				fread(&materialComponent->value.y, sizeof(real32), 1, file);
+				fread(&materialComponent->value.z, sizeof(real32), 1, file);
+				break;
+		}
 
 		switch ((MaterialComponentType)materialComponentType)
 		{
@@ -64,8 +71,7 @@ int32 loadMaterial(Material *material, FILE *file)
 				break;
 		}
 
-		printf(
-			"Successfully loaded %s material component\n",
+		printf("Successfully loaded %s material component\n",
 			materialComponentName);
 	}
 
@@ -74,7 +80,7 @@ int32 loadMaterial(Material *material, FILE *file)
 	return 0;
 }
 
-internal const char *getMaterialComponentName(
+const char *getMaterialComponentName(
 	MaterialComponentType materialComponentType)
 {
 	switch (materialComponentType)
@@ -98,20 +104,29 @@ internal const char *getMaterialComponentName(
 
 int32 freeMaterial(Material *material)
 {
+	int32 error = 0;
+
 	free(material->name);
 
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		if (material->components[i].texture)
+		char *texture = material->components[i].texture;
+
+		if (texture)
 		{
-			if (freeTexture(material->components[i].texture) == -1)
+			if (strlen(texture) > 0)
 			{
-				return -1;
+				error = freeTexture(texture);
 			}
 
-			free(material->components[i].texture);
+			free(texture);
+
+			if (error == -1)
+			{
+				break;
+			}
 		}
 	}
 
-	return 0;
+	return error;
 }

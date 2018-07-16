@@ -1,14 +1,18 @@
-#include "systems.h"
+#include "defines.h"
 
+#include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
+#include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/shader.h"
 
+#include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
 #include "components/component_types.h"
 
+#include "data/data_types.h"
 #include "data/list.h"
 
 #include <kazmath/mat4.h>
@@ -17,19 +21,24 @@
 
 #include <string.h>
 #include <malloc.h>
+#include <stdio.h>
 
-extern Shader vertShader;
-extern Shader fragShader;
+internal Shader vertShader;
+internal Shader fragShader;
 
-extern ShaderPipeline pipeline;
+internal ShaderPipeline pipeline;
 
-extern Uniform modelUniform;
-extern Uniform viewUniform;
-extern Uniform projectionUniform;
+internal Uniform modelUniform;
+internal Uniform viewUniform;
+internal Uniform projectionUniform;
 
-extern Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
+internal Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
 
-extern bool rendererActive;
+internal bool rendererActive;
+
+internal UUID transformComponentID = {};
+internal UUID modelComponentID = {};
+internal UUID cameraComponentID = {};
 
 internal
 void initRendererSystem(Scene *scene)
@@ -41,7 +50,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_VERTEX,
 			&vertShader) == -1)
 		{
-			return;
+			printf("Unable to compile vertex shader from file\n");
 		}
 
 		if (compileShaderFromFile(
@@ -49,7 +58,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_FRAGMENT,
 			&fragShader) == -1)
 		{
-			return;
+			printf("Unable to compile fragment shader from file\n");
 		}
 
 		Shader *program[2];
@@ -58,7 +67,7 @@ void initRendererSystem(Scene *scene)
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
-			return;
+			printf("Unable to compose shader program\n");
 		}
 
 		freeShader(vertShader);
@@ -68,12 +77,12 @@ void initRendererSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			return;
+			printf("Unable to get model component uniform\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			return;
+			printf("Unable to get view component uniform\n");
 		}
 
 		if (getUniform(
@@ -82,7 +91,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_MAT4,
 			&projectionUniform) == -1)
 		{
-			return;
+			printf("Unable to get projection component uniform\n");
 		}
 
 		for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
@@ -96,7 +105,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
 		{
-			return;
+			printf("Unable to get diffuse texture uniform\n");
 		}
 
 		if (getUniform(
@@ -105,7 +114,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
 		{
-			return;
+			printf("Unable to get specular texture uniform\n");
 		}
 
 		if (getUniform(
@@ -114,7 +123,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
 		{
-			return;
+			printf("Unable to get normal texture uniform\n");
 		}
 
 		if (getUniform(
@@ -123,74 +132,55 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
 		{
-			return;
+			printf("Unable to get emissive texture uniform\n");
 		}
 
 		rendererActive = true;
 	}
 }
 
+internal CameraComponent *camera = 0;
+internal TransformComponent *cameraTransform = 0;
+internal kmMat4 view = {};
+internal kmMat4 projection = {};
+
+extern real64 alpha;
+
 internal
-void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
+void beginRendererSystem(Scene *scene, real64 dt)
 {
-	UUID modelComponentID = idFromName("model");
-	ModelComponent *model = sceneGetComponentFromEntity(
+	camera = sceneGetComponentFromEntity(
 		scene,
-		entityID,
-		modelComponentID);
-
-	if (!getModel(model->name))
-	{
-		if (loadModel(model->name) == -1)
-		{
-			return;
-		}
-	}
-
-	if (!model->visible)
-	{
-		return;
-	}
-
-	UUID transformComponentID = idFromName("transform");
-	TransformComponent *transform = sceneGetComponentFromEntity(
+		scene->mainCamera,
+		cameraComponentID);
+	cameraTransform = sceneGetComponentFromEntity(
 		scene,
-		entityID,
+		scene->mainCamera,
 		transformComponentID);
 
-	kmMat3 rotation;
-	kmMat3FromRotationQuaternion(&rotation, &transform->rotation);
-
-	kmMat4 worldMatrix;
-	kmMat4RotationTranslation(&worldMatrix, &rotation, &transform->position);
-	kmMat4 scalingMatrix;
-	kmMat4Scaling(
-		&scalingMatrix,
-		transform->scale.x,
-		transform->scale.y,
-		transform->scale.z);
-	kmMat4Multiply(&worldMatrix, &worldMatrix, &scalingMatrix);
-
-	UUID cameraComponentID = idFromName("camera");
-	CameraComponent *camera =
-		sceneGetComponentFromEntity(
-			scene,
-			scene->mainCamera,
-			cameraComponentID);
-	TransformComponent *cameraTransform =
-		sceneGetComponentFromEntity(
-			scene,
-			scene->mainCamera,
-			transformComponentID);
+	kmQuaternion cameraRotationQuat;
+	kmQuaternionSlerp(
+		&cameraRotationQuat,
+		&cameraTransform->lastGlobalRotation,
+		&cameraTransform->globalRotation,
+		alpha);
 
 	kmMat3 cameraRotation;
-	kmMat3FromRotationQuaternion(&cameraRotation, &cameraTransform->rotation);
+	kmMat3FromRotationQuaternion(&cameraRotation, &cameraRotationQuat);
 
-	kmMat4 view;
-	kmMat4RotationTranslation(&view, &cameraRotation, &cameraTransform->position);
+	kmVec3 cameraPosition;
+	kmVec3Lerp(
+		&cameraPosition,
+		&cameraTransform->lastGlobalPosition,
+		&cameraTransform->globalPosition,
+		alpha);
+
+	kmMat4RotationTranslation(
+		&view,
+		&cameraRotation,
+		&cameraPosition);
 	kmMat4Inverse(&view, &view);
 
-	kmMat4 projection;
 	kmMat4PerspectiveProjection(
 		&projection,
 		camera->fov,
@@ -198,10 +188,171 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		camera->nearPlane,
 		camera->farPlane);
 
-	if (renderModel(model->name, &worldMatrix, &view, &projection) == -1)
+	bindShaderPipeline(pipeline);
+
+	if (setUniform(viewUniform, &view) == -1)
+	{
+		printf("Unable to set view uniform\n");
+	}
+
+	if (setUniform(projectionUniform, &projection) == -1)
+	{
+		printf("Unable to set projection uniform\n");
+	}
+
+	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		if (textureUniforms[i].type != UNIFORM_INVALID)
+		{
+			if (setUniform(textureUniforms[i], &i) == -1)
+			{
+				printf("Unable to set texture uniform %d\n", i);
+			}
+		}
+	}
+}
+
+extern real64 alpha;
+
+internal
+void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
+{
+	ModelComponent *modelComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		modelComponentID);
+
+	Model *model = getModel(modelComponent->name);
+	if (!model)
+	{
+		if (loadModel(modelComponent->name) == -1)
+		{
+			return;
+		}
+	}
+
+	if (!modelComponent->visible)
 	{
 		return;
 	}
+
+	TransformComponent *transform = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		transformComponentID);
+
+	kmQuaternion rotationQuat = transform->globalRotation;
+	kmQuaternionNormalize(&transform->globalRotation, &transform->globalRotation);
+	kmQuaternionNormalize(&transform->lastGlobalRotation, &transform->lastGlobalRotation);
+	kmQuaternionSlerp(
+		&rotationQuat,
+		&transform->lastGlobalRotation,
+		&transform->globalRotation,
+		alpha);
+
+	kmVec3 position = transform->globalPosition;
+	kmVec3Lerp(
+		&position,
+		&transform->lastGlobalPosition,
+		&transform->globalPosition,
+		alpha);
+
+	kmVec3 scale = transform->globalScale;
+	kmVec3Lerp(
+		&scale,
+		&transform->lastGlobalScale,
+		&transform->globalScale,
+		alpha);
+
+	kmMat4 rotationMatrix;
+	kmMat4RotationQuaternion(&rotationMatrix, &rotationQuat);
+
+	kmMat4 positionMatrix;
+	kmMat4Translation(
+		&positionMatrix,
+		position.x,
+		position.y,
+		position.z);
+
+	kmMat4 scaleMatrix;
+	kmMat4Scaling(
+		&scaleMatrix,
+		scale.x,
+		scale.y,
+		scale.z);
+
+	kmMat4 worldMatrix;
+	kmMat4Multiply(&worldMatrix, &positionMatrix, kmMat4Multiply(&worldMatrix, &rotationMatrix, &scaleMatrix));
+
+	if (setUniform(modelUniform, &worldMatrix) == -1)
+	{
+		printf("Unable to set model uniform\n");
+		return;
+	}
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Mesh *mesh = &model->meshes[i];
+
+		glBindVertexArray(mesh->vertexArray);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glEnableVertexAttribArray(j);
+		}
+
+		Material *material = &model->materials[mesh->materialIndex];
+
+		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
+		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
+
+		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			textures[j] = getTexture(material->components[j].texture);
+
+			if (textures[j])
+			{
+				glActiveTexture(GL_TEXTURE0 + j);
+				glBindTexture(GL_TEXTURE_2D, textures[j]->id);
+			}
+		}
+
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			printf(
+				"Error in Draw Subset %s in Model (%s): %s\n",
+				material->name,
+				modelComponent->name,
+				gluErrorString(glError));
+		}
+	}
+}
+
+internal
+void endRendererSystem(Scene *scene, real64 dt)
+{
+	for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+	{
+		glActiveTexture(GL_TEXTURE0 + j);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	{
+		glDisableVertexAttribArray(j);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
 }
 
 internal
@@ -214,10 +365,11 @@ System createRendererSystem(void)
 {
 	System renderer = {};
 
-	UUID transformComponentID = idFromName("transform");
-	UUID modelComponentID = idFromName("model");
-
 	List componentList = createList(sizeof(UUID));
+
+	transformComponentID = idFromName("transform");
+	modelComponentID = idFromName("model");
+	cameraComponentID = idFromName("camera");
 
 	listPushFront(&componentList, &transformComponentID);
 	listPushFront(&componentList, &modelComponentID);
@@ -225,9 +377,9 @@ System createRendererSystem(void)
 	renderer.componentTypes = componentList;
 
 	renderer.init = &initRendererSystem;
-	renderer.begin = 0;
+	renderer.begin = &beginRendererSystem;
 	renderer.run = &runRendererSystem;
-	renderer.end = 0;
+	renderer.end = &endRendererSystem;
 	renderer.shutdown = &shutdownRendererSystem;
 
 	return renderer;

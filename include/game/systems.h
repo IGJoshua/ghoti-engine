@@ -7,5 +7,3 @@
 
 void initSystems(void);
 void freeSystems(void);
-
-System createRendererSystem(void);

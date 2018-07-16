@@ -42,7 +42,7 @@ void freeComponentDataTable(ComponentDataTable **table)
 	*table = 0;
 }
 
-void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
+int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
@@ -63,7 +63,7 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 
 		if (i >= table->numEntries)
 		{
-			return;
+			return -1;
 		}
 
 		// Associate the UUID with the index in the map
@@ -95,6 +95,8 @@ void cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		+ sizeof(UUID),
 		componentData,
 		table->componentSize);
+
+	return 0;
 }
 
 void cdtRemove(
@@ -160,14 +162,19 @@ void cdtMoveIterator(ComponentDataTableIterator *itr)
 
 	UUID emptyID = {};
 
-	while (!strcmp(
-			   emptyID.string,
-			   ((UUID *)(itr->table->data
-						 + ++itr->index
-						 * (itr->table->componentSize
-							+ sizeof(UUID))))->string)
-		   && itr->index < itr->table->numEntries)
-		;
+	// If the UUID is empty, move again
+	// If the index >= numEntries, stop moving
+
+	++itr->index;
+	for (; itr->index < itr->table->numEntries; ++itr->index)
+	{
+		if (strcmp(
+				emptyID.string,
+				cdtIteratorGetUUID(*itr)->string))
+		{
+			break;
+		}
+	}
 }
 
 inline

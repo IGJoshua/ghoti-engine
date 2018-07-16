@@ -1,4 +1,4 @@
-# Project: Monochrome
+# Project: Ghoti
 # Company: Broken Dinosaur Studios
 # Author: Joshua Suskalo, Pranav Sahani
 # Copyright: April 2018
@@ -6,8 +6,8 @@
 # Binary resources
 build/
 release/
-monochrome.so
-monochrome.dll
+ghoti.so
+ghoti.dll
 
 # Art assets
 resources/*
@@ -17,6 +17,7 @@ resources/*
 # Editor specific files
 .dir-locals.el
 .clang_complete
+local-ghoti.supp
 GTAGS
 GRTAGS
 GPATH
