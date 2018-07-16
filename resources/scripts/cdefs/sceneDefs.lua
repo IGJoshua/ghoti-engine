@@ -6,6 +6,7 @@ typedef struct scene_t
 	HashMap componentTypes;
 	HashMap entities;
 	UUID mainCamera;
+	UUID player;
 	List physicsFrameSystems;
 	List renderFrameSystems;
 	List luaPhysicsFrameSystemNames;

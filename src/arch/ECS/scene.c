@@ -55,6 +55,9 @@ Scene *createScene(void)
 	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
 	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
 
+	ret->mainCamera = idFromName("");
+	ret->player = idFromName("");
+
 	return ret;
 }
 
