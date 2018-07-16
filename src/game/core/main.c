@@ -175,8 +175,6 @@ int32 main()
 
 				listClear(&activeScenes);
 
-				reloadingScene = isReloadingScene;
-
 				for (ListIterator i = listGetIterator(&savedScenes);
 					 !listIteratorAtEnd(i);
 					 listMoveIterator(&i))
@@ -188,13 +186,13 @@ int32 main()
 
 				listClear(&savedScenes);
 
+				reloadingScene = isReloadingScene;
 				loadingSave = false;
 			}
 			else if (changeScene)
 			{
 				for (ListIterator i = listGetIterator(&unloadedScenes);
-					 !listIteratorAtEnd(i);
-					 listMoveIterator(&i))
+					 !listIteratorAtEnd(i);)
 				{
 					Scene **scene = LIST_ITERATOR_GET_ELEMENT(Scene*, i);
 
@@ -205,7 +203,7 @@ int32 main()
 						strcpy(name, (*scene)->name);
 					}
 
-					if (deactivateScene(*scene))
+					if (deactivateScene(*scene) == -1)
 					{
 						continue;
 					}
@@ -218,12 +216,11 @@ int32 main()
 					{
 						loadScene(name);
 						free(name);
-
-						reloadingScene = false;
 					}
 				}
 
 				changeScene = false;
+				reloadingScene = false;
 			}
 
 			// Integrate current state over t to dt (so, update)

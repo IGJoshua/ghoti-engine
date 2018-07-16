@@ -33,7 +33,6 @@ extern bool changeScene;
 extern bool reloadingScene;
 extern List unloadedScenes;
 
-
 Scene *createScene(void)
 {
 	Scene *ret = malloc(sizeof(Scene));
@@ -853,7 +852,6 @@ int32 loadScene(const char *name)
 		return 0;
 	}
 
-	printf("Scene to load doesn't exist\n");
 	return -1;
 }
 
@@ -884,11 +882,6 @@ int32 reloadAllScenes(void)
 		{
 			break;
 		}
-	}
-
-	if (!error)
-	{
-		reloadingScene = true;
 	}
 
 	return error;
@@ -941,7 +934,7 @@ int32 deactivateScene(Scene *scene)
 		listMoveIterator(&itr))
 	{
 		Scene *activeScene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
-		if (activeScene == scene)
+		if (!strcmp(activeScene->name, scene->name))
 		{
 			listRemove(&activeScenes, &itr);
 			return 0;
@@ -1828,7 +1821,7 @@ int32 sceneAddComponentToEntity(
 	if(cdtInsert(
 		   *dataTable,
 		   entity,
-		   componentData))
+		   componentData) == -1)
 	{
 		return -1;
 	}
