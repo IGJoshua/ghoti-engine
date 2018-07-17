@@ -35,7 +35,7 @@ extern List unloadedScenes;
 
 Scene *createScene(void)
 {
-	Scene *ret = malloc(sizeof(Scene));
+	Scene *ret = calloc(1, sizeof(Scene));
 
 	ASSERT(ret != 0);
 

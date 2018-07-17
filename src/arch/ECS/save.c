@@ -272,6 +272,8 @@ int32 loadSave(uint32 slot, void **data)
 		{
 			fread(*data, size, 1, file);
 		}
+
+		fclose(file);
 	}
 	else
 	{

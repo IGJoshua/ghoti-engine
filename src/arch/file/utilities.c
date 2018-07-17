@@ -143,12 +143,10 @@ void copyFile(const char *filename, const char *destination)
 		if (fileBuffer) {
 			fread(fileBuffer, 1, fileLength, file);
 		}
-
-		fclose(file);
 	}
 
 	if (fileBuffer) {
-		file = fopen(destination, "wb");
+		file = freopen(destination, "wb", file);
 		fwrite(fileBuffer, fileLength, 1, file);
 		fclose(file);
 		free(fileBuffer);
