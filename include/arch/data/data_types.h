@@ -52,3 +52,11 @@ typedef struct hash_map_iterator_t
 	ListIterator itr;
 	uint32 bucket;
 } HashMapIterator;
+
+typedef struct closure_data_t
+{
+	uint8 numArgs;
+	uint8 data[];
+} ClosureData;
+
+typedef void(*HashMapFunctorFn)(void*, void*, ClosureData*);

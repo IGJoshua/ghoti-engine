@@ -15,6 +15,18 @@ typedef struct hash_map_storage_t
 	uint8 data[];
 } HashMapStorage;
 
+
+int32 memeq(void *first, void *second, uint32 length)
+{
+	for (uint32 i = 0; i < length; ++i)
+	{
+		if (((char *)first)[i] != ((char *)second)[i])
+			return -1;
+	}
+
+	return 0;
+}
+
 HashMap createHashMap(
 	uint32 keySize,
 	uint32 valueSize,
@@ -95,16 +107,35 @@ void *hashMapGetKey(HashMap map, void *key)
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
+	if (map->comparison)
 	{
-		if (!map->comparison(
-				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
-				key))
+		for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
 		{
-			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
-				+ map->keySizeBytes;
+			if (!map->comparison(
+					LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+					key))
+			{
+				return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
+					+ map->keySizeBytes;
+			}
+		}
+	}
+	else
+	{
+		for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			if (!memeq(
+					LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+					key,
+					map->keySizeBytes))
+			{
+				return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
+					+ map->keySizeBytes;
+			}
 		}
 	}
 
@@ -228,7 +259,8 @@ void *hashMapIteratorGetKey(HashMapIterator itr)
 inline
 void *hashMapIteratorGetValue(HashMapIterator itr)
 {
-	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data + itr.map->keySizeBytes;
+	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data
+		+ itr.map->keySizeBytes;
 }
 
 void hashMapDeleteAtIterator(HashMapIterator *itr)
@@ -252,6 +284,21 @@ void hashMapDeleteAtIterator(HashMapIterator *itr)
 		else
 		{
 			break;
+		}
+	}
+}
+
+void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
+{
+	for (uint32 bucket = 0; bucket < map->bucketCount; ++bucket)
+	{
+		for (ListIterator itr = listGetIterator(&map->buckets[bucket]);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			HashMapStorage *element =
+				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr);
+			fn(element->data, element->data + map->keySizeBytes, data);
 		}
 	}
 }

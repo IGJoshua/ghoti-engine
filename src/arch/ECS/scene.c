@@ -761,6 +761,21 @@ void freeEntityResources(UUID entity, Scene *scene)
 	}
 }
 
+struct remove_entity_components_closure_t
+{
+	uint8 numArgs;
+	Scene *scene;
+};
+
+internal
+void removeEntityComponentsFMap(void *key, void *value, ClosureData *data)
+{
+	struct remove_entity_components_closure_t *closure =
+		(struct remove_entity_components_closure_t *)data;
+
+	sceneRemoveEntityComponents(closure->scene, *(UUID *)key);
+}
+
 void freeScene(Scene **scene)
 {
 	printf("Unloading scene (%s)...\n", (*scene)->name);
@@ -775,13 +790,13 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
-		sceneRemoveEntityComponents(*scene, entity);
-	}
+	struct remove_entity_components_closure_t closure = {};
+	closure.scene = *scene;
+
+	hashMapFMap(
+		(*scene)->entities,
+		&removeEntityComponentsFMap,
+		(ClosureData *)&closure);
 
 	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
 		 !hashMapIteratorAtEnd(itr);

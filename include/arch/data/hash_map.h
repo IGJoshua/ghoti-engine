@@ -3,6 +3,8 @@
 
 #include "data_types.h"
 
+int32 memeq(void *first, void *second, uint32 length);
+
 HashMap createHashMap(
 	uint32 keySize,
 	uint32 valueSize,
@@ -23,3 +25,5 @@ int32 hashMapIteratorAtEnd(HashMapIterator itr);
 void *hashMapIteratorGetKey(HashMapIterator itr);
 void *hashMapIteratorGetValue(HashMapIterator itr);
 void hashMapDeleteAtIterator(HashMapIterator *itr);
+
+void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data);
