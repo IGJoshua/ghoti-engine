@@ -3,8 +3,6 @@
 
 #include "data_types.h"
 
-int32 memeq(void *first, void *second, uint32 length);
-
 HashMap createHashMap(
 	uint32 keySize,
 	uint32 valueSize,

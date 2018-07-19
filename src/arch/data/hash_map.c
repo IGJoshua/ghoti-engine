@@ -15,18 +15,6 @@ typedef struct hash_map_storage_t
 	uint8 data[];
 } HashMapStorage;
 
-
-int32 memeq(void *first, void *second, uint32 length)
-{
-	for (uint32 i = 0; i < length; ++i)
-	{
-		if (((char *)first)[i] != ((char *)second)[i])
-			return -1;
-	}
-
-	return 0;
-}
-
 HashMap createHashMap(
 	uint32 keySize,
 	uint32 valueSize,
@@ -128,7 +116,7 @@ void *hashMapGetKey(HashMap map, void *key)
 			 !listIteratorAtEnd(itr);
 			 listMoveIterator(&itr))
 		{
-			if (!memeq(
+			if (!memcmp(
 					LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
 					key,
 					map->keySizeBytes))
