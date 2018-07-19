@@ -665,6 +665,9 @@ void exportRuntimeScene(const Scene *scene)
 		scene->name,
 		NULL,
 		RUNTIME_STATE_DIR);
+
+	deleteFolder(sceneFolder, false);
+
 	char *sceneFilename = getFullFilePath(
 		scene->name,
 		NULL,
