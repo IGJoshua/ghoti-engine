@@ -1826,6 +1826,15 @@ int32 sceneAddComponentToEntity(
 
 	List *l = hashMapGetKey(s->entities, &entity);
 
+	// Add the component to the data table
+	if(cdtInsert(
+		   *dataTable,
+		   entity,
+		   componentData) == -1)
+	{
+		return -1;
+	}
+
 	if (listContains(l, &componentType))
 	{
 		printf(
@@ -1836,15 +1845,6 @@ int32 sceneAddComponentToEntity(
 	}
 	else
 	{
-		// Add the component to the data table
-		if(cdtInsert(
-			   *dataTable,
-			   entity,
-			   componentData) == -1)
-		{
-			return -1;
-		}
-
 		// Add the component type to the list
 		listPushBack(l, &componentType);
 	}
