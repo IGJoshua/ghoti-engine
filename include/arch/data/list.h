@@ -20,4 +20,7 @@ int32 listIteratorAtEnd(ListIterator itr);
 void listRemove(List *l, ListIterator *itr);
 void listInsert(List *l, ListIterator *itr, void *data);
 
+bool listContains(List *l, void *data);
+bool listRemoveData(List *l, void *data);
+
 uint32 listGetSize(List *l);

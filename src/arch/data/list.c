@@ -152,6 +152,43 @@ void listInsert(List *l, ListIterator *itr, void *data)
 	}
 }
 
+bool listContains(List *l, void *data)
+{
+	for (ListIterator itr = listGetIterator(l);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		if (memcmp(
+				LIST_ITERATOR_GET_ELEMENT(void, itr),
+				data,
+				l->dataSize) == 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool listRemoveData(List *l, void *data)
+{
+	for (ListIterator itr = listGetIterator(l);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		if (memcmp(
+				LIST_ITERATOR_GET_ELEMENT(void, itr),
+				data,
+				l->dataSize) == 0)
+		{
+			listRemove(l, &itr);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 inline
 uint32 listGetSize(List *l)
 {

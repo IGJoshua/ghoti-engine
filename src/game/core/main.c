@@ -121,6 +121,12 @@ int32 main()
 			{
 				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
+				if (scene->loadedThisFrame)
+				{
+					scene->loadedThisFrame = false;
+					continue;
+				}
+
 				sceneRunPhysicsFrameSystems(scene, dt);
 
 				// Load the lua engine table and run its physics systems

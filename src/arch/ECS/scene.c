@@ -848,6 +848,8 @@ int32 loadScene(const char *name)
 				listRemove(&unloadedScenes, &itr);
 				listPushFront(&activeScenes, &scene);
 
+				scene->loadedThisFrame = true;
+
 				return 0;
 			}
 		}
@@ -863,6 +865,8 @@ int32 loadScene(const char *name)
 		sceneInitLua(&L, scene);
 
 		listPushFront(&activeScenes, &scene);
+
+		scene->loadedThisFrame = true;
 
 		return 0;
 	}
@@ -1832,17 +1836,30 @@ int32 sceneAddComponentToEntity(
 		return -1;
 	}
 
-	// Add the component to the data table
-	if(cdtInsert(
-		   *dataTable,
-		   entity,
-		   componentData) == -1)
-	{
-		return -1;
-	}
+	List *l = hashMapGetKey(s->entities, &entity);
 
-	// Add the component type to the list
-	listPushBack(hashMapGetKey(s->entities, &entity), &componentType);
+	if (listContains(l, &componentType))
+	{
+		printf(
+			"\n\nOverwriting component data of %s on entity %s\n\n\n",
+			componentType.string,
+			entity.string);
+		//ASSERT(false && "Overwriting component data")
+	}
+	else
+	{
+		// Add the component to the data table
+		if(cdtInsert(
+			   *dataTable,
+			   entity,
+			   componentData) == -1)
+		{
+			return -1;
+		}
+
+		// Add the component type to the list
+		listPushBack(l, &componentType);
+	}
 
 	return 0;
 }

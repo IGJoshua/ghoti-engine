@@ -79,6 +79,7 @@ typedef struct scene_t
 	char **componentLimitNames;
 	// Maps component UUIDs to component definitions
 	HashMap componentDefinitions;
+	bool loadedThisFrame;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

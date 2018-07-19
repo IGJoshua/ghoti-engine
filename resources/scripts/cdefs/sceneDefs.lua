@@ -13,6 +13,7 @@ typedef struct scene_t
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
 	HashMap componentDefinitions;
+  bool loadedThisFrame;
 } Scene;
 
 Scene *createScene(void);
