@@ -1,6 +1,8 @@
 #include "ECS/component.h"
 #include "ECS/ecs_types.h"
 
+#include "core/log.h"
+
 #include "data/hash_map.h"
 
 #include <stdio.h>
@@ -30,7 +32,7 @@ ComponentDataTable *createComponentDataTable(
 
 	memset(ret->data, 0, numEntries * (componentSize + sizeof(UUID)));
 
-	printf("Created a component data table with %d entries of %d bytes\n", numEntries, componentSize);
+	LOG("Created a component data table with %d entries of %d bytes\n", numEntries, componentSize);
 
 	return ret;
 }

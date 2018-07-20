@@ -1,7 +1,8 @@
 #include "data/hash_map.h"
-
 #include "data/data_types.h"
 #include "data/list.h"
+
+#include "core/log.h"
 
 #ifndef _WIN32
 #include <alloca.h>

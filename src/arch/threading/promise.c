@@ -1,6 +1,7 @@
 #include "threading/promise.h"
-
 #include "threading/threading_types.h"
+
+#include "core/log.h"
 
 #include <malloc.h>
 

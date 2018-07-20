@@ -1,6 +1,8 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
+#include "core/log.h"
+
 #include <malloc.h>
 #include <string.h>
 

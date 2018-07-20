@@ -2,6 +2,8 @@
 #include "ECS/component.h"
 #include "ECS/system.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -84,7 +86,7 @@ int32 exportSceneJSONEntities(const char *folder)
 				{
 					if (exportSceneJSONEntities(folderPath) == -1)
 					{
-						printf("Failed recursive export scene entities\n");
+						LOG("Failed recursive export scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -105,7 +107,7 @@ int32 exportSceneJSONEntities(const char *folder)
 
 						if (exportEntity(jsonEntityFilename) == -1)
 						{
-							printf("Failed to export entity\n");
+							LOG("Failed to export entity\n");
 							free(jsonEntityFilename);
 							free(folderPath);
 							free(extension);
@@ -129,7 +131,7 @@ int32 exportSceneJSONEntities(const char *folder)
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		LOG("Failed to open %s\n", folder);
 		error = -1;
 	}
 
@@ -189,7 +191,7 @@ int32 loadSceneEntities(
 						true,
 						folderPath) == -1)
 					{
-						printf("Failed to load scene entities\n");
+						LOG("Failed to load scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -319,7 +321,7 @@ int32 loadSceneEntities(
 						}
 						else
 						{
-							printf("Failed to open %s\n", folderPath);
+							LOG("Failed to open %s\n", folderPath);
 							free(folderPath);
 							free(extension);
 							closedir(dir);
@@ -340,7 +342,7 @@ int32 loadSceneEntities(
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		LOG("Failed to open %s\n", folder);
 		error = -1;
 	}
 
@@ -356,7 +358,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		return -1;
 	}
 
-	printf("Loading scene (%s)...\n", name);
+	LOG("Loading scene (%s)...\n", name);
 
 	char *sceneFolder = NULL;
 
@@ -408,7 +410,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	{
 		if (exportScene(sceneFilename) == -1)
 		{
-			printf("Failed to export scene.\n");
+			LOG("Failed to export scene.\n");
 			free(jsonSceneFilename);
 			free(sceneFilename);
 			free(sceneFolder);
@@ -527,7 +529,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 		if (exportSceneJSONEntities(entityFolder) == -1)
 		{
-			printf("Failed to export scene JSON entities\n");
+			LOG("Failed to export scene JSON entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -538,7 +540,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, false, false, entityFolder) == -1)
 		{
-			printf("Failed to load scene entities\n");
+			LOG("Failed to load scene entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -562,7 +564,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
 		{
-			printf("Failed to load scene entities\n");
+			LOG("Failed to load scene entities\n");
 
 			free(sceneFilename);
 			free(entityFolder);
@@ -584,7 +586,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	}
 	else
 	{
-		printf("Failed to open %s\n", sceneFilename);
+		LOG("Failed to open %s\n", sceneFilename);
 		error = -1;
 	}
 
@@ -634,7 +636,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 	if (error != -1)
 	{
-		printf("Successfully loaded scene (%s)\n", name);
+		LOG("Successfully loaded scene (%s)\n", name);
 	}
 
 	return error;
@@ -766,7 +768,7 @@ void freeEntityResources(UUID entity, Scene *scene)
 
 void freeScene(Scene **scene)
 {
-	printf("Unloading scene (%s)...\n", (*scene)->name);
+	LOG("Unloading scene (%s)...\n", (*scene)->name);
 
 	if (!reloadingScene)
 	{
@@ -813,7 +815,7 @@ void freeScene(Scene **scene)
 
 	free((*scene)->componentLimitNames);
 
-	printf("Successfully unloaded scene (%s)\n", (*scene)->name);
+	LOG("Successfully unloaded scene (%s)\n", (*scene)->name);
 	free((*scene)->name);
 
 	free(*scene);
@@ -845,7 +847,7 @@ int32 loadScene(const char *name)
 		Scene *scene;
 		if (loadSceneFile(name, &scene) == -1)
 		{
-			printf("Failed to load scene file\n");
+			LOG("Failed to load scene file\n");
 			return -1;
 		}
 
@@ -1415,7 +1417,7 @@ void freeSystemNames(char **systemNames, uint32 numSystemNames)
 
 void exportSceneSnapshot(const Scene *scene, const char *filename)
 {
-	printf("Exporting scene (%s)...\n", scene->name);
+	LOG("Exporting scene (%s)...\n", scene->name);
 
 	cJSON *json = cJSON_CreateObject();
 	cJSON *systems = cJSON_AddObjectToObject(json, "systems");
@@ -1494,7 +1496,7 @@ void exportSceneSnapshot(const Scene *scene, const char *filename)
 	writeJSON(json, filename);
 	cJSON_Delete(json);
 
-	printf("Successfully exported scene (%s)\n", scene->name);
+	LOG("Successfully exported scene (%s)\n", scene->name);
 }
 
 inline
@@ -1524,7 +1526,7 @@ void sceneInitRenderFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1546,7 +1548,7 @@ void sceneInitPhysicsFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1574,7 +1576,7 @@ void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1593,7 +1595,7 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1612,7 +1614,7 @@ void sceneShutdownRenderFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1634,7 +1636,7 @@ void sceneShutdownPhysicsFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1660,7 +1662,7 @@ void sceneInitLua(lua_State **L, Scene *scene)
 	int luaError = lua_pcall(*L, 1, 0, 0);
 	if (luaError)
 	{
-		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		LOG("Lua error: %s\n", lua_tostring(*L, -1));
 		lua_pop(*L, 1);
 		lua_close(*L);
 	}
@@ -1675,7 +1677,7 @@ void sceneShutdownLua(lua_State **L, Scene *scene)
 	int luaError = lua_pcall(*L, 1, 0, 0);
 	if (luaError)
 	{
-		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		LOG("Lua error: %s\n", lua_tostring(*L, -1));
 		lua_pop(*L, 1);
 		lua_close(*L);
 	}
@@ -1759,7 +1761,7 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 	List *entityList;
 	if ((entityList = hashMapGetKey(s->entities, &newEntity)))
 	{
-		printf(
+		LOG(
 			"Entity %s already exists in scene %s\n",
 			newEntity.string,
 			s->name);
@@ -1826,7 +1828,7 @@ int32 sceneAddComponentToEntity(
 	UUID componentType,
 	void *componentData)
 {
-	// printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
+	// LOG("Adding %s component to entity with id %s\n", componentType.string, entity.string);
 
 	// Get the data table
 	ComponentDataTable **dataTable = hashMapGetKey(
@@ -1851,7 +1853,7 @@ int32 sceneAddComponentToEntity(
 
 	if (listContains(l, &componentType))
 	{
-		printf(
+		LOG(
 			"\n\nOverwriting component data of %s on entity %s\n\n\n",
 			componentType.string,
 			entity.string);

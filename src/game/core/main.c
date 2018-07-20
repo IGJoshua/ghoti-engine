@@ -1,5 +1,6 @@
 #include "defines.h"
 
+#include "core/log.h"
 #include "core/window.h"
 #include "core/input.h"
 
@@ -42,6 +43,8 @@ int32 main()
 {
 	srand(time(0));
 
+	initLog();
+
 	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
 	if (!window)
@@ -79,7 +82,7 @@ int32 main()
 		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
-		printf("Lua Error: %s\n", lua_tostring(L, -1));
+		LOG("Lua Error: %s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 
 		lua_close(L);
@@ -140,7 +143,7 @@ int32 main()
 					luaError = lua_pcall(L, 2, 0, 0);
 					if (luaError)
 					{
-						printf("Lua error: %s\n", lua_tostring(L, -1));
+						LOG("Lua error: %s\n", lua_tostring(L, -1));
 						lua_close(L);
 						L = 0;
 					}
@@ -156,7 +159,7 @@ int32 main()
 				luaError = lua_pcall(L, 0, 0, 0);
 				if (luaError)
 				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
+					LOG("Lua error: %s\n", lua_tostring(L, -1));
 					lua_close(L);
 					L = 0;
 				}
@@ -275,7 +278,7 @@ int32 main()
 				luaError = lua_pcall(L, 2, 0, 0);
 				if (luaError)
 				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
+					LOG("Lua error: %s\n", lua_tostring(L, -1));
 					lua_close(L);
 					L = 0;
 				}
@@ -309,6 +312,8 @@ int32 main()
 	shutdownInput();
 
 	freeWindow(window);
+
+	shutdownLog();
 
 	return 0;
 }

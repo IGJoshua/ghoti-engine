@@ -1,5 +1,7 @@
 #include "asset_management/texture.h"
 
+#include "core/log.h"
+
 #include "file/utilities.h"
 
 #include <IL/il.h>
@@ -18,7 +20,7 @@ int32 loadTexture(const char *name)
 
 	if (name && !texture)
 	{
-		printf("Loading texture (%s)...\n", name);
+		LOG("Loading texture (%s)...\n", name);
 
 		texture = &textures[numTextures++];
 
@@ -33,7 +35,7 @@ int32 loadTexture(const char *name)
 		ilLoadImage(filename);
 
 		ILenum ilError = ilGetError();
-		printf("Load %s: %s\n", filename, iluErrorString(ilError));
+		LOG("Load %s: %s\n", filename, iluErrorString(ilError));
 		if (ilError != IL_NO_ERROR)
 		{
 			free(filename);
@@ -67,7 +69,7 @@ int32 loadTexture(const char *name)
 			GL_UNSIGNED_BYTE,
 			textureData);
 		GLenum glError = glGetError();
-		printf(
+		LOG(
 			"Load texture onto GPU: %s\n",
 			gluErrorString(glError));
 		if (glError != GL_NO_ERROR)
@@ -83,12 +85,12 @@ int32 loadTexture(const char *name)
 
 		ilDeleteImages(1, &devilID);
 
-		printf("Successfully loaded texture (%s)\n", name);
+		LOG("Successfully loaded texture (%s)\n", name);
 	}
 
 	if (texture)
 	{
-		printf(
+		LOG(
 			"Texture (%s) Reference Count: %d\n",
 			name,
 			++(texture->refCount));
@@ -122,12 +124,12 @@ void increaseTexturesCapacity(uint32 amount)
 
 	if (numTextures + amount == 1)
 	{
-		printf(
+		LOG(
 			"Increased textures capacity to %d to hold 1 new texture\n", texturesCapacity);
 	}
 	else
 	{
-		printf(
+		LOG(
 			"Increased textures capacity to %d to hold %d new textures\n", texturesCapacity,
 			amount);
 	}
@@ -167,13 +169,13 @@ uint32 getTextureIndex(const char *name)
 
 int32 freeTexture(const char *name)
 {
-	printf("Freeing texture (%s)...\n", name);
+	LOG("Freeing texture (%s)...\n", name);
 
 	Texture *texture = getTexture(name);
 
 	if (!texture)
 	{
-		printf("Could not find texture (%s)\n", name);
+		LOG("Could not find texture (%s)\n", name);
 		return -1;
 	}
 
@@ -199,12 +201,12 @@ int32 freeTexture(const char *name)
 		free(textures);
 		textures = resizedTextures;
 
-		printf("Successfully freed texture (%s)\n", name);
-		printf("Texture Count: %d\n", numTextures);
+		LOG("Successfully freed texture (%s)\n", name);
+		LOG("Texture Count: %d\n", numTextures);
 	}
 	else
 	{
-		printf(
+		LOG(
 			"Successfully reduced texture (%s) reference count to %d\n",
 			name,
 			texture->refCount);

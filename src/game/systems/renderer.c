@@ -1,5 +1,7 @@
 #include "defines.h"
 
+#include "core/log.h"
+
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/texture.h"
@@ -50,7 +52,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_VERTEX,
 			&vertShader) == -1)
 		{
-			printf("Unable to compile vertex shader from file\n");
+			LOG("Unable to compile vertex shader from file\n");
 		}
 
 		if (compileShaderFromFile(
@@ -58,7 +60,7 @@ void initRendererSystem(Scene *scene)
 			SHADER_FRAGMENT,
 			&fragShader) == -1)
 		{
-			printf("Unable to compile fragment shader from file\n");
+			LOG("Unable to compile fragment shader from file\n");
 		}
 
 		Shader *program[2];
@@ -67,7 +69,7 @@ void initRendererSystem(Scene *scene)
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
-			printf("Unable to compose shader program\n");
+			LOG("Unable to compose shader program\n");
 		}
 
 		freeShader(vertShader);
@@ -77,12 +79,12 @@ void initRendererSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			printf("Unable to get model component uniform\n");
+			LOG("Unable to get model component uniform\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			printf("Unable to get view component uniform\n");
+			LOG("Unable to get view component uniform\n");
 		}
 
 		if (getUniform(
@@ -91,7 +93,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_MAT4,
 			&projectionUniform) == -1)
 		{
-			printf("Unable to get projection component uniform\n");
+			LOG("Unable to get projection component uniform\n");
 		}
 
 		for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
@@ -105,7 +107,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
 		{
-			printf("Unable to get diffuse texture uniform\n");
+			LOG("Unable to get diffuse texture uniform\n");
 		}
 
 		if (getUniform(
@@ -114,7 +116,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
 		{
-			printf("Unable to get specular texture uniform\n");
+			LOG("Unable to get specular texture uniform\n");
 		}
 
 		if (getUniform(
@@ -123,7 +125,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
 		{
-			printf("Unable to get normal texture uniform\n");
+			LOG("Unable to get normal texture uniform\n");
 		}
 
 		if (getUniform(
@@ -132,7 +134,7 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
 		{
-			printf("Unable to get emissive texture uniform\n");
+			LOG("Unable to get emissive texture uniform\n");
 		}
 
 		rendererActive = true;
@@ -192,12 +194,12 @@ void beginRendererSystem(Scene *scene, real64 dt)
 
 	if (setUniform(viewUniform, &view) == -1)
 	{
-		printf("Unable to set view uniform\n");
+		LOG("Unable to set view uniform\n");
 	}
 
 	if (setUniform(projectionUniform, &projection) == -1)
 	{
-		printf("Unable to set projection uniform\n");
+		LOG("Unable to set projection uniform\n");
 	}
 
 	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
@@ -206,7 +208,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		{
 			if (setUniform(textureUniforms[i], &i) == -1)
 			{
-				printf("Unable to set texture uniform %d\n", i);
+				LOG("Unable to set texture uniform %d\n", i);
 			}
 		}
 	}
@@ -286,7 +288,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 	if (setUniform(modelUniform, &worldMatrix) == -1)
 	{
-		printf("Unable to set model uniform\n");
+		LOG("Unable to set model uniform\n");
 		return;
 	}
 
@@ -327,7 +329,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		GLenum glError = glGetError();
 		if (glError != GL_NO_ERROR)
 		{
-			printf(
+			LOG(
 				"Error in Draw Subset %s in Model (%s): %s\n",
 				material->name,
 				modelComponent->name,

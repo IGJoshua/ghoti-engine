@@ -1,4 +1,5 @@
 #include "core/window.h"
+#include "core/log.h"
 
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -16,7 +17,7 @@ void errorCallback(
 	int error,
 	const char *description)
 {
-	printf("GLFW Error %d: %s\n", error, description);
+	LOG("GLFW Error %d: %s\n", error, description);
 }
 
 GLFWwindow *initWindow(
@@ -51,7 +52,7 @@ GLFWwindow *initWindow(
 
 	if (GLEW_OK != err)
 	{
-		printf("Error: %s\n", glewGetErrorString(err));
+		LOG("Error: %s\n", glewGetErrorString(err));
 	}
 
 	ilInit();

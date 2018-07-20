@@ -1,6 +1,8 @@
 #include "ECS/save.h"
 #include "ECS/scene.h"
 
+#include "core/log.h"
+
 #include "data/hash_map.h"
 #include "data/list.h"
 
@@ -23,7 +25,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
-	printf("Exporting save file (%s)...\n", saveName);
+	LOG("Exporting save file (%s)...\n", saveName);
 
 	MKDIR(SAVE_FOLDER);
 
@@ -182,7 +184,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 
 	free(saveFolder);
 
-	printf("Successfully exported save file (%s)\n", saveName);
+	LOG("Successfully exported save file (%s)\n", saveName);
 	free(saveName);
 
 	return 0;
@@ -195,7 +197,7 @@ int32 loadSave(uint32 slot, void **data)
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
-	printf("Loading save file (%s)...\n", saveName);
+	LOG("Loading save file (%s)...\n", saveName);
 
 	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
@@ -212,7 +214,7 @@ int32 loadSave(uint32 slot, void **data)
 			char *sceneName = readString(file);
 			char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
 
-			deleteFolder(RUNTIME_STATE_DIR, true);
+			deleteFolder(RUNTIME_STATE_DIR, false);
 			MKDIR(RUNTIME_STATE_DIR);
 
 			DIR *dir = opendir(saveFolder);
@@ -262,7 +264,7 @@ int32 loadSave(uint32 slot, void **data)
 			}
 			else
 			{
-				printf("Failed to open %s\n", saveFolder);
+				LOG("Failed to open %s\n", saveFolder);
 				error = -1;
 			}
 
@@ -290,7 +292,7 @@ int32 loadSave(uint32 slot, void **data)
 	}
 	else
 	{
-		printf("Failed to open %s\n", saveFilename);
+		LOG("Failed to open %s\n", saveFilename);
 		error = -1;
 	}
 
@@ -300,7 +302,7 @@ int32 loadSave(uint32 slot, void **data)
 	if (error != -1)
 	{
 		loadingSave = true;
-		printf("Successfully loaded save file (%s)\n", saveName);
+		LOG("Successfully loaded save file (%s)\n", saveName);
 	}
 
 	free(saveName);
@@ -335,11 +337,11 @@ int32 deleteSave(uint32 slot)
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
 
-	printf("Deleting save file (%s)...\n", saveName);
+	LOG("Deleting save file (%s)...\n", saveName);
 
 	if (!getSaveSlotAvailability(slot))
 	{
-		printf("Save file doesn't exist.\n");
+		LOG("Save file doesn't exist.\n");
 		error = -1;
 	}
 
@@ -352,7 +354,7 @@ int32 deleteSave(uint32 slot)
 
 		if (error != -1)
 		{
-			printf("Successfully deleted save file (%s)\n", saveName);
+			LOG("Successfully deleted save file (%s)\n", saveName);
 		}
 	}
 

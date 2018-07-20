@@ -1,5 +1,7 @@
 #include "defines.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/list.h"
 #include "data/hash_map.h"
@@ -59,7 +61,7 @@ void initRenderAABBSystem(Scene *scene)
 				SHADER_VERTEX,
 				&vertShader) == -1)
 		{
-			printf("Unable to compile vertex shader for aabb renderer\n");
+			LOG("Unable to compile vertex shader for aabb renderer\n");
 		}
 
 		if (compileShaderFromFile(
@@ -67,7 +69,7 @@ void initRenderAABBSystem(Scene *scene)
 				SHADER_FRAGMENT,
 				&fragShader) == -1)
 		{
-			printf("Unable to compile fragment shader for aabb renderer\n");
+			LOG("Unable to compile fragment shader for aabb renderer\n");
 		}
 
 		Shader *program[2];
@@ -76,7 +78,7 @@ void initRenderAABBSystem(Scene *scene)
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
-			printf("Unable to compose aabb shader pipeline\n");
+			LOG("Unable to compose aabb shader pipeline\n");
 		}
 
 		freeShader(vertShader);
@@ -86,12 +88,12 @@ void initRenderAABBSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			printf("Unable to get model component uniform\n");
+			LOG("Unable to get model component uniform\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			printf("Unable to get view component uniform\n");
+			LOG("Unable to get view component uniform\n");
 		}
 
 		if (getUniform(
@@ -100,7 +102,7 @@ void initRenderAABBSystem(Scene *scene)
 				UNIFORM_MAT4,
 				&projectionUniform) == -1)
 		{
-			printf("Unable to get projection component uniform\n");
+			LOG("Unable to get projection component uniform\n");
 		}
 
 		rendererActive = true;
@@ -423,12 +425,12 @@ void endRenderAABBSystem(Scene *scene, real64 dt)
 
 	if (setUniform(viewUniform, &view) == -1)
 	{
-		printf("Unable to set view uniform\n");
+		LOG("Unable to set view uniform\n");
 	}
 
 	if (setUniform(projectionUniform, &projection) == -1)
 	{
-		printf("Unable to set projection uniform\n");
+		LOG("Unable to set projection uniform\n");
 	}
 
 	kmMat4 model;
@@ -436,7 +438,7 @@ void endRenderAABBSystem(Scene *scene, real64 dt)
 
 	if (setUniform(modelUniform, &model) == -1)
 	{
-		printf("Unable to set the model uniform\n");
+		LOG("Unable to set the model uniform\n");
 	}
 
 	glBindVertexArray(sceneLineAllocator->vertexArray);
