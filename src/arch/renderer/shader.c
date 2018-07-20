@@ -144,7 +144,11 @@ void unbindShaderPipeline(void)
 	glUseProgram(0);
 }
 
-int32 getUniform(ShaderPipeline pipeline, char *name, UniformType type, Uniform *uniform)
+int32 getUniform(
+	ShaderPipeline pipeline,
+	char *name,
+	UniformType type,
+	Uniform *uniform)
 {
 	uniform->type = type;
 	uniform->name = name;
