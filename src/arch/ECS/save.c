@@ -65,10 +65,23 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 					NULL,
 					RUNTIME_STATE_DIR);
 
+				bool active = false;
+				for (ListIterator itr = listGetIterator(&activeScenes);
+					!listIteratorAtEnd(itr);
+					listMoveIterator(&itr))
+				{
+					Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene*, itr);
+					if (!strcmp(scene->name, dirEntry->d_name))
+					{
+						active = true;
+						break;
+					}
+				}
+
 				struct stat info;
 				stat(folderPath, &info);
 
-				if (S_ISDIR(info.st_mode))
+				if (S_ISDIR(info.st_mode) && !active)
 				{
 					char *destinationFolderPath = getFullFilePath(
 						dirEntry->d_name,
@@ -198,7 +211,6 @@ int32 loadSave(uint32 slot, void **data)
 			char *sceneName = readString(file);
 			char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
 
-			MKDIR(RUNTIME_STATE_DIR);
 			deleteFolder(RUNTIME_STATE_DIR, true);
 			MKDIR(RUNTIME_STATE_DIR);
 

@@ -1860,7 +1860,6 @@ int32 sceneAddComponentToEntity(
 			"\n\nOverwriting component data of %s on entity %s\n\n\n",
 			componentType.string,
 			entity.string);
-		//ASSERT(false && "Overwriting component data")
 	}
 	else
 	{
