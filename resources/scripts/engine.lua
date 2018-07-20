@@ -2,8 +2,6 @@ ffi = require("ffi")
 
 engine = {}
 
--- io.output("lua.log")
-
 io.write("Loaded cFFI\n")
 
 engine.C = ffi.load(

@@ -78,7 +78,26 @@ int32 main()
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
+	int luaError = 0;
+
+#ifndef _DEBUG
+	if (L)
+	{
+		lua_getglobal(L, "io");
+		lua_getfield(L, -1, "output");
+		lua_remove(L, -2);
+		lua_pushstring(L, "lua.log");
+		luaError = lua_pcall(L, 1, 0, 0);
+		if (luaError)
+		{
+			LOG("Lua error: %s\n", lua_tostring(L, -1));
+			lua_close(L);
+			L = 0;
+		}
+	}
+#endif
+
+	luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
 		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
