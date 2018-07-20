@@ -38,52 +38,6 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
-void fakeKeyInput(uint32 action, uint32 key)
-{
-	lua_checkstack(L, 4);
-
-	// Get the keyboard
-	lua_getglobal(L, "engine");
-	lua_getfield(L, -1, "keyboard");
-	lua_remove(L, -2);
-
-	// Stack: keyboard
-
-	// Check if the field is nil
-	lua_pushnumber(L, key);
-	lua_gettable(L, -2);
-	// stack: keyboard keytable/nil
-	if (lua_isnil(L, -1))
-	{
-		lua_pop(L, 1);
-
-		lua_pushnumber(L, key);
-		lua_createtable(L, 0, 2);
-
-		lua_settable(L, -3);
-
-		lua_pushnumber(L, key);
-		lua_gettable(L, -2);
-	}
-	// stack: keyboard keytable
-
-	// Set the correct values in the table
-	// The key is down (or not)
-	lua_pushboolean(L, action != GLFW_RELEASE ? 1 : 0);
-	// stack: keyboard keytable bool
-	lua_setfield(L, -2, "keydown");
-	// stack: keyboard keytable(with keydown set)
-
-	// The key has just been updated
-	lua_pushboolean(L, action == GLFW_PRESS || action == GLFW_RELEASE);
-	// stack: keyboard keytable bool
-	lua_setfield(L, -2, "updated");
-	// stack: keyboard keytable(with updated set)
-
-	lua_pop(L, 2);
-	// stack: cleaned
-}
-
 int32 main()
 {
 	srand(time(0));
@@ -115,6 +69,8 @@ int32 main()
 
 	initSystems();
 
+	deleteFolder(RUNTIME_STATE_DIR, false);
+
 	// Init Lua
 	L = luaL_newstate();
 	luaL_openlibs(L);
@@ -131,8 +87,6 @@ int32 main()
 		return 1;
 	}
 
-	deleteFolder(RUNTIME_STATE_DIR, false);
-
 	// State previous
 	// State next
 
@@ -145,8 +99,6 @@ int32 main()
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
-
-	bool load = true;
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -163,12 +115,6 @@ int32 main()
 
 		while (accumulator >= dt && !glfwWindowShouldClose(window))
 		{
-			/*
-			fakeKeyInput(GLFW_RELEASE, load ? GLFW_KEY_U : GLFW_KEY_L);
-			fakeKeyInput(GLFW_PRESS, load ? GLFW_KEY_L : GLFW_KEY_U);
-			load = !load;
-			*/
-
 			for (itr = listGetIterator(&activeScenes);
 				 !listIteratorAtEnd(itr);
 				 listMoveIterator(&itr))
@@ -351,7 +297,7 @@ int32 main()
 		freeScene(&scene);
 	}
 
-	//deleteFolder(RUNTIME_STATE_DIR, false);
+	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	if (L)
 	{
