@@ -96,9 +96,10 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 						return -1;
 					}
 
-					free(folderPath);
 					free(destinationFolderPath);
 				}
+
+				free(folderPath);
 			}
 
 			dirEntry = readdir(dir);
