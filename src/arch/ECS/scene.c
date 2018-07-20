@@ -1770,11 +1770,6 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 		//ASSERT(false && "Entity already exists in scene");
 	}
 
-	printf(
-		"Entity %s is being registered in scene %s\n",
-		newEntity.string,
-		s->name);
-
 	List emptyList = createList(sizeof(UUID));
 	hashMapInsert(s->entities, &newEntity, &emptyList);
 }
