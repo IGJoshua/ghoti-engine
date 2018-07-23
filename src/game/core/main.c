@@ -27,6 +27,8 @@
 
 #include <SDL2/SDL.h>
 
+#include <ode/ode.h>
+
 #include <time.h>
 #include <stdlib.h>
 
@@ -62,6 +64,8 @@ int32 main()
 	activeScenes = createList(sizeof(Scene *));
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
+
+	dInitODE();
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
@@ -327,6 +331,8 @@ int32 main()
 	}
 
 	freeSystems();
+
+	dCloseODE();
 
 	shutdownInput();
 

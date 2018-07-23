@@ -61,6 +61,9 @@ Scene *createScene(void)
 
 	ret->physicsWorld = dWorldCreate();
 
+	dWorldSetGravity(ret->physicsWorld, 0, -9.8f, 0);
+	dWorldSetAutoDisableFlag(ret->physicsWorld, 1);
+
 	return ret;
 }
 
