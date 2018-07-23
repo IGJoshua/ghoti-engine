@@ -3,6 +3,8 @@
 
 #include "data/data_types.h"
 
+#include <ode/ode.h>
+
 #define UUID_LENGTH 63
 
 typedef union uuid_t
@@ -80,6 +82,7 @@ typedef struct scene_t
 	// Maps component UUIDs to component definitions
 	HashMap componentDefinitions;
 	bool loadedThisFrame;
+	dWorldID physicsWorld;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

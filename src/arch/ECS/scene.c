@@ -21,6 +21,8 @@
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <ode/ode.h>
+
 #include <sys/stat.h>
 
 #include <malloc.h>
@@ -56,6 +58,8 @@ Scene *createScene(void)
 	ret->renderFrameSystems = createList(sizeof(UUID));
 	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
 	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
+
+	ret->physicsWorld = dWorldCreate();
 
 	return ret;
 }
@@ -774,6 +778,8 @@ void freeScene(Scene **scene)
 	{
 		exportRuntimeScene(*scene);
 	}
+
+	dWorldDestroy((*scene)->physicsWorld);
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
