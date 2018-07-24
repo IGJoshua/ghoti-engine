@@ -13,9 +13,9 @@
 System createRendererSystem(void);
 System createCleanGlobalTransformsSystem(void);
 System createApplyParentTransformsSystem(void);
-System createCollideAABBSystem(void);
-System createRenderAABBSystem(void);
+System createRenderBoxSystem(void);
 System createCleanHitInformationSystem(void);
+System createSimulateRigidbodiesSystem(void);
 
 extern HashMap systemRegistry;
 
@@ -41,17 +41,17 @@ void initSystems(void)
 	key = idFromName("apply_parent_transforms");
 	hashMapInsert(systemRegistry, &key, &applyParentTransforms);
 
-	System collideAABB = createCollideAABBSystem();
-	key = idFromName("collide_aabb");
-	hashMapInsert(systemRegistry, &key, &collideAABB);
-
-	System renderAABB = createRenderAABBSystem();
-	key = idFromName("render_aabb");
-	hashMapInsert(systemRegistry, &key, &renderAABB);
+	System renderBox = createRenderBoxSystem();
+	key = idFromName("render_box");
+	hashMapInsert(systemRegistry, &key, &renderBox);
 
 	System cleanHitInformation = createCleanHitInformationSystem();
 	key = idFromName("clean_hit_information");
 	hashMapInsert(systemRegistry, &key, &cleanHitInformation);
+
+	System simulateRigidbodies = createSimulateRigidbodiesSystem();
+	key = idFromName("simulate_rigid_bodies");
+	hashMapInsert(systemRegistry, &key, &simulateRigidbodies);
 }
 
 void freeSystems(void)

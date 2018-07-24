@@ -60,6 +60,7 @@ Scene *createScene(void)
 	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
 
 	ret->physicsWorld = dWorldCreate();
+	ret->physicsSpace = dHashSpaceCreate(0);
 
 	dWorldSetGravity(ret->physicsWorld, 0, -9.8f, 0);
 	dWorldSetAutoDisableFlag(ret->physicsWorld, 1);
@@ -782,6 +783,7 @@ void freeScene(Scene **scene)
 		exportRuntimeScene(*scene);
 	}
 
+	dSpaceDestroy((*scene)->physicsSpace);
 	dWorldDestroy((*scene)->physicsWorld);
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);

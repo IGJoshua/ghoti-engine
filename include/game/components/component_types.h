@@ -3,6 +3,8 @@
 
 #include "ECS/ecs_types.h"
 
+#include <ode/ode.h>
+
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -52,28 +54,44 @@ typedef struct collision_component_t
 	UUID lastHitList;
 } CollisionComponent;
 
-typedef enum bounding_volume_type_e
+typedef enum collision_geom_type_e
 {
-	BOUNDING_VOLUME_TYPE_AABB = 0,
-	BOUNDING_VOLUME_TYPE_COUNT
-} BoundingVolumeType;
+	COLLISION_GEOM_TYPE_BOX = 0,
+	COLLISION_GEOM_TYPE_SPHERE
+} CollisionGeomType;
 
-typedef struct collision_tree_node_component_t
+typedef struct collision_tree_node_t
 {
-	UUID parent;
-	UUID nextSibling;
-	UUID firstChild;
-	BoundingVolumeType volumeType;
-} CollisionTreeNodeComponent;
+	CollisionGeomType type;
+	UUID collisionVolume;
+	dGeomID geomID;
+} CollisionTreeNode;
 
 typedef struct aabb_component_t
 {
-	UUID collisionVolume;
 	kmVec3 bounds;
-} AABBComponent;
+} BoxComponent;
 
 typedef struct hit_information_component_t
 {
 	UUID otherObject;
 	UUID nextHit;
 } HitInformationComponent;
+
+typedef struct rigid_body_component_t
+{
+	dBodyID bodyID;
+	dSpaceID spaceID;
+	bool enabled;
+	bool dynamic;
+	bool gravity;
+	real32 mass;
+	kmVec3 centerOfMass;
+	kmVec3 velocity;
+	kmVec3 angularVel;
+	real32 linearDamping;
+	real32 angularDamping;
+	real32 linearDampingThreshold;
+	real32 angularDampingThreshold;
+	real32 maxAngularSpeed;
+} RigidBodyComponent;

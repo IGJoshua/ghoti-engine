@@ -83,6 +83,7 @@ typedef struct scene_t
 	HashMap componentDefinitions;
 	bool loadedThisFrame;
 	dWorldID physicsWorld;
+	dSpaceID physicsSpace;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
