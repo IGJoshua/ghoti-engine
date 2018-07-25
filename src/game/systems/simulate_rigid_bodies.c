@@ -294,10 +294,33 @@ void endSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 }
 
 internal
+void freeUserData(dGeomID geom)
+{
+	// if it's not a space
+	if (!dGeomIsSpace(geom))
+	{
+		free(dGeomGetData(geom));
+	}
+	// if it's a space
+	else
+	{
+		dSpaceID space = (dSpaceID)geom;
+
+		uint32 count = dSpaceGetNumGeoms(space);
+		// For each geom in the space
+		for (uint32 i = 0; i < count; ++i)
+		{
+			// free all the stuff in the user data ptr
+			freeUserData(dSpaceGetGeom(space, i));
+		}
+	}
+}
+
+internal
 void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
 	// TODO: shutdown all the ode stuff
-
+	freeUserData((dGeomID)scene->physicsSpace);
 }
 
 System createSimulateRigidbodiesSystem(void)
