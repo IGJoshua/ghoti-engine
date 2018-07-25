@@ -48,9 +48,9 @@ void createCollisionGeom(
 
 		node->geomID = dCreateBox(
 			spaceID,
-			box->bounds.x,
-			box->bounds.y,
-			box->bounds.z);
+			box->bounds.x * trans->globalScale.x * 2,
+			box->bounds.y * trans->globalScale.y * 2,
+			box->bounds.z * trans->globalScale.z * 2);
 	} break;
 	case COLLISION_GEOM_TYPE_SPHERE:
 	{
@@ -63,13 +63,17 @@ void createCollisionGeom(
 
 	dGeomSetBody(node->geomID, body->bodyID);
 
+	void *userData = calloc(1, sizeof(UUID));
+	memcpy(userData, &entity, sizeof(UUID));
+	dGeomSetData(node->geomID, userData);
+
 	dGeomSetOffsetPosition(
 		node->geomID,
 		trans->position.x,
 		trans->position.y,
 		trans->position.z);
 
-	dQuaternion quat;
+	dReal quat[4] = {};
 	quat[0] = trans->rotation.w;
 	quat[1] = trans->rotation.x;
 	quat[2] = trans->rotation.y;
@@ -140,23 +144,21 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 
 		registerRigidBody(scene, body);
 
-		// TODO: Move this to registerRigidBody
-		body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
-
 		createCollisionGeoms(
 			scene,
 			coll->collisionTree,
 			body,
-			body->spaceID);
+			scene->physicsSpace);
 
 		// TODO: update all the other information about the rigidbody
-		dMass mass;
-		real32 aabb[6];
-		dGeomGetAABB((dGeomID)body->spaceID, aabb);
+		dMass mass = {};
+		real32 aabb[6] = {};
+		//dGeomGetAABB((dGeomID)body->spaceID, aabb);
 
 		real32 radius = fmaxf(
 			aabb[1] - aabb[0], fmaxf(aabb[3] - aabb[2], aabb[5] - aabb[4]))
 			/ 2.0f;
+		radius = 1;
 
 		dMassSetSphereTotal(&mass, body->mass, radius);
 		dBodySetMass(body->bodyID, &mass);
@@ -179,7 +181,7 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 			trans->globalPosition.y,
 			trans->globalPosition.z);
 
-		dQuaternion rot;
+		dQuaternion rot = {};
 		rot[0] = trans->globalRotation.w;
 		rot[1] = trans->globalRotation.x;
 		rot[2] = trans->globalRotation.y;
@@ -199,19 +201,64 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 }
 
 internal
+void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
+{
+	dContactGeom contacts[4] = {};
+
+	int32 numContacts = dCollide(
+		o1,
+		o2,
+		4,
+		contacts,
+		sizeof(dContactGeom));
+
+	Scene *scene = data;
+
+	// TODO: Actually create contact joints, and matching hit information
+	for (int32 i = 0; i < numContacts; ++i)
+	{
+		dContact contact = {};
+		contact.geom = contacts[i];
+
+		contact.surface.mode = 0;
+		contact.surface.mu = dInfinity;
+
+		dJointID joint = dJointCreateContact(
+			scene->physicsWorld,
+			scene->contactGroup,
+			&contact);
+
+		dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+	}
+}
+
+internal
 void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
-
+	bool space1 = dGeomIsSpace(o1);
+	bool space2 = dGeomIsSpace(o2);
+	if (space1 && space2)
+	{
+		dSpaceCollide2(o1, o2, data, &rigidsNearCallback);
+	}
+	else if (space1 || space2)
+	{
+		dSpaceCollide2(o1, o2, data, &rigidsNearCallback);
+	}
+	else
+	{
+		rigidsNearCallback(data, o1, o2);
+	}
 }
 
 internal
 void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 {
-	// run a physics frame
+	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
+
 	dWorldStep(scene->physicsWorld, dt);
 
-	// TODO: check for collisions and add them to a joint group
-	dSpaceCollide(scene->physicsSpace, 0, &nearCallback);
+	dJointGroupEmpty(scene->contactGroup);
 }
 
 internal
@@ -250,6 +297,7 @@ internal
 void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
 	// TODO: shutdown all the ode stuff
+
 }
 
 System createSimulateRigidbodiesSystem(void)
@@ -259,6 +307,7 @@ System createSimulateRigidbodiesSystem(void)
 	rigidBodyComponentID = idFromName("rigid_body");
 	collisionTreeNodeComponentID = idFromName("collision_tree_node");
 	collisionComponentID = idFromName("collision");
+
 	System sys = {};
 
 	sys.componentTypes = createList(sizeof(UUID));

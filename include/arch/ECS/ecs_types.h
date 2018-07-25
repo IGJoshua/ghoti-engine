@@ -84,6 +84,7 @@ typedef struct scene_t
 	bool loadedThisFrame;
 	dWorldID physicsWorld;
 	dSpaceID physicsSpace;
+	dJointGroupID contactGroup;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

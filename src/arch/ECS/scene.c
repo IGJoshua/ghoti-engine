@@ -31,6 +31,8 @@
 #include <dirent.h>
 #include <unistd.h>
 
+#define MAX_CONTACTS 4096
+
 extern HashMap systemRegistry;
 extern List activeScenes;
 extern bool changeScene;
@@ -61,6 +63,7 @@ Scene *createScene(void)
 
 	ret->physicsWorld = dWorldCreate();
 	ret->physicsSpace = dHashSpaceCreate(0);
+	ret->contactGroup = dJointGroupCreate(MAX_CONTACTS);
 
 	dWorldSetGravity(ret->physicsWorld, 0, -9.8f, 0);
 	dWorldSetAutoDisableFlag(ret->physicsWorld, 1);
@@ -783,6 +786,7 @@ void freeScene(Scene **scene)
 		exportRuntimeScene(*scene);
 	}
 
+	dJointGroupDestroy((*scene)->contactGroup);
 	dSpaceDestroy((*scene)->physicsSpace);
 	dWorldDestroy((*scene)->physicsWorld);
 

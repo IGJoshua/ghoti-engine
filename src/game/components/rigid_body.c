@@ -14,6 +14,7 @@ RigidBodyComponent createRigidBody(Scene *scene)
 void registerRigidBody(Scene *scene, RigidBodyComponent *body)
 {
 	body->bodyID = dBodyCreate(scene->physicsWorld);
+	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
 }
 
 void destroyRigidBody(RigidBodyComponent *body)

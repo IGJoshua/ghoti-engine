@@ -257,7 +257,6 @@ void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 	kmVec3 bounds;
 	kmVec3Assign(&bounds, &box->bounds);
 	kmVec3Mul(&bounds, &bounds, &transform->globalScale);
-	kmQuaternionMultiplyVec3(&bounds, &transform->globalRotation, &bounds);
 
 	// Top front left
 	kmVec3Fill(
