@@ -187,7 +187,7 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 		rot[2] = trans->globalRotation.y;
 		rot[3] = trans->globalRotation.z;
 
-		dBodySetRotation(body->bodyID, rot);
+		dBodySetQuaternion(body->bodyID, rot);
 
 		if (body->dynamic)
 		{
