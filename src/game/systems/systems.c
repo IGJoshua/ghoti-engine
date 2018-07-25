@@ -10,12 +10,18 @@
 
 #include <string.h>
 
-System createRendererSystem(void);
-System createCleanGlobalTransformsSystem(void);
-System createApplyParentTransformsSystem(void);
-System createRenderBoxSystem(void);
-System createCleanHitInformationSystem(void);
-System createSimulateRigidbodiesSystem(void);
+#define SYSTEM(fn) System fn(void)
+#define REGISTER_SYSTEM(sys, fn, name) System sys = fn();\
+	key = idFromName(name);\
+	hashMapInsert(systemRegistry, &key, &sys);
+
+SYSTEM(createRendererSystem);
+SYSTEM(createCleanGlobalTransformsSystem);
+SYSTEM(createApplyParentTransformsSystem);
+SYSTEM(createRenderBoxSystem);
+SYSTEM(createCleanHitInformationSystem);
+SYSTEM(createSimulateRigidbodiesSystem);
+SYSTEM(createCleanHitListSystem);
 
 extern HashMap systemRegistry;
 
@@ -29,29 +35,40 @@ void initSystems(void)
 
 	UUID key;
 
-	System renderer = createRendererSystem();
-	key = idFromName("renderer");
-	hashMapInsert(systemRegistry, &key, &renderer);
+	REGISTER_SYSTEM(
+		renderer,
+		createRendererSystem,
+		"renderer");
 
-	System cleanGlobalTransforms = createCleanGlobalTransformsSystem();
-	key = idFromName("clean_global_transforms");
-	hashMapInsert(systemRegistry, &key, &cleanGlobalTransforms);
+	REGISTER_SYSTEM(
+		cleanGlobalTransforms,
+		createCleanGlobalTransformsSystem,
+		"clean_global_transforms");
 
-	System applyParentTransforms = createApplyParentTransformsSystem();
-	key = idFromName("apply_parent_transforms");
-	hashMapInsert(systemRegistry, &key, &applyParentTransforms);
+	REGISTER_SYSTEM(
+		applyParentTransforms,
+		createApplyParentTransformsSystem,
+		"apply_parent_transforms");
 
-	System renderBox = createRenderBoxSystem();
-	key = idFromName("render_box");
-	hashMapInsert(systemRegistry, &key, &renderBox);
+	REGISTER_SYSTEM(
+		renderBox,
+		createRenderBoxSystem,
+		"render_box");
 
-	System cleanHitInformation = createCleanHitInformationSystem();
-	key = idFromName("clean_hit_information");
-	hashMapInsert(systemRegistry, &key, &cleanHitInformation);
+	REGISTER_SYSTEM(
+		cleanHitInformation,
+		createCleanHitInformationSystem,
+		"clean_hit_information");
 
-	System simulateRigidbodies = createSimulateRigidbodiesSystem();
-	key = idFromName("simulate_rigid_bodies");
-	hashMapInsert(systemRegistry, &key, &simulateRigidbodies);
+	REGISTER_SYSTEM(
+		simulateRigidbodies,
+		createSimulateRigidbodiesSystem,
+		"simulate_rigid_bodies");
+
+	REGISTER_SYSTEM(
+		cleanHitList,
+		createCleanHitListSystem,
+		"clean_hit_list");
 }
 
 void freeSystems(void)
