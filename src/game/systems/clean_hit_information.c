@@ -11,59 +11,32 @@
 #include <string.h>
 
 internal UUID hitInformationComponentID = {};
-internal UUID collisionComponentID = {};
-internal UUID emptyID = {};
 
 internal
 void runCleanHitInformationSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	// NOTE(Joshua): This is somehow causing memory leaks
-	//               but only when things stop colliding. Notably
-	//               this memory is leaked from objects with on
-	//               average 4 components (the scene which is leaking
-	//               has only objects with 2 and 6 components)
-
-	CollisionComponent *collision = sceneGetComponentFromEntity(
+	HitInformationComponent *hitInformation = sceneGetComponentFromEntity(
 		scene,
 		entityID,
-		collisionComponentID);
+		hitInformationComponentID);
 
-	UUID nextHit = {};
-	// Iterate over every hit in the last hit list and delete them
-	for (UUID itr = collision->lastHitList;
-		 strcmp(itr.string, emptyID.string);
-		 itr = nextHit)
+	if (hitInformation->age >= 0)
 	{
-		HitInformationComponent *hitInfoComponent =
-			(HitInformationComponent *)sceneGetComponentFromEntity(
-				scene,
-				itr,
-				hitInformationComponentID);
-
-		if (!hitInfoComponent)
+		if (++hitInformation->age > 2)
 		{
-			break;
+			sceneRemoveEntity(scene, entityID);
 		}
-
-		nextHit = hitInfoComponent->nextHit;
-
-		sceneRemoveEntity(scene, itr);
 	}
-
-	// Move current hits to last hit list
-	collision->lastHitList = collision->hitList;
-	collision->hitList = emptyID;
 }
 
 System createCleanHitInformationSystem(void)
 {
 	hitInformationComponentID = idFromName("hit_information");
-	collisionComponentID = idFromName("collision");
 
 	System ret = {};
 
 	ret.componentTypes = createList(sizeof(UUID));
-	listPushFront(&ret.componentTypes, &collisionComponentID);
+	listPushFront(&ret.componentTypes, &hitInformationComponentID);
 
 	ret.init = 0;
 	ret.begin = 0;

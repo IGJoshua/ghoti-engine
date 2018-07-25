@@ -23,6 +23,8 @@ internal UUID transformComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID collisionComponentID = {};
 internal UUID collisionTreeNodeComponentID = {};
+internal UUID hitInformationComponentID = {};
+internal UUID hitListComponentID = {};
 
 internal
 void createCollisionGeom(
@@ -36,6 +38,8 @@ void createCollisionGeom(
 		scene,
 		entity,
 		collisionTreeNodeComponentID);
+
+	ASSERT(node && "Collision tree pointed to a node with no node structure");
 
 	switch (node->type)
 	{
@@ -94,12 +98,12 @@ void createCollisionGeoms(
 		entity,
 		transformComponentID);
 
-	createCollisionGeom(scene, entity, trans, body, spaceID);
-
 	if (!trans)
 	{
 		return;
 	}
+
+	createCollisionGeom(scene, entity, trans, body, spaceID);
 
 	TransformComponent *child = 0;
 
@@ -148,17 +152,16 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 			scene,
 			coll->collisionTree,
 			body,
-			scene->physicsSpace);
+			body->spaceID);
 
 		// TODO: update all the other information about the rigidbody
 		dMass mass = {};
 		real32 aabb[6] = {};
-		//dGeomGetAABB((dGeomID)body->spaceID, aabb);
+		dGeomGetAABB((dGeomID)body->spaceID, aabb);
 
 		real32 radius = fmaxf(
 			aabb[1] - aabb[0], fmaxf(aabb[3] - aabb[2], aabb[5] - aabb[4]))
 			/ 2.0f;
-		radius = 1;
 
 		dMassSetSphereTotal(&mass, body->mass, radius);
 		dBodySetMass(body->bodyID, &mass);
@@ -214,7 +217,7 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 
 	Scene *scene = data;
 
-	// TODO: Actually create contact joints, and matching hit information
+	// create contact joints, and matching hit information
 	for (int32 i = 0; i < numContacts; ++i)
 	{
 		dContact contact = {};
@@ -229,6 +232,82 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 			&contact);
 
 		dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+
+		// TODO: create hit information entities and hit list entities,
+		//       and attach them to the correct entities
+		UUID *volume1 = dGeomGetData(o1);
+		UUID *volume2 = dGeomGetData(o1);
+
+		// create a hit_information entity
+		HitInformationComponent hitInformation = {};
+		hitInformation.age = 0;
+		hitInformation.volume1 = *volume1;
+		hitInformation.volume2 = *volume2;
+		{
+			CollisionTreeNode *node1 = sceneGetComponentFromEntity(
+				scene,
+				*volume1,
+				collisionTreeNodeComponentID);
+
+			CollisionTreeNode *node2 = sceneGetComponentFromEntity(
+				scene,
+				*volume2,
+				collisionTreeNodeComponentID);
+
+			hitInformation.object1 = node1->collisionVolume;
+			hitInformation.object2 = node2->collisionVolume;
+		}
+		kmVec3Fill(
+			&hitInformation.contactNormal,
+			contact.geom.normal[0],
+			contact.geom.normal[1],
+			contact.geom.normal[2]);
+		kmVec3Fill(
+			&hitInformation.position,
+			contact.geom.pos[0],
+			contact.geom.pos[1],
+			contact.geom.pos[2]);
+		hitInformation.depth = contact.geom.depth;
+
+		UUID hitInformationEntity = sceneCreateEntity(scene);
+		sceneAddComponentToEntity(
+			scene,
+			hitInformationEntity,
+			hitInformationComponentID,
+			&hitInformation);
+
+		// create two hit_list entities and link them to the appropriate lists
+		CollisionComponent *coll1 = sceneGetComponentFromEntity(
+			scene,
+			hitInformation.object1,
+			collisionComponentID);
+		CollisionComponent *coll2 = sceneGetComponentFromEntity(
+			scene,
+			hitInformation.object2,
+			collisionComponentID);
+
+		HitListComponent list1 = {};
+		HitListComponent list2 = {};
+		list1.hit = hitInformationEntity;
+		list2.hit = hitInformationEntity;
+		list1.nextHit = coll1->hitList;
+		list2.nextHit = coll2->hitList;
+
+		UUID list1Entity = sceneCreateEntity(scene);
+		UUID list2Entity = sceneCreateEntity(scene);
+		sceneAddComponentToEntity(
+			scene,
+			list1Entity,
+			hitListComponentID,
+			&list1);
+		sceneAddComponentToEntity(
+			scene,
+			list2Entity,
+			hitListComponentID,
+			&list2);
+
+		coll1->hitList = list1Entity;
+		coll2->hitList = list2Entity;
 	}
 }
 
@@ -237,11 +316,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
 	bool space1 = dGeomIsSpace(o1);
 	bool space2 = dGeomIsSpace(o2);
-	if (space1 && space2)
-	{
-		dSpaceCollide2(o1, o2, data, &rigidsNearCallback);
-	}
-	else if (space1 || space2)
+	if (space1 || space2)
 	{
 		dSpaceCollide2(o1, o2, data, &rigidsNearCallback);
 	}
@@ -264,7 +339,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 internal
 void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	// TODO: update the rigidbody information
+	// TODO: update the rest of the rigidbody information
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -286,11 +361,6 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 	transform->rotation.z = rot[3];
 
 	tMarkDirty(scene, entityID);
-}
-
-internal
-void endSimulateRigidbodiesSystem(Scene *scene, real64 dt)
-{
 }
 
 internal
@@ -319,7 +389,6 @@ void freeUserData(dGeomID geom)
 internal
 void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
-	// TODO: shutdown all the ode stuff
 	freeUserData((dGeomID)scene->physicsSpace);
 }
 
@@ -330,6 +399,8 @@ System createSimulateRigidbodiesSystem(void)
 	rigidBodyComponentID = idFromName("rigid_body");
 	collisionTreeNodeComponentID = idFromName("collision_tree_node");
 	collisionComponentID = idFromName("collision");
+	hitInformationComponentID = idFromName("hit_information");
+	hitListComponentID = idFromName("hit_list");
 
 	System sys = {};
 
@@ -341,7 +412,6 @@ System createSimulateRigidbodiesSystem(void)
 	sys.init = &initSimulateRigidbodiesSystem;
 	sys.begin = &beginSimulateRigidbodiesSystem;
 	sys.run = &runSimulateRigidbodiesSystem;
-	sys.end = &endSimulateRigidbodiesSystem;
 	sys.shutdown = &shutdownSimulateRigidbodiesSystem;
 
 	return sys;

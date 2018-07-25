@@ -98,15 +98,15 @@ typedef struct hit_information_component_t
 	UUID object1;
 	UUID object2;
 	kmVec3 contactNormal;
-	kmVec3 depth;
 	kmVec3 position;
+	float depth;
 } HitInformationComponent;
 
 typedef struct hit_list_component_t
 {
 	UUID nextHit;
 	UUID hit;
-} HitList;
+} HitListComponent;
 
 typedef struct surface_information_component_t
 {
