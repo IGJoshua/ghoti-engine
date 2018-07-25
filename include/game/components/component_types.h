@@ -90,6 +90,11 @@ typedef struct aabb_component_t
 	kmVec3 bounds;
 } BoxComponent;
 
+typedef struct sphere_component_t
+{
+	float radius;
+} SphereComponent;
+
 typedef struct hit_information_component_t
 {
 	int32 age;

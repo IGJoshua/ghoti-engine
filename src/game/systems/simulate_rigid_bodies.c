@@ -19,6 +19,7 @@
 #include <math.h>
 
 internal UUID boxComponentID = {};
+internal UUID sphereComponentID = {};
 internal UUID transformComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID collisionComponentID = {};
@@ -58,6 +59,12 @@ void createCollisionGeom(
 	} break;
 	case COLLISION_GEOM_TYPE_SPHERE:
 	{
+		SphereComponent *sphere = sceneGetComponentFromEntity(
+			scene,
+			entity,
+			sphereComponentID);
+
+		node->geomID = dCreateSphere(spaceID, sphere->radius);
 	} break;
 	default:
 	{
@@ -395,6 +402,7 @@ void shutdownSimulateRigidbodiesSystem(Scene *scene)
 System createSimulateRigidbodiesSystem(void)
 {
 	boxComponentID = idFromName("box");
+	sphereComponentID = idFromName("sphere");
 	transformComponentID = idFromName("transform");
 	rigidBodyComponentID = idFromName("rigid_body");
 	collisionTreeNodeComponentID = idFromName("collision_tree_node");
