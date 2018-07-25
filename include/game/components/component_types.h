@@ -47,6 +47,24 @@ typedef struct camera_component_t
 	CameraProjectionType projectionType;
 } CameraComponent;
 
+typedef struct rigid_body_component_t
+{
+	dBodyID bodyID;
+	dSpaceID spaceID;
+	bool enabled;
+	bool dynamic;
+	bool gravity;
+	real32 mass;
+	kmVec3 centerOfMass;
+	kmVec3 velocity;
+	kmVec3 angularVel;
+	real32 linearDamping;
+	real32 angularDamping;
+	real32 linearDampingThreshold;
+	real32 angularDampingThreshold;
+	real32 maxAngularSpeed;
+} RigidBodyComponent;
+
 typedef struct collision_component_t
 {
 	UUID collisionTree;
@@ -74,24 +92,23 @@ typedef struct aabb_component_t
 
 typedef struct hit_information_component_t
 {
-	UUID otherObject;
-	UUID nextHit;
+	int32 age;
+	UUID volume1;
+	UUID volume2;
+	UUID object1;
+	UUID object2;
+	kmVec3 contactNormal;
+	kmVec3 depth;
+	kmVec3 position;
 } HitInformationComponent;
 
-typedef struct rigid_body_component_t
+typedef struct hit_list_component_t
 {
-	dBodyID bodyID;
-	dSpaceID spaceID;
-	bool enabled;
-	bool dynamic;
-	bool gravity;
-	real32 mass;
-	kmVec3 centerOfMass;
-	kmVec3 velocity;
-	kmVec3 angularVel;
-	real32 linearDamping;
-	real32 angularDamping;
-	real32 linearDampingThreshold;
-	real32 angularDampingThreshold;
-	real32 maxAngularSpeed;
-} RigidBodyComponent;
+	UUID nextHit;
+	UUID hit;
+} HitList;
+
+typedef struct surface_information_component_t
+{
+
+} SurfaceInformationComponent;
