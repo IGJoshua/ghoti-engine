@@ -95,6 +95,7 @@ typedef enum collision_geom_type_e
 typedef struct collision_tree_node_t
 {
 	CollisionGeomType type;
+	// TODO: Add the next one in the list so that you can avoid using parenting for it
 	UUID collisionVolume;
 	dGeomID geomID;
 } CollisionTreeNode;
