@@ -14,7 +14,12 @@ extern Texture *textures;
 extern uint32 numTextures;
 extern uint32 texturesCapacity;
 
-int32 loadTexture(const char *name)
+int32 loadTexture(const char *name, bool genMipmaps)
+{
+	return loadTextureWithFormat(name, TEXTURE_FORMAT_RGBA8, genMipmaps);
+}
+
+int32 loadTextureWithFormat(const char *name, TextureFormat format, bool genMipmaps)
 {
 	Texture *texture = getTexture(name);
 
@@ -44,10 +49,46 @@ int32 loadTexture(const char *name)
 
 		free(filename);
 
-		ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+		ILenum ilColorFormat = IL_RGBA;
+		ILenum ilByteFormat = IL_UNSIGNED_BYTE;
+
+		switch (format)
+		{
+		case TEXTURE_FORMAT_R8:
+		{
+			ilColorFormat = IL_LUMINANCE;
+			ilByteFormat = IL_UNSIGNED_BYTE;
+		} break;
+		case TEXTURE_FORMAT_RGBA8:
+		default:
+		{
+			ilColorFormat = IL_RGBA;
+			ilByteFormat = IL_UNSIGNED_BYTE;
+		} break;
+		}
+
+		ilConvertImage(ilColorFormat, ilByteFormat);
 
 		glGenTextures(1, &texture->id);
 		glBindTexture(GL_TEXTURE_2D, texture->id);
+
+		GLenum glInternalFormat = GL_RGBA8;
+		GLenum glColorFormat = GL_RGBA;
+
+		switch (format)
+		{
+		case TEXTURE_FORMAT_R8:
+		{
+			glInternalFormat = GL_R8;
+			glColorFormat = GL_R;
+		} break;
+		default:
+		case TEXTURE_FORMAT_RGBA8:
+		{
+			glInternalFormat = GL_RGBA8;
+			glColorFormat = GL_RGBA;
+		} break;
+		}
 
 		GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
 		GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
@@ -55,7 +96,7 @@ int32 loadTexture(const char *name)
 		glTexStorage2D(
 			GL_TEXTURE_2D,
 			1,
-			GL_RGBA8,
+			glInternalFormat,
 			textureWidth,
 			textureHeight);
 		glTexSubImage2D(
@@ -65,7 +106,7 @@ int32 loadTexture(const char *name)
 			0,
 			textureWidth,
 			textureHeight,
-			GL_RGBA,
+			glColorFormat,
 			GL_UNSIGNED_BYTE,
 			textureData);
 		GLenum glError = glGetError();
@@ -77,9 +118,12 @@ int32 loadTexture(const char *name)
 			return -1;
 		}
 
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		if (genMipmaps)
+		{
+			glGenerateMipmap(GL_TEXTURE_2D);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 

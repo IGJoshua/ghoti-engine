@@ -19,6 +19,12 @@ typedef struct vertex_t
 	kmVec2 uv[MATERIAL_COMPONENT_TYPE_COUNT];
 } Vertex;
 
+typedef enum texture_format_e
+{
+	TEXTURE_FORMAT_RGBA8 = 0,
+	TEXTURE_FORMAT_R8
+} TextureFormat;
+
 typedef struct texture_t
 {
 	char *name;
