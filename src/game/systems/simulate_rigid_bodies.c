@@ -172,7 +172,7 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 			body,
 			body->spaceID);
 
-		// TODO: update all the other information about the rigidbody
+		// update all the other information about the rigidbody
 		dMass mass = {};
 
 		switch (body->inertiaType)
@@ -350,7 +350,7 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 
 		if (!rb1->isTrigger && !rb2->isTrigger)
 		{
-			// TODO: get surface information from the two objects
+			// get surface information from the two objects
 			SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
 				scene,
 				*volume1,
@@ -511,7 +511,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 internal
 void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	// TODO: update the rest of the rigidbody information
+	// update the rest of the rigidbody information
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
