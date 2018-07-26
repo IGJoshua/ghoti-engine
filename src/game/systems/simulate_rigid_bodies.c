@@ -29,6 +29,9 @@ internal UUID hitListComponentID = {};
 internal UUID surfaceInformationComponentID = {};
 internal UUID capsuleComponentID = {};
 
+// TODO: Move most of this stuff to rigid_body.c
+// TODO: Change collisions geoms to not be a tree, but a list, not dependant on transforms
+
 internal
 void createCollisionGeom(
 	Scene *scene,
@@ -501,6 +504,8 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 internal
 void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 {
+	// TODO: Update the simulation's copy of the rigidbodies
+
 	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
 
 	dWorldStep(scene->physicsWorld, dt);
