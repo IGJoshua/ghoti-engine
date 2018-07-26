@@ -485,6 +485,7 @@ void shutdownRenderBoxSystem(Scene *scene)
 	hashMapDeleteKey(sceneLineData, &scene);
 }
 
+internal
 int32 ptrEq(void *thing1, void *thing2)
 {
 	return *(uint64*)thing1 != *(uint64*)thing2;
