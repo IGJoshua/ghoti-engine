@@ -47,10 +47,20 @@ typedef struct camera_component_t
 	CameraProjectionType projectionType;
 } CameraComponent;
 
+typedef enum moment_of_inertia_e
+{
+	MOMENT_OF_INERTIA_USER = -1,
+	MOMENT_OF_INERTIA_DEFAULT = 0,
+	MOMENT_OF_INERTIA_SPHERE = 1,
+	MOMENT_OF_INERTIA_CUBE,
+	MOMENT_OF_INERTIA_CAPSULE
+} MomentOfInertia;
+
 typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;
 	dSpaceID spaceID;
+	bool isTrigger;
 	bool enabled;
 	bool dynamic;
 	bool gravity;
@@ -58,11 +68,14 @@ typedef struct rigid_body_component_t
 	kmVec3 centerOfMass;
 	kmVec3 velocity;
 	kmVec3 angularVel;
+	bool defaultDamping;
 	real32 linearDamping;
 	real32 angularDamping;
 	real32 linearDampingThreshold;
 	real32 angularDampingThreshold;
 	real32 maxAngularSpeed;
+	MomentOfInertia inertiaType;
+	real32 moiParams[6];
 } RigidBodyComponent;
 
 typedef struct collision_component_t
@@ -75,7 +88,8 @@ typedef struct collision_component_t
 typedef enum collision_geom_type_e
 {
 	COLLISION_GEOM_TYPE_BOX = 0,
-	COLLISION_GEOM_TYPE_SPHERE
+	COLLISION_GEOM_TYPE_SPHERE,
+	COLLISION_GEOM_TYPE_CAPSULE
 } CollisionGeomType;
 
 typedef struct collision_tree_node_t
@@ -92,8 +106,14 @@ typedef struct aabb_component_t
 
 typedef struct sphere_component_t
 {
-	float radius;
+	real32 radius;
 } SphereComponent;
+
+typedef struct capsule_component_t
+{
+	real32 radius;
+	real32 length;
+} CapsuleComponent;
 
 typedef struct hit_information_component_t
 {
@@ -104,7 +124,7 @@ typedef struct hit_information_component_t
 	UUID object2;
 	kmVec3 contactNormal;
 	kmVec3 position;
-	float depth;
+	real32 depth;
 } HitInformationComponent;
 
 typedef struct hit_list_component_t

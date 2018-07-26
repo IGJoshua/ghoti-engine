@@ -27,6 +27,7 @@ internal UUID collisionTreeNodeComponentID = {};
 internal UUID hitInformationComponentID = {};
 internal UUID hitListComponentID = {};
 internal UUID surfaceInformationComponentID = {};
+internal UUID capsuleComponentID = {};
 
 internal
 void createCollisionGeom(
@@ -66,6 +67,15 @@ void createCollisionGeom(
 			sphereComponentID);
 
 		node->geomID = dCreateSphere(spaceID, sphere->radius);
+	} break;
+	case COLLISION_GEOM_TYPE_CAPSULE:
+	{
+		CapsuleComponent *capsule = sceneGetComponentFromEntity(
+			scene,
+			entity,
+			capsuleComponentID);
+
+		node->geomID = dCreateCapsule(spaceID, capsule->radius, capsule->length);
 	} break;
 	default:
 	{
@@ -164,14 +174,69 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 
 		// TODO: update all the other information about the rigidbody
 		dMass mass = {};
-		real32 aabb[6] = {};
-		dGeomGetAABB((dGeomID)body->spaceID, aabb);
 
-		real32 radius = fmaxf(
-			aabb[1] - aabb[0], fmaxf(aabb[3] - aabb[2], aabb[5] - aabb[4]))
-			/ 2.0f;
+		switch (body->inertiaType)
+		{
+		case MOMENT_OF_INERTIA_USER:
+		{
+			dMassSetParameters(
+				&mass,
+				body->mass,
+				body->centerOfMass.x,
+				body->centerOfMass.y,
+				body->centerOfMass.z,
+				body->moiParams[0],
+				body->moiParams[1],
+				body->moiParams[2],
+				body->moiParams[3],
+				body->moiParams[4],
+				body->moiParams[5]);
+		} break;
+		case MOMENT_OF_INERTIA_CUBE:
+		{
+			dMassSetBoxTotal(
+				&mass,
+				body->mass,
+				body->moiParams[0] * 2,
+				body->moiParams[1] * 2,
+				body->moiParams[2] * 2);
+		} break;
+		case MOMENT_OF_INERTIA_SPHERE:
+		{
+			dMassSetSphereTotal(&mass, body->mass, body->moiParams[0]);
+		} break;
+		case MOMENT_OF_INERTIA_CAPSULE:
+		{
+			dMassSetCapsuleTotal(
+				&mass,
+				body->mass,
+				roundf(body->moiParams[0]),
+				body->moiParams[1],
+				body->moiParams[2]);
+		} break;
+		case MOMENT_OF_INERTIA_DEFAULT:
+		default:
+		{
+			real32 aabb[6] = {};
+			dGeomGetAABB((dGeomID)body->spaceID, aabb);
 
-		dMassSetSphereTotal(&mass, body->mass, radius);
+			real32 radius = fmaxf(
+				aabb[1] - aabb[0], fmaxf(aabb[3] - aabb[2], aabb[5] - aabb[4]))
+				/ 2.0f;
+
+			dMassSetSphereTotal(&mass, body->mass, radius);
+		} break;
+		}
+
+		if (body->inertiaType != MOMENT_OF_INERTIA_USER)
+		{
+			dMassTranslate(
+				&mass,
+				body->centerOfMass.x,
+				body->centerOfMass.y,
+				body->centerOfMass.z);
+		}
+
 		dBodySetMass(body->bodyID, &mass);
 
 		dBodySetAngularVel(
@@ -200,6 +265,30 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 
 		dBodySetQuaternion(body->bodyID, rot);
 
+		if (body->gravity)
+		{
+			dBodySetGravityMode(body->bodyID, 1);
+		}
+		else
+		{
+			dBodySetGravityMode(body->bodyID, 0);
+		}
+
+		if (!body->defaultDamping)
+		{
+			dBodySetLinearDamping(body->bodyID, body->linearDamping);
+			dBodySetAngularDamping(body->bodyID, body->angularDamping);
+
+			dBodySetLinearDampingThreshold(
+				body->bodyID,
+				body->linearDampingThreshold);
+			dBodySetAngularDampingThreshold(
+				body->bodyID,
+				body->angularDampingThreshold);
+		}
+
+		dBodySetMaxAngularSpeed(body->bodyID, body->maxAngularSpeed);
+
 		if (body->dynamic)
 		{
 			dBodySetDynamic(body->bodyID);
@@ -207,6 +296,11 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 		else
 		{
 			dBodySetKinematic(body->bodyID);
+		}
+
+		if (!body->enabled)
+		{
+			dBodyDisable(body->bodyID);
 		}
 	}
 }
@@ -234,71 +328,97 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 		UUID *volume1 = dGeomGetData(o1);
 		UUID *volume2 = dGeomGetData(o1);
 
-		// TODO: get surface information from the two objects
-		SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
+		CollisionTreeNode *node1 = sceneGetComponentFromEntity(
 			scene,
 			*volume1,
-			surfaceInformationComponentID);
-		SurfaceInformationComponent *surface2 = sceneGetComponentFromEntity(
+			collisionTreeNodeComponentID);
+
+		CollisionTreeNode *node2 = sceneGetComponentFromEntity(
 			scene,
 			*volume2,
-			surfaceInformationComponentID);
+			collisionTreeNodeComponentID);
 
-		SurfaceInformationComponent temp = {};
-		if (surface1 && surface2)
-		{
-			// Combine the surface properties
-			temp.bounceVelocity =
-				(surface1->bounceVelocity + surface2->bounceVelocity) / 2.0f;
-			temp.bounciness =
-				(surface1->bounciness + surface2->bounciness) / 2.0f;
-			temp.disableRolling =
-				surface1->disableRolling && surface2->disableRolling;
-			temp.finiteFriction =
-				surface1->finiteFriction && surface2->finiteFriction;
-			temp.friction =
-				(surface1->friction + surface2->friction) / 2.0f;
-			temp.rollingFriction =
-				(surface1->rollingFriction + surface2->rollingFriction) / 2.0f;
-			temp.spinningFriction =
-				(surface1->spinningFriction + surface2->spinningFriction)
-				/ 2.0f;
-		}
-		else if (surface1)
-		{
-			temp = *surface1;
-		}
-		else if (surface2)
-		{
-			temp = *surface2;
-		}
-		else
-		{
-			// Set default values
-			temp.bounceVelocity = 0.01f;
-			temp.bounciness = 0.1f;
-			temp.disableRolling = false;
-			temp.finiteFriction = true;
-			temp.friction = 5;
-			temp.rollingFriction = 5;
-			temp.spinningFriction = 1;
-		}
+		RigidBodyComponent *rb1 = sceneGetComponentFromEntity(
+			scene,
+			node1->collisionVolume,
+			rigidBodyComponentID);
 
-		contact.surface.mode = 0
-			| (temp.disableRolling ? 0 : dContactRolling)
-			| (temp.bounciness > 0 ? dContactBounce : 0);
-		contact.surface.mu = temp.finiteFriction ? temp.friction : dInfinity;
-		contact.surface.bounce = temp.bounciness;
-		contact.surface.bounce_vel = temp.bounceVelocity;
-		contact.surface.rho = contact.surface.rho2 = temp.rollingFriction;
-		contact.surface.rhoN = temp.spinningFriction;
+		RigidBodyComponent *rb2 = sceneGetComponentFromEntity(
+			scene,
+			node2->collisionVolume,
+			rigidBodyComponentID);
 
-		dJointID joint = dJointCreateContact(
-			scene->physicsWorld,
-			scene->contactGroup,
-			&contact);
+		if (!rb1->isTrigger && !rb2->isTrigger)
+		{
+			// TODO: get surface information from the two objects
+			SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
+				scene,
+				*volume1,
+				surfaceInformationComponentID);
+			SurfaceInformationComponent *surface2 = sceneGetComponentFromEntity(
+				scene,
+				*volume2,
+				surfaceInformationComponentID);
 
-		dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+			SurfaceInformationComponent temp = {};
+			if (surface1 && surface2)
+			{
+				// Combine the surface properties
+				temp.bounceVelocity =
+					(surface1->bounceVelocity + surface2->bounceVelocity)
+					/ 2.0f;
+				temp.bounciness =
+					(surface1->bounciness + surface2->bounciness) / 2.0f;
+				temp.disableRolling =
+					surface1->disableRolling && surface2->disableRolling;
+				temp.finiteFriction =
+					surface1->finiteFriction && surface2->finiteFriction;
+				temp.friction =
+					(surface1->friction + surface2->friction) / 2.0f;
+				temp.rollingFriction =
+					(surface1->rollingFriction + surface2->rollingFriction)
+					/ 2.0f;
+				temp.spinningFriction =
+					(surface1->spinningFriction + surface2->spinningFriction)
+					/ 2.0f;
+			}
+			else if (surface1)
+			{
+				temp = *surface1;
+			}
+			else if (surface2)
+			{
+				temp = *surface2;
+			}
+			else
+			{
+				// Set default values
+				temp.bounceVelocity = 0.01f;
+				temp.bounciness = 0.2f;
+				temp.disableRolling = false;
+				temp.finiteFriction = true;
+				temp.friction = 2;
+				temp.rollingFriction = 0.1f;
+				temp.spinningFriction = 0.02f;
+			}
+
+			contact.surface.mode = 0
+				| (temp.disableRolling ? 0 : dContactRolling)
+				| (temp.bounciness > 0 ? dContactBounce : 0);
+			contact.surface.mu =
+				temp.finiteFriction ? temp.friction : dInfinity;
+			contact.surface.bounce = temp.bounciness;
+			contact.surface.bounce_vel = temp.bounceVelocity;
+			contact.surface.rho = contact.surface.rho2 = temp.rollingFriction;
+			contact.surface.rhoN = temp.spinningFriction;
+
+			dJointID joint = dJointCreateContact(
+				scene->physicsWorld,
+				scene->contactGroup,
+				&contact);
+
+			dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+		}
 
 		// create hit information entities and hit list entities,
 		// and attach them to the correct entities
@@ -307,20 +427,8 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 		hitInformation.age = 0;
 		hitInformation.volume1 = *volume1;
 		hitInformation.volume2 = *volume2;
-		{
-			CollisionTreeNode *node1 = sceneGetComponentFromEntity(
-				scene,
-				*volume1,
-				collisionTreeNodeComponentID);
-
-			CollisionTreeNode *node2 = sceneGetComponentFromEntity(
-				scene,
-				*volume2,
-				collisionTreeNodeComponentID);
-
-			hitInformation.object1 = node1->collisionVolume;
-			hitInformation.object2 = node2->collisionVolume;
-		}
+		hitInformation.object1 = node1->collisionVolume;
+		hitInformation.object2 = node2->collisionVolume;
 		kmVec3Fill(
 			&hitInformation.contactNormal,
 			contact.geom.normal[0],
@@ -423,6 +531,16 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 	transform->rotation.x = rot[1];
 	transform->rotation.y = rot[2];
 	transform->rotation.z = rot[3];
+
+	const dReal *vel = dBodyGetLinearVel(body->bodyID);
+	body->velocity.x = vel[0];
+	body->velocity.y = vel[1];
+	body->velocity.z = vel[2];
+
+	const dReal *angularVel = dBodyGetAngularVel(body->bodyID);
+	body->angularVel.x = angularVel[0];
+	body->angularVel.y = angularVel[1];
+	body->angularVel.z = angularVel[2];
 
 	tMarkDirty(scene, entityID);
 }
