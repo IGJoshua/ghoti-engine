@@ -30,6 +30,7 @@ typedef struct texture_t
 	char *name;
 	GLuint id;
 	uint32 refCount;
+	TextureFormat format;
 } Texture;
 
 typedef struct model_t

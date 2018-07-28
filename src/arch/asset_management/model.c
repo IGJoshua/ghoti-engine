@@ -196,7 +196,7 @@ int32 loadTextures(Model *model)
 			if (materialComponent->texture &&
 				strlen(materialComponent->texture) > 0)
 			{
-				if (loadTexture(materialComponent->texture, true) == -1)
+				if (loadTexture(materialComponent->texture, true, 0) == -1)
 				{
 					return -1;
 				}

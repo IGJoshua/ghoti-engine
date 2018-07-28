@@ -14,13 +14,65 @@ extern Texture *textures;
 extern uint32 numTextures;
 extern uint32 texturesCapacity;
 
-int32 loadTexture(const char *name, bool genMipmaps)
+int32 loadTexture(const char *name, bool genMipmaps, ILuint *dataOut)
 {
-	return loadTextureWithFormat(name, TEXTURE_FORMAT_RGBA8, genMipmaps);
+	return loadTextureWithFormat(
+		name,
+		TEXTURE_FORMAT_RGBA8,
+		genMipmaps,
+		dataOut);
 }
 
-int32 loadTextureWithFormat(const char *name, TextureFormat format, bool genMipmaps)
+int32 loadTextureWithFormat(
+	const char *name,
+	TextureFormat format,
+	bool genMipmaps,
+	ILuint *dataOut)
 {
+	if (dataOut)
+	{
+		ILuint devilID;
+		ilGenImages(1, &devilID);
+		ilBindImage(devilID);
+
+		char *filename = getFullFilePath(name, NULL, "resources/textures");
+		ilLoadImage(filename);
+
+		ILenum ilError = ilGetError();
+		LOG("Load %s: %s\n", filename, iluErrorString(ilError));
+		if (ilError != IL_NO_ERROR)
+		{
+			free(filename);
+			return -1;
+		}
+
+		free(filename);
+
+		ILenum ilColorFormat = IL_RGBA;
+		ILenum ilByteFormat = IL_UNSIGNED_BYTE;
+
+		switch (format)
+		{
+		case TEXTURE_FORMAT_R8:
+		{
+			ilColorFormat = IL_LUMINANCE;
+			ilByteFormat = IL_UNSIGNED_BYTE;
+		} break;
+		case TEXTURE_FORMAT_RGBA8:
+		default:
+		{
+			ilColorFormat = IL_RGBA;
+			ilByteFormat = IL_UNSIGNED_BYTE;
+		} break;
+		}
+
+		ilConvertImage(ilColorFormat, ilByteFormat);
+
+		*dataOut = devilID;
+
+		return 0;
+	}
+
 	Texture *texture = getTexture(name);
 
 	if (name && !texture)
@@ -31,6 +83,8 @@ int32 loadTextureWithFormat(const char *name, TextureFormat format, bool genMipm
 
 		texture->name = malloc(strlen(name) + 1);
 		strcpy(texture->name, name);
+
+		texture->format = format;
 
 		ILuint devilID;
 		ilGenImages(1, &devilID);
@@ -122,7 +176,10 @@ int32 loadTextureWithFormat(const char *name, TextureFormat format, bool genMipm
 		{
 			glGenerateMipmap(GL_TEXTURE_2D);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(
+				GL_TEXTURE_2D,
+				GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
 		}
 
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -169,12 +226,14 @@ void increaseTexturesCapacity(uint32 amount)
 	if (numTextures + amount == 1)
 	{
 		LOG(
-			"Increased textures capacity to %d to hold 1 new texture\n", texturesCapacity);
+			"Increased textures capacity to %d to hold 1 new texture\n",
+			texturesCapacity);
 	}
 	else
 	{
 		LOG(
-			"Increased textures capacity to %d to hold %d new textures\n", texturesCapacity,
+			"Increased textures capacity to %d to hold %d new textures\n",
+			texturesCapacity,
 			amount);
 	}
 }
