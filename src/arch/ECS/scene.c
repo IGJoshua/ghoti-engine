@@ -593,6 +593,8 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
 		(*scene)->mainCamera = activeCamera;
 
+		fread(&(*scene)->gravity, sizeof(real32), 1, file);
+
 		fclose(file);
 	}
 	else

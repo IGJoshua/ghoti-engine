@@ -13,7 +13,11 @@ typedef struct scene_t
 	uint32 numComponentLimitNames;
 	char **componentLimitNames;
 	HashMap componentDefinitions;
-  bool loadedThisFrame;
+	bool loadedThisFrame;
+	void *physicsWorld;
+	void *physicsSpace;
+	void *contactGroup;
+	real32 gravity;
 } Scene;
 
 Scene *createScene(void);

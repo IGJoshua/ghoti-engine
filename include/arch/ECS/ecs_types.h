@@ -85,6 +85,7 @@ typedef struct scene_t
 	dWorldID physicsWorld;
 	dSpaceID physicsSpace;
 	dJointGroupID contactGroup;
+	real32 gravity;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);
