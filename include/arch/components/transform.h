@@ -28,3 +28,14 @@ void tGetInterpolatedTransform(
 kmMat4 tGetInterpolatedTransformMatrix(
 	TransformComponent const *transform,
 	real64 alpha);
+
+void tGetInverseTransform(
+	TransformComponent const *transform,
+	kmVec3 *position,
+	kmQuaternion *rotation,
+	kmVec3 *scale);
+void tGetInverseGlobalTransform(
+	TransformComponent const *transform,
+	kmVec3 *position,
+	kmQuaternion *rotation,
+	kmVec3 *scale);

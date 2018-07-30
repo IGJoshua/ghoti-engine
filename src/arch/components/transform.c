@@ -1,5 +1,7 @@
 #include "components/transform.h"
 
+#include <kazmath/mat3.h>
+
 void tMarkDirty(Scene *scene, UUID entityID)
 {
 	UUID transformComponentID = idFromName("transform");
@@ -34,6 +36,31 @@ void tDecomposeMat4(
 	kmVec3 *scale)
 {
 	// TODO: make a way to get the stuff out of the matrix
+	kmMat4ExtractTranslationVec3(transform, position);
+
+	kmMat3 rotationMat = {};
+	kmMat4ExtractRotationMat3(transform, &rotationMat);
+
+	kmQuaternionRotationMatrix(rotation, &rotationMat);
+
+	kmVec3 xAxis;
+	kmVec3Fill(&xAxis, transform->mat[0], transform->mat[1], transform->mat[2]);
+
+	kmVec3 yAxis;
+	kmVec3Fill(&yAxis, transform->mat[4], transform->mat[5], transform->mat[6]);
+
+	kmVec3 zAxis;
+	kmVec3Fill(
+		&zAxis,
+		transform->mat[8],
+		transform->mat[9],
+		transform->mat[10]);
+
+	kmVec3Fill(
+		scale,
+		kmVec3Length(&xAxis),
+		kmVec3Length(&yAxis),
+		kmVec3Length(&zAxis));
 }
 
 kmMat4 tComposeMat4(
@@ -116,4 +143,30 @@ kmMat4 tGetInterpolatedTransformMatrix(
 	tGetInterpolatedTransform(transform, &position, &rotation, &scale, alpha);
 
 	return tComposeMat4(&position, &rotation, &scale);
+}
+
+void tGetInverseTransform(
+	TransformComponent const *transform,
+	kmVec3 *position,
+	kmQuaternion *rotation,
+	kmVec3 *scale)
+{
+	kmVec3Scale(position, &transform->position, -1.0f);
+	kmQuaternionInverse(rotation, &transform->rotation);
+	scale->x = 1.0f / transform->scale.x;
+	scale->y = 1.0f / transform->scale.y;
+	scale->z = 1.0f / transform->scale.z;
+}
+
+void tGetInverseGlobalTransform(
+	TransformComponent const *transform,
+	kmVec3 *position,
+	kmQuaternion *rotation,
+	kmVec3 *scale)
+{
+	kmVec3Scale(position, &transform->globalPosition, -1.0f);
+	kmQuaternionInverse(rotation, &transform->globalRotation);
+	scale->x = 1.0f / transform->globalScale.x;
+	scale->y = 1.0f / transform->globalScale.y;
+	scale->z = 1.0f / transform->globalScale.z;
 }

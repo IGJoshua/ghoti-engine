@@ -60,8 +60,6 @@ typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;
 	dSpaceID spaceID;
-	// TODO: Move the trigger to the collision tree node
-	bool isTrigger;
 	bool enabled;
 	bool dynamic;
 	bool gravity;
@@ -96,8 +94,9 @@ typedef enum collision_geom_type_e
 typedef struct collision_tree_node_t
 {
 	CollisionGeomType type;
-	// TODO: Add the next one in the list so that you can avoid using parenting for it
 	UUID collisionVolume;
+	UUID nextCollider;
+	bool isTrigger;
 	dGeomID geomID;
 } CollisionTreeNode;
 

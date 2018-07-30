@@ -1,5 +1,7 @@
 #include "components/rigid_body.h"
 
+#include "components/transform.h"
+
 #include "core/log.h"
 
 #include <ode/ode.h>
@@ -8,7 +10,7 @@ internal
 void createCollisionGeom(
 	Scene *scene,
 	UUID entity,
-	TransformComponent *trans,
+	TransformComponent *bodyTrans,
 	RigidBodyComponent *body,
 	dSpaceID spaceID)
 {
@@ -16,6 +18,10 @@ void createCollisionGeom(
 		scene,
 		entity,
 		idFromName("collision_tree_node"));
+	TransformComponent *trans = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("transform"));
 
 	ASSERT(node && "Collision tree pointed to a node with no node structure");
 
@@ -64,17 +70,25 @@ void createCollisionGeom(
 	memcpy(userData, &entity, sizeof(UUID));
 	dGeomSetData(node->geomID, userData);
 
+	// TODO: Make this take the offset from bodyTrans
+	kmVec3 pos, scal;
+	kmQuaternion rot;
+	tGetInverseGlobalTransform(bodyTrans, &pos, &rot, &scal);
+	kmVec3Add(&pos, &trans->globalPosition, &pos);
+	kmQuaternionMultiply(&rot, &rot, &trans->globalRotation);
+	kmVec3Mul(&scal, &scal, &trans->globalScale);
+
 	dGeomSetOffsetPosition(
 		node->geomID,
-		trans->position.x,
-		trans->position.y,
-		trans->position.z);
+		pos.x,
+		pos.y,
+		pos.z);
 
 	dReal quat[4] = {};
-	quat[0] = trans->rotation.w;
-	quat[1] = trans->rotation.x;
-	quat[2] = trans->rotation.y;
-	quat[3] = trans->rotation.z;
+	quat[0] = rot.w;
+	quat[1] = rot.x;
+	quat[2] = rot.y;
+	quat[3] = rot.z;
 
 	dGeomSetOffsetQuaternion(node->geomID, quat);
 }
@@ -82,56 +96,52 @@ void createCollisionGeom(
 internal
 void createCollisionGeoms(
 	Scene *scene,
-	UUID entity,
+	TransformComponent *bodyTrans,
 	RigidBodyComponent *body,
+	CollisionComponent *coll,
 	dSpaceID spaceID)
 {
-	UUID transformComponentID = idFromName("transform");
-	TransformComponent *trans = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		transformComponentID);
-
-	if (!trans)
-	{
-		return;
-	}
-
-	createCollisionGeom(scene, entity, trans, body, spaceID);
-
-	TransformComponent *child = 0;
+	CollisionTreeNode *node = 0;
+	UUID collisionTreeNodeID = idFromName("collision_tree_node");
 
 	// Walk the tree of collision geometry
-	for (UUID currentChild = trans->firstChild;
-		 strcmp(currentChild.string, "");
-		 currentChild = child->nextSibling)
+	for (UUID currentCollider = coll->collisionTree;
+		 strcmp(currentCollider.string, "");
+		 currentCollider = node->nextCollider)
 	{
 		// Add each piece of collision geometry as a different geom
-		child = sceneGetComponentFromEntity(
-			scene,
-			currentChild,
-			transformComponentID);
+		createCollisionGeom(scene, currentCollider, bodyTrans, body, spaceID);
 
-		createCollisionGeoms(scene, currentChild, body, spaceID);
+		node = sceneGetComponentFromEntity(
+			scene,
+			currentCollider,
+			collisionTreeNodeID);
 	}
 }
 
-// TODO: Change collisions geoms to not be a tree, but a list, not dependant on transforms
-
-void registerRigidBody(Scene *scene, UUID entity, RigidBodyComponent *body)
+void registerRigidBody(Scene *scene, UUID entity)
 {
-	body->bodyID = dBodyCreate(scene->physicsWorld);
-	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
-
+	RigidBodyComponent *body = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("rigid_body"));
 	CollisionComponent *coll = sceneGetComponentFromEntity(
 		scene,
 		entity,
 		idFromName("collision"));
+	TransformComponent *trans = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("transform"));
+
+	body->bodyID = dBodyCreate(scene->physicsWorld);
+	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
 
 	createCollisionGeoms(
 		scene,
-		coll->collisionTree,
+		trans,
 		body,
+		coll,
 		body->spaceID);
 
 	// update all the other information about the rigidbody
@@ -212,11 +222,6 @@ void registerRigidBody(Scene *scene, UUID entity, RigidBodyComponent *body)
 		body->velocity.x,
 		body->velocity.y,
 		body->velocity.z);
-
-	TransformComponent *trans = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		idFromName("transform"));
 
 	dBodySetPosition(
 		body->bodyID,

@@ -38,11 +38,8 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
 	{
-		UUID entity = *cdtIteratorGetUUID(itr);
 		// Create a rigidbody in the physics world
-		RigidBodyComponent *body = cdtIteratorGetData(itr);
-
-		registerRigidBody(scene, entity, body);
+		registerRigidBody(scene, *cdtIteratorGetUUID(itr));
 	}
 }
 
@@ -79,17 +76,7 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 			*volume2,
 			collisionTreeNodeComponentID);
 
-		RigidBodyComponent *rb1 = sceneGetComponentFromEntity(
-			scene,
-			node1->collisionVolume,
-			rigidBodyComponentID);
-
-		RigidBodyComponent *rb2 = sceneGetComponentFromEntity(
-			scene,
-			node2->collisionVolume,
-			rigidBodyComponentID);
-
-		if (!rb1->isTrigger && !rb2->isTrigger)
+		if (!node1->isTrigger && !node2->isTrigger)
 		{
 			// get surface information from the two objects
 			SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
@@ -243,6 +230,7 @@ internal
 void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 {
 	// TODO: Update the simulation's copy of the rigidbodies
+	// TODO: Update the simulation's copy of the collision volumes
 
 	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
 
