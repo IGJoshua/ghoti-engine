@@ -244,26 +244,27 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				modelComponent->name,
 				gluErrorString(glError));
 		}
+
+		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		{
+			glActiveTexture(GL_TEXTURE0 + j);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glDisableVertexAttribArray(j);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 	}
 }
 
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
-	for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-	{
-		glActiveTexture(GL_TEXTURE0 + j);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-	{
-		glDisableVertexAttribArray(j);
-	}
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glUseProgram(0);
+	unbindShaderPipeline();
 }
 
 internal
