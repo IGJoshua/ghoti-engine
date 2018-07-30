@@ -5,6 +5,5 @@
 
 #include "component_types.h"
 
-RigidBodyComponent createRigidBody(Scene *scene);
-void registerRigidBody(Scene *scene, RigidBodyComponent *body);
+void registerRigidBody(Scene *scene, UUID entity, RigidBodyComponent *body);
 void destroyRigidBody(RigidBodyComponent *body);
