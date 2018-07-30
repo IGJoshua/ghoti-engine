@@ -149,10 +149,11 @@ typedef struct surface_information_component_t
 typedef struct heightmap_component_t
 {
 	char textureName[1024];
+	char heightmapName[1024];
 	uint32 sizeX;
 	uint32 sizeZ;
 	uint32 maxHeight;
-	float unitsPerTile;
-	uint32 uvScaleX;
-	uint32 uvScaleZ;
+	real32 unitsPerTile;
+	real32 uvScaleX;
+	real32 uvScaleZ;
 } HeightmapComponent;

@@ -78,3 +78,42 @@ kmMat4 tComposeMat4(
 
 	return worldMatrix;
 }
+
+void tGetInterpolatedTransform(
+	TransformComponent const *transform,
+	kmVec3 *position,
+	kmQuaternion *rotation,
+	kmVec3 *scale,
+	real64 alpha)
+{
+	kmVec3Lerp(
+		position,
+		&transform->lastGlobalPosition,
+		&transform->globalPosition,
+		(real32)alpha);
+
+	kmQuaternionSlerp(
+		rotation,
+		&transform->lastGlobalRotation,
+		&transform->globalRotation,
+		(real32)alpha);
+
+	kmVec3Lerp(
+		scale,
+		&transform->lastGlobalScale,
+		&transform->globalScale,
+		(real32)alpha);
+}
+
+kmMat4 tGetInterpolatedTransformMatrix(
+	TransformComponent const *transform,
+	real64 alpha)
+{
+	kmVec3 position;
+	kmQuaternion rotation;
+	kmVec3 scale;
+
+	tGetInterpolatedTransform(transform, &position, &rotation, &scale, alpha);
+
+	return tComposeMat4(&position, &rotation, &scale);
+}

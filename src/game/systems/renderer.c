@@ -191,10 +191,9 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		transformComponentID);
 
-	kmMat4 worldMatrix = tComposeMat4(
-		&transform->globalPosition,
-		&transform->globalRotation,
-		&transform->globalScale);
+	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
+		transform,
+		alpha);
 
 	if (setUniform(modelUniform, &worldMatrix) == -1)
 	{

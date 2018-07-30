@@ -369,7 +369,52 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
+	// TODO: Get the mesh from the hash map for this scene and render it
 
+	Mesh *heightmap = hashMapGetKey(
+		*(HashMap *)hashMapGetKey(heightmapModels, &scene),
+		&entityID);
+
+	if (heightmap)
+	{
+		TransformComponent *transform = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
+
+		kmMat4 transformMat = tComposeMat4(
+			&transform->globalPosition,
+			&transform->globalRotation,
+			&transform->globalScale);
+
+		bindShaderPipeline(pipeline);
+
+		if (setUniform(modelUniform, &transformMat))
+		{
+			LOG("Unable to set model uniform\n");
+			return;
+		}
+
+		glBindVertexArray(heightmap->vertexArray);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heightmap->indexBuffer);
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; ++j)
+		{
+			glEnableVertexAttribArray(j);
+		}
+
+		glDrawElements(
+			GL_TRIANGLE_STRIP,
+			heightmap->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			LOG("Error while drawing heightmap\n");
+		}
+	}
 }
 
 internal
