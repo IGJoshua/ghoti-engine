@@ -93,9 +93,10 @@ int32 strcmp(const char *str1, const char *str2);
 
 ]]
 
-local kazmath = require("resources/scripts/cdefs/kazmath")
-local components = require("resources/scripts/cdefs/componentDefs")
-local sceneDefs = require("resources/scripts/cdefs/sceneDefs")
-local glfwKeys = require("resources/scripts/cdefs/GLFW")
-local jsonUtil = require("resources/scripts/cdefs/jsonUtil")
-local saving = require("resources/scripts/cdefs/saving")
+require("resources/scripts/cdefs/kazmath")
+require("resources/scripts/cdefs/componentDefs")
+require("resources/scripts/cdefs/sceneDefs")
+require("resources/scripts/cdefs/GLFW")
+require("resources/scripts/cdefs/jsonUtil")
+require("resources/scripts/cdefs/saving")
+require("resources/scripts/cdefs/physics")
