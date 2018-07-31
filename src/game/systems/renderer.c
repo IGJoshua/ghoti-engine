@@ -175,10 +175,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	Model *model = getModel(modelComponent->name);
 	if (!model)
 	{
-		if (loadModel(modelComponent->name) == -1)
-		{
-			return;
-		}
+		return;
 	}
 
 	if (!modelComponent->visible)
