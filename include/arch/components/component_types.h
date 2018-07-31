@@ -60,6 +60,7 @@ typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;
 	dSpaceID spaceID;
+	bool dirty;
 	bool enabled;
 	bool dynamic;
 	bool gravity;

@@ -229,13 +229,37 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 internal
 void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 {
-	// TODO: Update the simulation's copy of the rigidbodies
-	// TODO: Update the simulation's copy of the collision volumes
+	// Update the simulation's copy of the rigidbodies
+	TransformComponent *trans = 0;
+	RigidBodyComponent *body = 0;
+	for (ComponentDataTableIterator itr = cdtGetIterator(
+			 *(ComponentDataTable **)hashMapGetKey(
+				 scene->componentTypes,
+				 &rigidBodyComponentID));
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+	{
+		body = (RigidBodyComponent *)cdtIteratorGetData(itr);
 
-	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
+		if (body->dirty)
+		{
+			trans = sceneGetComponentFromEntity(
+				scene,
+				*(UUID *)cdtIteratorGetUUID(itr),
+				transformComponentID);
 
-	dWorldStep(scene->physicsWorld, dt);
+			updateRigidBodyPosition(
+				body,
+				trans);
 
+			body->dirty = false;
+
+			// TODO: Update the simulation's copy of the collision volumes
+		}
+	}
+
+	//dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
+	dWorldQuickStep(scene->physicsWorld, dt);
 	dJointGroupEmpty(scene->contactGroup);
 }
 
@@ -277,32 +301,17 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 }
 
 internal
-void freeUserData(dGeomID geom)
-{
-	// if it's not a space
-	if (!dGeomIsSpace(geom))
-	{
-		free(dGeomGetData(geom));
-	}
-	// if it's a space
-	else
-	{
-		dSpaceID space = (dSpaceID)geom;
-
-		uint32 count = dSpaceGetNumGeoms(space);
-		// For each geom in the space
-		for (uint32 i = 0; i < count; ++i)
-		{
-			// free all the stuff in the user data ptr
-			freeUserData(dSpaceGetGeom(space, i));
-		}
-	}
-}
-
-internal
 void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
-	freeUserData((dGeomID)scene->physicsSpace);
+	for (ComponentDataTableIterator itr = cdtGetIterator(
+			 *(ComponentDataTable **)hashMapGetKey(
+				 scene->componentTypes,
+				 &rigidBodyComponentID));
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+	{
+		destroyRigidBody(cdtIteratorGetData(itr));
+	}
 }
 
 System createSimulateRigidbodiesSystem(void)

@@ -33,7 +33,7 @@ function system.run(scene, uuid, dt)
                     pos,
                     oscillator.position)
 
-  transform:markDirty(scene)
+  transform:markDirty(scene, uuid)
 end
 
 io.write("Finished loading the Oscillator system\n")

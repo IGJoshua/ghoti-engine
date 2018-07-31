@@ -1,14 +1,16 @@
 #include "components/transform.h"
 
+#include "components/rigid_body.h"
+
 #include <kazmath/mat3.h>
 
-void tMarkDirty(Scene *scene, UUID entityID)
+internal
+void markDirtyHelper(
+	Scene *scene,
+	UUID entityID,
+	UUID *transformComponentID,
+	TransformComponent *trans)
 {
-	UUID transformComponentID = idFromName("transform");
-
-	TransformComponent *trans =
-		sceneGetComponentFromEntity(scene, entityID, transformComponentID);
-
 	if (trans)
 	{
 		trans->dirty = true;
@@ -22,10 +24,42 @@ void tMarkDirty(Scene *scene, UUID entityID)
 			child = sceneGetComponentFromEntity(
 				scene,
 				currentChild,
-				transformComponentID);
+				*transformComponentID);
 
-			tMarkDirty(scene, currentChild);
+			markDirtyHelper(
+				scene,
+				currentChild,
+				transformComponentID,
+				child);
 		}
+	}
+}
+
+void tMarkDirty(Scene *scene, UUID entityID)
+{
+	UUID transformComponentID = idFromName("transform");
+	UUID rigidbodyComponentID = idFromName("rigid_body");
+
+	RigidBodyComponent *body = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		rigidbodyComponentID);
+
+	if (body)
+	{
+		body->dirty = true;
+	}
+
+	TransformComponent *trans =
+		sceneGetComponentFromEntity(scene, entityID, transformComponentID);
+
+	if (trans)
+	{
+		markDirtyHelper(
+			scene,
+			entityID,
+			&transformComponentID,
+			trans);
 	}
 }
 
@@ -35,7 +69,6 @@ void tDecomposeMat4(
 	kmQuaternion *rotation,
 	kmVec3 *scale)
 {
-	// TODO: make a way to get the stuff out of the matrix
 	kmMat4ExtractTranslationVec3(transform, position);
 
 	kmMat3 rotationMat = {};

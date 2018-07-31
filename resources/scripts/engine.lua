@@ -48,6 +48,8 @@ for line in testFile:lines() do
   require(string.sub(line, 0, -5))
 end
 
+require("resources/scripts/componentUtils")
+
 engine.scenes = {}
 engine.systems = {}
 

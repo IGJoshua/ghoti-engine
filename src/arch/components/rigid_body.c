@@ -70,7 +70,6 @@ void createCollisionGeom(
 	memcpy(userData, &entity, sizeof(UUID));
 	dGeomSetData(node->geomID, userData);
 
-	// TODO: Make this take the offset from bodyTrans
 	kmVec3 pos, scal;
 	kmQuaternion rot;
 	tGetInverseGlobalTransform(bodyTrans, &pos, &rot, &scal);
@@ -137,14 +136,86 @@ void registerRigidBody(Scene *scene, UUID entity)
 	body->bodyID = dBodyCreate(scene->physicsWorld);
 	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
 
-	createCollisionGeoms(
-		scene,
-		trans,
-		body,
-		coll,
-		body->spaceID);
+	if (coll)
+	{
+		createCollisionGeoms(
+			scene,
+			trans,
+			body,
+			coll,
+			body->spaceID);
+	}
 
 	// update all the other information about the rigidbody
+	updateRigidBody(body, trans);
+}
+
+internal
+void freeUserData(dGeomID geom)
+{
+	// if it's not a space
+	if (!dGeomIsSpace(geom))
+	{
+		free(dGeomGetData(geom));
+		dGeomSetData(geom, 0);
+	}
+	// if it's a space
+	else
+	{
+		dSpaceID space = (dSpaceID)geom;
+
+		uint32 count = dSpaceGetNumGeoms(space);
+		// For each geom in the space
+		for (uint32 i = 0; i < count; ++i)
+		{
+			// free all the stuff in the user data ptr
+			freeUserData(dSpaceGetGeom(space, i));
+		}
+	}
+}
+
+void destroyRigidBody(RigidBodyComponent *body)
+{
+	freeUserData((dGeomID)body->spaceID);
+	dSpaceDestroy(body->spaceID);
+	dBodyDestroy(body->bodyID);
+}
+
+void updateRigidBodyPosition(
+	RigidBodyComponent *body,
+	TransformComponent *trans)
+{
+	dBodySetAngularVel(
+		body->bodyID,
+		body->angularVel.x,
+		body->angularVel.y,
+		body->angularVel.z);
+
+	dBodySetLinearVel(
+		body->bodyID,
+		body->velocity.x,
+		body->velocity.y,
+		body->velocity.z);
+
+	dBodySetPosition(
+		body->bodyID,
+		trans->globalPosition.x,
+		trans->globalPosition.y,
+		trans->globalPosition.z);
+
+	dQuaternion rot = {};
+	rot[0] = trans->globalRotation.w;
+	rot[1] = trans->globalRotation.x;
+	rot[2] = trans->globalRotation.y;
+	rot[3] = trans->globalRotation.z;
+
+	dBodySetQuaternion(body->bodyID, rot);
+}
+
+void updateRigidBody(
+	RigidBodyComponent *body,
+	TransformComponent *trans)
+{
 	dMass mass = {};
 
 	switch (body->inertiaType)
@@ -211,32 +282,6 @@ void registerRigidBody(Scene *scene, UUID entity)
 
 	dBodySetMass(body->bodyID, &mass);
 
-	dBodySetAngularVel(
-		body->bodyID,
-		body->angularVel.x,
-		body->angularVel.y,
-		body->angularVel.z);
-
-	dBodySetLinearVel(
-		body->bodyID,
-		body->velocity.x,
-		body->velocity.y,
-		body->velocity.z);
-
-	dBodySetPosition(
-		body->bodyID,
-		trans->globalPosition.x,
-		trans->globalPosition.y,
-		trans->globalPosition.z);
-
-	dQuaternion rot = {};
-	rot[0] = trans->globalRotation.w;
-	rot[1] = trans->globalRotation.x;
-	rot[2] = trans->globalRotation.y;
-	rot[3] = trans->globalRotation.z;
-
-	dBodySetQuaternion(body->bodyID, rot);
-
 	if (body->gravity)
 	{
 		dBodySetGravityMode(body->bodyID, 1);
@@ -261,6 +306,8 @@ void registerRigidBody(Scene *scene, UUID entity)
 
 	dBodySetMaxAngularSpeed(body->bodyID, body->maxAngularSpeed);
 
+	updateRigidBodyPosition(body, trans);
+
 	if (body->dynamic)
 	{
 		dBodySetDynamic(body->bodyID);
@@ -274,10 +321,4 @@ void registerRigidBody(Scene *scene, UUID entity)
 	{
 		dBodyDisable(body->bodyID);
 	}
-}
-
-void destroyRigidBody(RigidBodyComponent *body)
-{
-	dSpaceDestroy(body->spaceID);
-	dBodyDestroy(body->bodyID);
 }
