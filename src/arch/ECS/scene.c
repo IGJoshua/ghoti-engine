@@ -590,7 +590,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
-		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
+		fread(activeCamera.bytes, UUID_LENGTH + 1, 1, file);
 		(*scene)->mainCamera = activeCamera;
 
 		fread(&(*scene)->gravity, sizeof(real32), 1, file);
@@ -1467,6 +1467,7 @@ void exportSceneSnapshot(const Scene *scene, const char *filename)
 	}
 
 	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
+	cJSON_AddNumberToObject(json, "gravity", scene->gravity);
 
 	writeJSON(json, filename);
 	cJSON_Delete(json);
