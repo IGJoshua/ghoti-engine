@@ -593,6 +593,8 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
 		(*scene)->mainCamera = activeCamera;
 
+		fread(&(*scene)->gravity, sizeof(real32), 1, file);
+
 		fclose(file);
 	}
 	else
@@ -602,48 +604,6 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	}
 
 	free(sceneFilename);
-
-	UUID componentUUID = idFromName("model");
-
-	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
-		(*scene)->componentTypes, &componentUUID);
-
-	if (modelComponents)
-	{
-		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
-		{
-			for (ListIterator listItr = listGetIterator(
-					(List*)hashMapIteratorGetValue(itr));
-				!listIteratorAtEnd(listItr);
-				listMoveIterator(&listItr))
-			{
-				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(
-					UUID,
-					listItr);
-				if (!strcmp(componentID->string, "model"))
-				{
-					ModelComponent *modelComponent =
-						(ModelComponent*)cdtGet(
-							*modelComponents,
-							*(UUID*)hashMapIteratorGetKey(itr));
-
-					if (loadModel(modelComponent->name) == -1)
-					{
-						error = -1;
-					}
-
-					break;
-				}
-			}
-
-			if (error == -1)
-			{
-				break;
-			}
-		}
-	}
 
 	if (error != -1)
 	{
@@ -1837,6 +1797,16 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	hashMapDeleteKey(s->entities, &entity);
 }
 
+internal
+void loadComponentResources(UUID componentType, void *componentData)
+{
+	if (!strcmp(componentType.string, "model"))
+	{
+		ModelComponent modelComponent = *(ModelComponent*)componentData;
+		loadModel(modelComponent.name);
+	}
+}
+
 int32 sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
@@ -1878,6 +1848,8 @@ int32 sceneAddComponentToEntity(
 		// Add the component type to the list
 		listPushBack(l, &componentType);
 	}
+
+	loadComponentResources(componentType, componentData);
 
 	return 0;
 }
