@@ -1,5 +1,7 @@
 #include "defines.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/list.h"
 #include "data/hash_map.h"
@@ -34,9 +36,10 @@ internal bool rendererActive;
 internal HashMap sceneLineData;
 
 internal UUID transformComponentID = {};
-internal UUID aabbComponentID = {};
+internal UUID boxComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID collisionComponentID = {};
+internal UUID collisionTreeNodeComponentID = {};
 
 #define MAX_LINES 4096
 
@@ -49,7 +52,7 @@ typedef struct scene_line_allocator_t
 	Vertex verts[MAX_LINES * 2];
 } SceneLineAllocator;
 
-void initRenderAABBSystem(Scene *scene)
+void initRenderBoxSystem(Scene *scene)
 {
 	if (!rendererActive)
 	{
@@ -59,7 +62,7 @@ void initRenderAABBSystem(Scene *scene)
 				SHADER_VERTEX,
 				&vertShader) == -1)
 		{
-			printf("Unable to compile vertex shader for aabb renderer\n");
+			LOG("Unable to compile vertex shader for box renderer\n");
 		}
 
 		if (compileShaderFromFile(
@@ -67,7 +70,7 @@ void initRenderAABBSystem(Scene *scene)
 				SHADER_FRAGMENT,
 				&fragShader) == -1)
 		{
-			printf("Unable to compile fragment shader for aabb renderer\n");
+			LOG("Unable to compile fragment shader for box renderer\n");
 		}
 
 		Shader *program[2];
@@ -76,7 +79,7 @@ void initRenderAABBSystem(Scene *scene)
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
-			printf("Unable to compose aabb shader pipeline\n");
+			LOG("Unable to compose box shader pipeline\n");
 		}
 
 		freeShader(vertShader);
@@ -86,12 +89,12 @@ void initRenderAABBSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			printf("Unable to get model component uniform\n");
+			LOG("Unable to get model component uniform\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			printf("Unable to get view component uniform\n");
+			LOG("Unable to get view component uniform\n");
 		}
 
 		if (getUniform(
@@ -100,14 +103,14 @@ void initRenderAABBSystem(Scene *scene)
 				UNIFORM_MAT4,
 				&projectionUniform) == -1)
 		{
-			printf("Unable to get projection component uniform\n");
+			LOG("Unable to get projection component uniform\n");
 		}
 
 		rendererActive = true;
 	}
 
 	// Initialize the line renderer
-	if(hashMapGetKey(sceneLineData, &scene))
+	if(hashMapGetData(sceneLineData, &scene))
 	{
 		hashMapDeleteKey(sceneLineData, &scene);
 	}
@@ -198,9 +201,9 @@ internal kmVec4 noCollision = {0, 1, 0, 1};
 internal kmVec4 collision = {1, 0, 0, 1};
 
 internal
-void beginRenderAABBSystem(Scene *scene, real64 dt)
+void beginRenderBoxSystem(Scene *scene, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(
 		sceneLineData,
 		&scene);
 
@@ -220,9 +223,9 @@ void addLine(
 	sceneLineAllocator->verts[sceneLineAllocator->numVerts++].color = collided ? collision : noCollision;
 }
 
-void runRenderAABBSystem(Scene *scene, UUID entityID, real64 dt)
+void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(
 		sceneLineData,
 		&scene);
 	ASSERT(sceneLineAllocator);
@@ -232,139 +235,147 @@ void runRenderAABBSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		transformComponentID);
 
-	AABBComponent *aabb = sceneGetComponentFromEntity(
+	BoxComponent *box = sceneGetComponentFromEntity(
 		scene,
 		entityID,
-		aabbComponentID);
+		boxComponentID);
+
+	CollisionTreeNode *treeNode = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		collisionTreeNodeComponentID);
 
 	CollisionComponent *collision = sceneGetComponentFromEntity(
 		scene,
-		entityID,
+		treeNode->collisionVolume,
 		collisionComponentID);
 
 	bool collided = strcmp(collision->hitList.string, "");
 
 	kmVec3 pos1;
 	kmVec3 pos2;
+	kmVec3 bounds;
+	kmVec3Assign(&bounds, &box->bounds);
+	kmVec3Mul(&bounds, &bounds, &transform->globalScale);
 
 	// Top front left
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z + bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z + bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z + bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	// Top front right
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z + bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z + bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	// Bottom front left
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z + bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z + bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	// Bottom front right
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z + aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z + bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	// Back top left
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z - bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	// Back bottom right
 	kmVec3Fill(
 		&pos1,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z - bounds.z);
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x - aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y - aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x - bounds.x,
+		transform->globalPosition.y - bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 
 	kmVec3Fill(
 		&pos2,
-		transform->globalPosition.x + aabb->bounds.x * transform->globalScale.x,
-		transform->globalPosition.y + aabb->bounds.y * transform->globalScale.y,
-		transform->globalPosition.z - aabb->bounds.z * transform->globalScale.z);
+		transform->globalPosition.x + bounds.x,
+		transform->globalPosition.y + bounds.y,
+		transform->globalPosition.z - bounds.z);
 	addLine(sceneLineAllocator, pos1, pos2, collided);
 }
 
@@ -375,9 +386,9 @@ internal kmMat4 projection = {};
 
 extern real64 alpha;
 
-void endRenderAABBSystem(Scene *scene, real64 dt)
+void endRenderBoxSystem(Scene *scene, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(sceneLineData, &scene);
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(sceneLineData, &scene);
 	ASSERT(sceneLineAllocator);
 
 	camera = sceneGetComponentFromEntity(
@@ -423,12 +434,12 @@ void endRenderAABBSystem(Scene *scene, real64 dt)
 
 	if (setUniform(viewUniform, &view) == -1)
 	{
-		printf("Unable to set view uniform\n");
+		LOG("Unable to set view uniform\n");
 	}
 
 	if (setUniform(projectionUniform, &projection) == -1)
 	{
-		printf("Unable to set projection uniform\n");
+		LOG("Unable to set projection uniform\n");
 	}
 
 	kmMat4 model;
@@ -436,7 +447,7 @@ void endRenderAABBSystem(Scene *scene, real64 dt)
 
 	if (setUniform(modelUniform, &model) == -1)
 	{
-		printf("Unable to set the model uniform\n");
+		LOG("Unable to set the model uniform\n");
 	}
 
 	glBindVertexArray(sceneLineAllocator->vertexArray);
@@ -460,10 +471,10 @@ void endRenderAABBSystem(Scene *scene, real64 dt)
 	}
 }
 
-void shutdownRenderAABBSystem(Scene *scene)
+void shutdownRenderBoxSystem(Scene *scene)
 {
 	SceneLineAllocator *sceneLineAllocator =
-		hashMapGetKey(sceneLineData, &scene);
+		hashMapGetData(sceneLineData, &scene);
 	ASSERT(sceneLineAllocator);
 	glBindVertexArray(sceneLineAllocator->vertexArray);
 	glDeleteBuffers(1, &sceneLineAllocator->vertexBuffer);
@@ -474,17 +485,19 @@ void shutdownRenderAABBSystem(Scene *scene)
 	hashMapDeleteKey(sceneLineData, &scene);
 }
 
+internal
 int32 ptrEq(void *thing1, void *thing2)
 {
 	return *(uint64*)thing1 != *(uint64*)thing2;
 }
 
-System createRenderAABBSystem(void)
+System createRenderBoxSystem(void)
 {
 	transformComponentID = idFromName("transform");
-	aabbComponentID = idFromName("aabb");
+	boxComponentID = idFromName("box");
 	collisionComponentID = idFromName("collision");
 	cameraComponentID = idFromName("camera");
+	collisionTreeNodeComponentID = idFromName("collision_tree_node");
 
 	sceneLineData = createHashMap(
 		sizeof(Scene *), sizeof(SceneLineAllocator), 7, &ptrEq);
@@ -493,13 +506,14 @@ System createRenderAABBSystem(void)
 
 	ret.componentTypes = createList(sizeof(UUID));
 	listPushFront(&ret.componentTypes, &transformComponentID);
-	listPushFront(&ret.componentTypes, &aabbComponentID);
+	listPushFront(&ret.componentTypes, &boxComponentID);
+	listPushFront(&ret.componentTypes, &collisionTreeNodeComponentID);
 
-	ret.init = &initRenderAABBSystem;
-	ret.begin = &beginRenderAABBSystem;
-	ret.run = &runRenderAABBSystem;
-	ret.end = &endRenderAABBSystem;
-	ret.shutdown = &shutdownRenderAABBSystem;
+	ret.init = &initRenderBoxSystem;
+	ret.begin = &beginRenderBoxSystem;
+	ret.run = &runRenderBoxSystem;
+	ret.end = &endRenderBoxSystem;
+	ret.shutdown = &shutdownRenderBoxSystem;
 
 	return ret;
 }

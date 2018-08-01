@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility
+_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility assimp ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -84,6 +84,16 @@ SUPPRESSIONS = $(PROJ).supp
 leakcheck : build
 	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(BUILDDIR)/$(PROJ)
 
+.PHONY: callgrind
+
+callgrind : build
+	LD_LIBRARY_PATH=.:./lib valgrind --tool=callgrind --branch-sim=yes $(BUILDDIR)/$(PROJ)
+
+.PHONY: cachegrind
+
+cachegrind : build
+	LD_LIBRARY_PATH=.:./lib valgrind --tool=cachegrind $(BUILDDIR)/$(PROJ)
+
 .PHONY: debug
 
 debug : build
@@ -108,7 +118,7 @@ release : clean
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3 opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility
+_WINLIBS = glew32 glfw3 opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility ode-6
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))

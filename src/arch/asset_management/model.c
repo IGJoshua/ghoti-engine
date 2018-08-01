@@ -5,6 +5,8 @@
 
 #include "renderer/shader.h"
 
+#include "core/log.h"
+
 #include "file/utilities.h"
 
 #include "json-utilities/utilities.h"
@@ -30,7 +32,7 @@ int32 loadModel(const char *name)
 
 	if (name && !model)
 	{
-		printf("Loading model (%s)...\n", name);
+		LOG("Loading model (%s)...\n", name);
 
 		if (numModels + 1 > modelsCapacity)
 		{
@@ -52,16 +54,16 @@ int32 loadModel(const char *name)
 			return -1;
 		}
 
-		printf("Successfully loaded model (%s)\n", name);
+		LOG("Successfully loaded model (%s)\n", name);
+
+		LOG("Model Count: %d\n", numModels);
+		LOG("Models Capacity: %d\n", modelsCapacity);
 	}
 
 	if (model)
 	{
-		printf("Model (%s) Reference Count: %d\n", name, ++(model->refCount));
+		model->refCount++;
 	}
-
-	printf("Model Count: %d\n", numModels);
-	printf("Models Capacity: %d\n", modelsCapacity);
 
 	return 0;
 }
@@ -86,7 +88,7 @@ void increaseModelsCapacity()
 			newBufferSize - previousBufferSize);
 	}
 
-	printf("Increased models capacity to %d to hold 1 new model\n",
+	LOG("Increased models capacity to %d to hold 1 new model\n",
 		modelsCapacity);
 }
 
@@ -145,7 +147,7 @@ int32 loadMaterials(Model *model)
 	}
 	else
 	{
-		printf("Failed to open %s\n", assetFilename);
+		LOG("Failed to open %s\n", assetFilename);
 		error = -1;
 	}
 
@@ -194,7 +196,7 @@ int32 loadTextures(Model *model)
 			if (materialComponent->texture &&
 				strlen(materialComponent->texture) > 0)
 			{
-				if (loadTexture(materialComponent->texture) == -1)
+				if (loadTexture(materialComponent->texture, true, 0) == -1)
 				{
 					return -1;
 				}
@@ -202,8 +204,8 @@ int32 loadTextures(Model *model)
 		}
 	}
 
-	printf("Texture Count: %d\n", numTextures);
-	printf("Textures Capacity: %d\n", texturesCapacity);
+	LOG("Texture Count: %d\n", numTextures);
+	LOG("Textures Capacity: %d\n", texturesCapacity);
 
 	return 0;
 }
@@ -242,13 +244,11 @@ uint32 getModelIndex(const char *name)
 
 int32 freeModel(const char *name)
 {
-	printf("Freeing model (%s)...\n", name);
-
 	Model *model = getModel(name);
 
 	if (!model)
 	{
-		printf("Could not find model\n");
+		LOG("Could not find model\n");
 		return -1;
 	}
 
@@ -256,6 +256,8 @@ int32 freeModel(const char *name)
 
 	if (--(model->refCount) == 0)
 	{
+		LOG("Freeing model (%s)...\n", name);
+
 		free(model->name);
 
 		for (uint32 i = 0; i < model->numSubsets; i++)
@@ -289,15 +291,8 @@ int32 freeModel(const char *name)
 		free(models);
 		models = resizedModels;
 
-		printf("Successfully freed model (%s)\n", name);
-		printf("Model Count: %d\n", numModels);
-	}
-	else
-	{
-		printf(
-			"Successfully reduced model (%s) reference count to %d\n",
-			name,
-			model->refCount);
+		LOG("Successfully freed model (%s)\n", name);
+		LOG("Model Count: %d\n", numModels);
 	}
 
 	return 0;

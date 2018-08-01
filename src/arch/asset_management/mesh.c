@@ -1,6 +1,8 @@
 #include "asset_management/mesh.h"
 #include "asset_management/asset_manager_types.h"
 
+#include "core/log.h"
+
 #include "model-utility/mesh_exporter.h"
 
 #include "file/utilities.h"
@@ -40,8 +42,8 @@ int32 loadMesh(Model *model)
 		for (uint32 i = 0; i < numSubsets; i++)
 		{
 			char *subsetName = readString(file);
-			printf("Loading subset mesh (%s)...\n", subsetName);
-			printf("Loading subset mesh data...\n");
+			LOG("Loading subset mesh (%s)...\n", subsetName);
+			LOG("Loading subset mesh data...\n");
 
 			uint32 numVertices;
 			fread(&numVertices, sizeof(uint32), 1, file);
@@ -55,8 +57,8 @@ int32 loadMesh(Model *model)
 			uint32 *indices = calloc(numIndices, sizeof(uint32));
 			fread(indices, numIndices, sizeof(uint32), file);
 
-			printf("Successfully loaded subset mesh data\n");
-			printf("Loading subset mesh onto GPU...\n");
+			LOG("Successfully loaded subset mesh data\n");
+			LOG("Loading subset mesh onto GPU...\n");
 
 			Mesh *mesh = &model->meshes[i];
 
@@ -148,10 +150,10 @@ int32 loadMesh(Model *model)
 			free(vertices);
 			free(indices);
 
-			printf("Successfully loaded subset mesh onto GPU\n");
-			printf("Vertex Count: %d\n", numVertices);
-			printf("Index Count: %d\n", numIndices);
-			printf("Successfully loaded subset mesh (%s)\n", subsetName);
+			LOG("Successfully loaded subset mesh onto GPU\n");
+			LOG("Vertex Count: %d\n", numVertices);
+			LOG("Index Count: %d\n", numIndices);
+			LOG("Successfully loaded subset mesh (%s)\n", subsetName);
 			free(subsetName);
 		}
 
@@ -159,7 +161,7 @@ int32 loadMesh(Model *model)
 	}
 	else
 	{
-		printf("Failed to open %s\n", meshFilename);
+		LOG("Failed to open %s\n", meshFilename);
 		return -1;
 	}
 

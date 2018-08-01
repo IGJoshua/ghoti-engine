@@ -1,5 +1,7 @@
 #include "renderer/shader.h"
 
+#include "core/log.h"
+
 #include <malloc.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,11 +26,11 @@ int32 compileShaderFromFile(char *filename, ShaderType type, Shader *shader)
 
 		fclose(file);
 
-		printf("Loaded %s\n", filename);
+		LOG("Loaded %s\n", filename);
 	}
 	else
 	{
-		printf("Unable to open %s\n", filename);
+		LOG("Unable to open %s\n", filename);
 		return -1;
 	}
 
@@ -61,7 +63,7 @@ int32 compileShaderFromSource(char *source, ShaderType type, Shader *shader)
 
 	glCompileShader(shaderObject);
 	GLenum glError = glGetError();
-	printf("Compilation of Shader: %s\n", gluErrorString(glError));
+	LOG("Compilation of Shader: %s\n", gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
 		return -1;
@@ -78,7 +80,7 @@ int32 composeShaderPipeline(Shader **shaders, uint32 numShaders, ShaderPipeline 
 	GLuint programObject = glCreateProgram();
 
 	GLenum glError = glGetError();
-	printf("Shader Pipeline Creation: %s\n", gluErrorString(glError));
+	LOG("Shader Pipeline Creation: %s\n", gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
 		return -1;
@@ -92,7 +94,7 @@ int32 composeShaderPipeline(Shader **shaders, uint32 numShaders, ShaderPipeline 
 	glLinkProgram(programObject);
 
 	glError = glGetError();
-	printf("Shader Pipeline Linking: %s\n", gluErrorString(glError));
+	LOG("Shader Pipeline Linking: %s\n", gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
 		return -1;
@@ -101,7 +103,7 @@ int32 composeShaderPipeline(Shader **shaders, uint32 numShaders, ShaderPipeline 
 	glValidateProgram(programObject);
 
 	glError = glGetError();
-	printf("Shader Pipeline Validation: %s\n", gluErrorString(glError));
+	LOG("Shader Pipeline Validation: %s\n", gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
 		return -1;
@@ -144,14 +146,18 @@ void unbindShaderPipeline(void)
 	glUseProgram(0);
 }
 
-int32 getUniform(ShaderPipeline pipeline, char *name, UniformType type, Uniform *uniform)
+int32 getUniform(
+	ShaderPipeline pipeline,
+	char *name,
+	UniformType type,
+	Uniform *uniform)
 {
 	uniform->type = type;
 	uniform->name = name;
 
 	uniform->location = glGetUniformLocation(pipeline.object, name);
 	GLenum glError = glGetError();
-	printf("Get Uniform (%s): %s\n", name, gluErrorString(glError));
+	LOG("Get Uniform (%s): %s\n", name, gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
 		return -1;
@@ -181,7 +187,7 @@ int32 setUniform(Uniform uniform, void *data)
 	GLenum glError = glGetError();
 	if (glError != GL_NO_ERROR)
 	{
-		printf("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
+		LOG("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
 		return -1;
 	}
 

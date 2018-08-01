@@ -1,6 +1,8 @@
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
+#include "core/log.h"
+
 #include "file/utilities.h"
 
 #include <malloc.h>
@@ -14,7 +16,7 @@ int32 loadMaterial(Material *material, FILE *file)
 	material->type = MATERIAL_TYPE_DEBUG;
 	material->name = readString(file);
 
-	printf("Loading subset material (%s)...\n", material->name);
+	LOG("Loading subset material (%s)...\n", material->name);
 
 	uint32 numMaterialComponents;
 	fread(&numMaterialComponents, sizeof(uint32), 1, file);
@@ -33,7 +35,7 @@ int32 loadMaterial(Material *material, FILE *file)
 			getMaterialComponentName(
 				(MaterialComponentType)materialComponentType);
 
-		printf("Loading %s material component...\n", materialComponentName);
+		LOG("Loading %s material component...\n", materialComponentName);
 
 		MaterialComponent *materialComponent =
 			&material->components[(uint32)materialComponentType];
@@ -71,11 +73,11 @@ int32 loadMaterial(Material *material, FILE *file)
 				break;
 		}
 
-		printf("Successfully loaded %s material component\n",
+		LOG("Successfully loaded %s material component\n",
 			materialComponentName);
 	}
 
-	printf("Successfully loaded subset material (%s)\n", material->name);
+	LOG("Successfully loaded subset material (%s)\n", material->name);
 
 	return 0;
 }

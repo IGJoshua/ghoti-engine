@@ -2,4 +2,4 @@
 
 local C = engine.C
 
-C.loadScene("cool_scene")
+C.loadScene("physics_test")

@@ -1,5 +1,6 @@
 #include "defines.h"
 
+#include "core/log.h"
 #include "core/window.h"
 #include "core/input.h"
 
@@ -26,6 +27,8 @@
 
 #include <SDL2/SDL.h>
 
+#include <ode/ode.h>
+
 #include <time.h>
 #include <stdlib.h>
 
@@ -41,6 +44,8 @@ extern List savedScenes;
 int32 main()
 {
 	srand(time(0));
+
+	initLog();
 
 	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
@@ -60,6 +65,8 @@ int32 main()
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
 
+	dInitODE();
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
 
@@ -69,23 +76,42 @@ int32 main()
 
 	initSystems();
 
+	deleteFolder(RUNTIME_STATE_DIR, false);
+
 	// Init Lua
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
+	int luaError = 0;
+
+#ifndef _DEBUG
+	if (L)
+	{
+		lua_getglobal(L, "io");
+		lua_getfield(L, -1, "output");
+		lua_remove(L, -2);
+		lua_pushstring(L, "lua.log");
+		luaError = lua_pcall(L, 1, 0, 0);
+		if (luaError)
+		{
+			LOG("Lua error: %s\n", lua_tostring(L, -1));
+			lua_close(L);
+			L = 0;
+		}
+	}
+#endif
+
+	luaError = luaL_loadfile(L, "resources/scripts/engine.lua")
 		|| lua_pcall(L, 0, 0, 0);
 	if (luaError)
 	{
-		printf("Lua Error: %s\n", lua_tostring(L, -1));
+		LOG("Lua Error: %s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 
 		lua_close(L);
 		freeWindow(window);
 		return 1;
 	}
-
-	deleteFolder(RUNTIME_STATE_DIR, false);
 
 	// State previous
 	// State next
@@ -95,7 +121,7 @@ int32 main()
 	// total accumulated fixed timestep
 	real64 t = 0.0;
 	// Fixed timestep
-	real64 dt = 1.0 / 60.0;
+	real64 dt = 1.0 / 24.0;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
@@ -113,13 +139,19 @@ int32 main()
 
 		accumulator += frameTime;
 
-		while (accumulator >= dt)
+		while (accumulator >= dt && !glfwWindowShouldClose(window))
 		{
 			for (itr = listGetIterator(&activeScenes);
 				 !listIteratorAtEnd(itr);
 				 listMoveIterator(&itr))
 			{
 				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+				if (scene->loadedThisFrame)
+				{
+					scene->loadedThisFrame = false;
+					continue;
+				}
 
 				sceneRunPhysicsFrameSystems(scene, dt);
 
@@ -134,7 +166,7 @@ int32 main()
 					luaError = lua_pcall(L, 2, 0, 0);
 					if (luaError)
 					{
-						printf("Lua error: %s\n", lua_tostring(L, -1));
+						LOG("Lua error: %s\n", lua_tostring(L, -1));
 						lua_close(L);
 						L = 0;
 					}
@@ -150,7 +182,7 @@ int32 main()
 				luaError = lua_pcall(L, 0, 0, 0);
 				if (luaError)
 				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
+					LOG("Lua error: %s\n", lua_tostring(L, -1));
 					lua_close(L);
 					L = 0;
 				}
@@ -269,7 +301,7 @@ int32 main()
 				luaError = lua_pcall(L, 2, 0, 0);
 				if (luaError)
 				{
-					printf("Lua error: %s\n", lua_tostring(L, -1));
+					LOG("Lua error: %s\n", lua_tostring(L, -1));
 					lua_close(L);
 					L = 0;
 				}
@@ -280,6 +312,8 @@ int32 main()
 
 		glfwSwapBuffers(window);
 	}
+
+	reloadingScene = true;
 
 	for (itr = listGetIterator(&activeScenes);
 		 !listIteratorAtEnd(itr);
@@ -300,9 +334,13 @@ int32 main()
 
 	freeSystems();
 
+	dCloseODE();
+
 	shutdownInput();
 
 	freeWindow(window);
+
+	shutdownLog();
 
 	return 0;
 }

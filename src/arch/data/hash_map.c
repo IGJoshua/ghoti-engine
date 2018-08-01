@@ -1,7 +1,8 @@
 #include "data/hash_map.h"
-
 #include "data/data_types.h"
 #include "data/list.h"
+
+#include "core/log.h"
 
 #ifndef _WIN32
 #include <alloca.h>
@@ -21,6 +22,8 @@ HashMap createHashMap(
 	uint32 bucketCount,
 	ComparisonOp comparison)
 {
+	ASSERT(comparison);
+
 	uint32 mapSize =
 		sizeof(struct hash_map_t)
 		+ (sizeof(HashMapBucket) * bucketCount);
@@ -90,14 +93,14 @@ void hashMapInsert(HashMap map, void *key, void *value)
 	hashMapPush(map, key, value);
 }
 
-void *hashMapGetKey(HashMap map, void *key)
+void *hashMapGetData(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
 	{
 		if (!map->comparison(
 				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
@@ -228,7 +231,8 @@ void *hashMapIteratorGetKey(HashMapIterator itr)
 inline
 void *hashMapIteratorGetValue(HashMapIterator itr)
 {
-	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data + itr.map->keySizeBytes;
+	return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr.itr)->data
+		+ itr.map->keySizeBytes;
 }
 
 void hashMapDeleteAtIterator(HashMapIterator *itr)
@@ -252,6 +256,21 @@ void hashMapDeleteAtIterator(HashMapIterator *itr)
 		else
 		{
 			break;
+		}
+	}
+}
+
+void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
+{
+	for (uint32 bucket = 0; bucket < map->bucketCount; ++bucket)
+	{
+		for (ListIterator itr = listGetIterator(&map->buckets[bucket]);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			HashMapStorage *element =
+				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr);
+			fn(element->data, element->data + map->keySizeBytes, data);
 		}
 	}
 }

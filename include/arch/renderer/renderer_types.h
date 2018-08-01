@@ -84,7 +84,7 @@ typedef enum uniform_type_e
 
 typedef struct uniform_t
 {
-	GLuint location;
+	GLint location;
 	UniformType type;
 	char *name;
 } Uniform;

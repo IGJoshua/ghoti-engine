@@ -10,12 +10,19 @@
 
 #include <string.h>
 
-System createRendererSystem(void);
-System createCleanGlobalTransformsSystem(void);
-System createApplyParentTransformsSystem(void);
-System createCollideAABBSystem(void);
-System createRenderAABBSystem(void);
-System createCleanHitInformationSystem(void);
+#define SYSTEM(fn) System create ## fn ## System(void)
+#define REGISTER_SYSTEM(sys, name) System sys = create ## sys ## System();\
+	key = idFromName(name);\
+	hashMapInsert(systemRegistry, &key, &sys);
+
+SYSTEM(Renderer);
+SYSTEM(CleanGlobalTransforms);
+SYSTEM(ApplyParentTransforms);
+SYSTEM(RenderBox);
+SYSTEM(CleanHitInformation);
+SYSTEM(SimulateRigidbodies);
+SYSTEM(CleanHitList);
+SYSTEM(RenderHeightmap);
 
 extern HashMap systemRegistry;
 
@@ -29,29 +36,14 @@ void initSystems(void)
 
 	UUID key;
 
-	System renderer = createRendererSystem();
-	key = idFromName("renderer");
-	hashMapInsert(systemRegistry, &key, &renderer);
-
-	System cleanGlobalTransforms = createCleanGlobalTransformsSystem();
-	key = idFromName("clean_global_transforms");
-	hashMapInsert(systemRegistry, &key, &cleanGlobalTransforms);
-
-	System applyParentTransforms = createApplyParentTransformsSystem();
-	key = idFromName("apply_parent_transforms");
-	hashMapInsert(systemRegistry, &key, &applyParentTransforms);
-
-	System collideAABB = createCollideAABBSystem();
-	key = idFromName("collide_aabb");
-	hashMapInsert(systemRegistry, &key, &collideAABB);
-
-	System renderAABB = createRenderAABBSystem();
-	key = idFromName("render_aabb");
-	hashMapInsert(systemRegistry, &key, &renderAABB);
-
-	System cleanHitInformation = createCleanHitInformationSystem();
-	key = idFromName("clean_hit_information");
-	hashMapInsert(systemRegistry, &key, &cleanHitInformation);
+	REGISTER_SYSTEM(Renderer, "renderer");
+	REGISTER_SYSTEM(CleanGlobalTransforms, "clean_global_transforms");
+	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
+	REGISTER_SYSTEM(RenderBox, "render_box");
+	REGISTER_SYSTEM(CleanHitInformation, "clean_hit_information");
+	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
+	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
+	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 }
 
 void freeSystems(void)

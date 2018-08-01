@@ -12,6 +12,12 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
+typedef enum
+{
+  false,
+  true
+} Bool;
+
 char *strcpy(char *destination, const char *source);
 
 typedef struct list_node_t
@@ -60,7 +66,7 @@ typedef struct hash_map_t
   HashMapBucket buckets[];
 } *HashMap;
 
-void *hashMapGetKey(HashMap map, void *key);
+void *hashMapGetData(HashMap map, void *key);
 
 typedef union uuid_t
 {
@@ -90,12 +96,12 @@ typedef enum data_type_e {
 } DataType;
 
 int32 strcmp(const char *str1, const char *str2);
-
 ]]
 
-local kazmath = require("resources/scripts/cdefs/kazmath")
-local components = require("resources/scripts/cdefs/componentDefs")
-local sceneDefs = require("resources/scripts/cdefs/sceneDefs")
-local glfwKeys = require("resources/scripts/cdefs/GLFW")
-local jsonUtil = require("resources/scripts/cdefs/jsonUtil")
-local saving = require("resources/scripts/cdefs/saving")
+require("resources/scripts/cdefs/kazmath")
+require("resources/scripts/cdefs/componentDefs")
+require("resources/scripts/cdefs/sceneDefs")
+require("resources/scripts/cdefs/GLFW")
+require("resources/scripts/cdefs/jsonUtil")
+require("resources/scripts/cdefs/saving")
+require("resources/scripts/cdefs/physics")

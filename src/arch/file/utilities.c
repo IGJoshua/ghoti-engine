@@ -1,5 +1,7 @@
 #include "file/utilities.h"
 
+#include "core/log.h"
+
 #include "frozen/frozen.h"
 
 #include <sys/stat.h>
@@ -118,7 +120,7 @@ int32 deleteFolder(const char *folder, bool errors)
 	{
 		if (errors)
 		{
-			printf("Failed to open %s\n", folder);
+			LOG("Failed to open %s\n", folder);
 		}
 		return -1;
 	}
@@ -143,12 +145,10 @@ void copyFile(const char *filename, const char *destination)
 		if (fileBuffer) {
 			fread(fileBuffer, 1, fileLength, file);
 		}
-
-		fclose(file);
 	}
 
 	if (fileBuffer) {
-		file = fopen(destination, "wb");
+		file = freopen(destination, "wb", file);
 		fwrite(fileBuffer, fileLength, 1, file);
 		fclose(file);
 		free(fileBuffer);
@@ -205,7 +205,7 @@ int32 copyFolder(const char *folder, const char *destination)
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		LOG("Failed to open %s\n", folder);
 		return -1;
 	}
 

@@ -27,7 +27,7 @@ typedef enum { false, true } bool;
 #include <stdlib.h>
 #define ASSERT(test) if (!(test))							\
 	{														\
-		printf(												\
+		LOG(												\
 			"Assertion: %s failed in file %s on line %d\n",	\
 			#test,											\
 			__FILE__,										\

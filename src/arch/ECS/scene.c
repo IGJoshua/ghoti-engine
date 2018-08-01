@@ -2,6 +2,8 @@
 #include "ECS/component.h"
 #include "ECS/system.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -19,6 +21,8 @@
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
 
+#include <ode/ode.h>
+
 #include <sys/stat.h>
 
 #include <malloc.h>
@@ -26,6 +30,8 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <unistd.h>
+
+#define MAX_CONTACTS 4096
 
 extern HashMap systemRegistry;
 extern List activeScenes;
@@ -35,7 +41,7 @@ extern List unloadedScenes;
 
 Scene *createScene(void)
 {
-	Scene *ret = malloc(sizeof(Scene));
+	Scene *ret = calloc(1, sizeof(Scene));
 
 	ASSERT(ret != 0);
 
@@ -55,8 +61,12 @@ Scene *createScene(void)
 	ret->luaPhysicsFrameSystemNames = createList(sizeof(UUID));
 	ret->luaRenderFrameSystemNames = createList(sizeof(UUID));
 
-	ret->mainCamera = idFromName("");
-	ret->player = idFromName("");
+	ret->physicsWorld = dWorldCreate();
+	ret->physicsSpace = dHashSpaceCreate(0);
+	ret->contactGroup = dJointGroupCreate(MAX_CONTACTS);
+
+	dWorldSetGravity(ret->physicsWorld, 0, -9.8f, 0);
+	dWorldSetAutoDisableFlag(ret->physicsWorld, 1);
 
 	return ret;
 }
@@ -87,7 +97,7 @@ int32 exportSceneJSONEntities(const char *folder)
 				{
 					if (exportSceneJSONEntities(folderPath) == -1)
 					{
-						printf("Failed recursive export scene entities\n");
+						LOG("Failed recursive export scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -108,7 +118,7 @@ int32 exportSceneJSONEntities(const char *folder)
 
 						if (exportEntity(jsonEntityFilename) == -1)
 						{
-							printf("Failed to export entity\n");
+							LOG("Failed to export entity\n");
 							free(jsonEntityFilename);
 							free(folderPath);
 							free(extension);
@@ -132,7 +142,7 @@ int32 exportSceneJSONEntities(const char *folder)
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		LOG("Failed to open %s\n", folder);
 		error = -1;
 	}
 
@@ -192,7 +202,7 @@ int32 loadSceneEntities(
 						true,
 						folderPath) == -1)
 					{
-						printf("Failed to load scene entities\n");
+						LOG("Failed to load scene entities\n");
 						free(folderPath);
 						closedir(dir);
 						return -1;
@@ -285,7 +295,7 @@ int32 loadSceneEntities(
 
 									ComponentDefinition
 										*existingComponentDefinition =
-											(ComponentDefinition*)hashMapGetKey(
+											(ComponentDefinition*)hashMapGetData(
 												(*scene)->componentDefinitions,
 												&componentID);
 
@@ -322,7 +332,7 @@ int32 loadSceneEntities(
 						}
 						else
 						{
-							printf("Failed to open %s\n", folderPath);
+							LOG("Failed to open %s\n", folderPath);
 							free(folderPath);
 							free(extension);
 							closedir(dir);
@@ -343,7 +353,7 @@ int32 loadSceneEntities(
 	}
 	else
 	{
-		printf("Failed to open %s\n", folder);
+		LOG("Failed to open %s\n", folder);
 		error = -1;
 	}
 
@@ -359,7 +369,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		return -1;
 	}
 
-	printf("Loading scene (%s)...\n", name);
+	LOG("Loading scene (%s)...\n", name);
 
 	char *sceneFolder = NULL;
 
@@ -411,7 +421,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	{
 		if (exportScene(sceneFilename) == -1)
 		{
-			printf("Failed to export scene.\n");
+			LOG("Failed to export scene.\n");
 			free(jsonSceneFilename);
 			free(sceneFilename);
 			free(sceneFolder);
@@ -530,7 +540,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		char *entityFolder = getFullFilePath("entities", NULL, sceneFolder);
 		if (exportSceneJSONEntities(entityFolder) == -1)
 		{
-			printf("Failed to export scene JSON entities\n");
+			LOG("Failed to export scene JSON entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -541,7 +551,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, false, false, entityFolder) == -1)
 		{
-			printf("Failed to load scene entities\n");
+			LOG("Failed to load scene entities\n");
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
@@ -565,7 +575,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
 		{
-			printf("Failed to load scene entities\n");
+			LOG("Failed to load scene entities\n");
 
 			free(sceneFilename);
 			free(entityFolder);
@@ -580,64 +590,24 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
-		fread(activeCamera.bytes, UUID_LENGTH, 1, file);
+		fread(activeCamera.bytes, UUID_LENGTH + 1, 1, file);
 		(*scene)->mainCamera = activeCamera;
+
+		fread(&(*scene)->gravity, sizeof(real32), 1, file);
 
 		fclose(file);
 	}
 	else
 	{
-		printf("Failed to open %s\n", sceneFilename);
+		LOG("Failed to open %s\n", sceneFilename);
 		error = -1;
 	}
 
 	free(sceneFilename);
 
-	UUID componentUUID = idFromName("model");
-
-	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
-		(*scene)->componentTypes, &componentUUID);
-
-	if (modelComponents)
-	{
-		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
-		{
-			for (ListIterator listItr = listGetIterator(
-					(List*)hashMapIteratorGetValue(itr));
-				!listIteratorAtEnd(listItr);
-				listMoveIterator(&listItr))
-			{
-				UUID *componentID = (UUID*)LIST_ITERATOR_GET_ELEMENT(
-					UUID,
-					listItr);
-				if (!strcmp(componentID->string, "model"))
-				{
-					ModelComponent *modelComponent =
-						(ModelComponent*)cdtGet(
-							*modelComponents,
-							*(UUID*)hashMapIteratorGetKey(itr));
-
-					if (loadModel(modelComponent->name) == -1)
-					{
-						error = -1;
-					}
-
-					break;
-				}
-			}
-
-			if (error == -1)
-			{
-				break;
-			}
-		}
-	}
-
 	if (error != -1)
 	{
-		printf("Successfully loaded scene (%s)\n", name);
+		LOG("Successfully loaded scene (%s)\n", name);
 	}
 
 	return error;
@@ -668,6 +638,9 @@ void exportRuntimeScene(const Scene *scene)
 		scene->name,
 		NULL,
 		RUNTIME_STATE_DIR);
+
+	deleteFolder(sceneFolder, false);
+
 	char *sceneFilename = getFullFilePath(
 		scene->name,
 		NULL,
@@ -739,13 +712,13 @@ void freeEntityResources(UUID entity, Scene *scene)
 {
 	UUID componentUUID = idFromName("model");
 
-	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetData(
 		scene->componentTypes, &componentUUID);
 
 	if (modelComponents)
 	{
 		for (ListIterator itr = listGetIterator(
-				hashMapGetKey(scene->entities, &entity));
+				hashMapGetData(scene->entities, &entity));
 			!listIteratorAtEnd(itr);
 			listMoveIterator(&itr))
 		{
@@ -766,12 +739,16 @@ void freeEntityResources(UUID entity, Scene *scene)
 
 void freeScene(Scene **scene)
 {
-	printf("Unloading scene (%s)...\n", (*scene)->name);
+	LOG("Unloading scene (%s)...\n", (*scene)->name);
 
 	if (!reloadingScene)
 	{
 		exportRuntimeScene(*scene);
 	}
+
+	dJointGroupDestroy((*scene)->contactGroup);
+	dSpaceDestroy((*scene)->physicsSpace);
+	dWorldDestroy((*scene)->physicsWorld);
 
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
@@ -813,7 +790,7 @@ void freeScene(Scene **scene)
 
 	free((*scene)->componentLimitNames);
 
-	printf("Successfully unloaded scene (%s)\n", (*scene)->name);
+	LOG("Successfully unloaded scene (%s)\n", (*scene)->name);
 	free((*scene)->name);
 
 	free(*scene);
@@ -836,6 +813,8 @@ int32 loadScene(const char *name)
 				listRemove(&unloadedScenes, &itr);
 				listPushFront(&activeScenes, &scene);
 
+				scene->loadedThisFrame = true;
+
 				return 0;
 			}
 		}
@@ -843,7 +822,7 @@ int32 loadScene(const char *name)
 		Scene *scene;
 		if (loadSceneFile(name, &scene) == -1)
 		{
-			printf("Failed to load scene file\n");
+			LOG("Failed to load scene file\n");
 			return -1;
 		}
 
@@ -851,6 +830,8 @@ int32 loadScene(const char *name)
 		sceneInitLua(&L, scene);
 
 		listPushFront(&activeScenes, &scene);
+
+		scene->loadedThisFrame = true;
 
 		return 0;
 	}
@@ -952,7 +933,7 @@ ComponentDefinition getComponentDefinition(
 	UUID name)
 {
 	ComponentDefinition *componentDefinition =
-		(ComponentDefinition*)hashMapGetKey(
+		(ComponentDefinition*)hashMapGetData(
 			scene->componentDefinitions,
 			&name);
 
@@ -1071,7 +1052,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 	cJSON_AddStringToObject(json, "uuid", entity.string);
 	cJSON *jsonComponents = cJSON_AddObjectToObject(json, "components");
 
-	List *components = (List*)hashMapGetKey(scene->entities, entity.bytes);
+	List *components = (List*)hashMapGetData(scene->entities, entity.bytes);
 
 	for (ListIterator itr = listGetIterator(components);
 		 !listIteratorAtEnd(itr);
@@ -1083,7 +1064,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			componentUUID->string);
 
 		ComponentDataTable **componentDataTable =
-			(ComponentDataTable**)hashMapGetKey(
+			(ComponentDataTable**)hashMapGetData(
 				scene->componentTypes,
 				componentUUID->bytes);
 
@@ -1411,7 +1392,7 @@ void freeSystemNames(char **systemNames, uint32 numSystemNames)
 
 void exportSceneSnapshot(const Scene *scene, const char *filename)
 {
-	printf("Exporting scene (%s)...\n", scene->name);
+	LOG("Exporting scene (%s)...\n", scene->name);
 
 	cJSON *json = cJSON_CreateObject();
 	cJSON *systems = cJSON_AddObjectToObject(json, "systems");
@@ -1486,11 +1467,12 @@ void exportSceneSnapshot(const Scene *scene, const char *filename)
 	}
 
 	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
+	cJSON_AddNumberToObject(json, "gravity", scene->gravity);
 
 	writeJSON(json, filename);
 	cJSON_Delete(json);
 
-	printf("Successfully exported scene (%s)\n", scene->name);
+	LOG("Successfully exported scene (%s)\n", scene->name);
 }
 
 inline
@@ -1516,11 +1498,11 @@ void sceneInitRenderFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1538,11 +1520,11 @@ void sceneInitPhysicsFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1566,11 +1548,11 @@ void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1585,11 +1567,11 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1604,11 +1586,11 @@ void sceneShutdownRenderFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1626,11 +1608,11 @@ void sceneShutdownPhysicsFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
-			printf("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n", systemName->string);
 			continue;
 		}
 
@@ -1656,7 +1638,7 @@ void sceneInitLua(lua_State **L, Scene *scene)
 	int luaError = lua_pcall(*L, 1, 0, 0);
 	if (luaError)
 	{
-		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		LOG("Lua error: %s\n", lua_tostring(*L, -1));
 		lua_pop(*L, 1);
 		lua_close(*L);
 	}
@@ -1671,7 +1653,7 @@ void sceneShutdownLua(lua_State **L, Scene *scene)
 	int luaError = lua_pcall(*L, 1, 0, 0);
 	if (luaError)
 	{
-		printf("Lua error: %s\n", lua_tostring(*L, -1));
+		LOG("Lua error: %s\n", lua_tostring(*L, -1));
 		lua_pop(*L, 1);
 		lua_close(*L);
 	}
@@ -1691,9 +1673,9 @@ void sceneAddComponentType(
 
 	hashMapInsert(scene->componentTypes, &componentID, &table);
 
-	ASSERT(hashMapGetKey(scene->componentTypes, &componentID));
+	ASSERT(hashMapGetData(scene->componentTypes, &componentID));
 	ASSERT(table == *(ComponentDataTable **)
-		hashMapGetKey(
+		hashMapGetData(
 			scene->componentTypes,
 			&componentID));
 }
@@ -1721,7 +1703,7 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 	}
 
 	// Delete the component data table
-	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
+	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetData(
 		scene->componentTypes,
 		&componentID);
 
@@ -1752,6 +1734,20 @@ UUID generateUUID()
 
 void sceneRegisterEntity(Scene *s, UUID newEntity)
 {
+	List *entityList;
+	if ((entityList = hashMapGetData(s->entities, &newEntity)))
+	{
+		LOG(
+			"Entity %s already exists in scene %s\n",
+			newEntity.string,
+			s->name);
+
+		listClear(entityList);
+		hashMapDeleteKey(s->entities, &newEntity);
+
+		//ASSERT(false && "Entity already exists in scene");
+	}
+
 	List emptyList = createList(sizeof(UUID));
 	hashMapInsert(s->entities, &newEntity, &emptyList);
 }
@@ -1765,7 +1761,7 @@ UUID sceneCreateEntity(Scene *s)
 
 void sceneRemoveEntityComponents(Scene *s, UUID entity)
 {
-	List *entityComponentList = hashMapGetKey(s->entities, &entity);
+	List *entityComponentList = hashMapGetData(s->entities, &entity);
 
 	if (!entityComponentList)
 	{
@@ -1779,7 +1775,7 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 		 !listIteratorAtEnd(listIterator);
 		 listMoveIterator(&listIterator))
 	{
-		ComponentDataTable **table = hashMapGetKey(
+		ComponentDataTable **table = hashMapGetData(
 			s->componentTypes,
 			LIST_ITERATOR_GET_ELEMENT(void, listIterator));
 
@@ -1802,16 +1798,26 @@ void sceneRemoveEntity(Scene *s, UUID entity)
 	hashMapDeleteKey(s->entities, &entity);
 }
 
+internal
+void loadComponentResources(UUID componentType, void *componentData)
+{
+	if (!strcmp(componentType.string, "model"))
+	{
+		ModelComponent modelComponent = *(ModelComponent*)componentData;
+		loadModel(modelComponent.name);
+	}
+}
+
 int32 sceneAddComponentToEntity(
 	Scene *s,
 	UUID entity,
 	UUID componentType,
 	void *componentData)
 {
-	// printf("Adding %s component to entity with id %s\n", componentType.string, entity.string);
+	// LOG("Adding %s component to entity with id %s\n", componentType.string, entity.string);
 
 	// Get the data table
-	ComponentDataTable **dataTable = hashMapGetKey(
+	ComponentDataTable **dataTable = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 
@@ -1819,6 +1825,8 @@ int32 sceneAddComponentToEntity(
 	{
 		return -1;
 	}
+
+	List *l = hashMapGetData(s->entities, &entity);
 
 	// Add the component to the data table
 	if(cdtInsert(
@@ -1829,8 +1837,20 @@ int32 sceneAddComponentToEntity(
 		return -1;
 	}
 
-	// Add the component type to the list
-	listPushBack(hashMapGetKey(s->entities, &entity), &componentType);
+	if (listContains(l, &componentType))
+	{
+		LOG(
+			"\n\nOverwriting component data of %s on entity %s\n\n\n",
+			componentType.string,
+			entity.string);
+	}
+	else
+	{
+		// Add the component type to the list
+		listPushBack(l, &componentType);
+	}
+
+	loadComponentResources(componentType, componentData);
 
 	return 0;
 }
@@ -1840,7 +1860,7 @@ void sceneRemoveComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	ComponentDataTable **table = hashMapGetKey(
+	ComponentDataTable **table = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 
@@ -1851,7 +1871,7 @@ void sceneRemoveComponentFromEntity(
 
 	cdtRemove(*table, entity);
 
-	List *componentTypeList = hashMapGetKey(s->entities, &entity);
+	List *componentTypeList = hashMapGetData(s->entities, &entity);
 
 	if (!componentTypeList)
 	{
@@ -1874,7 +1894,7 @@ void *sceneGetComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	ComponentDataTable **table = hashMapGetKey(
+	ComponentDataTable **table = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 

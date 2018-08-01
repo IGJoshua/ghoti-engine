@@ -1,4 +1,5 @@
 #include "core/input.h"
+#include "core/log.h"
 
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -69,7 +70,7 @@ void keyCallback(
 	}
 	else
 	{
-		printf("No lua state exists, failing to register keypress\n");
+		LOG("No lua state exists, failing to register keypress\n");
 	}
 }
 
@@ -96,7 +97,7 @@ void cursorPositionCallback(
 	}
 	else
 	{
-		printf("No lua state exists, failing to register cursor position\n");
+		LOG("No lua state exists, failing to register cursor position\n");
 	}
 }
 
@@ -153,7 +154,7 @@ void mouseButtonCallback(
 	}
 	else
 	{
-		printf("No lua state exists, failing to register mouse click\n");
+		LOG("No lua state exists, failing to register mouse click\n");
 	}
 }
 
@@ -190,7 +191,7 @@ void mouseScrollCallback(
 	}
 	else
 	{
-		printf("No lua state exists, failing to register mouse scroll\n");
+		LOG("No lua state exists, failing to register mouse scroll\n");
 	}
 }
 
@@ -491,7 +492,7 @@ void handleSDLEvents()
 			} break;
 			case SDL_CONTROLLERDEVICEADDED:
 			{
-				printf("Controller connected!\n");
+				LOG("Controller connected!\n");
 
 				if (event.cdevice.which == 0)
 				{
@@ -500,7 +501,7 @@ void handleSDLEvents()
 			} break;
 			case SDL_CONTROLLERDEVICEREMOVED:
 			{
-				printf("Controller disconnected!\n");
+				LOG("Controller disconnected!\n");
 
 				if (event.cdevice.which == 0 && controller)
 				{
@@ -522,7 +523,7 @@ int32 initInput(GLFWwindow *window)
 {
 	if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
 	{
-		printf("Failed to initialize SDL2.\n%s\n", SDL_GetError());
+		LOG("Failed to initialize SDL2.\n%s\n", SDL_GetError());
 		return -1;
 	}
 

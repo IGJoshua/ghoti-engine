@@ -1,6 +1,8 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
+#include "core/log.h"
+
 #include <malloc.h>
 #include <string.h>
 
@@ -150,6 +152,43 @@ void listInsert(List *l, ListIterator *itr, void *data)
 		l->front = node;
 		l->back = node;
 	}
+}
+
+bool listContains(List *l, void *data)
+{
+	for (ListIterator itr = listGetIterator(l);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		if (memcmp(
+				LIST_ITERATOR_GET_ELEMENT(void, itr),
+				data,
+				l->dataSize) == 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool listRemoveData(List *l, void *data)
+{
+	for (ListIterator itr = listGetIterator(l);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		if (memcmp(
+				LIST_ITERATOR_GET_ELEMENT(void, itr),
+				data,
+				l->dataSize) == 0)
+		{
+			listRemove(l, &itr);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 inline
