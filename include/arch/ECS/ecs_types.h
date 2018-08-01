@@ -13,12 +13,21 @@ typedef union uuid_t
 	uint8 bytes[UUID_LENGTH + 1];
 } UUID;
 
+typedef struct component_data_entry_t
+{
+	UUID entity;
+	uint32 nextFree;
+	uint8 data[];
+} ComponentDataEntry;
+
 typedef struct component_data_table_t
 {
 	// Maximum number of active components
 	uint32 numEntries;
 	// Byte size of the component structure
 	uint32 componentSize;
+	// Index of the first free component in the array
+	uint32 firstFree;
 	// Maps UUID to uint32 index of component
 	HashMap idToIndex;
 	// Data table
@@ -85,6 +94,7 @@ typedef struct scene_t
 	dWorldID physicsWorld;
 	dSpaceID physicsSpace;
 	dJointGroupID contactGroup;
+	real32 gravity;
 } Scene;
 
 typedef void(*InitSystem)(Scene *scene);

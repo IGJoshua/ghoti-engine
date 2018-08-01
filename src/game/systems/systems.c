@@ -10,19 +10,21 @@
 
 #include <string.h>
 
-#define SYSTEM(fn) System fn(void)
-#define REGISTER_SYSTEM(sys, fn, name) System sys = fn();\
+#define SYSTEM(fn) System create ## fn ## System(void)
+#define REGISTER_SYSTEM(sys, name) System sys = create ## sys ## System();\
 	key = idFromName(name);\
 	hashMapInsert(systemRegistry, &key, &sys);
 
-SYSTEM(createRendererSystem);
-SYSTEM(createCleanGlobalTransformsSystem);
-SYSTEM(createApplyParentTransformsSystem);
-SYSTEM(createRenderBoxSystem);
-SYSTEM(createCleanHitInformationSystem);
-SYSTEM(createSimulateRigidbodiesSystem);
-SYSTEM(createCleanHitListSystem);
-SYSTEM(createJointInformationSystem);
+
+SYSTEM(Renderer);
+SYSTEM(CleanGlobalTransforms);
+SYSTEM(ApplyParentTransforms);
+SYSTEM(RenderBox);
+SYSTEM(CleanHitInformation);
+SYSTEM(SimulateRigidbodies);
+SYSTEM(CleanHitList);
+SYSTEM(RenderHeightmap);
+SYSTEM(JointInformation);
 
 extern HashMap systemRegistry;
 
@@ -36,45 +38,16 @@ void initSystems(void)
 
 	UUID key;
 
-	REGISTER_SYSTEM(
-		renderer,
-		createRendererSystem,
-		"renderer");
+	REGISTER_SYSTEM(Renderer, "renderer");
+	REGISTER_SYSTEM(CleanGlobalTransforms, "clean_global_transforms");
+	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
+	REGISTER_SYSTEM(RenderBox, "render_box");
+	REGISTER_SYSTEM(CleanHitInformation, "clean_hit_information");
+	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
+	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
+	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
+	REGISTER_SYSTEM(JointInformation, "joint_information")
 
-	REGISTER_SYSTEM(
-		cleanGlobalTransforms,
-		createCleanGlobalTransformsSystem,
-		"clean_global_transforms");
-
-	REGISTER_SYSTEM(
-		applyParentTransforms,
-		createApplyParentTransformsSystem,
-		"apply_parent_transforms");
-
-	REGISTER_SYSTEM(
-		renderBox,
-		createRenderBoxSystem,
-		"render_box");
-
-	REGISTER_SYSTEM(
-		cleanHitInformation,
-		createCleanHitInformationSystem,
-		"clean_hit_information");
-
-	REGISTER_SYSTEM(
-		simulateRigidbodies,
-		createSimulateRigidbodiesSystem,
-		"simulate_rigid_bodies");
-
-	REGISTER_SYSTEM(
-		cleanHitList,
-		createCleanHitListSystem,
-		"clean_hit_list");
-
-	REGISTER_SYSTEM(
-		jointInformation,
-		createJointInformationSystem,
-		"joint_information");
 }
 
 void freeSystems(void)

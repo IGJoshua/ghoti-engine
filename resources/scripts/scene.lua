@@ -24,4 +24,9 @@ function Scene:getComponent(component, entity)
   end
 end
 
+function Scene:addComponentToEntity(component, entity, componentData)
+  local componentID = C.idFromName(component)
+  C.sceneAddComponentToEntity(self.ptr, entity, componentID, componentData)
+end
+
 return Scene

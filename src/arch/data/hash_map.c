@@ -22,6 +22,8 @@ HashMap createHashMap(
 	uint32 bucketCount,
 	ComparisonOp comparison)
 {
+	ASSERT(comparison);
+
 	uint32 mapSize =
 		sizeof(struct hash_map_t)
 		+ (sizeof(HashMapBucket) * bucketCount);
@@ -91,40 +93,21 @@ void hashMapInsert(HashMap map, void *key, void *value)
 	hashMapPush(map, key, value);
 }
 
-void *hashMapGetKey(HashMap map, void *key)
+void *hashMapGetData(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	if (map->comparison)
+	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
 	{
-		for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
-			 !listIteratorAtEnd(itr);
-			 listMoveIterator(&itr))
+		if (!map->comparison(
+				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+				key))
 		{
-			if (!map->comparison(
-					LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
-					key))
-			{
-				return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
-					+ map->keySizeBytes;
-			}
-		}
-	}
-	else
-	{
-		for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
-			 !listIteratorAtEnd(itr);
-			 listMoveIterator(&itr))
-		{
-			if (!memcmp(
-					LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
-					key,
-					map->keySizeBytes))
-			{
-				return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
-					+ map->keySizeBytes;
-			}
+			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
+				+ map->keySizeBytes;
 		}
 	}
 

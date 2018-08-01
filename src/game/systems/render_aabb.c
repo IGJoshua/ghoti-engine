@@ -110,7 +110,7 @@ void initRenderBoxSystem(Scene *scene)
 	}
 
 	// Initialize the line renderer
-	if(hashMapGetKey(sceneLineData, &scene))
+	if(hashMapGetData(sceneLineData, &scene))
 	{
 		hashMapDeleteKey(sceneLineData, &scene);
 	}
@@ -203,7 +203,7 @@ internal kmVec4 collision = {1, 0, 0, 1};
 internal
 void beginRenderBoxSystem(Scene *scene, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(
 		sceneLineData,
 		&scene);
 
@@ -225,7 +225,7 @@ void addLine(
 
 void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(
 		sceneLineData,
 		&scene);
 	ASSERT(sceneLineAllocator);
@@ -388,7 +388,7 @@ extern real64 alpha;
 
 void endRenderBoxSystem(Scene *scene, real64 dt)
 {
-	SceneLineAllocator *sceneLineAllocator = hashMapGetKey(sceneLineData, &scene);
+	SceneLineAllocator *sceneLineAllocator = hashMapGetData(sceneLineData, &scene);
 	ASSERT(sceneLineAllocator);
 
 	camera = sceneGetComponentFromEntity(
@@ -474,7 +474,7 @@ void endRenderBoxSystem(Scene *scene, real64 dt)
 void shutdownRenderBoxSystem(Scene *scene)
 {
 	SceneLineAllocator *sceneLineAllocator =
-		hashMapGetKey(sceneLineData, &scene);
+		hashMapGetData(sceneLineData, &scene);
 	ASSERT(sceneLineAllocator);
 	glBindVertexArray(sceneLineAllocator->vertexArray);
 	glDeleteBuffers(1, &sceneLineAllocator->vertexBuffer);
@@ -485,6 +485,7 @@ void shutdownRenderBoxSystem(Scene *scene)
 	hashMapDeleteKey(sceneLineData, &scene);
 }
 
+internal
 int32 ptrEq(void *thing1, void *thing2)
 {
 	return *(uint64*)thing1 != *(uint64*)thing2;

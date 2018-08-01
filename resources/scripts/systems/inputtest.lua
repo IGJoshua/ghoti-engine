@@ -12,8 +12,12 @@ function system.init(scene)
   input:register("attack", input.BUTTON(nil, gamepad.buttons.x))
   input:register("scroll", input.AXIS(nil, nil, mouse.scroll.yaxis))
   input:register("trigger", input.AXIS(nil, nil, gamepad.lefttrigger))
-  input:register("horizontal", input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
-  input:register("horizontallook", input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
+  input:register(
+	"horizontal",
+	input.AXIS(keyboard.A, keyboard.D, gamepad.leftstick.xaxis))
+  input:register(
+	"horizontallook",
+	input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
   input:register("reload", input.BUTTON(keyboard.R))
   input:register("load_cool_thing", input.BUTTON(keyboard.L))
   input:register("unload_cool_thing", input.BUTTON(keyboard.U))
