@@ -1734,6 +1734,7 @@ UUID generateUUID()
 
 void sceneRegisterEntity(Scene *s, UUID newEntity)
 {
+#ifdef _DEBUG
 	List *entityList;
 	if ((entityList = hashMapGetData(s->entities, &newEntity)))
 	{
@@ -1747,6 +1748,7 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 
 		//ASSERT(false && "Entity already exists in scene");
 	}
+#endif
 
 	List emptyList = createList(sizeof(UUID));
 	hashMapInsert(s->entities, &newEntity, &emptyList);
