@@ -148,7 +148,7 @@ function engine.runSystems(pScene, dt, physics)
 	  cdtItr = C.cdtGetIterator(
 		ffi.cast(
 		  "ComponentDataTable **",
-		C.hashMapGetKey(scene.ptr.componentTypes, componentName))[0])
+		C.hashMapGetData(scene.ptr.componentTypes, componentName))[0])
 
 	  while C.cdtIteratorAtEnd(cdtItr) == 0 do
 		local valid = true
@@ -157,7 +157,7 @@ function engine.runSystems(pScene, dt, physics)
 		  local componentID = C.idFromName(system.components[k])
 		  local componentTable = ffi.cast(
 			"ComponentDataTable **",
-			C.hashMapGetKey(
+			C.hashMapGetData(
 			  scene.ptr.componentTypes,
 			  componentID))
 

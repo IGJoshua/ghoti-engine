@@ -93,7 +93,7 @@ void hashMapInsert(HashMap map, void *key, void *value)
 	hashMapPush(map, key, value);
 }
 
-void *hashMapGetKey(HashMap map, void *key)
+void *hashMapGetData(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;

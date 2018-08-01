@@ -32,7 +32,7 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 	// turn all the loaded rigidbodies into real rigidbodies
 	// for each rigidbody
 	for (ComponentDataTableIterator itr = cdtGetIterator(
-			 *(ComponentDataTable **)hashMapGetKey(
+			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
@@ -245,7 +245,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	TransformComponent *trans = 0;
 	RigidBodyComponent *body = 0;
 	for (ComponentDataTableIterator itr = cdtGetIterator(
-			 *(ComponentDataTable **)hashMapGetKey(
+			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
@@ -316,7 +316,7 @@ internal
 void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
 	for (ComponentDataTableIterator itr = cdtGetIterator(
-			 *(ComponentDataTable **)hashMapGetKey(
+			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
