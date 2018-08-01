@@ -22,6 +22,7 @@ SYSTEM(createRenderBoxSystem);
 SYSTEM(createCleanHitInformationSystem);
 SYSTEM(createSimulateRigidbodiesSystem);
 SYSTEM(createCleanHitListSystem);
+SYSTEM(createJointInformationSystem);
 
 extern HashMap systemRegistry;
 
@@ -69,6 +70,11 @@ void initSystems(void)
 		cleanHitList,
 		createCleanHitListSystem,
 		"clean_hit_list");
+
+	REGISTER_SYSTEM(
+		jointInformation,
+		createJointInformationSystem,
+		"joint_information");
 }
 
 void freeSystems(void)

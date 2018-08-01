@@ -47,6 +47,45 @@ typedef struct camera_component_t
 	CameraProjectionType projectionType;
 } CameraComponent;
 
+typedef enum joint_type_e
+{
+	JOINT_TYPE_BALL_SOCKET = dJointTypeBall,
+	JOINT_TYPE_HINGE = dJointTypeHinge,
+	JOINT_TYPE_SLIDER = dJointTypeSlider
+} JointType;
+
+typedef struct joint_information_component_t
+{
+	JointType type;
+	UUID object1;
+	UUID object2;
+} JointInformationComponent;
+
+typedef struct joint_list_component_t
+{
+	UUID jointInfo;
+	UUID next;
+} JointListComponent;
+
+typedef struct hinge_joint_component_t
+{
+	dJointID hinge;
+	kmVec3 anchor;
+	kmVec3 axis;
+} HingeJointComponent;
+
+typedef struct slider_joint_component_t
+{
+	dJointID slider;
+	kmVec3 axis;
+} SliderJointComponent;
+
+typedef struct ball_socket_joint_component_t
+{
+	dJointID ballSocket;
+	kmVec3 anchor;
+} BallSocketJointComponent;
+
 typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;
