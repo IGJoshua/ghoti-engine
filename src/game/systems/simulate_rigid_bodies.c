@@ -148,6 +148,7 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 			dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
 
+		/*
 		// create hit information entities and hit list entities,
 		// and attach them to the correct entities
 		// create a hit_information entity
@@ -208,6 +209,7 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 
 		coll1->hitList = list1Entity;
 		coll2->hitList = list2Entity;
+		*/
 	}
 }
 
@@ -258,7 +260,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 		}
 	}
 
-	//dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
+	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
 	dWorldQuickStep(scene->physicsWorld, dt);
 	dJointGroupEmpty(scene->contactGroup);
 }

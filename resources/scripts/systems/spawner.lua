@@ -23,11 +23,11 @@ function system.run(scene, entityID, dt)
 	- spawner.numSpawned
 
   for i=1,numToSpawn do
+	spawner.numSpawned = spawner.numSpawned + 1
+
 	if spawner.numSpawned > spawner.numToSpawn then
 	  return nil
 	end
-
-	spawner.numSpawned = spawner.numSpawned + 1
 
 	print(string.format(
 			"Spawning entity #%d from spawner %s",
@@ -112,7 +112,7 @@ function system.run(scene, entityID, dt)
 	collisionTreeNode.type = 0
 	collisionTreeNode.collisionVolume = entity
 	collisionTreeNode.nextCollider = C.idFromName("")
-	collisionTreeNode.isTrigger = true
+	collisionTreeNode.isTrigger = false
 	scene:addComponentToEntity("collision_tree_node", colliderEntity, collisionTreeNode)
 
 	local box = ffi.new("BoxComponent")

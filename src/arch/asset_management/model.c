@@ -55,15 +55,15 @@ int32 loadModel(const char *name)
 		}
 
 		LOG("Successfully loaded model (%s)\n", name);
+
+		LOG("Model Count: %d\n", numModels);
+		LOG("Models Capacity: %d\n", modelsCapacity);
 	}
 
 	if (model)
 	{
-		LOG("Model (%s) Reference Count: %d\n", name, ++(model->refCount));
+		model->refCount++;
 	}
-
-	LOG("Model Count: %d\n", numModels);
-	LOG("Models Capacity: %d\n", modelsCapacity);
 
 	return 0;
 }
@@ -244,8 +244,6 @@ uint32 getModelIndex(const char *name)
 
 int32 freeModel(const char *name)
 {
-	LOG("Freeing model (%s)...\n", name);
-
 	Model *model = getModel(name);
 
 	if (!model)
@@ -258,6 +256,8 @@ int32 freeModel(const char *name)
 
 	if (--(model->refCount) == 0)
 	{
+		LOG("Freeing model (%s)...\n", name);
+
 		free(model->name);
 
 		for (uint32 i = 0; i < model->numSubsets; i++)
@@ -293,13 +293,6 @@ int32 freeModel(const char *name)
 
 		LOG("Successfully freed model (%s)\n", name);
 		LOG("Model Count: %d\n", numModels);
-	}
-	else
-	{
-		LOG(
-			"Successfully reduced model (%s) reference count to %d\n",
-			name,
-			model->refCount);
 	}
 
 	return 0;

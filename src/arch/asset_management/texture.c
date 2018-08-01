@@ -187,14 +187,14 @@ int32 loadTextureWithFormat(
 		ilDeleteImages(1, &devilID);
 
 		LOG("Successfully loaded texture (%s)\n", name);
+
+		LOG("Texture Count: %d\n", numTextures);
+		LOG("Textures Capacity: %d\n", texturesCapacity);
 	}
 
 	if (texture)
 	{
-		LOG(
-			"Texture (%s) Reference Count: %d\n",
-			name,
-			++(texture->refCount));
+		texture->refCount++;
 	}
 
 	return 0;
@@ -272,8 +272,6 @@ uint32 getTextureIndex(const char *name)
 
 int32 freeTexture(const char *name)
 {
-	LOG("Freeing texture (%s)...\n", name);
-
 	Texture *texture = getTexture(name);
 
 	if (!texture)
@@ -286,6 +284,8 @@ int32 freeTexture(const char *name)
 
 	if (--(texture->refCount) == 0)
 	{
+		LOG("Freeing texture (%s)...\n", name);
+
 		free(texture->name);
 		glDeleteTextures(1, &texture->id);
 
@@ -306,13 +306,6 @@ int32 freeTexture(const char *name)
 
 		LOG("Successfully freed texture (%s)\n", name);
 		LOG("Texture Count: %d\n", numTextures);
-	}
-	else
-	{
-		LOG(
-			"Successfully reduced texture (%s) reference count to %d\n",
-			name,
-			texture->refCount);
 	}
 
 	return 0;
