@@ -44,8 +44,10 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 }
 
 internal
-void nearCallback(Scene *scene, dGeomID o1, dGeomID o2)
+void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
+	Scene *scene = data;
+
 	bool space1 = dGeomIsSpace(o1);
 	bool space2 = dGeomIsSpace(o2);
 	if (space1 || space2)
@@ -67,6 +69,7 @@ void nearCallback(Scene *scene, dGeomID o1, dGeomID o2)
 			*volume2,
 			collisionTreeNodeComponentID);
 
+		/*
 		RigidBodyComponent *body1 = sceneGetComponentFromEntity(
 			scene,
 			node1->collisionVolume,
@@ -76,6 +79,7 @@ void nearCallback(Scene *scene, dGeomID o1, dGeomID o2)
 			scene,
 			node2->collisionVolume,
 			rigidBodyComponentID);
+		*/
 
 		if (node1->isTrigger && node2->isTrigger)
 		{
