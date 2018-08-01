@@ -128,6 +128,7 @@ void *cdtGet(ComponentDataTable *table, UUID entityID)
 
 	if (index)
 	{
+		// NOTE(Joshua): "Feels like pretty standard C to me"
 		return
 			(void *)table->data
 			+ *index

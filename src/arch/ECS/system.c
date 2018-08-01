@@ -1,5 +1,7 @@
 #include "ECS/system.h"
 
+#include "ECS/component.h"
+
 #include "data/list.h"
 #include "data/hash_map.h"
 
@@ -36,43 +38,24 @@ void systemRun(
 
 	if (system->run)
 	{
-		// Get the first component type
-		ComponentDataTable **firstComp = hashMapGetKey(
-			scene->componentTypes,
-			(UUID*)system->componentTypes.front->data);
-
-		// If there are no required components
-		if (!firstComp || !*firstComp)
+		// For each entity in the first component table
+		for (ComponentDataTableIterator itr = cdtGetIterator(
+				 *(ComponentDataTable **)hashMapGetKey(
+					 scene->componentTypes,
+					 (UUID*)system->componentTypes.front->data));
+			 !cdtIteratorAtEnd(itr);
+			 cdtMoveIterator(&itr))
 		{
-			return;
-		}
-
-		UUID emptyID = {};
-
-		// For each entity in the component table
-		for (uint32 i = 0; i < (*firstComp)->numEntries; ++i)
-		{
-			if (!strcmp(
-					emptyID.string,
-					// NOTE(Joshua): "Feels like pretty standard C to me"
-					((UUID *)((*firstComp)->data
-							  + i
-							  * ((*firstComp)->componentSize
-								 + sizeof(UUID))))->string))
-			{
-				continue;
-			}
-
 			// Check to see if it has the other component types
 			int32 entityValid = 1;
 
-			ListIterator itr = listGetIterator(&system->componentTypes);
-			for (listMoveIterator(&itr);
-				!listIteratorAtEnd(itr);
-				listMoveIterator(&itr))
+			ListIterator litr = listGetIterator(&system->componentTypes);
+			for (listMoveIterator(&litr);
+				 !listIteratorAtEnd(litr);
+				 listMoveIterator(&litr))
 			{
 				// Get the component to check
-				UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+				UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, litr);
 				ComponentDataTable **table = hashMapGetKey(
 					scene->componentTypes,
 					componentID);
@@ -83,12 +66,7 @@ void systemRun(
 				}
 
 				// Check if the entity exists in the table
-				uint32 *entityIndex =
-					hashMapGetKey(
-						(*table)->idToIndex,
-						(*firstComp)->data
-						+ i
-						* ((*firstComp)->componentSize + sizeof(UUID)));
+				uint32 *entityIndex = cdtIteratorGetData(itr);
 
 				if (!entityIndex)
 				{
@@ -102,10 +80,7 @@ void systemRun(
 			{
 				system->run(
 					scene,
-					*(UUID *)((*firstComp)->data
-							+ i
-							* ((*firstComp)->componentSize
-								+ sizeof(UUID))),
+					*cdtIteratorGetUUID(itr),
 					dt);
 			}
 		}
