@@ -295,7 +295,7 @@ int32 loadSceneEntities(
 
 									ComponentDefinition
 										*existingComponentDefinition =
-											(ComponentDefinition*)hashMapGetKey(
+											(ComponentDefinition*)hashMapGetData(
 												(*scene)->componentDefinitions,
 												&componentID);
 
@@ -712,13 +712,13 @@ void freeEntityResources(UUID entity, Scene *scene)
 {
 	UUID componentUUID = idFromName("model");
 
-	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetKey(
+	ComponentDataTable **modelComponents = (ComponentDataTable**)hashMapGetData(
 		scene->componentTypes, &componentUUID);
 
 	if (modelComponents)
 	{
 		for (ListIterator itr = listGetIterator(
-				hashMapGetKey(scene->entities, &entity));
+				hashMapGetData(scene->entities, &entity));
 			!listIteratorAtEnd(itr);
 			listMoveIterator(&itr))
 		{
@@ -933,7 +933,7 @@ ComponentDefinition getComponentDefinition(
 	UUID name)
 {
 	ComponentDefinition *componentDefinition =
-		(ComponentDefinition*)hashMapGetKey(
+		(ComponentDefinition*)hashMapGetData(
 			scene->componentDefinitions,
 			&name);
 
@@ -1052,7 +1052,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 	cJSON_AddStringToObject(json, "uuid", entity.string);
 	cJSON *jsonComponents = cJSON_AddObjectToObject(json, "components");
 
-	List *components = (List*)hashMapGetKey(scene->entities, entity.bytes);
+	List *components = (List*)hashMapGetData(scene->entities, entity.bytes);
 
 	for (ListIterator itr = listGetIterator(components);
 		 !listIteratorAtEnd(itr);
@@ -1064,7 +1064,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			componentUUID->string);
 
 		ComponentDataTable **componentDataTable =
-			(ComponentDataTable**)hashMapGetKey(
+			(ComponentDataTable**)hashMapGetData(
 				scene->componentTypes,
 				componentUUID->bytes);
 
@@ -1498,7 +1498,7 @@ void sceneInitRenderFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1520,7 +1520,7 @@ void sceneInitPhysicsFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1548,7 +1548,7 @@ void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1567,7 +1567,7 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1586,7 +1586,7 @@ void sceneShutdownRenderFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1608,7 +1608,7 @@ void sceneShutdownPhysicsFrameSystems(Scene *scene)
 		 listMoveIterator(&itr))
 	{
 		UUID *systemName = LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-		System *system = hashMapGetKey(systemRegistry, systemName);
+		System *system = hashMapGetData(systemRegistry, systemName);
 
 		if (!system)
 		{
@@ -1673,9 +1673,9 @@ void sceneAddComponentType(
 
 	hashMapInsert(scene->componentTypes, &componentID, &table);
 
-	ASSERT(hashMapGetKey(scene->componentTypes, &componentID));
+	ASSERT(hashMapGetData(scene->componentTypes, &componentID));
 	ASSERT(table == *(ComponentDataTable **)
-		hashMapGetKey(
+		hashMapGetData(
 			scene->componentTypes,
 			&componentID));
 }
@@ -1703,7 +1703,7 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 	}
 
 	// Delete the component data table
-	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetKey(
+	ComponentDataTable **temp = (ComponentDataTable **)hashMapGetData(
 		scene->componentTypes,
 		&componentID);
 
@@ -1735,7 +1735,7 @@ UUID generateUUID()
 void sceneRegisterEntity(Scene *s, UUID newEntity)
 {
 	List *entityList;
-	if ((entityList = hashMapGetKey(s->entities, &newEntity)))
+	if ((entityList = hashMapGetData(s->entities, &newEntity)))
 	{
 		LOG(
 			"Entity %s already exists in scene %s\n",
@@ -1761,7 +1761,7 @@ UUID sceneCreateEntity(Scene *s)
 
 void sceneRemoveEntityComponents(Scene *s, UUID entity)
 {
-	List *entityComponentList = hashMapGetKey(s->entities, &entity);
+	List *entityComponentList = hashMapGetData(s->entities, &entity);
 
 	if (!entityComponentList)
 	{
@@ -1775,7 +1775,7 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 		 !listIteratorAtEnd(listIterator);
 		 listMoveIterator(&listIterator))
 	{
-		ComponentDataTable **table = hashMapGetKey(
+		ComponentDataTable **table = hashMapGetData(
 			s->componentTypes,
 			LIST_ITERATOR_GET_ELEMENT(void, listIterator));
 
@@ -1817,7 +1817,7 @@ int32 sceneAddComponentToEntity(
 	// LOG("Adding %s component to entity with id %s\n", componentType.string, entity.string);
 
 	// Get the data table
-	ComponentDataTable **dataTable = hashMapGetKey(
+	ComponentDataTable **dataTable = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 
@@ -1826,7 +1826,7 @@ int32 sceneAddComponentToEntity(
 		return -1;
 	}
 
-	List *l = hashMapGetKey(s->entities, &entity);
+	List *l = hashMapGetData(s->entities, &entity);
 
 	// Add the component to the data table
 	if(cdtInsert(
@@ -1860,7 +1860,7 @@ void sceneRemoveComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	ComponentDataTable **table = hashMapGetKey(
+	ComponentDataTable **table = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 
@@ -1871,7 +1871,7 @@ void sceneRemoveComponentFromEntity(
 
 	cdtRemove(*table, entity);
 
-	List *componentTypeList = hashMapGetKey(s->entities, &entity);
+	List *componentTypeList = hashMapGetData(s->entities, &entity);
 
 	if (!componentTypeList)
 	{
@@ -1894,7 +1894,7 @@ void *sceneGetComponentFromEntity(
 	UUID entity,
 	UUID componentType)
 {
-	ComponentDataTable **table = hashMapGetKey(
+	ComponentDataTable **table = hashMapGetData(
 		s->componentTypes,
 		&componentType);
 

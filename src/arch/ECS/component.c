@@ -67,7 +67,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
-	if (!hashMapGetKey(table->idToIndex, &entityID))
+	if (!hashMapGetData(table->idToIndex, &entityID))
 	{
 		// Find an empty slot in the component data table
 		if (table->firstFree >= table->numEntries)
@@ -86,7 +86,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	else
 	{
 		// Set i to the index
-		i = *(uint32 *)hashMapGetKey(table->idToIndex, &entityID);
+		i = *(uint32 *)hashMapGetData(table->idToIndex, &entityID);
 	}
 
 	ASSERT(i >= 0);
@@ -112,7 +112,7 @@ void cdtRemove(
 {
 	// If the entity exists in the table
 	uint32 *pIndex =
-		hashMapGetKey(
+		hashMapGetData(
 			table->idToIndex,
 			&entityID);
 	if (pIndex)
@@ -133,7 +133,7 @@ void cdtRemove(
 
 void *cdtGet(ComponentDataTable *table, UUID entityID)
 {
-	uint32 *index = hashMapGetKey(table->idToIndex, &entityID);
+	uint32 *index = hashMapGetData(table->idToIndex, &entityID);
 
 	if (index)
 	{
