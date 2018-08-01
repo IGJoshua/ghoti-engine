@@ -3,7 +3,7 @@
 
 #include "ECS/ecs_types.h"
 
-#define CDT_ID_BUCKETS 97
+#define CDT_ID_BUCKETS 10007
 
 ComponentDataTable *createComponentDataTable(
 	uint32 numEntries,
@@ -17,5 +17,5 @@ void *cdtGet(ComponentDataTable *table, UUID entityID);
 ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table);
 void cdtMoveIterator(ComponentDataTableIterator *itr);
 uint32 cdtIteratorAtEnd(ComponentDataTableIterator itr);
-UUID *cdtIteratorGetUUID(ComponentDataTableIterator itr) ;
+UUID cdtIteratorGetUUID(ComponentDataTableIterator itr) ;
 void *cdtIteratorGetData(ComponentDataTableIterator itr);

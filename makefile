@@ -84,8 +84,15 @@ SUPPRESSIONS = $(PROJ).supp
 leakcheck : build
 	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(BUILDDIR)/$(PROJ)
 
+.PHONY: callgrind
+
 callgrind : build
-	LD_LIBRARY_PATH=.:./lib valgrind --tool=callgrind $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib valgrind --tool=callgrind --branch-sim=yes $(BUILDDIR)/$(PROJ)
+
+.PHONY: cachegrind
+
+cachegrind : build
+	LD_LIBRARY_PATH=.:./lib valgrind --tool=cachegrind $(BUILDDIR)/$(PROJ)
 
 .PHONY: debug
 

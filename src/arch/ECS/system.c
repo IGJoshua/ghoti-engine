@@ -47,7 +47,7 @@ void systemRun(
 			 cdtMoveIterator(&itr))
 		{
 			// Check to see if it has the other component types
-			int32 entityValid = 1;
+			bool entityValid = true;
 
 			ListIterator litr = listGetIterator(&system->componentTypes);
 			for (listMoveIterator(&litr);
@@ -70,7 +70,7 @@ void systemRun(
 
 				if (!entityIndex)
 				{
-					entityValid = 0;
+					entityValid = false;
 					break;
 				}
 			}
@@ -80,7 +80,7 @@ void systemRun(
 			{
 				system->run(
 					scene,
-					*cdtIteratorGetUUID(itr),
+					cdtIteratorGetUUID(itr),
 					dt);
 			}
 		}

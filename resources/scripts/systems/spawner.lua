@@ -8,6 +8,7 @@ local quatOut = ffi.new("kmQuaternion[1]")
 
 system.components = {}
 system.components[1] = "spawner"
+system.components[2] = "transform"
 
 function system.run(scene, entityID, dt)
   local spawner = scene:getComponent("spawner", entityID)
@@ -15,6 +16,8 @@ function system.run(scene, entityID, dt)
   if spawner.numSpawned >= spawner.numToSpawn then
 	return nil
   end
+
+  local spawnerTransform = scene:getComponent("transform", entityID)
 
   spawner.timeElapsed = spawner.timeElapsed + dt
 
@@ -39,7 +42,7 @@ function system.run(scene, entityID, dt)
 	local transform = ffi.new("TransformComponent")
 	transform.dirty = true
 
-	kazmath.kmVec3Assign(vecOut, spawner.spawnLocation)
+	kazmath.kmVec3Assign(vecOut, spawnerTransform.globalPosition)
 	transform.position = vecOut[0]
 	transform.globalPosition = vecOut[0]
 	transform.lastGlobalPosition = vecOut[0]
@@ -64,11 +67,17 @@ function system.run(scene, entityID, dt)
 	local rigidbody = ffi.new("RigidBodyComponent")
 	rigidbody.dirty = false
 	rigidbody.enabled = true
-	rigidbody.dynamic = true
+	if math.random(0, 1) >= 0.5 then
+	  rigidbody.dynamic = true
+	else
+	  rigidbody.dynamic = false
+	end
 	rigidbody.gravity = true
 	rigidbody.mass = 1
 	C.kmVec3Zero(rigidbody.centerOfMass)
-	C.kmVec3Zero(rigidbody.velocity)
+	rigidbody.velocity.x = math.random(-10, 10)
+	rigidbody.velocity.y = math.random(-10, 10)
+	rigidbody.velocity.z = math.random(-10, 10)
 	C.kmVec3Zero(rigidbody.angularVel)
 	rigidbody.defaultDamping = true
 	rigidbody.maxAngularSpeed = 1000000
@@ -86,7 +95,7 @@ function system.run(scene, entityID, dt)
 	local colliderEntity = C.sceneCreateEntity(scene.ptr)
 
 	local colliderTransform = ffi.new("TransformComponent")
-	kazmath.kmVec3Assign(vecOut, spawner.spawnLocation)
+	kazmath.kmVec3Assign(vecOut, spawnerTransform.globalPosition)
 	colliderTransform.globalPosition = vecOut[0]
 	colliderTransform.lastGlobalPosition = vecOut[0]
 	kazmath.kmVec3Zero(vecOut)

@@ -121,7 +121,7 @@ int32 main()
 	// total accumulated fixed timestep
 	real64 t = 0.0;
 	// Fixed timestep
-	real64 dt = 1.0 / 60.0;
+	real64 dt = 1.0 / 24.0;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
@@ -312,6 +312,8 @@ int32 main()
 
 		glfwSwapBuffers(window);
 	}
+
+	reloadingScene = true;
 
 	for (itr = listGetIterator(&activeScenes);
 		 !listIteratorAtEnd(itr);

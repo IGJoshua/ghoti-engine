@@ -9,6 +9,16 @@
 #include <malloc.h>
 #include <string.h>
 
+internal
+inline
+ComponentDataEntry *getEntry(ComponentDataTable *table, uint32 index)
+{
+	return (ComponentDataEntry *)
+		(table->data
+		 + index
+		 * (table->componentSize + sizeof(ComponentDataEntry)));
+}
+
 ComponentDataTable *createComponentDataTable(
 	uint32 numEntries,
 	uint32 componentSize)
@@ -16,11 +26,12 @@ ComponentDataTable *createComponentDataTable(
 	ComponentDataTable *ret = malloc(
 		sizeof(ComponentDataTable)
 		+ numEntries
-		* (componentSize + sizeof(UUID)));
+		* (componentSize + sizeof(ComponentDataEntry)));
 
 	ASSERT(ret != 0);
 
 	ret->componentSize = componentSize;
+	ret->firstFree = 0;
 	ret->numEntries = numEntries;
 	ret->idToIndex = createHashMap(
 		sizeof(UUID),
@@ -30,9 +41,17 @@ ComponentDataTable *createComponentDataTable(
 
 	ASSERT(ret->idToIndex != 0);
 
-	memset(ret->data, 0, numEntries * (componentSize + sizeof(UUID)));
+	for (uint32 i = 0; i < numEntries; ++i)
+	{
+		ComponentDataEntry *entry = getEntry(ret, i);
 
-	LOG("Created a component data table with %d entries of %d bytes\n", numEntries, componentSize);
+		entry->nextFree = i + 1;
+	}
+
+	LOG(
+		"Created a component data table with %d entries of %d bytes\n",
+		numEntries,
+		componentSize);
 
 	return ret;
 }
@@ -51,21 +70,13 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	if (!hashMapGetKey(table->idToIndex, &entityID))
 	{
 		// Find an empty slot in the component data table
-		UUID emptyID = {};
-		for (; i < table->numEntries; ++i)
-		{
-			if (!strcmp((char *)(table->data
-								 + i
-								 * (table->componentSize + sizeof(UUID))),
-						emptyID.string))
-			{
-				break;
-			}
-		}
-
-		if (i >= table->numEntries)
+		if (table->firstFree >= table->numEntries)
 		{
 			return -1;
+		}
+		else
+		{
+			i = table->firstFree;
 		}
 
 		// Associate the UUID with the index in the map
@@ -80,23 +91,17 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 
 	ASSERT(i >= 0);
 	ASSERT(i < table->numEntries);
-	ASSERT(i
-		   * (table->componentSize + sizeof(UUID))
-		   + sizeof(UUID)
-		   + table->componentSize
-		   <= table->numEntries * (table->componentSize + sizeof(UUID)));
+
+	ComponentDataEntry *entry = getEntry(table, i);
+
+	table->firstFree = entry->nextFree;
 
 	// Put the UUID into the table
-	memcpy(table->data + i * (table->componentSize + sizeof(UUID)),
-		   &entityID, sizeof(UUID));
+	memcpy(entry->entity.string, &entityID, sizeof(UUID));
 	// Put the component data into the table
-	memcpy(
-		table->data
-		+ i
-		* (table->componentSize + sizeof(UUID))
-		+ sizeof(UUID),
-		componentData,
-		table->componentSize);
+	memcpy(entry->data, componentData, table->componentSize);
+
+	entry->nextFree = table->numEntries + 1;
 
 	return 0;
 }
@@ -112,12 +117,16 @@ void cdtRemove(
 			&entityID);
 	if (pIndex)
 	{
+		ComponentDataEntry *entry = getEntry(table, *pIndex);
+
 		memset(
-			table->data
-			+ *pIndex
-			* (table->componentSize + sizeof(UUID)),
+			entry->entity.string,
 			0,
 			sizeof(UUID));
+
+		entry->nextFree = table->firstFree;
+		table->firstFree = *pIndex;
+
 		hashMapDeleteKey(table->idToIndex, &entityID);
 	}
 }
@@ -128,12 +137,7 @@ void *cdtGet(ComponentDataTable *table, UUID entityID)
 
 	if (index)
 	{
-		// NOTE(Joshua): "Feels like pretty standard C to me"
-		return
-			(void *)table->data
-			+ *index
-			* (table->componentSize + sizeof(UUID))
-			+ sizeof(UUID);
+		return getEntry(table, *index)->data;
 	}
 
 	return 0;
@@ -143,12 +147,10 @@ ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table)
 {
 	ComponentDataTableIterator itr = {};
 
-	UUID emptyID = {};
-
 	itr.index = 0;
 	itr.table = table;
 
-	if (!strcmp((const char *)&emptyID, (const char *)table->data))
+	if (getEntry(table, 0)->nextFree < table->numEntries + 1)
 	{
 		cdtMoveIterator(&itr);
 	}
@@ -158,22 +160,11 @@ ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table)
 
 void cdtMoveIterator(ComponentDataTableIterator *itr)
 {
-	if (itr->index >= itr->table->numEntries)
-	{
-		return;
-	}
-
-	UUID emptyID = {};
-
-	// If the UUID is empty, move again
-	// If the index >= numEntries, stop moving
-
 	++itr->index;
 	for (; itr->index < itr->table->numEntries; ++itr->index)
 	{
-		if (strcmp(
-				emptyID.string,
-				cdtIteratorGetUUID(*itr)->string))
+		if (getEntry(itr->table, itr->index)->nextFree
+			== itr->table->numEntries + 1)
 		{
 			break;
 		}
@@ -187,20 +178,13 @@ uint32 cdtIteratorAtEnd(ComponentDataTableIterator itr)
 }
 
 inline
-UUID *cdtIteratorGetUUID(ComponentDataTableIterator itr)
+UUID cdtIteratorGetUUID(ComponentDataTableIterator itr)
 {
-	return (UUID *)(itr.table->data
-					+ itr.index
-					* (itr.table->componentSize
-					   + sizeof(UUID)));
+	return getEntry(itr.table, itr.index)->entity;
 }
 
 inline
 void *cdtIteratorGetData(ComponentDataTableIterator itr)
 {
-	return (itr.table->data
-			+ itr.index
-			* (itr.table->componentSize
-			   + sizeof(UUID)))
-		+ sizeof(UUID);
+	return getEntry(itr.table, itr.index)->data;
 }

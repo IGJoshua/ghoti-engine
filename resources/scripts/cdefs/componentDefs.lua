@@ -20,8 +20,20 @@ typedef struct component_data_table_t
 {
   uint32 numEntries;
   uint32 componentSize;
+  uint32 firstFree;
   HashMap idToIndex;
   uint8 data[];
 } ComponentDataTable;
 
+typedef struct
+{
+  uint32 index;
+  ComponentDataTable *table;
+} ComponentDataTableIterator;
+
+ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table);
+void cdtMoveIterator(ComponentDataTableIterator *itr);
+uint32 cdtIteratorAtEnd(ComponentDataTableIterator itr);
+UUID cdtIteratorGetUUID(ComponentDataTableIterator itr) ;
+void *cdtIteratorGetData(ComponentDataTableIterator itr);
 ]]

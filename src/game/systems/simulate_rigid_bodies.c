@@ -39,30 +39,21 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 		 cdtMoveIterator(&itr))
 	{
 		// Create a rigidbody in the physics world
-		registerRigidBody(scene, *cdtIteratorGetUUID(itr));
+		registerRigidBody(scene, cdtIteratorGetUUID(itr));
 	}
 }
 
 internal
-void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
+void nearCallback(Scene *scene, dGeomID o1, dGeomID o2)
 {
-	dContactGeom contacts[4] = {};
-
-	int32 numContacts = dCollide(
-		o1,
-		o2,
-		4,
-		contacts,
-		sizeof(dContactGeom));
-
-	Scene *scene = data;
-
-	// create contact joints, and matching hit information
-	for (int32 i = 0; i < numContacts; ++i)
+	bool space1 = dGeomIsSpace(o1);
+	bool space2 = dGeomIsSpace(o2);
+	if (space1 || space2)
 	{
-		dContact contact = {};
-		contact.geom = contacts[i];
-
+		dSpaceCollide2(o1, o2, scene, &nearCallback);
+	}
+	else
+	{
 		UUID *volume1 = dGeomGetData(o1);
 		UUID *volume2 = dGeomGetData(o1);
 
@@ -76,59 +67,92 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 			*volume2,
 			collisionTreeNodeComponentID);
 
-		if (!node1->isTrigger && !node2->isTrigger)
-		{
-			// get surface information from the two objects
-			SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
-				scene,
-				*volume1,
-				surfaceInformationComponentID);
-			SurfaceInformationComponent *surface2 = sceneGetComponentFromEntity(
-				scene,
-				*volume2,
-				surfaceInformationComponentID);
+		RigidBodyComponent *body1 = sceneGetComponentFromEntity(
+			scene,
+			node1->collisionVolume,
+			rigidBodyComponentID);
 
-			SurfaceInformationComponent temp = {};
-			if (surface1 && surface2)
-			{
-				// Combine the surface properties
-				temp.bounceVelocity =
-					(surface1->bounceVelocity + surface2->bounceVelocity)
-					/ 2.0f;
-				temp.bounciness =
-					(surface1->bounciness + surface2->bounciness) / 2.0f;
-				temp.disableRolling =
-					surface1->disableRolling && surface2->disableRolling;
-				temp.finiteFriction =
-					surface1->finiteFriction && surface2->finiteFriction;
-				temp.friction =
-					(surface1->friction + surface2->friction) / 2.0f;
-				temp.rollingFriction =
-					(surface1->rollingFriction + surface2->rollingFriction)
-					/ 2.0f;
-				temp.spinningFriction =
-					(surface1->spinningFriction + surface2->spinningFriction)
-					/ 2.0f;
-			}
-			else if (surface1)
-			{
-				temp = *surface1;
-			}
-			else if (surface2)
-			{
-				temp = *surface2;
-			}
-			else
-			{
-				// Set default values
-				temp.bounceVelocity = 0.01f;
-				temp.bounciness = 0.2f;
-				temp.disableRolling = false;
-				temp.finiteFriction = true;
-				temp.friction = 2;
-				temp.rollingFriction = 0.1f;
-				temp.spinningFriction = 0.02f;
-			}
+		RigidBodyComponent *body2 = sceneGetComponentFromEntity(
+			scene,
+			node2->collisionVolume,
+			rigidBodyComponentID);
+
+		if (node1->isTrigger && node2->isTrigger)
+		{
+			return;
+		}
+
+		dContactGeom contacts[4] = {};
+
+		int32 numContacts = dCollide(
+			o1,
+			o2,
+			4,
+			contacts,
+			sizeof(dContactGeom));
+
+		// get surface information from the two objects
+		SurfaceInformationComponent *surface1 = sceneGetComponentFromEntity(
+			scene,
+			*volume1,
+			surfaceInformationComponentID);
+		SurfaceInformationComponent *surface2 = sceneGetComponentFromEntity(
+			scene,
+			*volume2,
+			surfaceInformationComponentID);
+
+		SurfaceInformationComponent temp = {};
+		if (surface1 && surface2)
+		{
+			// Combine the surface properties
+			temp.bounceVelocity =
+				(surface1->bounceVelocity + surface2->bounceVelocity)
+				/ 2.0f;
+			temp.bounciness =
+				(surface1->bounciness + surface2->bounciness) / 2.0f;
+			temp.disableRolling =
+				surface1->disableRolling && surface2->disableRolling;
+			temp.finiteFriction =
+				surface1->finiteFriction && surface2->finiteFriction;
+			temp.friction =
+				(surface1->friction + surface2->friction) / 2.0f;
+			temp.rollingFriction =
+				(surface1->rollingFriction + surface2->rollingFriction)
+				/ 2.0f;
+			temp.spinningFriction =
+				(surface1->spinningFriction + surface2->spinningFriction)
+				/ 2.0f;
+		}
+		else if (surface1)
+		{
+			temp = *surface1;
+		}
+		else if (surface2)
+		{
+			temp = *surface2;
+		}
+		else
+		{
+			// Set default values
+			temp.bounceVelocity = 0.01f;
+			temp.bounciness = 0.2f;
+			temp.disableRolling = false;
+			temp.finiteFriction = true;
+			temp.friction = 2;
+			temp.rollingFriction = 0.1f;
+			temp.spinningFriction = 0.02f;
+		}
+
+		if (numContacts == 0)
+		{
+			return;
+		}
+
+		// create contact joints, and matching hit information
+		for (int32 i = 0; i < numContacts; ++i)
+		{
+			dContact contact = {};
+			contact.geom = contacts[i];
 
 			contact.surface.mode = 0
 				| (temp.disableRolling ? 0 : dContactRolling)
@@ -148,7 +172,9 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 			dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
 		}
 
-		/*
+		dContact contact = {};
+		contact.geom = contacts[0];
+
 		// create hit information entities and hit list entities,
 		// and attach them to the correct entities
 		// create a hit_information entity
@@ -209,22 +235,6 @@ void rigidsNearCallback(void *data, dGeomID o1, dGeomID o2)
 
 		coll1->hitList = list1Entity;
 		coll2->hitList = list2Entity;
-		*/
-	}
-}
-
-internal
-void nearCallback(void *data, dGeomID o1, dGeomID o2)
-{
-	bool space1 = dGeomIsSpace(o1);
-	bool space2 = dGeomIsSpace(o2);
-	if (space1 || space2)
-	{
-		dSpaceCollide2(o1, o2, data, &rigidsNearCallback);
-	}
-	else
-	{
-		rigidsNearCallback(data, o1, o2);
 	}
 }
 
@@ -247,7 +257,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 		{
 			trans = sceneGetComponentFromEntity(
 				scene,
-				*(UUID *)cdtIteratorGetUUID(itr),
+				cdtIteratorGetUUID(itr),
 				transformComponentID);
 
 			updateRigidBodyPosition(

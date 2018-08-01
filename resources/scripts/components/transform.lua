@@ -27,7 +27,7 @@ function component:markDirty(scene, entity)
   self.dirty = true
 
   local body = scene:getComponent("rigid_body", entity)
-  if body then
+  if ffi.cast("uint64", body) ~= 0 then
 	body.dirty = true
   end
 

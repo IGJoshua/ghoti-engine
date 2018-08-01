@@ -3,6 +3,8 @@
 
 #include "data_types.h"
 
+#define HASH_SEED 10007
+
 HashMap createHashMap(
 	uint32 keySize,
 	uint32 valueSize,

@@ -115,6 +115,7 @@ function engine.runSystems(pScene, dt, physics)
   local emptyUUID = ffi.new("UUID")
 
   local itr
+  local itrRef = ffi.new("ListIterator[1]")
 
   if physics then
     itr = C.listGetIterator(scene.ptr.luaPhysicsFrameSystemNames)
@@ -141,63 +142,52 @@ function engine.runSystems(pScene, dt, physics)
       local componentName = ffi.new(
         "UUID[1]",
         C.idFromName(system.components[1]))
-      -- Loop over every entity which has the correct components
-      local firstComp = ffi.cast(
-        "ComponentDataTable **",
-        C.hashMapGetKey(
-          scene.ptr.componentTypes,
-          componentName))
 
-      if ffi.cast("int64", firstComp) ~= null
-      and ffi.cast("int64", firstComp[0]) ~= null then
-        for j = 0,tonumber(firstComp[0].numEntries) - 1 do
-          if ffi.string(emptyUUID.string) ~= ffi.string(
-            ffi.cast("UUID *", firstComp[0].data + j
-                       * (firstComp[0].componentSize
-                          + ffi.sizeof("UUID"))).string) then
+	  local cdtItr = ffi.new("ComponentDataTableIterator")
+	  local itrOut = ffi.new("ComponentDataTableIterator[1]")
+	  cdtItr = C.cdtGetIterator(
+		ffi.cast(
+		  "ComponentDataTable **",
+		C.hashMapGetKey(scene.ptr.componentTypes, componentName))[0])
 
-            local valid = true
-            for k = 2,#system.components do
-              local componentID = C.idFromName(system.components[k])
-              local componentTable = ffi.cast(
-                "ComponentDataTable **",
-                C.hashMapGetKey(
-                  scene.ptr.componentTypes,
-                  componentID))
+	  while C.cdtIteratorAtEnd(cdtItr) == 0 do
+		local valid = true
 
-              if ffi.cast("int64", componentTable) ~= null
-              and ffi.cast("int64", componentTable[0]) then
-                if ffi.cast("int64", ffi.cast("uint32 *", C.hashMapGetKey(
-                                                componentTable[0].idToIndex,
-                                                firstComp[0].data
-                                                  + j
-                                                  * (firstComp[0].componentSize
-                                                       + ffi.sizeof("UUID")))))
-                == null then
-                  valid = false
-                  break
-                end
-              end
-            end
+		for k = 2,#system.components do
+		  local componentID = C.idFromName(system.components[k])
+		  local componentTable = ffi.cast(
+			"ComponentDataTable **",
+			C.hashMapGetKey(
+			  scene.ptr.componentTypes,
+			  componentID))
 
-            if valid then
-              local err, message = pcall(
-                system.run,
-                scene,
-                ffi.cast("UUID *", firstComp[0].data
-                           + j
-                           * (firstComp[0].componentSize
-                                + ffi.sizeof("UUID")))[0],
-                dt)
-              if err == false then
-                io.write(string.format(
-                           "Error raised while running physics system\n%s\n",
-                           message))
-              end
-            end
-          end
-        end
-      end
+		  if ffi.cast("int64", componentTable) ~= null
+		  and ffi.cast("int64", componentTable[0]) ~= null then
+			local index = ffi.cast("int64", C.cdtIteratorGetData(cdtItr))
+			if index == null then
+			  valid = false
+			  break
+			end
+		  end
+		end
+
+		if valid then
+		  local err, message = pcall(
+			system.run,
+			scene,
+			C.cdtIteratorGetUUID(cdtItr),
+			dt)
+		  if err == false then
+			io.write(string.format(
+					   "Error raised while running physics system\n%s\n",
+					   message))
+		  end
+		end
+
+		itrOut[0] = cdtItr
+		C.cdtMoveIterator(itrOut)
+		cdtItr = itrOut[0]
+	  end
 
       if system.clean then
         local err, message = pcall(system.clean, scene, dt)
@@ -209,7 +199,7 @@ function engine.runSystems(pScene, dt, physics)
       end
     end
 
-    local itrRef = ffi.new("ListIterator[1]", itr)
+	itrRef[0] = itr
     C.listMoveIterator(itrRef)
     itr = itrRef[0]
   end

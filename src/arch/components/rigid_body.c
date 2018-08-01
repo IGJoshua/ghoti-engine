@@ -306,8 +306,6 @@ void updateRigidBody(
 
 	dBodySetMaxAngularSpeed(body->bodyID, body->maxAngularSpeed);
 
-	updateRigidBodyPosition(body, trans);
-
 	if (body->dynamic)
 	{
 		dBodySetDynamic(body->bodyID);
@@ -316,6 +314,8 @@ void updateRigidBody(
 	{
 		dBodySetKinematic(body->bodyID);
 	}
+
+	updateRigidBodyPosition(body, trans);
 
 	if (!body->enabled)
 	{

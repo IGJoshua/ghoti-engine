@@ -12,7 +12,7 @@ system.components = {}
 system.components[1] = "oscillator"
 system.components[2] = "transform"
 
-local pos
+local pos = ffi.new("kmVec3[1]")
 local transform
 local oscillator
 
@@ -21,8 +21,6 @@ function system.run(scene, uuid, dt)
   oscillator = scene:getComponent("oscillator", uuid)
 
   oscillator.time = oscillator.time + dt
-
-  pos = ffi.new("kmVec3[1]")
 
   kazmath.kmVec3Scale(pos,
                       oscillator.direction,

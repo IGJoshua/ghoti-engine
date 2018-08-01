@@ -6,7 +6,7 @@
 #include <luajit-2.0/lua.h>
 
 #define COMPONENT_TYPE_BUCKETS 97
-#define ENTITY_BUCKETS 97
+#define ENTITY_BUCKETS 20011
 #define COMPONENT_DEFINITION_BUCKETS 97
 
 #define RUNTIME_STATE_DIR "resources/.runtime-state"
