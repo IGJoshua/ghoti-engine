@@ -1,0 +1,42 @@
+stages:
+  - linux
+  - windows
+  - release
+
+lin-build:
+  stage: linux
+  script:
+    - make release
+    - rm -rf linux-build/
+    - cp -r release/ linux-build
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - linux-build/ghoti
+      - linux-build/ghoti.so
+
+win-build:
+  stage: windows
+  script:
+    - make WINDOWS=yes release
+    - rm -rf win-build/
+    - cp -r release/ win-build
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - win-build/ghoti.exe
+      - win-build/ghoti.dll
+
+# Include all dlls, scripts and shaders.
+release:
+  stage: release
+  when: manual
+  script:
+    - echo Yay
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - release/
+  variables:
+    GIT_STRATEGY: none
+
