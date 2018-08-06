@@ -96,6 +96,8 @@ typedef enum data_type_e {
 } DataType;
 
 int32 strcmp(const char *str1, const char *str2);
+
+
 ]]
 
 require("resources/scripts/cdefs/kazmath")

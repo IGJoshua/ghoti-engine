@@ -30,20 +30,40 @@ internal
 void initJointInformationSystem(Scene *scene)
 {
 	for (ComponentDataTableIterator itr = cdtGetIterator(
-			 *(ComponentDataTable **)hashMapGetKey(
+			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &jointInfoComponentID));
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
 	{
-		UUID entityID = *cdtIteratorGetUUID(itr);
+		UUID entityID = cdtIteratorGetUUID(itr);
 
 		JointInformationComponent *joint = cdtIteratorGetData(itr);
+
+		RigidBodyComponent *object1 = sceneGetComponentFromEntity(
+			scene,
+			joint->object1,
+			rigidBodyComponentID);
+
+		RigidBodyComponent *object2 = sceneGetComponentFromEntity(
+			scene,
+			joint->object2,
+			rigidBodyComponentID);
+
+		if(!(object1 || object2))
+			continue;
+
+		printf("Joint UUID: %s\n", entityID.string);
+		printf("Object1 UUID: %s\n", joint->object1.string);
+		printf("Object2 UUID: %s\n", joint->object2.string);
+
+		dJointID jointID = 0;
 
 		switch (joint->type)
 		{
 		case JOINT_TYPE_SLIDER:
 		{
+			printf("%s\n", "\n\nSlider?\n\n");
 
 		} break;
 		case JOINT_TYPE_HINGE:
@@ -54,6 +74,16 @@ void initJointInformationSystem(Scene *scene)
 				jointHingeComponentID);
 
 			hJoint->hinge = dJointCreateHinge(scene->physicsWorld, 0);
+
+			printf("\nAnchor:\n");
+			printf("x: %f\n", hJoint->anchor.x);
+			printf("y: %f\n", hJoint->anchor.y);
+			printf("z: %f\n", hJoint->anchor.z);
+
+			printf("\nAxis:\n");
+			printf("x: %f\n", hJoint->axis.x);
+			printf("y: %f\n", hJoint->axis.y);
+			printf("z: %f\n", hJoint->axis.z);
 
 			dJointSetHingeAnchor(
 				hJoint->hinge,
@@ -67,16 +97,53 @@ void initJointInformationSystem(Scene *scene)
 				hJoint->axis.y,
 				hJoint->axis.z);
 
+			dReal Vec3[3] = {};
+
+			dJointGetHingeAnchor(hJoint->hinge, Vec3);
+
+			printf("\nAnchor:\n");
+			printf("x: %f\n", Vec3[0]);
+			printf("y: %f\n", Vec3[1]);
+			printf("z: %f\n", Vec3[2]);
+
+			dJointGetHingeAxis(hJoint->hinge, Vec3);
+
+			printf("\nAxis:\n");
+			printf("x: %f\n", Vec3[0]);
+			printf("y: %f\n", Vec3[1]);
+			printf("z: %f\n", Vec3[2]);
+
+
+			jointID = hJoint->hinge;
+
 		} break;
 		case JOINT_TYPE_BALL_SOCKET:
 		{
+			printf("%s\n", "\n\nBall Socket?\n\n");
 
 		} break;
 		default:
 		{
-			ASSERT(false && "Unable to determine joint type");
+			printf("%s\n", "\n\nDEFAULT!?\n\n");
+
 		}break;
 		}
+
+		if(object1 && object2)
+		{
+			dJointAttach(jointID, object1->bodyID, object2->bodyID);
+		}
+		else if(object1)
+		{
+			dJointAttach(jointID, object1->bodyID, 0);
+		}
+		else
+		{
+			dJointAttach(jointID, 0, object2->bodyID);
+		}
+
+		dJointEnable(jointID);
+
 	}
 }
 
@@ -134,15 +201,15 @@ System createJointInformationSystem(void)
 	jointInfoComponentID = idFromName("joint_information");
 	rigidBodyComponentID = idFromName("rigid_body");
 
-	jointHingeComponentID = idFromName("joint_hinge");
-	jointSliderComponentID = idFromName("joint_slider");
-	jointBallSocketComponentID = idFromName("joint_ball_socket");
+	jointHingeComponentID = idFromName("hinge_joint");
+	jointSliderComponentID = idFromName("slider_joint");
+	jointBallSocketComponentID = idFromName("ball_socket_joint");
 
 
 	System sys = {};
 
 	sys.componentTypes = createList(sizeof(UUID));
-	listPushFront(&sys.componentTypes, &jointListComponentID);
+	listPushFront(&sys.componentTypes, &jointInfoComponentID);
 
 	sys.init = initJointInformationSystem;
 	sys.begin = 0;
