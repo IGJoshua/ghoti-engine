@@ -833,6 +833,8 @@ int32 loadScene(const char *name)
 
 		scene->loadedThisFrame = true;
 
+		dWorldSetGravity(scene->physicsWorld, 0, scene->gravity, 0);
+
 		return 0;
 	}
 
