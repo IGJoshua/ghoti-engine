@@ -59,6 +59,45 @@ void initJointInformationSystem(Scene *scene)
 
 		dJointID jointID = 0;
 
+		// TODO: Create all the joints
+		switch (joint->type)
+		{
+		case JOINT_TYPE_SLIDER:
+		{
+			ASSERT(false && "Slider joint type not yet supported.\n");
+		} break;
+		case JOINT_TYPE_HINGE:
+		{
+			HingeJointComponent *hJoint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointHingeComponentID);
+
+			hJoint->hinge = dJointCreateHinge(scene->physicsWorld, 0);
+
+			jointID = hJoint->hinge;
+		} break;
+		default:
+		{
+			LOG("Invalid joint type added on entity %s\n", entityID.string);
+		} break;
+		}
+
+		// Attach all the joints to the relevant objects
+		if(object1 && object2)
+		{
+			dJointAttach(jointID, object1->bodyID, object2->bodyID);
+		}
+		else if(object1)
+		{
+			dJointAttach(jointID, object1->bodyID, 0);
+		}
+		else
+		{
+			dJointAttach(jointID, 0, object2->bodyID);
+		}
+
+		// TODO: Set all the joint-specific values
 		switch (joint->type)
 		{
 		case JOINT_TYPE_SLIDER:
@@ -72,8 +111,6 @@ void initJointInformationSystem(Scene *scene)
 				scene,
 				entityID,
 				jointHingeComponentID);
-
-			hJoint->hinge = dJointCreateHinge(scene->physicsWorld, 0);
 
 			printf("\nAnchor:\n");
 			printf("x: %f\n", hJoint->anchor.x);
@@ -112,10 +149,6 @@ void initJointInformationSystem(Scene *scene)
 			printf("x: %f\n", Vec3[0]);
 			printf("y: %f\n", Vec3[1]);
 			printf("z: %f\n", Vec3[2]);
-
-
-			jointID = hJoint->hinge;
-
 		} break;
 		case JOINT_TYPE_BALL_SOCKET:
 		{
@@ -129,21 +162,7 @@ void initJointInformationSystem(Scene *scene)
 		}break;
 		}
 
-		if(object1 && object2)
-		{
-			dJointAttach(jointID, object1->bodyID, object2->bodyID);
-		}
-		else if(object1)
-		{
-			dJointAttach(jointID, object1->bodyID, 0);
-		}
-		else
-		{
-			dJointAttach(jointID, 0, object2->bodyID);
-		}
-
 		dJointEnable(jointID);
-
 	}
 }
 
