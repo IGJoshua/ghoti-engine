@@ -56,6 +56,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 	}
 	else
 	{
+		// TODO: Make this work using indices into the tables instead of UUIDs
 		UUID *volume1 = dGeomGetData(o1);
 		UUID *volume2 = dGeomGetData(o1);
 
@@ -81,6 +82,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			rigidBodyComponentID);
 		*/
 
+		// FIXME: This should not collide if both bodies are kinematic
 		if (node1->isTrigger && node2->isTrigger)
 		{
 			return;

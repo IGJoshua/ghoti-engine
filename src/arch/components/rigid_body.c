@@ -66,6 +66,7 @@ void createCollisionGeom(
 
 	dGeomSetBody(node->geomID, body->bodyID);
 
+	// TODO: Store the index in the component data table, instead of the uuid
 	void *userData = calloc(1, sizeof(UUID));
 	memcpy(userData, &entity, sizeof(UUID));
 	dGeomSetData(node->geomID, userData);
