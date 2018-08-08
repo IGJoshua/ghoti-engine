@@ -82,7 +82,7 @@ SUPPRESSIONS = $(PROJ).supp
 .PHONY: leakcheck
 
 leakcheck : build
-	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(if $(VGDB),--vgdb=yes --vgdb-error=0,) $(BUILDDIR)/$(PROJ)
 
 .PHONY: callgrind
 
