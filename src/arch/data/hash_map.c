@@ -274,3 +274,15 @@ void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
 		}
 	}
 }
+
+uint32 hashMapCount(HashMap map)
+{
+	uint32 count = 0;
+	for (HashMapIterator itr = hashMapGetIterator(map);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		++count;
+	}
+	return count;
+}
