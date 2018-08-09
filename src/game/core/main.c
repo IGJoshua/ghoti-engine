@@ -45,7 +45,7 @@ int32 main()
 {
 	srand(time(0));
 
-	initLog();
+	remove(LOG_FILE_NAME);
 
 	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
@@ -337,8 +337,6 @@ int32 main()
 	shutdownInput();
 
 	freeWindow(window);
-
-	shutdownLog();
 
 	return 0;
 }
