@@ -12,7 +12,6 @@ typedef struct rigid_body_component_t
 {
   int64 bodyID;
   int64 spaceID;
-  Bool dirty;
   Bool enabled;
   Bool dynamic;
   Bool gravity;

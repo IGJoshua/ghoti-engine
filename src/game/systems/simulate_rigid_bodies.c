@@ -250,6 +250,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	// Update the simulation's copy of the rigidbodies
 	TransformComponent *trans = 0;
 	RigidBodyComponent *body = 0;
+	CollisionComponent *coll = 0;
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
@@ -259,21 +260,21 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	{
 		body = (RigidBodyComponent *)cdtIteratorGetData(itr);
 
-		if (body->dirty)
-		{
-			trans = sceneGetComponentFromEntity(
-				scene,
-				cdtIteratorGetUUID(itr),
-				transformComponentID);
+		trans = sceneGetComponentFromEntity(
+			scene,
+			cdtIteratorGetUUID(itr),
+			transformComponentID);
 
-			updateRigidBodyPosition(
-				body,
-				trans);
+		coll = sceneGetComponentFromEntity(
+			scene,
+			cdtIteratorGetUUID(itr),
+			collisionComponentID);
 
-			body->dirty = false;
-
-			// TODO: Update the simulation's copy of the collision volumes
-		}
+		updateRigidBodyPosition(
+			scene,
+			coll,
+			body,
+			trans);
 	}
 
 	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);

@@ -7,7 +7,6 @@
 internal
 void markDirtyHelper(
 	Scene *scene,
-	UUID entityID,
 	UUID *transformComponentID,
 	TransformComponent *trans)
 {
@@ -28,7 +27,6 @@ void markDirtyHelper(
 
 			markDirtyHelper(
 				scene,
-				currentChild,
 				transformComponentID,
 				child);
 		}
@@ -38,17 +36,6 @@ void markDirtyHelper(
 void tMarkDirty(Scene *scene, UUID entityID)
 {
 	UUID transformComponentID = idFromName("transform");
-	UUID rigidbodyComponentID = idFromName("rigid_body");
-
-	RigidBodyComponent *body = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		rigidbodyComponentID);
-
-	if (body)
-	{
-		body->dirty = true;
-	}
 
 	TransformComponent *trans =
 		sceneGetComponentFromEntity(scene, entityID, transformComponentID);
@@ -57,7 +44,6 @@ void tMarkDirty(Scene *scene, UUID entityID)
 	{
 		markDirtyHelper(
 			scene,
-			entityID,
 			&transformComponentID,
 			trans);
 	}
