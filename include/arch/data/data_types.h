@@ -20,19 +20,6 @@ typedef struct list_iterator_t
 	ListNode *curr;
 } ListIterator;
 
-typedef struct binary_search_tree_node_t
-{
-	struct binary_search_tree_node_t *left;
-	struct binary_search_tree_node_t *right;
-	uint8 data[];
-} BinarySearchTreeNode;
-
-typedef struct binary_search_tree_t
-{
-	BinarySearchTreeNode *root;
-	uint32 dataSize;
-} BinarySearchTree;
-
 typedef List HashMapBucket;
 
 typedef int32(*ComparisonOp)(void*, void*);

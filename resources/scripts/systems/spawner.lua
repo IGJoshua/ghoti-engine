@@ -65,7 +65,6 @@ function system.run(scene, entityID, dt)
 	scene:addComponentToEntity("model", entity, model)
 
 	local rigidbody = ffi.new("RigidBodyComponent")
-	rigidbody.dirty = false
 	rigidbody.enabled = true
 	if math.random(0, 1) >= 0.5 then
 	  rigidbody.dynamic = true
