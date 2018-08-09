@@ -11,6 +11,7 @@ ghoti.dll
 
 # Art assets
 resources/*
+!resources/doc/
 !resources/shaders/
 !resources/scripts/
 
