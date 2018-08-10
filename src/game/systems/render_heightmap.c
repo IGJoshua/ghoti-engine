@@ -89,12 +89,12 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
 		{
-			LOG("Unalbe to get model uniform for heightmap rendering\n");
+			LOG("Unable to get model uniform for heightmap rendering\n");
 		}
 
 		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
-			LOG("Unalbe to get view uniform for heightmap rendering\n");
+			LOG("Unable to get view uniform for heightmap rendering\n");
 		}
 
 		if (getUniform(
@@ -103,7 +103,7 @@ void initRenderHeightmapSystem(Scene *scene)
 				UNIFORM_MAT4,
 				&projectionUniform) == -1)
 		{
-			LOG("Unalbe to get projection uniform for heightmap rendering\n");
+			LOG("Unable to get projection uniform for heightmap rendering\n");
 		}
 	}
 
@@ -138,7 +138,7 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		// create grid for size of heightmap
 		uint32 numVerts = (heightmap->sizeX + 1) * (heightmap->sizeZ + 1);
-		Vertex *verts = calloc(sizeof(Vertex), numVerts);
+		Vertex *verts = calloc(numVerts, sizeof(Vertex));
 
 		// Create verts at the correct heights (currently it's doing it wrong)
 		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
