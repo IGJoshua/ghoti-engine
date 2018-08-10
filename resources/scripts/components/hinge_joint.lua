@@ -2,7 +2,7 @@ ffi.cdef[[
 
 typedef struct hinge_joint_component_t
 {
-	dJointID hinge;
+	dJointID id;
 	kmVec3 anchor;
 	kmVec3 axis;
 } HingeJointComponent;

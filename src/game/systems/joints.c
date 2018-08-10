@@ -17,14 +17,66 @@
 
 #include <string.h>
 
+internal UUID transformComponentID = {};
 internal UUID jointListComponentID = {};
 internal UUID jointInfoComponentID = {};
 internal UUID rigidBodyComponentID = {};
+internal UUID jointConstraintComponentID = {};
 
 internal UUID jointHingeComponentID = {};
 internal UUID jointSliderComponentID = {};
 internal UUID jointBallSocketComponentID = {};
+internal UUID jointBallSocket2ComponentID = {};
 
+internal
+void setJointConstraints(
+	dJointID jointID,
+	JointConstraintComponent* constraint,
+	void(*ParamFn)(dJointID, int, dReal))
+{
+	//Set any optional parameters
+	if(constraint)
+	{
+		if(constraint->loStop_bool)
+		{
+			ParamFn(jointID, dParamLoStop, constraint->loStop_val);
+		}
+
+		if(constraint->hiStop_bool)
+		{
+			ParamFn(jointID, dParamHiStop, constraint->hiStop_val);
+		}
+
+		if(constraint->bounce_bool)
+		{
+			ParamFn(jointID, dParamBounce, constraint->bounce_val);
+		}
+
+		if(constraint->CFM_bool)
+		{
+			ParamFn(jointID, dParamCFM, constraint->CFM_val);
+		}
+
+		if(constraint->stopERP_bool)
+		{
+			ParamFn(jointID, dParamStopERP, constraint->stopERP_val);
+		}
+
+		if(constraint->stopCFM_bool)
+		{
+			ParamFn(jointID, dParamStopCFM, constraint->stopCFM_val);
+		}
+
+		printf("%s\n\n", "constraints set");
+	}
+	else
+	{
+		printf("%s\n\n", "constraints not set");
+	}
+
+
+
+}
 
 internal
 void initJointInformationSystem(Scene *scene)
@@ -40,6 +92,11 @@ void initJointInformationSystem(Scene *scene)
 
 		JointInformationComponent *joint = cdtIteratorGetData(itr);
 
+		JointConstraintComponent *constraint = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			jointConstraintComponentID);
+
 		RigidBodyComponent *object1 = sceneGetComponentFromEntity(
 			scene,
 			joint->object1,
@@ -53,7 +110,7 @@ void initJointInformationSystem(Scene *scene)
 		if(!(object1 || object2))
 			continue;
 
-		printf("Joint UUID: %s\n", entityID.string);
+		printf("\nJoint UUID: %s\n", entityID.string);
 		printf("Object1 UUID: %s\n", joint->object1.string);
 		printf("Object2 UUID: %s\n", joint->object2.string);
 
@@ -64,7 +121,15 @@ void initJointInformationSystem(Scene *scene)
 		{
 		case JOINT_TYPE_SLIDER:
 		{
-			ASSERT(false && "Slider joint type not yet supported.\n");
+			SliderJointComponent *sJoint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointSliderComponentID);
+
+			sJoint->id = dJointCreateSlider(scene->physicsWorld, 0);
+
+			jointID = sJoint->id;
+
 		} break;
 		case JOINT_TYPE_HINGE:
 		{
@@ -73,15 +138,41 @@ void initJointInformationSystem(Scene *scene)
 				entityID,
 				jointHingeComponentID);
 
-			hJoint->hinge = dJointCreateHinge(scene->physicsWorld, 0);
+			hJoint->id = dJointCreateHinge(scene->physicsWorld, 0);
 
-			jointID = hJoint->hinge;
+			jointID = hJoint->id;
+
+		} break;
+		case JOINT_TYPE_BALL_SOCKET:
+		{
+			BallSocketJointComponent *bJoint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointBallSocketComponentID);
+
+			bJoint->id = dJointCreateBall(scene->physicsWorld, 0);
+
+			jointID =bJoint->id;
+
+		} break;
+		case JOINT_TYPE_BALL_SOCKET2:
+		{
+			BallSocket2JointComponent *b2Joint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointBallSocket2ComponentID);
+
+			b2Joint->id = dJointCreateDBall(scene->physicsWorld, 0);
+
+			jointID =b2Joint->id;
+
 		} break;
 		default:
 		{
 			LOG("Invalid joint type added on entity %s\n", entityID.string);
 		} break;
 		}
+
 
 		// Attach all the joints to the relevant objects
 		if(object1 && object2)
@@ -102,7 +193,18 @@ void initJointInformationSystem(Scene *scene)
 		{
 		case JOINT_TYPE_SLIDER:
 		{
-			printf("%s\n", "\n\nSlider?\n\n");
+			SliderJointComponent *sJoint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointSliderComponentID);
+
+			dJointSetSliderAxis(
+				sJoint->id,
+				sJoint->axis.x,
+				sJoint->axis.y,
+				sJoint->axis.z);
+
+			setJointConstraints(jointID, constraint, dJointSetSliderParam);
 
 		} break;
 		case JOINT_TYPE_HINGE:
@@ -112,47 +214,60 @@ void initJointInformationSystem(Scene *scene)
 				entityID,
 				jointHingeComponentID);
 
-			printf("\nAnchor:\n");
-			printf("x: %f\n", hJoint->anchor.x);
-			printf("y: %f\n", hJoint->anchor.y);
-			printf("z: %f\n", hJoint->anchor.z);
-
-			printf("\nAxis:\n");
-			printf("x: %f\n", hJoint->axis.x);
-			printf("y: %f\n", hJoint->axis.y);
-			printf("z: %f\n", hJoint->axis.z);
-
 			dJointSetHingeAnchor(
-				hJoint->hinge,
+				hJoint->id,
 				hJoint->anchor.x,
 				hJoint->anchor.y,
 				hJoint->anchor.z);
 
 			dJointSetHingeAxis(
-				hJoint->hinge,
+				hJoint->id,
 				hJoint->axis.x,
 				hJoint->axis.y,
 				hJoint->axis.z);
 
-			dReal Vec3[3] = {};
+			setJointConstraints(jointID, constraint, dJointSetHingeParam);
 
-			dJointGetHingeAnchor(hJoint->hinge, Vec3);
-
-			printf("\nAnchor:\n");
-			printf("x: %f\n", Vec3[0]);
-			printf("y: %f\n", Vec3[1]);
-			printf("z: %f\n", Vec3[2]);
-
-			dJointGetHingeAxis(hJoint->hinge, Vec3);
-
-			printf("\nAxis:\n");
-			printf("x: %f\n", Vec3[0]);
-			printf("y: %f\n", Vec3[1]);
-			printf("z: %f\n", Vec3[2]);
 		} break;
 		case JOINT_TYPE_BALL_SOCKET:
 		{
-			printf("%s\n", "\n\nBall Socket?\n\n");
+			BallSocketJointComponent *bJoint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointBallSocketComponentID);
+
+			dJointSetBallAnchor(
+				bJoint->id,
+				bJoint->anchor.x,
+				bJoint->anchor.y,
+				bJoint->anchor.z);
+
+		} break;
+		case JOINT_TYPE_BALL_SOCKET2:
+		{
+			BallSocket2JointComponent *b2Joint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointBallSocket2ComponentID);
+
+			dJointSetDBallAnchor1(
+				b2Joint->id,
+				b2Joint->anchor1.x,
+				b2Joint->anchor1.y,
+				b2Joint->anchor1.z);
+
+			dJointSetDBallAnchor2(
+				b2Joint->id,
+				b2Joint->anchor2.x,
+				b2Joint->anchor2.y,
+				b2Joint->anchor2.z);
+
+			dJointSetDBallDistance(
+				b2Joint->id,
+				b2Joint->distance);
+
+			setJointConstraints(jointID, constraint, dJointSetDBallParam);
+
 
 		} break;
 		default:
@@ -169,60 +284,35 @@ void initJointInformationSystem(Scene *scene)
 internal
 void runJointInformationSystem(Scene *scene, UUID entityID, real64 dt)
 {
-
-/*
-	JointListComponent *jointList = sceneGetComponentFromEntity(
+	TransformComponent *trans = sceneGetComponentFromEntity(
 		scene,
 		entityID,
-		jointListComponentID);
+		transformComponentID);
 
-	JointInformationComponent *joint = sceneGetComponentFromEntity(
-		scene,
-		jointList->jointInfo,
-		jointInfoComponentID);
-	RigidBodyComponent *object1 = sceneGetComponentFromEntity(
-		scene,
-		joint->object1,
-		rigidBodyComponentID);
+	if(!trans)
+		return;
 
-	RigidBodyComponent *object2 = sceneGetComponentFromEntity(
-		scene,
-		joint->object2,
-		rigidBodyComponentID);
-	switch (joint->type)
-	{
-	case JOINT_TYPE_HINGE:
-	{
+	printf("Entity %s has position (%f, %f, %f)\n",
+		entityID.string,
+		trans->position.x,
+		trans->position.y,
+		trans->position.z);
 
-
-	} break;
-	case JOINT_TYPE_SLIDER:
-	{
-
-	} break;
-	case JOINT_TYPE_BALL_SOCKET:
-	{
-
-	} break;
-	default:
-	{
-		ASSERT(false && "Unable to determine joint type");
-	}break;
-	}
-
-*/
-
+	return;
 }
 
 System createJointInformationSystem(void)
 {
+	transformComponentID = idFromName("transform");
 	jointListComponentID = idFromName("joint_list");
 	jointInfoComponentID = idFromName("joint_information");
 	rigidBodyComponentID = idFromName("rigid_body");
+	jointConstraintComponentID = idFromName("joint_constraint");
 
 	jointHingeComponentID = idFromName("hinge_joint");
 	jointSliderComponentID = idFromName("slider_joint");
 	jointBallSocketComponentID = idFromName("ball_socket_joint");
+	jointBallSocket2ComponentID = idFromName("ball_socket2_joint");
 
 
 	System sys = {};

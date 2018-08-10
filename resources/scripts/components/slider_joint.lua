@@ -1,7 +1,7 @@
 ffi.cdef[[
 typedef struct slider_joint_component_t
 {
-	dJointID slider;
+	dJointID id;
 	kmVec3 axis;
 } SliderJointComponent;
 ]]
