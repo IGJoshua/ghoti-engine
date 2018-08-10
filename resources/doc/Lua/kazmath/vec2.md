@@ -11,7 +11,7 @@ typedef struct kmVec2 {
 ## kmVec2 Constants
 Can be used to assign a vector to these values
 ```c
-kmVec2 KM_VEC2_POS_Y = { 0, 1 };;
+kmVec2 KM_VEC2_POS_Y = { 0, 1 };
 kmVec2 KM_VEC2_NEG_Y = { 0, -1 };
 kmVec2 KM_VEC2_NEG_X = { -1, 0 };
 kmVec2 KM_VEC2_POS_X = { 1, 0 };
@@ -55,7 +55,7 @@ the two vectors multiplied by their kmVec2LengthSq
 kmScalar kmVec2Dot(const kmVec2* pV1, const kmVec2* pV2);
 ```
 ## kmScalar kmVec2Cross
-Returns the signed magnitude of the vector from a 3D cross product where the Z values are assumed to be 0.   
+Returns the signed magnitude of the vector from a 3D cross product where the Z values are assumed to be 0.
 ```c
 kmScalar kmVec2Cross(const kmVec2* pV1, const kmVec2* pV2);
 ```
