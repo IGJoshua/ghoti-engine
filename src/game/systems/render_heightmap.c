@@ -56,7 +56,7 @@ void initRenderHeightmapSystem(Scene *scene)
 {
 	if (!rendererActive)
 	{
-		// TODO: create and compile the shader pipeline
+		// create and compile the shader pipeline
 		if (compileShaderFromFile(
 				"resources/shaders/base.vert",
 				SHADER_VERTEX,
@@ -122,6 +122,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
 	{
+		UUID entityID = cdtIteratorGetUUID(itr);
 		HeightmapComponent *heightmap = cdtIteratorGetData(itr);
 
 		ILuint imageID;
@@ -135,11 +136,11 @@ void initRenderHeightmapSystem(Scene *scene)
 		uint32 imageHeight = ilGetInteger(IL_IMAGE_HEIGHT);
 		uint8 *imageData = ilGetData();
 
-		// TODO: create grid for size of heightmap
+		// create grid for size of heightmap
 		uint32 numVerts = (heightmap->sizeX + 1) * (heightmap->sizeZ + 1);
 		Vertex *verts = calloc(sizeof(Vertex), numVerts);
 
-		// TODO: Create verts at the correct heights
+		// Create verts at the correct heights (currently it's doing it wrong)
 		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
 		{
 			for (uint32 z = 0; z <= heightmap->sizeZ; ++z)
@@ -151,8 +152,8 @@ void initRenderHeightmapSystem(Scene *scene)
 				kmVec2 uv;
 				kmVec2Fill(
 					&uv,
-					(real32)x / (real32)heightmap->sizeX + 1,
-					(real32)z / (real32)heightmap->sizeZ + 1);
+					(real32)x / ((real32)heightmap->sizeX + 1),
+					(real32)z / ((real32)heightmap->sizeZ + 1));
 				uint32 imageIndex = INDEX(
 					(uint32)(uv.x * imageWidth),
 					(uint32)(uv.y * imageHeight),
@@ -175,7 +176,7 @@ void initRenderHeightmapSystem(Scene *scene)
 			}
 		}
 
-		// TODO: Create valid normals for all the verts
+		// Create valid normals for all the verts
 		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
 		{
 			for (uint32 z = 0; z <= heightmap->sizeZ; ++z)
@@ -216,6 +217,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		ilDeleteImage(imageID);
 
 		// Create the index buffer
+		// TODO: Make this have a more normal number of indices
 		uint32 numIndices =
 			(((heightmap->sizeX + 1) * 2) + 2)
 			* heightmap->sizeZ - 1;
@@ -227,6 +229,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		uint32 row = 0;
 		uint32 index = 0;
 
+		// TODO: Make this generate a more normal triangle mesh
 		while (row < heightmap->sizeZ)
 		{
 			// Do a triangle strip
@@ -261,7 +264,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		// Upload the model to the GPU
 		Mesh m = {};
 
-		m.materialIndex = -1;
+		m.materialIndex = 0;
 
 		glGenBuffers(1, &m.vertexBuffer);
 		glGenVertexArrays(1, &m.vertexArray);
@@ -343,7 +346,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		free(verts);
 		free(indices);
 
-		hashMapInsert(map, &scene, &m);
+		hashMapInsert(map, &entityID, &m);
 	}
 }
 
@@ -369,52 +372,55 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	// TODO: Get the mesh from the hash map for this scene and render it
+	HashMap *sceneMap = (HashMap *)hashMapGetData(heightmapModels, &scene);
+	ASSERT(sceneMap);
 
 	Mesh *heightmap = hashMapGetData(
-		*(HashMap *)hashMapGetData(heightmapModels, &scene),
+		*sceneMap,
 		&entityID);
+	ASSERT(heightmap);
 
-	if (heightmap)
+	TransformComponent *transform = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		transformComponentID);
+
+	kmMat4 transformMat = tGetInterpolatedTransformMatrix(
+		transform,
+		alpha);
+
+	if (setUniform(modelUniform, &transformMat))
 	{
-		TransformComponent *transform = sceneGetComponentFromEntity(
-			scene,
-			entityID,
-			transformComponentID);
-
-		kmMat4 transformMat = tComposeMat4(
-			&transform->globalPosition,
-			&transform->globalRotation,
-			&transform->globalScale);
-
-		bindShaderPipeline(pipeline);
-
-		if (setUniform(modelUniform, &transformMat))
-		{
-			LOG("Unable to set model uniform\n");
-			return;
-		}
-
-		glBindVertexArray(heightmap->vertexArray);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heightmap->indexBuffer);
-
-		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; ++j)
-		{
-			glEnableVertexAttribArray(j);
-		}
-
-		glDrawElements(
-			GL_TRIANGLE_STRIP,
-			heightmap->numIndices,
-			GL_UNSIGNED_INT,
-			NULL);
-		GLenum glError = glGetError();
-		if (glError != GL_NO_ERROR)
-		{
-			LOG("Error while drawing heightmap\n");
-		}
+		LOG("Unable to set model uniform\n");
+		return;
 	}
+
+	glBindVertexArray(heightmap->vertexArray);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heightmap->indexBuffer);
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; ++j)
+	{
+		glEnableVertexAttribArray(j);
+	}
+
+	// TODO: Make this use a triangle list
+	glDrawElements(
+		GL_TRIANGLE_STRIP,
+		heightmap->numIndices,
+		GL_UNSIGNED_INT,
+		NULL);
+	GLenum glError = glGetError();
+	if (glError != GL_NO_ERROR)
+	{
+		LOG("Error while drawing heightmap\n");
+	}
+}
+
+internal
+void endRenderHeightmapSystem(Scene *scene, real64 dt)
+{
+	unbindShaderPipeline();
 }
 
 internal
@@ -469,6 +475,7 @@ System createRenderHeightmapSystem(void)
 	ret.init = &initRenderHeightmapSystem;
 	ret.begin = &beginRenderHeightmapSystem;
 	ret.run = &runRenderHeightmapSystem;
+	ret.end = &endRenderHeightmapSystem;
 	ret.shutdown = &shutdownRenderHeightmapSystem;
 
 	return ret;
