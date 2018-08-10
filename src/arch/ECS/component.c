@@ -131,7 +131,7 @@ void cdtRemove(
 		entry->nextFree = table->firstFree;
 		table->firstFree = *pIndex;
 
-		hashMapDeleteKey(table->idToIndex, &entityID);
+		hashMapDelete(table->idToIndex, &entityID);
 	}
 }
 

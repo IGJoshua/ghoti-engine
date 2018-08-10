@@ -16,7 +16,7 @@ void hashMapPush(HashMap map, void *key, void *value);
 void hashMapInsert(HashMap map, void *key, void *value);
 void *hashMapGetData(HashMap map, void *key);
 void hashMapPopKey(HashMap map, void *key);
-void hashMapDeleteKey(HashMap map, void *key);
+void hashMapDelete(HashMap map, void *key);
 void hashMapClear(HashMap map);
 
 HashMapIterator hashMapGetIterator(HashMap map);
