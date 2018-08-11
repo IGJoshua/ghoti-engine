@@ -14,7 +14,7 @@
 
 #include "file/utilities.h"
 
-#include "cJSON/cJSON.h"
+#include <cjson/cJSON.h>
 
 #include "json-utilities/utilities.h"
 

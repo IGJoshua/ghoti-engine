@@ -1,7 +1,7 @@
 #pragma once
 #include "defines.h"
 
-#include "cJSON/cJSON.h"
+#include <cjson/cJSON.h>
 
 #include <stdio.h>
 

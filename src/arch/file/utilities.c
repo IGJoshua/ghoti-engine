@@ -2,7 +2,7 @@
 
 #include "core/log.h"
 
-#include "frozen/frozen.h"
+#include <frozen/frozen.h>
 
 #include <sys/stat.h>
 
