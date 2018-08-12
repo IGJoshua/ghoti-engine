@@ -13,7 +13,7 @@ ARCHOBJDIR = $(OBJDIR)/arch
 GAMEOBJDIR = $(OBJDIR)/game
 
 _LIBDIRS = lib
-LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR) -Wl,-rpath-link,$(LIBDIR)) 
+LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR) -Wl,-rpath-link,$(LIBDIR))
 
 LUALIBDIR = lualib
 
@@ -22,7 +22,7 @@ WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 
 ARCHDIRS = $(foreach DIR,$(shell find $(ARCHDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(ARCHOBJDIR)/$(DIR) &&) :
 GAMEDIRS = $(foreach DIR,$(shell find $(GAMEDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(GAMEOBJDIR)/$(DIR) &&) :
- 
+
 CC = clang
 CCDB = lldb
 CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR)) -fPIC
@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = json-utilities model-utility cjson frozen assimp glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
+_LIBS = json-utilities model-utility cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
