@@ -116,7 +116,9 @@ int32 exportSceneJSONEntities(const char *folder)
 							folder);
 						free(entityFilename);
 
-						if (exportEntity(jsonEntityFilename) == -1)
+						if (exportEntity(
+							jsonEntityFilename,
+							LOG_FILE_NAME) == -1)
 						{
 							LOG("Failed to export entity\n");
 							free(jsonEntityFilename);
@@ -419,7 +421,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 	if (access(jsonSceneFilename, F_OK) != -1)
 	{
-		if (exportScene(sceneFilename) == -1)
+		if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
 		{
 			LOG("Failed to export scene.\n");
 			free(jsonSceneFilename);
@@ -652,7 +654,7 @@ void exportRuntimeScene(const Scene *scene)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
-	if (exportScene(sceneFilename) == -1)
+	if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
 	{
 		free(sceneFolder);
 		free(sceneFilename);
@@ -683,7 +685,7 @@ void exportRuntimeScene(const Scene *scene)
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
 
-		if (exportEntity(entityFilename) == -1)
+		if (exportEntity(entityFilename, LOG_FILE_NAME) == -1)
 		{
 			free(entityFilename);
 			free(sceneFolder);
@@ -1717,25 +1719,6 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 	{
 		freeComponentDataTable(temp);
 	}
-}
-
-internal
-UUID generateUUID()
-{
-	UUID ret;
-
-	// Generate random byte for all but the last byte
-	for (uint32 i = 0; i < sizeof(UUID) - 1; ++i)
-	{
-		do
-		{
-			ret.bytes[i] = (rand() % (126 - 35)) + 35;
-		} while (ret.bytes[i] == 92);
-	}
-
-	ret.bytes[sizeof(UUID) - 1] = 0;
-
-	return ret;
 }
 
 void sceneRegisterEntity(Scene *s, UUID newEntity)

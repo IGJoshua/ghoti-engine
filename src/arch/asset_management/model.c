@@ -111,7 +111,7 @@ int32 loadMaterials(Model *model)
 
 	char *assetFilename = getFullFilePath(model->name, NULL, modelFolder);
 
-	if (exportAsset(assetFilename) == -1)
+	if (exportAsset(assetFilename, LOG_FILE_NAME) == -1)
 	{
 		free(assetFilename);
 		free(modelFolder);
