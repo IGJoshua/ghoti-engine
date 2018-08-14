@@ -548,6 +548,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+			freeScene(scene);
 			return -1;
 		}
 
@@ -559,6 +560,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+			freeScene(scene);
 			return -1;
 		}
 
@@ -578,17 +580,16 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		if (loadSceneEntities(scene, true, false, entityFolder) == -1)
 		{
 			LOG("Failed to load scene entities\n");
-
 			free(sceneFilename);
 			free(entityFolder);
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+			freeScene(scene);
 			return -1;
 		}
 
 		free(entityFolder);
-		free(sceneFolder);
 		free(componentLimitNumbers);
 
 		UUID activeCamera = {};
@@ -605,6 +606,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		error = -1;
 	}
 
+	free(sceneFolder);
 	free(sceneFilename);
 
 	if (error != -1)
