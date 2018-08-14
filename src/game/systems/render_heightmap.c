@@ -140,6 +140,27 @@ void initRenderHeightmapSystem(Scene *scene)
 		uint32 numVerts = (heightmap->sizeX + 1) * (heightmap->sizeZ + 1);
 		Vertex *verts = calloc(numVerts, sizeof(Vertex));
 
+		// TODO: Load the image into ODE
+		dHeightfieldDataID heightfieldData = dGeomHeightfieldDataCreate();
+		dGeomHeightfieldDataBuildByte(
+			heightfieldData,
+			imageData,
+			1,
+			heightmap->sizeX * heightmap->unitsPerTile,
+			heightmap->sizeZ * heightmap->unitsPerTile,
+			imageWidth,
+			imageHeight,
+			heightmap->maxHeight / 255.0f,
+			0,
+			5,
+			0);
+		dGeomHeightfieldDataSetBounds(
+			heightfieldData,
+			0,
+			255);
+		dGeomID heightfieldGeom = dCreateHeightfield(scene->physicsSpace, heightfieldData, 1);
+		dGeomHeightfieldSetHeightfieldData(heightfieldGeom, heightfieldData);
+
 		// Create verts at the correct heights (currently it's doing it wrong)
 		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
 		{
@@ -217,47 +238,27 @@ void initRenderHeightmapSystem(Scene *scene)
 		ilDeleteImage(imageID);
 
 		// Create the index buffer
-		// TODO: Make this have a more normal number of indices
-		uint32 numIndices =
-			(((heightmap->sizeX + 1) * 2) + 2)
-			* heightmap->sizeZ - 1;
-		uint32 *indices = calloc(
-			sizeof(uint32),
-			numIndices);
+		uint32 numIndices = (heightmap->sizeX * heightmap->sizeZ) * 6;
+		uint32 *indices = calloc(sizeof(uint32), numIndices);
 
-		uint32 vertCol = 0;
-		uint32 row = 0;
 		uint32 index = 0;
 
 		// TODO: Make this generate a more normal triangle mesh
-		while (row < heightmap->sizeZ)
+		for (uint32 triX = 0; triX < heightmap->sizeX; ++triX)
 		{
-			// Do a triangle strip
-			if (vertCol <= heightmap->sizeX)
+			for (uint32 triZ = 0; triZ < heightmap->sizeZ; ++triZ)
 			{
-				indices[index++] = INDEX(
-					vertCol,
-					row,
-					heightmap->sizeX + 1);
+				// Create indices for the first triangle
+				// (-x, -z), (-x, z), (x, z)
+				indices[index++] = INDEX(triX, triZ, heightmap->sizeX + 1);
+				indices[index++] = INDEX(triX, triZ + 1, heightmap->sizeX + 1);
+				indices[index++] = INDEX(triX + 1, triZ + 1, heightmap->sizeX + 1);
 
-				indices[index++] = INDEX(
-					++vertCol,
-					row + 1,
-					heightmap->sizeX + 1);
-			}
-			// If you're past the end of the row, do a degenerate triangle
-			else
-			{
-				indices[index] = indices[index - 1];
-				++index;
-
-				vertCol = 0;
-				++row;
-
-				indices[index++] = INDEX(
-					vertCol,
-					row,
-					heightmap->sizeX + 1);
+				// Create indices for the second triangle
+				// (x, z), (x, -z), (-x, -z)
+				indices[index++] = INDEX(triX + 1, triZ + 1, heightmap->sizeX + 1);
+				indices[index++] = INDEX(triX + 1, triZ, heightmap->sizeX + 1);
+				indices[index++] = INDEX(triX, triZ, heightmap->sizeX + 1);
 			}
 		}
 
@@ -404,9 +405,9 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		glEnableVertexAttribArray(j);
 	}
 
-	// TODO: Make this use a triangle list
+	// Make this use a triangle list
 	glDrawElements(
-		GL_TRIANGLE_STRIP,
+		GL_TRIANGLES,
 		heightmap->numIndices,
 		GL_UNSIGNED_INT,
 		NULL);
@@ -439,6 +440,9 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 		glDeleteBuffers(1, &m->vertexBuffer);
 		glDeleteBuffers(1, &m->indexBuffer);
 		glBindVertexArray(0);
+
+		// TODO: destroy the geom from the heightmap, and the user data
+		//       this'll require changing the for loop to go over the cdt
 
 		glDeleteVertexArrays(1, &m->vertexArray);
 	}
