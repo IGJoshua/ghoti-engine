@@ -25,6 +25,7 @@ SYSTEM(SimulateRigidbodies);
 SYSTEM(CleanHitList);
 SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
+SYSTEM(RayTest);
 
 extern HashMap systemRegistry;
 
@@ -46,7 +47,8 @@ void initSystems(void)
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
-	REGISTER_SYSTEM(JointInformation, "joint_information")
+	REGISTER_SYSTEM(JointInformation, "joint_information");
+	REGISTER_SYSTEM(RayTest, "ray_test");
 
 }
 

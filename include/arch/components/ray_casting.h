@@ -5,4 +5,19 @@
 
 #include "component_types.h"
 
-void rayCast(Scene *scene, kmVec3 pos, kmVec3 dir, real32 length);
+typedef struct ray_collision_t
+{
+    bool hasContact;
+    real32 contact_pos[3];
+	real32 surface_normal[3];
+	real32 distance;
+    real32 minDist;
+    UUID contact_UUID;
+} RayCollision;
+
+RayCollision rayCast(
+    Scene *scene,
+    kmVec3 pos,
+    kmVec3 dir,
+    real32 minDist,
+    real32 length);
