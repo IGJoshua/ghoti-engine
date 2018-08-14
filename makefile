@@ -119,7 +119,8 @@ release : clean
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3 opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility ode-6
+_WINLIBS = mingw32 SDL2main json-utilities model-utility cjson frozen glfw3 glew32 glu32 opengl32 ILU DevIL kazmath pthread luajit ode-6 SDL2
+
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
