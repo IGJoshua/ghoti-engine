@@ -112,13 +112,12 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
-	cp -r lualib/ release/
 	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
+WINFLAGS = -I/usr/local/include -Wl,-subsystem,windows
 _WINLIBS = mingw32 SDL2main json-utilities model-utility cjson frozen glfw3 glew32 glu32 opengl32 ILU DevIL kazmath pthread luajit ode-6 SDL2
 
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))

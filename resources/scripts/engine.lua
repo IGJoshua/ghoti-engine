@@ -15,8 +15,8 @@ io.write("Loaded ghoti library\n")
 
 engine.kazmath = ffi.load(
   ffi.os == "Windows"
-    and "./libkazmath.a"
-    or "lualib/libkazmath.so")
+    and "./kazmath.dll"
+    or "./lib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
 
