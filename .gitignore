@@ -14,6 +14,7 @@ resources/*
 !resources/doc/
 !resources/shaders/
 !resources/scripts/
+!resources/scenes/
 
 # Editor specific files
 .dir-locals.el
@@ -29,3 +30,5 @@ GPATH
 *.log
 vgcore.*
 *.json
+*.scene
+*.entity

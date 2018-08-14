@@ -348,7 +348,6 @@ System createSimulateRigidbodiesSystem(void)
 	sys.componentTypes = createList(sizeof(UUID));
 	listPushFront(&sys.componentTypes, &transformComponentID);
 	listPushFront(&sys.componentTypes, &rigidBodyComponentID);
-	listPushFront(&sys.componentTypes, &collisionComponentID);
 
 	sys.init = &initSimulateRigidbodiesSystem;
 	sys.begin = &beginSimulateRigidbodiesSystem;
