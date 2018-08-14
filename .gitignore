@@ -29,3 +29,5 @@ GPATH
 *.log
 vgcore.*
 *.json
+*.scene
+*.entity
