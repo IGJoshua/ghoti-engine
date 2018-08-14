@@ -61,6 +61,8 @@ $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
 
 arch : $(LIBNAME).so
 
+SUPPRESSIONS = $(PROJ).supp
+
 .PHONY: clean
 
 clean:
@@ -72,13 +74,12 @@ clean:
 	mkdir -p $(GAMEOBJDIR)
 	$(ARCHDIRS)
 	$(GAMEDIRS)
+	touch local-$(SUPPRESSIONS)
 
 .PHONY: run
 
 run : build
 	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
-
-SUPPRESSIONS = $(PROJ).supp
 
 .PHONY: leakcheck
 
