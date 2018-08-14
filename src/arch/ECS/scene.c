@@ -151,8 +151,6 @@ int32 exportSceneJSONEntities(const char *folder)
 	return error;
 }
 
-#define COMPONENT_DEFINITON_REALLOCATION_AMOUNT 32
-
 internal
 int32 loadSceneEntities(
 	Scene **scene,
@@ -759,33 +757,43 @@ void freeScene(Scene **scene)
 	listClear(&(*scene)->physicsFrameSystems);
 	listClear(&(*scene)->renderFrameSystems);
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
-		sceneRemoveEntityComponents(*scene, entity);
+	if ((*scene)->entities) {
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
+			sceneRemoveEntityComponents(*scene, entity);
+		}
+
+		freeHashMap(&(*scene)->entities);
 	}
 
-	for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		sceneRemoveComponentType(*scene, *(UUID *)hashMapIteratorGetKey(itr));
+	if ((*scene)->componentTypes) {
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			sceneRemoveComponentType(
+				*scene,
+				*(UUID *)hashMapIteratorGetKey(itr));
+		}
+
+		freeHashMap(&(*scene)->componentTypes);
 	}
 
-	for (HashMapIterator itr =
-			 hashMapGetIterator((*scene)->componentDefinitions);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		freeComponentDefinition(
-			(ComponentDefinition*)hashMapIteratorGetValue(itr));
-	}
+	if ((*scene)->componentDefinitions) {
+		for (HashMapIterator itr =
+				hashMapGetIterator((*scene)->componentDefinitions);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			freeComponentDefinition(
+				(ComponentDefinition*)hashMapIteratorGetValue(itr));
+		}
 
-	freeHashMap(&(*scene)->entities);
-	freeHashMap(&(*scene)->componentTypes);
-	freeHashMap(&(*scene)->componentDefinitions);
+		freeHashMap(&(*scene)->componentDefinitions);
+	}
 
 	for (uint32 i = 0; i < (*scene)->numComponentLimitNames; i++)
 	{
