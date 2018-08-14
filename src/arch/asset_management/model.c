@@ -100,7 +100,7 @@ int32 loadMaterials(Model *model)
 	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
 	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
 
-	if (exportMaterials(modelFilename) == -1)
+	if (exportMaterials(modelFilename, LOG_FILE_NAME) == -1)
 	{
 		free(modelFilename);
 		free(modelFolder);

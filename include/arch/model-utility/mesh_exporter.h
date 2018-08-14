@@ -2,4 +2,4 @@
 
 #include "defines.h"
 
-int32 exportMesh(const char *filename);
+int32 exportMesh(const char *filename, const char *logFilename);

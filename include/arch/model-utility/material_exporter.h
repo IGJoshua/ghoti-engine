@@ -2,4 +2,4 @@
 
 #include "defines.h"
 
-int32 exportMaterials(const char *filename);
+int32 exportMaterials(const char *filename, const char *logFilename);

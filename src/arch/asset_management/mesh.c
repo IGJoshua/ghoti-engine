@@ -17,7 +17,7 @@ int32 loadMesh(Model *model)
 	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
 	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
 
-	if (exportMesh(modelFilename) == -1)
+	if (exportMesh(modelFilename, LOG_FILE_NAME) == -1)
 	{
 		free(modelFilename);
 		free(modelFolder);
