@@ -45,7 +45,7 @@ int32 main()
 {
 	srand(time(0));
 
-	initLog();
+	remove(LOG_FILE_NAME);
 
 	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
@@ -71,6 +71,7 @@ int32 main()
 	glfwSwapInterval(VSYNC);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
@@ -112,9 +113,6 @@ int32 main()
 		freeWindow(window);
 		return 1;
 	}
-
-	// State previous
-	// State next
 
 	ListIterator itr = {};
 
@@ -339,8 +337,6 @@ int32 main()
 	shutdownInput();
 
 	freeWindow(window);
-
-	shutdownLog();
 
 	return 0;
 }

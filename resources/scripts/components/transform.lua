@@ -26,11 +26,6 @@ local emptyID = engine.C.idFromName("")
 function component:markDirty(scene, entity)
   self.dirty = true
 
-  local body = scene:getComponent("rigid_body", entity)
-  if ffi.cast("uint64", body) ~= 0 then
-	body.dirty = true
-  end
-
   if ffi.C.strcmp(self.firstChild.string, emptyID.string) ~= 0 then
     local child = scene:getComponent("transform", self.firstChild)
     child:markDirty(scene)

@@ -67,7 +67,8 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
-	if (!hashMapGetData(table->idToIndex, &entityID))
+	uint32 *indexPtr = hashMapGetData(table->idToIndex, &entityID);
+	if (!indexPtr)
 	{
 		// Find an empty slot in the component data table
 		if (table->firstFree >= table->numEntries)
@@ -79,6 +80,9 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 			i = table->firstFree;
 		}
 
+		ASSERT(i >= 0);
+		ASSERT(i < table->numEntries);
+
 		// Associate the UUID with the index in the map
 		hashMapInsert(table->idToIndex, &entityID, &i);
 	}
@@ -86,11 +90,11 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	else
 	{
 		// Set i to the index
-		i = *(uint32 *)hashMapGetData(table->idToIndex, &entityID);
-	}
+		i = *indexPtr;
 
-	ASSERT(i >= 0);
-	ASSERT(i < table->numEntries);
+		ASSERT(i >= 0);
+		ASSERT(i < table->numEntries);
+	}
 
 	ComponentDataEntry *entry = getEntry(table, i);
 
@@ -127,7 +131,7 @@ void cdtRemove(
 		entry->nextFree = table->firstFree;
 		table->firstFree = *pIndex;
 
-		hashMapDeleteKey(table->idToIndex, &entityID);
+		hashMapDelete(table->idToIndex, &entityID);
 	}
 }
 
@@ -141,6 +145,24 @@ void *cdtGet(ComponentDataTable *table, UUID entityID)
 	}
 
 	return 0;
+}
+
+inline
+UUID cdtGetIndexUUID(ComponentDataTable *table, uint32 index)
+{
+	return getEntry(table, index)->entity;
+}
+
+inline
+void *cdtGetIndexData(ComponentDataTable *table, uint32 index)
+{
+	return getEntry(table, index)->data;
+}
+
+inline
+uint32 cdtGetIndexNF(ComponentDataTable *table, uint32 index)
+{
+	return getEntry(table, index)->nextFree;
 }
 
 ComponentDataTableIterator cdtGetIterator(ComponentDataTable *table)

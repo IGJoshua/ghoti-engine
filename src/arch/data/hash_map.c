@@ -89,7 +89,7 @@ void hashMapPush(HashMap map, void *key, void *value)
 
 void hashMapInsert(HashMap map, void *key, void *value)
 {
-	hashMapDeleteKey(map, key);
+	hashMapDelete(map, key);
 	hashMapPush(map, key, value);
 }
 
@@ -131,7 +131,7 @@ void hashMapPopKey(HashMap map, void *key)
 	}
 }
 
-void hashMapDeleteKey(HashMap map, void *key)
+void hashMapDelete(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
@@ -273,4 +273,16 @@ void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
 			fn(element->data, element->data + map->keySizeBytes, data);
 		}
 	}
+}
+
+uint32 hashMapCount(HashMap map)
+{
+	uint32 count = 0;
+	for (HashMapIterator itr = hashMapGetIterator(map);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		++count;
+	}
+	return count;
 }

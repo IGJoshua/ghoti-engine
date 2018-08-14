@@ -7,6 +7,64 @@
 #include <ode/ode.h>
 
 internal
+void updateCollisionGeom(
+	TransformComponent *bodyTrans,
+	TransformComponent *trans,
+	CollisionTreeNode *node)
+{
+	kmVec3 pos, scal;
+	kmQuaternion rot;
+	tGetInverseGlobalTransform(bodyTrans, &pos, &rot, &scal);
+	kmVec3Add(&pos, &trans->globalPosition, &pos);
+	kmQuaternionMultiply(&rot, &rot, &trans->globalRotation);
+	kmVec3Mul(&scal, &scal, &trans->globalScale);
+
+	dGeomSetOffsetPosition(
+		node->geomID,
+		pos.x,
+		pos.y,
+		pos.z);
+
+	dReal quat[4] = {};
+	quat[0] = rot.w;
+	quat[1] = rot.x;
+	quat[2] = rot.y;
+	quat[3] = rot.z;
+
+	dGeomSetOffsetQuaternion(node->geomID, quat);
+}
+
+void updateCollisionGeoms(
+	Scene *scene,
+	TransformComponent *bodyTrans,
+	CollisionComponent *coll)
+{
+	CollisionTreeNode *node = 0;
+	TransformComponent *trans = 0;
+	UUID collisionTreeNodeComponentID = idFromName("collision_tree_node");
+	UUID transformComponentID = idFromName("transform");
+
+	// Walk the tree of collision geometry
+	for (UUID currentCollider = coll->collisionTree;
+		 strcmp(currentCollider.string, "");
+		 currentCollider = node->nextCollider)
+	{
+		trans = sceneGetComponentFromEntity(
+			scene,
+			currentCollider,
+			transformComponentID);
+
+		node = sceneGetComponentFromEntity(
+			scene,
+			currentCollider,
+			collisionTreeNodeComponentID);
+
+		// Add each piece of collision geometry as a different geom
+		//updateCollisionGeom(bodyTrans, trans, node);
+	}
+}
+
+internal
 void createCollisionGeom(
 	Scene *scene,
 	UUID entity,
@@ -66,30 +124,12 @@ void createCollisionGeom(
 
 	dGeomSetBody(node->geomID, body->bodyID);
 
+	// TODO: Store the index in the component data table, instead of the uuid
 	void *userData = calloc(1, sizeof(UUID));
 	memcpy(userData, &entity, sizeof(UUID));
 	dGeomSetData(node->geomID, userData);
 
-	kmVec3 pos, scal;
-	kmQuaternion rot;
-	tGetInverseGlobalTransform(bodyTrans, &pos, &rot, &scal);
-	kmVec3Add(&pos, &trans->globalPosition, &pos);
-	kmQuaternionMultiply(&rot, &rot, &trans->globalRotation);
-	kmVec3Mul(&scal, &scal, &trans->globalScale);
-
-	dGeomSetOffsetPosition(
-		node->geomID,
-		pos.x,
-		pos.y,
-		pos.z);
-
-	dReal quat[4] = {};
-	quat[0] = rot.w;
-	quat[1] = rot.x;
-	quat[2] = rot.y;
-	quat[3] = rot.z;
-
-	dGeomSetOffsetQuaternion(node->geomID, quat);
+	updateCollisionGeom(bodyTrans, trans, node);
 }
 
 internal
@@ -147,7 +187,7 @@ void registerRigidBody(Scene *scene, UUID entity)
 	}
 
 	// update all the other information about the rigidbody
-	updateRigidBody(body, trans);
+	updateRigidBody(scene, coll, body, trans);
 }
 
 internal
@@ -182,6 +222,8 @@ void destroyRigidBody(RigidBodyComponent *body)
 }
 
 void updateRigidBodyPosition(
+	Scene *scene,
+	CollisionComponent *coll,
 	RigidBodyComponent *body,
 	TransformComponent *trans)
 {
@@ -210,9 +252,13 @@ void updateRigidBodyPosition(
 	rot[3] = trans->globalRotation.z;
 
 	dBodySetQuaternion(body->bodyID, rot);
+
+	updateCollisionGeoms(scene, trans, coll);
 }
 
 void updateRigidBody(
+	Scene *scene,
+	CollisionComponent *coll,
 	RigidBodyComponent *body,
 	TransformComponent *trans)
 {
@@ -315,7 +361,7 @@ void updateRigidBody(
 		dBodySetKinematic(body->bodyID);
 	}
 
-	updateRigidBodyPosition(body, trans);
+	updateRigidBodyPosition(scene, coll, body, trans);
 
 	if (!body->enabled)
 	{

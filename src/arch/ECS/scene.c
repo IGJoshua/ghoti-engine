@@ -14,7 +14,7 @@
 
 #include "file/utilities.h"
 
-#include "cJSON/cJSON.h"
+#include <cjson/cJSON.h>
 
 #include "json-utilities/utilities.h"
 
@@ -833,6 +833,8 @@ int32 loadScene(const char *name)
 
 		scene->loadedThisFrame = true;
 
+		dWorldSetGravity(scene->physicsWorld, 0, scene->gravity, 0);
+
 		return 0;
 	}
 
@@ -961,7 +963,8 @@ void freeComponentDefinition(ComponentDefinition *componentDefinition)
 
 uint32 getDataTypeSize(DataType type)
 {
-	switch (type) {
+	switch (type)
+	{
 		case DATA_TYPE_UINT8:
 		case DATA_TYPE_INT8:
 		case DATA_TYPE_CHAR:
@@ -992,7 +995,8 @@ char* getDataTypeString(
 {
 	char *dataTypeString = malloc(256);
 
-	switch (componentValueDefinition->type) {
+	switch (componentValueDefinition->type)
+	{
 		case DATA_TYPE_UINT8:
 			strcpy(dataTypeString, "uint8");
 			break;
@@ -1171,7 +1175,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 
 				if (componentValueDefinition->count == 1)
 				{
-					switch (componentValueDefinition->type) {
+					switch (componentValueDefinition->type)
+					{
 						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							cJSON_AddNumberToObject(
@@ -1272,7 +1277,8 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 				{
 					cJSON *jsonComponentValueDataArrayItem = NULL;
 
-					switch (componentValueDefinition->type) {
+					switch (componentValueDefinition->type)
+					{
 						case DATA_TYPE_UINT8:
 							uint8Data = *(uint8*)valueData;
 							jsonComponentValueDataArrayItem =
@@ -1734,6 +1740,7 @@ UUID generateUUID()
 
 void sceneRegisterEntity(Scene *s, UUID newEntity)
 {
+#ifdef _DEBUG
 	List *entityList;
 	if ((entityList = hashMapGetData(s->entities, &newEntity)))
 	{
@@ -1743,10 +1750,11 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 			s->name);
 
 		listClear(entityList);
-		hashMapDeleteKey(s->entities, &newEntity);
+		hashMapDelete(s->entities, &newEntity);
 
 		//ASSERT(false && "Entity already exists in scene");
 	}
+#endif
 
 	List emptyList = createList(sizeof(UUID));
 	hashMapInsert(s->entities, &newEntity, &emptyList);
@@ -1795,7 +1803,7 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
 	sceneRemoveEntityComponents(s, entity);
-	hashMapDeleteKey(s->entities, &entity);
+	hashMapDelete(s->entities, &entity);
 }
 
 internal

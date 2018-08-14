@@ -56,6 +56,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 	}
 	else
 	{
+		// TODO: Make this work using indices into the tables instead of UUIDs
 		UUID *volume1 = dGeomGetData(o1);
 		UUID *volume2 = dGeomGetData(o1);
 
@@ -81,6 +82,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			rigidBodyComponentID);
 		*/
 
+		// FIXME: This should not collide if both bodies are kinematic
 		if (node1->isTrigger && node2->isTrigger)
 		{
 			return;
@@ -248,6 +250,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	// Update the simulation's copy of the rigidbodies
 	TransformComponent *trans = 0;
 	RigidBodyComponent *body = 0;
+	CollisionComponent *coll = 0;
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
@@ -257,21 +260,21 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	{
 		body = (RigidBodyComponent *)cdtIteratorGetData(itr);
 
-		if (body->dirty)
-		{
-			trans = sceneGetComponentFromEntity(
-				scene,
-				cdtIteratorGetUUID(itr),
-				transformComponentID);
+		trans = sceneGetComponentFromEntity(
+			scene,
+			cdtIteratorGetUUID(itr),
+			transformComponentID);
 
-			updateRigidBodyPosition(
-				body,
-				trans);
+		coll = sceneGetComponentFromEntity(
+			scene,
+			cdtIteratorGetUUID(itr),
+			collisionComponentID);
 
-			body->dirty = false;
-
-			// TODO: Update the simulation's copy of the collision volumes
-		}
+		updateRigidBodyPosition(
+			scene,
+			coll,
+			body,
+			trans);
 	}
 
 	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
