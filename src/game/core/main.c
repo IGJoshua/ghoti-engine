@@ -45,7 +45,9 @@ int32 main()
 {
 	srand(time(0));
 
-	remove(LOG_FILE_NAME);
+	if (LOG_FILE_NAME) {
+		remove(LOG_FILE_NAME);
+	}
 
 	GLFWwindow *window = initWindow(640, 480, "Ghoti");
 
