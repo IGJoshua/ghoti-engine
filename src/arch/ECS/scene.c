@@ -791,21 +791,17 @@ void freeScene(Scene **scene)
 			UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
 			sceneRemoveEntityComponents(*scene, entity);
 		}
-
-		freeHashMap(&(*scene)->entities);
 	}
 
 	if ((*scene)->componentTypes) {
-		// for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
-		// 	!hashMapIteratorAtEnd(itr);
-		// 	hashMapMoveIterator(&itr))
-		// {
-		// 	sceneRemoveComponentType(
-		// 		*scene,
-		// 		*(UUID *)hashMapIteratorGetKey(itr));
-		// }
-
-		freeHashMap(&(*scene)->componentTypes);
+		for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			sceneRemoveComponentType(
+				*scene,
+				*(UUID *)hashMapIteratorGetKey(itr));
+		}
 	}
 
 	if ((*scene)->componentDefinitions) {
@@ -817,7 +813,17 @@ void freeScene(Scene **scene)
 			freeComponentDefinition(
 				(ComponentDefinition*)hashMapIteratorGetValue(itr));
 		}
+	}
 
+	if ((*scene)->entities) {
+		freeHashMap(&(*scene)->entities);
+	}
+
+	if ((*scene)->componentTypes) {
+		freeHashMap(&(*scene)->componentTypes);
+	}
+
+	if ((*scene)->componentDefinitions) {
 		freeHashMap(&(*scene)->componentDefinitions);
 	}
 
