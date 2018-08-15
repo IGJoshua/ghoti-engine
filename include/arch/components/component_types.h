@@ -8,10 +8,20 @@
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
+typedef enum render_mode_e
+{
+	RENDER_MODE_FILL,
+	RENDER_MODE_FILL_AND_LINES,
+	RENDER_MODE_LINES,
+	RENDER_MODE_POINTS,
+	RENDER_MODE_FILL_AND_POINTS,
+	RENDER_MODE_INVISIBLE
+} RenderMode;
+
 typedef struct model_component_t
 {
 	char name[1024];
-	bool visible;
+	RenderMode renderMode;
 } ModelComponent;
 
 typedef struct transform_component_t
