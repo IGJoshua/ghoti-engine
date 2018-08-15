@@ -41,6 +41,8 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
+#define WINDOW_TITLE "Ghoti 0.6.1"
+
 int32 main()
 {
 	srand(time(0));
@@ -49,7 +51,7 @@ int32 main()
 		remove(LOG_FILE_NAME);
 	}
 
-	GLFWwindow *window = initWindow(640, 480, "Ghoti");
+	GLFWwindow *window = initWindow(640, 480, WINDOW_TITLE);
 
 	if (!window)
 	{
