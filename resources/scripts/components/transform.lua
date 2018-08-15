@@ -7,7 +7,7 @@ typedef struct transform_component_t
   UUID parent;
   UUID firstChild;
   UUID nextSibling;
-  Bool dirty;
+  bool dirty;
   kmVec3 globalPosition;
   kmQuaternion globalRotation;
   kmVec3 globalScale;

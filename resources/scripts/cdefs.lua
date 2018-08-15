@@ -12,12 +12,6 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum
-{
-  false,
-  true
-} Bool;
-
 char *strcpy(char *destination, const char *source);
 
 typedef struct list_node_t

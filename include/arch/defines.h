@@ -16,7 +16,9 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum { false, true } bool;
+typedef unsigned char bool;
+#define true 1
+#define false 0
 
 #define UUID_LENGTH 63
 

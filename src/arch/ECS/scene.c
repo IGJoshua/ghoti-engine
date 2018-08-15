@@ -39,6 +39,15 @@ extern bool changeScene;
 extern bool reloadingScene;
 extern List unloadedScenes;
 
+internal ComponentDefinition getComponentDefinition(
+	const Scene *scene,
+	UUID name);
+internal void freeComponentDefinition(ComponentDefinition *componentDefinition);
+
+internal uint32 getDataTypeSize(DataType type);
+internal char* getDataTypeString(
+	const ComponentValueDefinition *componentValueDefinition);
+
 Scene *createScene(void)
 {
 	Scene *ret = calloc(1, sizeof(Scene));
@@ -249,8 +258,9 @@ int32 loadSceneEntities(
 									j < componentDefinition->numValues;
 									j++)
 								{
-									ComponentValueDefinition *componentValueDefinition =
-										&componentDefinition->values[j];
+									ComponentValueDefinition
+										*componentValueDefinition =
+											&componentDefinition->values[j];
 
 									componentValueDefinition->name =
 										readString(file);
@@ -261,12 +271,15 @@ int32 loadSceneEntities(
 										sizeof(int8),
 										1,
 										file);
-									componentValueDefinition->type = (DataType)dataType;
+									componentValueDefinition->type =
+										(DataType)dataType;
 
-									if (componentValueDefinition->type == DATA_TYPE_STRING)
+									if (componentValueDefinition->type
+										== DATA_TYPE_STRING)
 									{
 										fread(
-											&componentValueDefinition->maxStringSize,
+											&componentValueDefinition
+												->maxStringSize,
 											sizeof(uint32),
 											1,
 											file);
@@ -295,7 +308,8 @@ int32 loadSceneEntities(
 
 									ComponentDefinition
 										*existingComponentDefinition =
-											(ComponentDefinition*)hashMapGetData(
+										(ComponentDefinition*)
+											hashMapGetData(
 												(*scene)->componentDefinitions,
 												&componentID);
 
@@ -546,7 +560,11 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+
+			reloadingScene = true;
 			freeScene(scene);
+			reloadingScene = false;
+
 			return -1;
 		}
 
@@ -558,7 +576,11 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+
+			reloadingScene = true;
 			freeScene(scene);
+			reloadingScene = false;
+
 			return -1;
 		}
 
@@ -583,7 +605,11 @@ int32 loadSceneFile(const char *name, Scene **scene)
 			free(sceneFolder);
 			free(componentLimitNumbers);
 			fclose(file);
+
+			reloadingScene = true;
 			freeScene(scene);
+			reloadingScene = false;
+
 			return -1;
 		}
 
@@ -770,14 +796,14 @@ void freeScene(Scene **scene)
 	}
 
 	if ((*scene)->componentTypes) {
-		for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
-		{
-			sceneRemoveComponentType(
-				*scene,
-				*(UUID *)hashMapIteratorGetKey(itr));
-		}
+		// for (HashMapIterator itr = hashMapGetIterator((*scene)->componentTypes);
+		// 	!hashMapIteratorAtEnd(itr);
+		// 	hashMapMoveIterator(&itr))
+		// {
+		// 	sceneRemoveComponentType(
+		// 		*scene,
+		// 		*(UUID *)hashMapIteratorGetKey(itr));
+		// }
 
 		freeHashMap(&(*scene)->componentTypes);
 	}
@@ -980,6 +1006,7 @@ uint32 getDataTypeSize(DataType type)
 		case DATA_TYPE_UINT8:
 		case DATA_TYPE_INT8:
 		case DATA_TYPE_CHAR:
+		case DATA_TYPE_BOOL:
 			return 1;
 		case DATA_TYPE_UINT16:
 		case DATA_TYPE_INT16:
@@ -987,7 +1014,6 @@ uint32 getDataTypeSize(DataType type)
 		case DATA_TYPE_UINT32:
 		case DATA_TYPE_INT32:
 		case DATA_TYPE_FLOAT32:
-		case DATA_TYPE_BOOL:
 			return 4;
 		case DATA_TYPE_UINT64:
 		case DATA_TYPE_INT64:
@@ -1090,37 +1116,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 			scene,
 			*componentUUID);
 
-		uint32 maxValueSize = 0;
-		for (uint32 i = 0; i < componentDefinition.numValues; i++)
-		{
-			ComponentValueDefinition *componentValueDefinition =
-				&componentDefinition.values[i];
-
-			uint32 size = 0;
-			if (componentValueDefinition->type == DATA_TYPE_STRING)
-			{
-				size = componentValueDefinition->maxStringSize;
-			}
-			else
-			{
-				size = getDataTypeSize(componentValueDefinition->type);
-			}
-
-			uint32 paddingSize = size;
-			if (componentValueDefinition->type == DATA_TYPE_STRING ||
-				componentValueDefinition->type == DATA_TYPE_UUID)
-			{
-				paddingSize = 1;
-			}
-
-			if (paddingSize > maxValueSize)
-			{
-				maxValueSize = paddingSize;
-			}
-		}
-
 		uint32 bytesWritten = 0;
-
 		for (uint32 i = 0; i < componentDefinition.numValues; i++)
 		{
 			ComponentValueDefinition *componentValueDefinition =
@@ -1158,18 +1154,14 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 					cJSON_AddArrayToObject(jsonComponentValue, dataTypeString);
 			}
 
+			uint32 padding = bytesWritten % paddingSize;
+			if (padding > 0)
+			{
+				bytesWritten += paddingSize - padding;
+			}
+
 			for (uint32 j = 0; j < componentValueDefinition->count; j++)
 			{
-				uint32 padding = 0;
-				if (bytesWritten > 0)
-				{
-					padding = bytesWritten % paddingSize;
-					if (padding > 0)
-					{
-						padding = maxValueSize - padding;
-					}
-				}
-
 				void *valueData = componentData + bytesWritten;
 
 				uint8 uint8Data;
@@ -1366,7 +1358,7 @@ void exportEntitySnapshot(const Scene *scene, UUID entity, const char *filename)
 						jsonComponentValueDataArrayItem);
 				}
 
-				bytesWritten += size + padding;
+				bytesWritten += size;
 			}
 
 			free(dataTypeString);
@@ -1475,7 +1467,8 @@ void exportSceneSnapshot(const Scene *scene, const char *filename)
 			if (!strcmp(scene->componentLimitNames[i], componentUUID->string))
 			{
 				uint32 componentLimit =
-					(*(ComponentDataTable**)hashMapIteratorGetValue(itr))->numEntries;
+					(*(ComponentDataTable**)hashMapIteratorGetValue(itr))
+						->numEntries;
 				cJSON_AddNumberToObject(
 					componentLimits,
 					componentUUID->string,
@@ -1520,7 +1513,8 @@ void sceneInitRenderFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1542,7 +1536,8 @@ void sceneInitPhysicsFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1570,7 +1565,8 @@ void sceneRunRenderFrameSystems(Scene *scene, real64 dt)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1589,7 +1585,8 @@ void sceneRunPhysicsFrameSystems(Scene *scene, real64 dt)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1608,7 +1605,8 @@ void sceneShutdownRenderFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1630,7 +1628,8 @@ void sceneShutdownPhysicsFrameSystems(Scene *scene)
 
 		if (!system)
 		{
-			LOG("System %s doesn't exist in system registry\n", systemName->string);
+			LOG("System %s doesn't exist in system registry\n",
+				systemName->string);
 			continue;
 		}
 
@@ -1710,7 +1709,9 @@ void sceneRemoveComponentType(Scene *scene, UUID componentID)
 		while (!listIteratorAtEnd(litr))
 		{
 			// Remove this component from that entity
-			if (!strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string, componentID.string))
+			if (!strcmp(
+				LIST_ITERATOR_GET_ELEMENT(UUID, litr)->string,
+				componentID.string))
 			{
 				listRemove((List *)hashMapIteratorGetValue(itr), &litr);
 			}
@@ -1815,7 +1816,9 @@ int32 sceneAddComponentToEntity(
 	UUID componentType,
 	void *componentData)
 {
-	// LOG("Adding %s component to entity with id %s\n", componentType.string, entity.string);
+	// LOG("Adding %s component to entity with id %s\n",
+	// 	componentType.string,
+	// 	entity.string);
 
 	// Get the data table
 	ComponentDataTable **dataTable = hashMapGetData(
@@ -1883,7 +1886,9 @@ void sceneRemoveComponentFromEntity(
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (strcmp(LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string, componentType.string))
+		if (strcmp(
+			LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string,
+			componentType.string))
 		{
 			listRemove(componentTypeList, &itr);
 		}
