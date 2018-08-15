@@ -1,0 +1,53 @@
+{
+	"systems":
+	{
+		"update":
+		{
+			"external":
+			[
+				"inputtest"
+			],
+
+			"internal":
+			[
+				"clean_hit_information",
+				"clean_hit_list",
+				"clean_global_transforms",
+				"apply_parent_transforms",
+				"simulate_rigid_bodies"
+			]
+		},
+
+		"draw":
+		{
+			"external":
+			[
+
+			],
+
+			"internal":
+			[
+				"renderer"
+			]
+		}
+	},
+
+	"component_limits":
+	{
+		"transform": 20000,
+		"model": 20000,
+		"camera": 16,
+		"collision": 20000,
+		"box": 20000,
+		"sphere": 128,
+		"hit_information": 20000,
+		"hit_list": 40000,
+		"rigid_body": 20000,
+		"collision_tree_node": 20000,
+		"surface_information": 20000
+	},
+
+	"active_camera": "09Uw29Vy`b_dc,hmF#%3/VUM39nUylXa^fZm|3h_M${i-eX+@[;LinQy_B,50as",
+
+	"gravity": -9.81
+}

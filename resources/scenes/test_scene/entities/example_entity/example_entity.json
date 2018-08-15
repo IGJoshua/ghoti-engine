@@ -1,0 +1,193 @@
+{
+	"uuid": "1x#KFG#t_Ikg=wO$nwg^88XUiY;s)$Z0#SX>oX9Lwy:2nf+cg?q%lLcDJ^5OV&i",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "firstChild",
+				"uuid": ""
+			},
+
+			{
+				"name": "nextSibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "globalPosition",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "globalRotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "globalScale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "lastGlobalPosition",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "lastGlobalRotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "lastGlobalScale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "filename",
+				"char(1024)": "example_model"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "bodyID",
+				"int64": 0
+			},
+
+			{
+				"name": "spaceID",
+				"int64": 0
+			},
+
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "dynamic",
+				"bool": true
+			},
+
+			{
+				"name": "gravity",
+				"bool": true
+			},
+
+			{
+				"name": "mass",
+				"float32": 1
+			},
+
+			{
+				"name": "centerOfMass",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "angularVel",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "defaultDamping",
+				"bool": true
+			},
+
+			{
+				"name": "linearDamping",
+				"float32": 0.10000000149011612
+			},
+
+			{
+				"name": "angularDamping",
+				"float32": 0.10000000149011612
+			},
+
+			{
+				"name": "linearDampingThreshold",
+				"float32": 0.10000000149011612
+			},
+
+			{
+				"name": "angularDampingThreshold",
+				"float32": 0.10000000149011612
+			},
+
+			{
+				"name": "maxAngularSpeed",
+				"float32": 0
+			},
+
+			{
+				"name": "inertiaType",
+				"int32": 0
+			},
+
+			{
+				"name": "moiParams",
+				"float32": [0, 0, 0, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collisionTree",
+				"uuid": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka"
+			},
+
+			{
+				"name": "hitList",
+				"uuid": ""
+			},
+
+			{
+				"name": "lastHitList",
+				"uuid": ""
+			}
+		]
+	}
+}

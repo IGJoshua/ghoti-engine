@@ -114,7 +114,10 @@ void createCollisionGeom(
 			entity,
 			idFromName("capsule"));
 
-		node->geomID = dCreateCapsule(spaceID, capsule->radius, capsule->length);
+		node->geomID = dCreateCapsule(
+			spaceID,
+			capsule->radius,
+			capsule->length);
 	} break;
 	default:
 	{
