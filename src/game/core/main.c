@@ -43,7 +43,7 @@ extern List savedScenes;
 
 #define WINDOW_TITLE "Ghoti 0.6.1"
 
-int32 main()
+int32 main(int32 argc, char *argv[])
 {
 	srand(time(0));
 

@@ -1,5 +1,5 @@
 {
-	"uuid": "RSw%Hv4XcwXLPFhGHi2tCd<vniRRl:yE7$c4-Alyv>P:$t`TgN%Ihx=WIlA`dte",
+	"uuid": "3$v9YetG)V^+f^Wxq*c?OLxlSiOqbS+OA32<W8g48KomAft+#ALy4%JrRAR#I3G",
 
 	"components":
 	{
@@ -26,12 +26,12 @@
 			},
 
 			{
-				"name": "firstChild",
+				"name": "first child",
 				"uuid": ""
 			},
 
 			{
-				"name": "nextSibling",
+				"name": "next sibling",
 				"uuid": ""
 			},
 
@@ -41,32 +41,32 @@
 			},
 
 			{
-				"name": "globalPosition",
+				"name": "global position",
 				"float32": [0, 0, 0]
 			},
 
 			{
-				"name": "globalRotation",
+				"name": "global rotation",
 				"float32": [0, 0, 0, 1]
 			},
 
 			{
-				"name": "globalScale",
+				"name": "global scale",
 				"float32": [1, 1, 1]
 			},
 
 			{
-				"name": "lastGlobalPosition",
+				"name": "last global position",
 				"float32": [0, 0, 0]
 			},
 
 			{
-				"name": "lastGlobalRotation",
+				"name": "last global rotation",
 				"float32": [0, 0, 0, 1]
 			},
 
 			{
-				"name": "lastGlobalScale",
+				"name": "last global scale",
 				"float32": [1, 1, 1]
 			}
 		],
@@ -79,22 +79,22 @@
 			},
 
 			{
-				"name": "collisionVolume",
-				"uuid": "RSw%Hv4XcwXLPFhGHi2tCd<vniRRl:yE7$c4-Alyv>P:$t`TgN%Ihx=WIlA`dte"
+				"name": "collision volume",
+				"uuid": "3$v9YetG)V^+f^Wxq*c?OLxlSiOqbS+OA32<W8g48KomAft+#ALy4%JrRAR#I3G"
 			},
 
 			{
-				"name": "nextCollider",
-				"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^="
+				"name": "next collider",
+				"uuid": "hCVypc^*y0ndN^NStxR&#yuJ9EB_VfEn:<$xcr&XI18ua2k26c)),?LKtw87cOQ"
 			},
 
 			{
-				"name": "isTrigger",
+				"name": "is trigger",
 				"bool": false
 			},
 
 			{
-				"name": "geomID",
+				"name": "geometry ID",
 				"int64": 0
 			}
 		]

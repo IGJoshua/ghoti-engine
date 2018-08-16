@@ -8,8 +8,6 @@ build/
 release/
 ghoti.so
 ghoti.dll
-*.mesh
-*.asset
 *.entity
 *.scene
 

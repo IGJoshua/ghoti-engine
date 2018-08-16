@@ -17,7 +17,7 @@ LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR) -Wl,-rpath-link,$(LIBDIR))
 
 LUALIBDIR = lualib
 
-_WINLIBDIRS = winlib
+_WINLIBDIRS = winlib winlib/static
 WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 
 ARCHDIRS = $(foreach DIR,$(shell find $(ARCHDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(ARCHOBJDIR)/$(DIR) &&) :
@@ -113,10 +113,10 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
-	rm -r release/resources/models/*
-	rm -r release/resources/scenes/*
+	rm -rf release/resources/models/*
+	rm -rf release/resources/scenes/*
 	mkdir -p release/resources/saves/
-	rm -r release/resources/saves/*
+	rm -rf release/resources/saves/*
 	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
@@ -146,7 +146,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 
 windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
-	cp winlib/* $(BUILDDIR)/
+	find winlib/* -not -path '*/static*' -exec cp {} $(BUILDDIR)/ \;
 
 .PHONY: wine
 
