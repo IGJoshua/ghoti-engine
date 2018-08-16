@@ -1,0 +1,34 @@
+{
+	"uuid": "slider_joint_1",
+
+	"components":
+	{
+		"joint_information":
+		[
+			{
+				"name": "type",
+				"int32": 2
+			},
+			{
+				"name": "object1",
+				"uuid": "slider_thing"
+			},
+			{
+				"name": "object2",
+				"uuid": "thing2"
+			}
+		],
+
+		"slider_joint":
+		[
+			{
+				"name": "id",
+				"int64": 0
+			},
+			{
+				"name": "axis",
+				"float32": [1, 0.125, 0]
+			}
+		]
+	}
+}

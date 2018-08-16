@@ -1,0 +1,18 @@
+{
+	"uuid": "ball_socket_joint",
+
+	"components":
+	{
+		"ball_socket_joint":
+		[
+			{
+				"name": "ballSocket",
+				"uuid": ""
+			},
+			{
+				"name": "anchor",
+				"float32": [0, 0, 0]
+			}
+		]
+	}
+}

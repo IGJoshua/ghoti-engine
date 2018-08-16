@@ -19,6 +19,12 @@ GPATH
 .vscode
 *.cap
 
+resources/*
+!resources/doc/
+!resources/scripts/
+!resources/scenes/
+!resources/shaders/
+
 # Other files
 *.log
 vgcore.*
