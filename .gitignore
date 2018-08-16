@@ -29,6 +29,5 @@ GPATH
 # Other files
 *.log
 vgcore.*
-*.json
 *.scene
 *.entity
