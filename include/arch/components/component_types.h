@@ -5,6 +5,9 @@
 
 #include <ode/ode.h>
 
+#include <AL/alc.h>
+#include <AL/al.h>
+
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -46,6 +49,22 @@ typedef struct camera_component_t
 	real32 fov;
 	CameraProjectionType projectionType;
 } CameraComponent;
+
+typedef struct audio_manager_t
+{
+	int32 buffers;
+
+} AudioManagerComonent;
+
+typedef struct audio_source_t
+{
+
+} AudioSourceComponent;
+
+typedef struct audio_file_t
+{
+
+} AudioFileComponent;
 
 typedef enum joint_type_e
 {

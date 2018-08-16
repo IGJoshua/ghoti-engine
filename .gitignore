@@ -9,13 +9,6 @@ release/
 ghoti.so
 ghoti.dll
 
-# Art assets
-resources/*
-!resources/doc/
-!resources/shaders/
-!resources/scripts/
-!resources/scenes/
-
 # Editor specific files
 .dir-locals.el
 .clang_complete
