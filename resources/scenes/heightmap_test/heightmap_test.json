@@ -1,0 +1,42 @@
+{
+	"systems":
+	{
+		"update":
+		{
+			"external":
+			[
+				"inputtest"
+			],
+
+			"internal":
+			[
+				"clean_global_transforms",
+				"apply_parent_transforms"
+			]
+		},
+
+		"draw":
+		{
+			"external":
+			[
+
+			],
+
+			"internal":
+			[
+				"render_heightmap"
+			]
+		}
+	},
+
+	"component_limits":
+	{
+		"transform": 2,
+		"camera": 1,
+		"heightmap": 1
+	},
+
+	"active_camera": "09Uw29Vy`b_dc,hmF#%3/VUM39nUylXa^fZm|3h_M${i-eX+@[;LinQy_B,50as",
+
+	"gravity": -9.81
+}

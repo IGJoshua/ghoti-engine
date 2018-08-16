@@ -1,0 +1,114 @@
+{
+	"uuid": "spawner",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 10, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "firstChild",
+				"uuid": ""
+			},
+
+			{
+				"name": "nextSibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "globalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "globalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "globalScale",
+				"float32": [1.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "lastGlobalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalScale",
+				"float32": [1.0, 1.0, 1.0]
+			}
+		],
+
+		"spawner":
+		[
+			{
+				"name": "number to spawn",
+				"uint32": 1500
+			},
+			{
+				"name": "number spawned so far",
+				"uint32": 0
+			},
+			{
+				"name": "number to spawn per second",
+				"float32": 30
+			},
+			{
+				"name": "time since start",
+				"float32": 0
+			}
+		],
+
+		"orbit":
+		[
+			{
+				"name": "origin",
+				"float32": [0, 15, 0]
+			},
+			{
+				"name": "speed",
+				"float32": 3
+			},
+			{
+				"name": "distance",
+				"float32": 10
+			},
+			{
+				"name": "time",
+				"float32": 0
+			}
+		]
+	}
+}

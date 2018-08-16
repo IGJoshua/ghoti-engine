@@ -1,0 +1,22 @@
+{
+	"uuid": "joint_information",
+
+	"components":
+	{
+		"joint_information":
+		[
+			{
+				"name": "type",
+				"int32": ""
+			},
+			{
+				"name": "object1",
+				"uuid": ""
+			},
+			{
+				"name": "object2",
+				"uuid": ""
+			}
+		]
+	}
+}

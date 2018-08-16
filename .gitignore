@@ -13,6 +13,7 @@ ghoti.dll
 resources/*
 !resources/shaders/
 !resources/scripts/
+!resources/scenes/
 
 # Editor specific files
 .dir-locals.el
