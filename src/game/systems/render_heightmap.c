@@ -366,6 +366,13 @@ void initRenderHeightmapSystem(Scene *scene)
 		// Load the texture onto the GPU
 		if (strcmp(heightmap->textureName, ""))
 		{
+			// Ensure that there is enough space for the texture
+			if (numTextures + 1 > texturesCapacity)
+			{
+				increaseTexturesCapacity(numTextures + 1);
+			}
+
+			// Load the texture
 			loadTexture(heightmap->textureName, 1, 0);
 		}
 	}
