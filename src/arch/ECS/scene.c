@@ -14,7 +14,7 @@
 
 #include "file/utilities.h"
 
-#include "cJSON/cJSON.h"
+#include <cjson/cJSON.h>
 
 #include "json-utilities/utilities.h"
 
@@ -1750,7 +1750,7 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 			s->name);
 
 		listClear(entityList);
-		hashMapDeleteKey(s->entities, &newEntity);
+		hashMapDelete(s->entities, &newEntity);
 
 		//ASSERT(false && "Entity already exists in scene");
 	}
@@ -1803,7 +1803,7 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
 	sceneRemoveEntityComponents(s, entity);
-	hashMapDeleteKey(s->entities, &entity);
+	hashMapDelete(s->entities, &entity);
 }
 
 internal

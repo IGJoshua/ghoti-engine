@@ -9,11 +9,6 @@ release/
 ghoti.so
 ghoti.dll
 
-# Art assets
-resources/*
-!resources/shaders/
-!resources/scripts/
-
 # Editor specific files
 .dir-locals.el
 .clang_complete
@@ -24,7 +19,16 @@ GPATH
 .vscode
 *.cap
 
+resources/*
+!resources/doc/
+!resources/scripts/
+!resources/scenes/
+!resources/shaders/
+
 # Other files
 *.log
 vgcore.*
-*.json
+*.scene
+*.entity
+*.asset
+*.mesh

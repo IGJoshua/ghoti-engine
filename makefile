@@ -13,7 +13,7 @@ ARCHOBJDIR = $(OBJDIR)/arch
 GAMEOBJDIR = $(OBJDIR)/game
 
 _LIBDIRS = lib
-LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR))
+LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR) -Wl,-rpath-link,$(LIBDIR))
 
 LUALIBDIR = lualib
 
@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = GLEW glfw GL m kazmath GLU IL ILU luajit-5.1 SDL2 cjson frozen json-utilities model-utility assimp ode
+_LIBS = json-utilities model-utility cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode openal
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -66,7 +66,8 @@ arch : $(LIBNAME).so
 clean:
 	rm -rf release
 	rm -rf $(BUILDDIR)
-	rm -f $(LIBNAME).{so,dll}
+	rm -f $(LIBNAME).so
+	rm -f $(LIBNAME).dll
 	mkdir -p $(ARCHOBJDIR)
 	mkdir -p $(GAMEOBJDIR)
 	$(ARCHDIRS)

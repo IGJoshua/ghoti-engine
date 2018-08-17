@@ -5,6 +5,9 @@
 
 #include <ode/ode.h>
 
+#include <AL/alc.h>
+#include <AL/al.h>
+
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -47,6 +50,88 @@ typedef struct camera_component_t
 	CameraProjectionType projectionType;
 } CameraComponent;
 
+typedef struct audio_manager_t
+{
+	int32 buffers;
+
+} AudioManagerComonent;
+
+typedef struct audio_source_t
+{
+
+} AudioSourceComponent;
+
+typedef struct audio_file_t
+{
+
+} AudioFileComponent;
+
+typedef enum joint_type_e
+{
+	JOINT_TYPE_BALL_SOCKET = 0,
+	JOINT_TYPE_HINGE,
+	JOINT_TYPE_SLIDER,
+	JOINT_TYPE_BALL_SOCKET2
+} JointType;
+
+typedef struct joint_information_component_t
+{
+	JointType type;
+	UUID object1;
+	UUID object2;
+} JointInformationComponent;
+
+typedef struct joint_list_component_t
+{
+	UUID jointInfo;
+	UUID next;
+} JointListComponent;
+
+typedef struct joint_constraint_component_t
+{
+	bool loStop_bool;
+	bool hiStop_bool;
+	bool bounce_bool;
+	bool CFM_bool;
+	bool stopERP_bool;
+	bool stopCFM_bool;
+
+	real32 loStop_val;
+	real32 hiStop_val;
+	real32 bounce_val;
+	real32 CFM_val;
+	real32 stopERP_val;
+	real32 stopCFM_val;
+
+} JointConstraintComponent;
+
+typedef struct hinge_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor;
+	kmVec3 axis;
+} HingeJointComponent;
+
+typedef struct slider_joint_component_t
+{
+	dJointID id;
+	kmVec3 axis;
+} SliderJointComponent;
+
+typedef struct ball_socket_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor;
+} BallSocketJointComponent;
+
+typedef struct ball_socket2_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor1;
+	kmVec3 anchor2;
+	real32 distance;
+} BallSocket2JointComponent;
+
 typedef enum moment_of_inertia_e
 {
 	MOMENT_OF_INERTIA_USER = -1,
@@ -60,7 +145,6 @@ typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;
 	dSpaceID spaceID;
-	bool dirty;
 	bool enabled;
 	bool dynamic;
 	bool gravity;

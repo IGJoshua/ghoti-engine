@@ -112,7 +112,7 @@ void initRenderBoxSystem(Scene *scene)
 	// Initialize the line renderer
 	if(hashMapGetData(sceneLineData, &scene))
 	{
-		hashMapDeleteKey(sceneLineData, &scene);
+		hashMapDelete(sceneLineData, &scene);
 	}
 	SceneLineAllocator sceneLineAllocator = {};
 
@@ -482,7 +482,7 @@ void shutdownRenderBoxSystem(Scene *scene)
 
 	glDeleteVertexArrays(1, &sceneLineAllocator->vertexArray);
 
-	hashMapDeleteKey(sceneLineData, &scene);
+	hashMapDelete(sceneLineData, &scene);
 }
 
 internal

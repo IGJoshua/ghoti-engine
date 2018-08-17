@@ -439,7 +439,7 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 
 	hashMapClear(*map);
 	freeHashMap(map);
-	hashMapDeleteKey(heightmapModels, &scene);
+	hashMapDelete(heightmapModels, &scene);
 }
 
 internal

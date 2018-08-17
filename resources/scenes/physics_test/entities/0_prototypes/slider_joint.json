@@ -1,0 +1,18 @@
+{
+	"uuid": "slider_joint",
+
+	"components":
+	{
+		"slider_joint":
+		[
+			{
+				"name": "slider",
+				"uuid": ""
+			},
+			{
+				"name": "axis",
+				"float32": [0, 0, 0]
+			}
+		]
+	}
+}

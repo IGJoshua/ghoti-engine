@@ -60,12 +60,11 @@ function system.run(scene, entityID, dt)
 	scene:addComponentToEntity("transform", entity, transform)
 
 	local model = ffi.new("ModelComponent")
-	model.name = "box"
+	model.name = "newbox"
 	model.visible = true
 	scene:addComponentToEntity("model", entity, model)
 
 	local rigidbody = ffi.new("RigidBodyComponent")
-	rigidbody.dirty = false
 	rigidbody.enabled = true
 	if math.random(0, 1) >= 0.5 then
 	  rigidbody.dynamic = true
@@ -125,9 +124,9 @@ function system.run(scene, entityID, dt)
 	scene:addComponentToEntity("collision_tree_node", colliderEntity, collisionTreeNode)
 
 	local box = ffi.new("BoxComponent")
-	box.bounds.x = 1
-	box.bounds.y = 1
-	box.bounds.z = 1
+	box.bounds.x = 0.5
+	box.bounds.y = 0.5
+	box.bounds.z = 0.5
 	scene:addComponentToEntity("box", colliderEntity, box)
 
 	collision.collisionTree = colliderEntity

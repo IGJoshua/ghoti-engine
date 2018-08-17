@@ -1,0 +1,59 @@
+{
+	"uuid": "joint_constraint",
+
+	"components":
+	{
+		"joint_constraint":
+		[
+			{
+				"name": "loStop_bool",
+				"bool": false
+			},
+			{
+				"name": "hiStop_bool",
+				"bool": false
+			},
+			{
+				"name": "bounce_bool",
+				"bool": false
+			},
+			{
+				"name": "CFM_bool",
+				"bool": false
+			},
+			{
+				"name": "stopERP_bool",
+				"bool": false
+			},
+			{
+				"name": "stopCFM_bool",
+				"bool": false
+			},
+
+			{
+				"name": "loStop_val",
+				"float32": 0
+			},
+			{
+				"name": "hiStop_val",
+				"float32": 0
+			},
+			{
+				"name": "bounce_val",
+				"float32": 0
+			},
+			{
+				"name": "CFM_val",
+				"float32": 0
+			},
+			{
+				"name": "stopERP_val",
+				"float32": 0
+			},
+			{
+				"name": "stopCFM_val",
+				"float32": 0
+			}
+		]
+	}
+}

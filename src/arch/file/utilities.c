@@ -2,7 +2,7 @@
 
 #include "core/log.h"
 
-#include "frozen/frozen.h"
+#include <frozen/frozen.h>
 
 #include <sys/stat.h>
 
@@ -136,18 +136,21 @@ void copyFile(const char *filename, const char *destination)
 	uint64 fileLength = 0;
 
 	FILE *file = fopen(filename, "rb");
-	if (file) {
+	if (file)
+	{
 		fseek(file, 0, SEEK_END);
 		fileLength = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		fileBuffer = calloc(fileLength + 1, 1);
 
-		if (fileBuffer) {
+		if (fileBuffer)
+		{
 			fread(fileBuffer, 1, fileLength, file);
 		}
 	}
 
-	if (fileBuffer) {
+	if (fileBuffer)
+	{
 		file = freopen(destination, "wb", file);
 		fwrite(fileBuffer, fileLength, 1, file);
 		fclose(file);

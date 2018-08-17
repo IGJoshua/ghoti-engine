@@ -1,16 +1,16 @@
 #pragma once
 #include "defines.h"
 
-#include "cJSON/cJSON.h"
+#include <cjson/cJSON.h>
 
 #include <stdio.h>
 
 #ifdef _WIN32
 #include <direct.h>
-#define MKDIR(file) _mkdir(file)
+#define MKDIR(folder) _mkdir(folder)
 #else
 #include <sys/stat.h>
-#define MKDIR(file) mkdir(file, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+#define MKDIR(folder) mkdir(folder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 #endif
 
 char* getFullFilePath(

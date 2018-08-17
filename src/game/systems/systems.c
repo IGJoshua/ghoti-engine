@@ -15,6 +15,7 @@
 	key = idFromName(name);\
 	hashMapInsert(systemRegistry, &key, &sys);
 
+
 SYSTEM(Renderer);
 SYSTEM(CleanGlobalTransforms);
 SYSTEM(ApplyParentTransforms);
@@ -23,6 +24,8 @@ SYSTEM(CleanHitInformation);
 SYSTEM(SimulateRigidbodies);
 SYSTEM(CleanHitList);
 SYSTEM(RenderHeightmap);
+SYSTEM(JointInformation);
+SYSTEM(Audio);
 
 extern HashMap systemRegistry;
 
@@ -44,6 +47,9 @@ void initSystems(void)
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
+	REGISTER_SYSTEM(JointInformation, "joint_information");
+	REGISTER_SYSTEM(Audio, "audio");
+
 }
 
 void freeSystems(void)
