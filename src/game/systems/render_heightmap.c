@@ -51,6 +51,9 @@ internal Uniform viewUniform = {};
 internal Uniform projectionUniform = {};
 internal Uniform textureUniforms[1] = {};
 
+extern uint32 numTextures;
+extern uint32 texturesCapacity;
+
 internal
 void initRenderHeightmapSystem(Scene *scene)
 {
