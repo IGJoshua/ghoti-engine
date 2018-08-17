@@ -78,8 +78,12 @@
 				"uint64": 0
 			},
 			{
-				"name": "texture name",
+				"name": "heightmap name",
 				"char(1024)": "heightmap.tga"
+			},
+			{
+				"name": "texture name",
+				"char(1024)": "gold.png"
 			},
 			{
 				"name": "size x",

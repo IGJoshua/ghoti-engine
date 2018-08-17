@@ -14,6 +14,7 @@ extern Texture *textures;
 extern uint32 numTextures;
 extern uint32 texturesCapacity;
 
+// NOTE(Joshua): Loading a texture to CPU memory should really be a separate fn
 int32 loadTexture(const char *name, bool genMipmaps, ILuint *dataOut)
 {
 	return loadTextureWithFormat(

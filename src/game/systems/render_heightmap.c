@@ -105,6 +105,15 @@ void initRenderHeightmapSystem(Scene *scene)
 		{
 			LOG("Unable to get projection uniform for heightmap rendering\n");
 		}
+
+		if (getUniform(
+				pipeline,
+				"diffuseTexture",
+				UNIFORM_TEXTURE_2D,
+				textureUniforms) == -1)
+		{
+			LOG("Unable to get diffuse texture uniform for heightmap rendering\n");
+		}
 	}
 
 	HashMap map = createHashMap(
@@ -126,11 +135,16 @@ void initRenderHeightmapSystem(Scene *scene)
 		HeightmapComponent *heightmap = cdtIteratorGetData(itr);
 
 		ILuint imageID;
-		loadTextureWithFormat(
-			heightmap->textureName,
+		if (loadTextureWithFormat(
+			heightmap->heightmapName,
 			TEXTURE_FORMAT_R8,
 			false,
-			&imageID);
+			&imageID) == -1)
+		{
+			LOG("Unable to load texture %s, heightmap is broken\n",
+				heightmap->heightmapName);
+			continue;
+		}
 		ilBindImage(imageID);
 		uint32 imageWidth = ilGetInteger(IL_IMAGE_WIDTH);
 		uint32 imageHeight = ilGetInteger(IL_IMAGE_HEIGHT);
@@ -348,6 +362,12 @@ void initRenderHeightmapSystem(Scene *scene)
 		free(indices);
 
 		hashMapInsert(map, &entityID, &m);
+
+		// Load the texture onto the GPU
+		if (strcmp(heightmap->textureName, ""))
+		{
+			loadTexture(heightmap->textureName, 1, 0);
+		}
 	}
 }
 
@@ -379,7 +399,12 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 	Mesh *heightmap = hashMapGetData(
 		*sceneMap,
 		&entityID);
-	ASSERT(heightmap);
+	if (!heightmap)
+	{
+		LOG("No heightmap loaded for entity %s, skipping render\n",
+			entityID.string);
+		return;
+	}
 
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
@@ -394,6 +419,18 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		LOG("Unable to set model uniform\n");
 		return;
+	}
+
+	HeightmapComponent *heightmapComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		heightmapComponentID);
+
+	Texture *tex = getTexture(heightmapComponent->textureName);
+	if (tex)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, tex->id);
 	}
 
 	glBindVertexArray(heightmap->vertexArray);

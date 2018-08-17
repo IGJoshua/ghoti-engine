@@ -148,6 +148,7 @@ typedef struct surface_information_component_t
 typedef struct heightmap_component_t
 {
 	dGeomID heightfieldGeom;
+	char heightmapName[1024];
 	char textureName[1024];
 	uint32 sizeX;
 	uint32 sizeZ;
