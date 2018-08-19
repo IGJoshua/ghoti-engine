@@ -162,12 +162,11 @@ void freeModel(const char *name)
 				freeSubset(&model->subsets[i]);
 			}
 
+			free(model->subsets);
 			deleteModel(name);
 
 			LOG("Successfully freed model (%s)\n", name);
 			LOG("Model Count: %d\n", models->count);
-
-			free(model->subsets);
 		}
 	}
 }
