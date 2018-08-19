@@ -12,11 +12,15 @@ typedef struct model_component_t
 {
 	char name[1024];
 	bool visible;
-	bool wireframe;
-	real32 wireframeLineWidth;
-	bool customWireframeColor;
-	kmVec3 wireframeColor;
 } ModelComponent;
+
+typedef struct wireframe_component_t
+{
+	bool visible;
+	real32 lineWidth;
+	bool customColor;
+	kmVec3 color;
+} WireframeComponent;
 
 typedef struct transform_component_t
 {

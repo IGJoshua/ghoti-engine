@@ -142,7 +142,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 		free(jsonSceneFilename);
 
 		uint32 entityNumber = 0;
-		for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+		for (HashMapIterator itr = hashMapGetIterator(&scene->entities);
 			!hashMapIteratorAtEnd(itr);
 			hashMapMoveIterator(&itr))
 		{

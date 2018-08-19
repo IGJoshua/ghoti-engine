@@ -1,299 +1,268 @@
+#include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
-#include "asset_management/mesh.h"
 #include "asset_management/material.h"
+#include "asset_management/mask.h"
+#include "asset_management/mesh.h"
 #include "asset_management/texture.h"
-
-#include "renderer/shader.h"
 
 #include "core/log.h"
 
 #include "file/utilities.h"
 
-#include "json-utilities/utilities.h"
+#include "data/data_types.h"
+#include "data/hash_map.h"
 
-#include "model-utility/material_exporter.h"
+#include "ECS/scene.h"
 
-#include <malloc.h>
-#include <string.h>
+extern HashMap models;
+extern HashMap textures;
 
-extern Model *models;
-extern uint32 numModels;
-extern uint32 modelsCapacity;
+internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
+internal void freeSubset(Subset *subset);
+internal int32 loadModelTextures(Model *model);
+internal UUID getMaskTextureName(Model *model, char suffix);
 
-extern uint32 numTextures;
-extern uint32 texturesCapacity;
-
-internal int32 loadMaterials(Model *model);
-internal int32 loadTextures(Model *model);
+internal void deleteModel(const char *name);
 
 int32 loadModel(const char *name)
 {
-	Model *model = getModel(name);
-
-	if (name && !model)
-	{
-		LOG("Loading model (%s)...\n", name);
-
-		if (numModels + 1 > modelsCapacity)
-		{
-			increaseModelsCapacity();
-		}
-
-		model = &models[numModels++];
-
-		model->name = malloc(strlen(name) + 1);
-		strcpy(model->name, name);
-
-		if (loadMaterials(model) == -1)
-		{
-			return -1;
-		}
-
-		if (loadMesh(model) == -1)
-		{
-			return -1;
-		}
-
-		LOG("Successfully loaded model (%s)\n", name);
-
-		LOG("Model Count: %d\n", numModels);
-		LOG("Models Capacity: %d\n", modelsCapacity);
-	}
-
-	if (model)
-	{
-		model->refCount++;
-	}
-
-	return 0;
-}
-
-void increaseModelsCapacity()
-{
-	modelsCapacity += RESOURCE_REALLOCATION_AMOUNT;
-
-	uint32 previousBufferSize = numModels * sizeof(Model);
-	uint32 newBufferSize = modelsCapacity * sizeof(Model);
-
-	if (previousBufferSize == 0)
-	{
-		models = calloc(newBufferSize, 1);
-	}
-	else
-	{
-		models = realloc(models, newBufferSize);
-		memset(
-			models + previousBufferSize,
-			0,
-			newBufferSize - previousBufferSize);
-	}
-
-	LOG("Increased models capacity to %d to hold 1 new model\n",
-		modelsCapacity);
-}
-
-
-int32 loadMaterials(Model *model)
-{
 	int32 error = 0;
 
-	char *modelFolder = getFullFilePath(model->name, NULL, "resources/models");
-	char *modelFilename = getFullFilePath(model->name, NULL, modelFolder);
-
-	if (exportMaterials(modelFilename, LOG_FILE_NAME) == -1)
+	Model *modelResource = getModel(name);
+	if (!modelResource)
 	{
-		free(modelFilename);
-		free(modelFolder);
-		return -1;
-	}
+		Model model = {};
 
-	free(modelFilename);
+		LOG("Loading model (%s)...\n", name);
 
-	char *assetFilename = getFullFilePath(model->name, NULL, modelFolder);
+		model.name = idFromName(name);
+		model.refCount = 1;
 
-	if (exportAsset(assetFilename, LOG_FILE_NAME) == -1)
-	{
+		char *modelFolder = getFullFilePath(name, NULL, "resources/models");
+
+		char *assetFilename = getFullFilePath(name, "asset", modelFolder);
+		FILE *assetFile = fopen(assetFilename, "rb");
 		free(assetFilename);
-		free(modelFolder);
-		return -1;
-	}
 
-	free(assetFilename);
-
-	assetFilename = getFullFilePath(model->name, "asset", modelFolder);
-	free(modelFolder);
-
-	FILE *file = fopen(assetFilename, "rb");
-
-	if (file)
-	{
-		uint32 numMaterials;
-		fread(&numMaterials, sizeof(uint32), 1, file);
-
-		model->materials = calloc(numMaterials, sizeof(Material));
-
-		for (uint32 i = 0; i < numMaterials; i++)
+		if (assetFile)
 		{
-			error = loadMaterial(
-				&model->materials[model->numSubsets++],
-				file);
-			if (error == -1)
+			char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
+			FILE *meshFile = fopen(meshFilename, "rb");
+			free(meshFilename);
+
+			if (meshFile)
 			{
-				break;
+				fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
+				model.subsets = calloc(model.numSubsets, sizeof(Subset));
+
+				for (uint32 i = 0; i < model.numSubsets; i++)
+				{
+					model.subsets[i].name = readStringAsUUID(assetFile);
+				}
+
+				model.materialTexture = getMaskTextureName(&model, 'm');
+				model.opacityTexture = getMaskTextureName(&model, 'o');
+
+				for (uint32 i = 0; i < model.numSubsets; i++)
+				{
+					error = loadSubset(&model.subsets[i], assetFile, meshFile);
+					if (error == -1)
+					{
+						break;
+					}
+				}
+
+				if (error != -1)
+				{
+					error = loadModelTextures(&model);
+
+					if (error != -1)
+					{
+						// TODO: Add animation loading
+						// error = loadAnimations(meshFile);
+					}
+				}
+			}
+			else
+			{
+				LOG("Failed to open %s\n", meshFilename);
+				error = -1;
+			}
+
+			if (meshFile)
+			{
+				fclose(meshFile);
 			}
 		}
+		else
+		{
+			LOG("Failed to open %s\n", assetFilename);
+			error = -1;
+		}
 
-		fclose(file);
+		if (assetFile)
+		{
+			fclose(assetFile);
+		}
+
+		free(modelFolder);
+
+		if (error != -1)
+		{
+			hashMapInsert(&models, &model.name, &model);
+
+			LOG("Successfully loaded model (%s)\n", name);
+			LOG("Model Count: %d\n", models->count);
+		}
+		else
+		{
+			LOG("Failed to load model (%s)\n", name);
+		}
 	}
 	else
 	{
-		LOG("Failed to open %s\n", assetFilename);
-		error = -1;
-	}
-
-	free(assetFilename);
-
-	if (error != -1)
-	{
-		error = loadTextures(model);
+		modelResource->refCount++;
 	}
 
 	return error;
 }
 
-int32 loadTextures(Model *model)
-{
-	uint32 numUniqueTextures = 0;
-	uint32 i, j;
-
-	for (i = 0; i < model->numSubsets; i++)
-	{
-		Material *material = &model->materials[i];
-		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-		{
-			MaterialComponent *materialComponent = &material->components[j];
-			if (materialComponent->texture &&
-				strlen(materialComponent->texture) > 0 &&
-				!getTexture(materialComponent->texture))
-			{
-				numUniqueTextures++;
-			}
-		}
-	}
-
-	if (numTextures + numUniqueTextures > texturesCapacity)
-	{
-		increaseTexturesCapacity(numUniqueTextures);
-	}
-
-	for (i = 0; i < model->numSubsets; i++)
-	{
-		Material *material = &model->materials[i];
-		for (j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-		{
-			MaterialComponent *materialComponent = &material->components[j];
-
-			if (materialComponent->texture &&
-				strlen(materialComponent->texture) > 0)
-			{
-				if (loadTexture(materialComponent->texture, true, 0) == -1)
-				{
-					return -1;
-				}
-			}
-		}
-	}
-
-	LOG("Texture Count: %d\n", numTextures);
-	LOG("Textures Capacity: %d\n", texturesCapacity);
-
-	return 0;
-}
-
 Model* getModel(const char *name)
 {
-	if (name && strlen(name) > 0)
+	Model *model = NULL;
+	if (strlen(name) > 0)
 	{
-		for (uint32 i = 0; i < numModels; i++)
-		{
-			if (!strcmp(models[i].name, name))
-			{
-				return &models[i];
-			}
-		}
+		UUID nameID = idFromName(name);
+		model = hashMapGetData(&models, &nameID);
 	}
 
-	return NULL;
+	return model;
 }
 
-uint32 getModelIndex(const char *name)
+void deleteModel(const char *name)
 {
-	if (name && strlen(name) > 0)
-	{
-		for (uint32 i = 0; i < numModels; i++)
-		{
-			if (!strcmp(models[i].name, name))
-			{
-				return i;
-			}
-		}
-	}
-
-	return 0;
+	UUID nameID = idFromName(name);
+	hashMapDelete(&models, &nameID);
 }
 
-int32 freeModel(const char *name)
+void freeModel(const char *name)
 {
 	Model *model = getModel(name);
-
-	if (!model)
+	if (model)
 	{
-		LOG("Could not find model\n");
+		if (--model->refCount == 0)
+		{
+			LOG("Freeing model (%s)...\n", name);
+
+			freeTexture(model->materialTexture);
+			freeTexture(model->opacityTexture);
+
+			for (uint32 i = 0; i < model->numSubsets; i++)
+			{
+				freeSubset(&model->subsets[i]);
+			}
+
+			deleteModel(name);
+
+			LOG("Successfully freed model (%s)\n", name);
+			LOG("Model Count: %d\n", models->count);
+
+			free(model->subsets);
+		}
+	}
+}
+
+int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
+{
+	LOG("Loading subset (%s)...\n", subset->name.string);
+
+	if (loadMaterial(&subset->material, assetFile) == -1)
+	{
 		return -1;
 	}
 
-	uint32 index = getModelIndex(name);
-
-	if (--(model->refCount) == 0)
+	if (loadMask(&subset->mask, assetFile) == -1)
 	{
-		LOG("Freeing model (%s)...\n", name);
-
-		free(model->name);
-
-		for (uint32 i = 0; i < model->numSubsets; i++)
-		{
-			if (freeMaterial(&model->materials[i]) == -1)
-			{
-				return -1;
-			}
-
-			if (freeMesh(&model->meshes[i]) == -1)
-			{
-				return -1;
-			}
-		}
-
-		free(model->materials);
-		free(model->meshes);
-
-		numModels--;
-		Model *resizedModels = calloc(modelsCapacity, sizeof(Model));
-		memcpy(resizedModels, models, index * sizeof(Model));
-
-		if (index < numModels)
-		{
-			memcpy(
-				&resizedModels[index],
-				&models[index + 1],
-				(numModels - index) * sizeof(Model));
-		}
-
-		free(models);
-		models = resizedModels;
-
-		LOG("Successfully freed model (%s)\n", name);
-		LOG("Model Count: %d\n", numModels);
+		return -1;
 	}
 
+	if (loadMesh(&subset->mesh, meshFile) == -1)
+	{
+		return -1;
+	}
+
+	LOG("Successfully loaded subset (%s)\n", subset->name.string);
+
 	return 0;
+}
+
+void freeSubset(Subset *subset)
+{
+	freeMesh(&subset->mesh);
+	freeMaterial(&subset->material);
+	freeMask(&subset->mask);
+}
+
+int32 loadModelTextures(Model *model)
+{
+	LOG("Loading textures...\n");
+
+	char *modelFolder = getFullFilePath(
+		model->name.string,
+		NULL,
+		"resources/models");
+	char *masksFolder = getFullFilePath("masks", NULL, modelFolder);
+	free(modelFolder);
+
+	if (loadMaskTexture(masksFolder, model->materialTexture) == -1)
+	{
+		free(masksFolder);
+		return -1;
+	}
+
+	if (loadMaskTexture(masksFolder, model->opacityTexture) == -1)
+	{
+		free(masksFolder);
+		return -1;
+	}
+
+	free(masksFolder);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Subset *subset = &model->subsets[i];
+
+		if (loadMaterialTextures(&subset->material) == -1)
+		{
+			return -1;
+		}
+
+		Mask *mask = &subset->mask;
+
+		if (loadMaterialTextures(&mask->collectionMaterial) == -1)
+		{
+			return -1;
+		}
+
+		if (loadMaterialTextures(&mask->grungeMaterial) == -1)
+		{
+			return -1;
+		}
+
+		if (loadMaterialTextures(&mask->wearMaterial) == -1)
+		{
+			return -1;
+		}
+	}
+
+	LOG("Successfully loaded textures\n");
+
+	return 0;
+}
+
+UUID getMaskTextureName(Model *model, char suffix)
+{
+	UUID textureName = {};
+	sprintf(textureName.string, "%s_%c", model->name.string, suffix);
+	return textureName;
 }

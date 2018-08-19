@@ -11,27 +11,27 @@
 			},
 
 			{
-				"name": "volume1",
+				"name": "volume 1",
 				"uuid": ""
 			},
 
 			{
-				"name": "volume2",
+				"name": "volume 2",
 				"uuid": ""
 			},
 
 			{
-				"name": "object1",
+				"name": "object 1",
 				"uuid": ""
 			},
 
 			{
-				"name": "object2",
+				"name": "object 2",
 				"uuid": ""
 			},
 
 			{
-				"name": "contactNormal",
+				"name": "contact normal",
 				"float32": [0, 0, 0]
 			},
 

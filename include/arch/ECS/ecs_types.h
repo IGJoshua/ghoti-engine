@@ -14,6 +14,8 @@ typedef struct component_data_entry_t
 
 typedef struct component_data_table_t
 {
+	// Name of component
+	UUID componentID;
 	// Maximum number of active components
 	uint32 numEntries;
 	// Byte size of the component structure

@@ -22,7 +22,10 @@ char* removeExtension(const char *filename);
 int32 deleteFolder(const char *folder, bool errors);
 void copyFile(const char *filename, const char *destination);
 int32 copyFolder(const char *folder, const char *destination);
+
+char* readFile(const char *filename, uint64 *fileLength);
 char* readString(FILE *file);
+UUID readStringAsUUID(FILE *file);
 void writeString(const char *string, FILE *file);
 
 void writeJSON(const cJSON *json, const char *filename);

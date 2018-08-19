@@ -7,7 +7,9 @@
 #include <kazmath/vec3.h>
 #include <kazmath/vec4.h>
 
-#define RESOURCE_REALLOCATION_AMOUNT 16
+#define NUM_VERTEX_ATTRIBUTES 9
+#define NUM_BONES 4
+#define MAX_BONE_COUNT 128
 
 typedef struct vertex_t
 {
@@ -16,7 +18,10 @@ typedef struct vertex_t
 	kmVec3 normal;
 	kmVec3 tangent;
 	kmVec3 bitangent;
-	kmVec2 uv[MATERIAL_COMPONENT_TYPE_COUNT];
+	kmVec2 materialUV;
+	kmVec2 maskUV;
+	uint32 bones[NUM_BONES];
+	real32 weights[NUM_BONES];
 } Vertex;
 
 typedef enum texture_format_e
@@ -27,17 +32,17 @@ typedef enum texture_format_e
 
 typedef struct texture_t
 {
-	char *name;
+	UUID name;
 	GLuint id;
 	uint32 refCount;
-	TextureFormat format;
 } Texture;
 
 typedef struct model_t
 {
-	char *name;
-	uint32 numSubsets;
-	Material *materials;
-	Mesh *meshes;
+	UUID name;
 	uint32 refCount;
+	UUID materialTexture;
+	UUID opacityTexture;
+	uint32 numSubsets;
+	Subset *subsets;
 } Model;

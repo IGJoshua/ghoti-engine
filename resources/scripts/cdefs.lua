@@ -57,10 +57,11 @@ typedef struct hash_map_t
   uint32 valueSizeBytes;
   uint32 bucketCount;
   ComparisonOp comparison;
+  uint32 count;
   HashMapBucket buckets[];
 } *HashMap;
 
-void *hashMapGetData(HashMap map, void *key);
+void *hashMapGetData(HashMap *map, void *key);
 
 typedef union uuid_t
 {

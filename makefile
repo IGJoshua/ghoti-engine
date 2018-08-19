@@ -30,7 +30,7 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = json-utilities model-utility cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
+_LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -123,7 +123,7 @@ release : clean
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
 WINFLAGS = -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = mingw32 SDL2main json-utilities model-utility cjson frozen glfw3 glew32 glu32 opengl32 ILU DevIL kazmath pthread luajit ode-6 SDL2
+_WINLIBS = mingw32 SDL2main json-utilities cjson frozen glfw3 glew32 glu32 opengl32 ILU DevIL kazmath pthread luajit ode-6 SDL2
 
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 

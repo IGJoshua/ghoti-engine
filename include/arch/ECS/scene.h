@@ -24,10 +24,10 @@ int32 shutdownScene(Scene **scene);
 int32 deactivateScene(Scene *scene);
 
 void exportEntitySnapshot(
-	const Scene *scene,
+	Scene *scene,
 	UUID entity,
 	const char *filename);
-void exportSceneSnapshot(const Scene *scene, const char *filename);
+void exportSceneSnapshot(Scene *scene, const char *filename);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,

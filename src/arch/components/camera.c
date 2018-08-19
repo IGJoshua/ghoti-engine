@@ -68,12 +68,12 @@ int32 cameraSetUniforms(
 
 	bindShaderPipeline(pipeline);
 
-	if (setUniform(viewUniform, &view) == -1)
+	if (setUniform(viewUniform, 1, &view) == -1)
 	{
 		LOG("Unable to set view uniform\n");
 	}
 
-	if (setUniform(projectionUniform, &projection) == -1)
+	if (setUniform(projectionUniform, 1, &projection) == -1)
 	{
 		LOG("Unable to set projection uniform\n");
 	}

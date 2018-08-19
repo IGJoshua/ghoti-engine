@@ -4,6 +4,8 @@
 #include "core/window.h"
 #include "core/input.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
@@ -47,7 +49,8 @@ int32 main(int32 argc, char *argv[])
 {
 	srand(time(0));
 
-	if (LOG_FILE_NAME) {
+	if (LOG_FILE_NAME)
+	{
 		remove(LOG_FILE_NAME);
 	}
 
@@ -68,6 +71,8 @@ int32 main(int32 argc, char *argv[])
 	activeScenes = createList(sizeof(Scene *));
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
+
+	initializeAssetManager();
 
 	dInitODE();
 
@@ -335,6 +340,8 @@ int32 main(int32 argc, char *argv[])
 	}
 
 	freeSystems();
+
+	shutdownAssetManager();
 
 	dCloseODE();
 

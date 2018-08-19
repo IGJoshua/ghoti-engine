@@ -3,7 +3,7 @@
 [[./ghoti.png]]
 
 * Ghoti Engine
-An OpenGL Voxel Cone Tracing PBR engine using pure C, and an ECS implemented with a Lua JIT.
+A C game engine with a Lua JIT based ECS and a PBR OpenGL renderer.
 
 ** Required Build Tools
 

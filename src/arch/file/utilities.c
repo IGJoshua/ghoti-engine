@@ -2,6 +2,8 @@
 
 #include "core/log.h"
 
+#include "ECS/scene.h"
+
 #include <frozen/frozen.h>
 
 #include <sys/stat.h>
@@ -13,7 +15,6 @@
 
 #define MAX_JSON_LINE_LENGTH 80
 
-internal char* readFile(const char *filename);
 internal void writeCharacter(char character, uint32 n, FILE *file);
 internal void formatJSON(const char *filename);
 internal void formatJSONArrays(const char *filename);
@@ -222,6 +223,35 @@ int32 copyFolder(const char *folder, const char *destination)
 	return 0;
 }
 
+char* readFile(const char *filename, uint64 *fileLength)
+{
+	char *fileBuffer = NULL;
+	*fileLength = 0;
+
+	FILE *file = fopen(filename, "r");
+
+	if (file)
+	{
+		fseek(file, 0, SEEK_END);
+		*fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		fileBuffer = calloc(*fileLength + 1, 1);
+
+		if (fileBuffer)
+		{
+			fread(fileBuffer, 1, *fileLength, file);
+		}
+
+		fclose(file);
+	}
+	else
+	{
+		LOG("Unable to open %s\n", filename);
+	}
+
+	return fileBuffer;
+}
+
 char* readString(FILE *file)
 {
 	uint32 stringLength;
@@ -231,6 +261,20 @@ char* readString(FILE *file)
 	fread(string, stringLength, 1, file);
 
 	return string;
+}
+
+UUID readStringAsUUID(FILE *file)
+{
+	uint32 stringLength;
+	fread(&stringLength, sizeof(uint32), 1, file);
+
+	char *string = malloc(stringLength);
+	fread(string, stringLength, 1, file);
+
+	UUID uuid = idFromName(string);
+	free(string);
+
+	return uuid;
 }
 
 void writeString(const char *string, FILE *file)
@@ -257,35 +301,6 @@ void writeJSON(const cJSON *json, const char *filename)
 	free(jsonFilename);
 }
 
-char* readFile(const char *filename)
-{
-	char *fileBuffer = NULL;
-	uint64 fileLength = 0;
-
-	FILE *file = fopen(filename, "r");
-
-	if (file)
-	{
-		fseek(file, 0, SEEK_END);
-		fileLength = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		fileBuffer = calloc(fileLength + 1, 1);
-
-		if (fileBuffer)
-		{
-			fread(fileBuffer, 1, fileLength, file);
-		}
-
-		fclose(file);
-	}
-	else
-	{
-		LOG("Unable to open %s\n", filename);
-	}
-
-	return fileBuffer;
-}
-
 void writeCharacter(char character, uint32 n, FILE *file)
 {
 	for (uint32 i = 0; i < n; i++)
@@ -296,8 +311,8 @@ void writeCharacter(char character, uint32 n, FILE *file)
 
 void formatJSON(const char *filename)
 {
-	char *fileBuffer = readFile(filename);
-	uint64 fileLength = strlen(fileBuffer);
+	uint64 fileLength;
+	char *fileBuffer = readFile(filename, &fileLength);
 
 	FILE *file = fopen(filename, "w");
 
@@ -388,8 +403,8 @@ void formatJSON(const char *filename)
 
 void formatJSONArrays(const char *filename)
 {
-	char *fileBuffer = readFile(filename);
-	uint64 fileLength = strlen(fileBuffer);
+	uint64 fileLength;
+	char *fileBuffer = readFile(filename, &fileLength);
 
 	FILE *file = fopen(filename, "w");
 
