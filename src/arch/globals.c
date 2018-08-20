@@ -10,13 +10,9 @@
 
 // NOTE(Joshua): Asset Management globals
 
-Model *models;
-uint32 numModels = 0;
-uint32 modelsCapacity = 0;
-
-Texture *textures;
-uint32 numTextures = 0;
-uint32 texturesCapacity = 0;
+HashMap models;
+HashMap textures;
+HashMap materialFolders;
 
 // NOTE(Joshua): Globals for ECS
 

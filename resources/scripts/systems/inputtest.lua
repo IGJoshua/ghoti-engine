@@ -19,10 +19,6 @@ function system.init(scene)
 	"horizontallook",
 	input.AXIS(keyboard.LEFT, keyboard.RIGHT, gamepad.rightstick.xaxis))
   input:register("reload", input.BUTTON(keyboard.R))
-  input:register("load_cool_thing", input.BUTTON(keyboard.L))
-  input:register("unload_cool_thing", input.BUTTON(keyboard.U))
-  input:register("switch_to_cool_thing", input.BUTTON(keyboard.C))
-  input:register("switch_to_cool_scene", input.BUTTON(keyboard.V))
   input:register("save", input.BUTTON(keyboard.S))
   input:register("load_save", input.BUTTON(keyboard.Z))
 end
@@ -60,32 +56,12 @@ function system.begin(scene, dt)
     C.reloadAllScenes()
   end
 
-  if input.load_cool_thing.updated and input.load_cool_thing.keydown then
-    C.loadScene("cool_thing")
-  end
-
-  if input.unload_cool_thing.updated and input.unload_cool_thing.keydown then
-    C.unloadScene("cool_thing")
-  end
-
-  if input.switch_to_cool_thing.updated and
-    input.switch_to_cool_thing.keydown then
-    C.loadScene("cool_thing")
-    C.unloadScene("cool_scene")
-  end
-
-  if input.switch_to_cool_scene.updated and
-    input.switch_to_cool_scene.keydown then
-    C.loadScene("cool_scene")
-    C.unloadScene("cool_thing")
-  end
-
   if input.save.updated and input.save.keydown then
-    C.exportSave(nil, 0, 2)
+    C.exportSave(nil, 0, 1)
   end
 
   if input.load_save.updated and input.load_save.keydown then
-    C.loadSave(2, nil)
+    C.loadSave(1, nil)
   end
 end
 

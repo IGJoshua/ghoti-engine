@@ -4,6 +4,8 @@
 #include "core/window.h"
 #include "core/input.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
@@ -41,13 +43,18 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
-int32 main()
+#define WINDOW_TITLE "Ghoti 0.6.2"
+
+int32 main(int32 argc, char *argv[])
 {
 	srand(time(0));
 
-	remove(LOG_FILE_NAME);
+	if (LOG_FILE_NAME)
+	{
+		remove(LOG_FILE_NAME);
+	}
 
-	GLFWwindow *window = initWindow(640, 480, "Ghoti");
+	GLFWwindow *window = initWindow(640, 480, WINDOW_TITLE);
 
 	if (!window)
 	{
@@ -64,6 +71,8 @@ int32 main()
 	activeScenes = createList(sizeof(Scene *));
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
+
+	initializeAssetManager();
 
 	dInitODE();
 
@@ -331,6 +340,8 @@ int32 main()
 	}
 
 	freeSystems();
+
+	shutdownAssetManager();
 
 	dCloseODE();
 

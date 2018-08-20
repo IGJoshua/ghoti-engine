@@ -1,0 +1,19 @@
+{
+	"uuid": "hit_list",
+
+	"components":
+	{
+		"hit_list":
+		[
+			{
+				"name": "next hit",
+				"uuid": ""
+			},
+
+			{
+				"name": "hit",
+				"uuid": ""
+			}
+		]
+	}
+}

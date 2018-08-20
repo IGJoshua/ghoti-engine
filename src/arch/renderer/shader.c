@@ -2,39 +2,23 @@
 
 #include "core/log.h"
 
+#include "file/utilities.h"
+
 #include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_CHUNKS 128
-#define CHUNK_SIZE 1024
-
 int32 compileShaderFromFile(char *filename, ShaderType type, Shader *shader)
 {
-	char *source = 0;
-
-	FILE *file = fopen(filename, "r");
-	if (file)
+	uint64 fileLength;
+	char *source = readFile(filename, &fileLength);
+	if (source)
 	{
-		fseek(file, 0, SEEK_END);
-		uint64 numBytes = ftell(file);
-		fseek(file, 0, SEEK_SET);
-
-		source = malloc(numBytes + 1);
-		fread(source, numBytes, 1, file);
-		source[numBytes] = 0;
-
-		fclose(file);
-
 		LOG("Loaded %s\n", filename);
-	}
-	else
-	{
-		LOG("Unable to open %s\n", filename);
-		return -1;
+		return compileShaderFromSource(source, type, shader);
 	}
 
-	return compileShaderFromSource(source, type, shader);
+	return -1;
 }
 
 internal inline
@@ -166,29 +150,38 @@ int32 getUniform(
 	return 0;
 }
 
-int32 setUniform(Uniform uniform, void *data)
+int32 setUniform(Uniform uniform, uint32 count, void *data)
 {
-	switch (uniform.type)
+	if (uniform.location > -1)
 	{
-		case UNIFORM_MAT4:
+		GLint boolData;
+		switch (uniform.type)
 		{
-			glUniformMatrix4fv(uniform.location, 1, GL_FALSE, data);
-		} break;
-		case UNIFORM_TEXTURE_2D:
-		{
-			glUniform1i(uniform.location, *(GLint*)data);
-		} break;
-		default:
-		{
+			case UNIFORM_MAT4:
+				glUniformMatrix4fv(uniform.location, count, GL_FALSE, data);
+				break;
+			case UNIFORM_VEC3:
+				glUniform3fv(uniform.location, count, data);
+				break;
+			case UNIFORM_BOOL:
+				boolData = *(bool*)data ? true : false;
+				glUniform1iv(uniform.location, count, &boolData);
+				break;
+			case UNIFORM_TEXTURE_2D:
+				glUniform1iv(uniform.location, count, data);
+				break;
+			default:
+				break;
+		}
 
-		} break;
-	}
-
-	GLenum glError = glGetError();
-	if (glError != GL_NO_ERROR)
-	{
-		LOG("Set Uniform (%s): %s\n", uniform.name, gluErrorString(glError));
-		return -1;
+		GLenum glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			LOG("Set Uniform (%s): %s\n",
+				uniform.name,
+				gluErrorString(glError));
+			return -1;
+		}
 	}
 
 	return 0;

@@ -12,12 +12,6 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum
-{
-  false,
-  true
-} Bool;
-
 char *strcpy(char *destination, const char *source);
 
 typedef struct list_node_t
@@ -63,10 +57,11 @@ typedef struct hash_map_t
   uint32 valueSizeBytes;
   uint32 bucketCount;
   ComparisonOp comparison;
+  uint32 count;
   HashMapBucket buckets[];
 } *HashMap;
 
-void *hashMapGetData(HashMap map, void *key);
+void *hashMapGetData(HashMap *map, void *key);
 
 typedef union uuid_t
 {

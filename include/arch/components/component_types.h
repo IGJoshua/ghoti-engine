@@ -5,9 +5,6 @@
 
 #include <ode/ode.h>
 
-#include <AL/alc.h>
-#include <AL/al.h>
-
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -16,6 +13,14 @@ typedef struct model_component_t
 	char name[1024];
 	bool visible;
 } ModelComponent;
+
+typedef struct wireframe_component_t
+{
+	bool visible;
+	real32 lineWidth;
+	bool customColor;
+	kmVec3 color;
+} WireframeComponent;
 
 typedef struct transform_component_t
 {
@@ -49,22 +54,6 @@ typedef struct camera_component_t
 	real32 fov;
 	CameraProjectionType projectionType;
 } CameraComponent;
-
-typedef struct audio_manager_t
-{
-	int32 buffers;
-
-} AudioManagerComonent;
-
-typedef struct audio_source_t
-{
-
-} AudioSourceComponent;
-
-typedef struct audio_file_t
-{
-
-} AudioFileComponent;
 
 typedef enum joint_type_e
 {
@@ -185,7 +174,7 @@ typedef struct collision_tree_node_t
 	dGeomID geomID;
 } CollisionTreeNode;
 
-typedef struct aabb_component_t
+typedef struct obb_component_t
 {
 	kmVec3 bounds;
 } BoxComponent;

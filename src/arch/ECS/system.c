@@ -41,7 +41,7 @@ void systemRun(
 		// For each entity in the first component table
 		for (ComponentDataTableIterator itr = cdtGetIterator(
 				 *(ComponentDataTable **)hashMapGetData(
-					 scene->componentTypes,
+					 &scene->componentTypes,
 					 (UUID*)system->componentTypes.front->data));
 			 !cdtIteratorAtEnd(itr);
 			 cdtMoveIterator(&itr))
@@ -57,7 +57,7 @@ void systemRun(
 				// Get the component to check
 				UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, litr);
 				ComponentDataTable **table = hashMapGetData(
-					scene->componentTypes,
+					&scene->componentTypes,
 					componentID);
 
 				if (!table || !*table || !componentID)

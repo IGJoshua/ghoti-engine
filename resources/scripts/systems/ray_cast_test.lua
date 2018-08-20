@@ -1,4 +1,4 @@
-io.write("\nLoading the Ray Cast Test system\n")
+io.write("Loading the Ray Cast Test system\n")
 
 local system = {}
 
@@ -37,6 +37,6 @@ function system.run(scene, uuid, dt)
 
     end
 end
-io.write("Finished loading the Ray Cast Test system\n\n")
+io.write("Finished loading the Ray Cast Test system\n")
 
 return system

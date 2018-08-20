@@ -2,6 +2,8 @@
 
 #include "core/log.h"
 
+#include "ECS/scene.h"
+
 #include <frozen/frozen.h>
 
 #include <sys/stat.h>
@@ -10,6 +12,12 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+
+#define MAX_JSON_LINE_LENGTH 80
+
+internal void writeCharacter(char character, uint32 n, FILE *file);
+internal void formatJSON(const char *filename);
+internal void formatJSONArrays(const char *filename);
 
 char* getFullFilePath(
 	const char *filename,
@@ -215,6 +223,35 @@ int32 copyFolder(const char *folder, const char *destination)
 	return 0;
 }
 
+char* readFile(const char *filename, uint64 *fileLength)
+{
+	char *fileBuffer = NULL;
+	*fileLength = 0;
+
+	FILE *file = fopen(filename, "r");
+
+	if (file)
+	{
+		fseek(file, 0, SEEK_END);
+		*fileLength = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		fileBuffer = calloc(*fileLength + 1, 1);
+
+		if (fileBuffer)
+		{
+			fread(fileBuffer, 1, *fileLength, file);
+		}
+
+		fclose(file);
+	}
+	else
+	{
+		LOG("Unable to open %s\n", filename);
+	}
+
+	return fileBuffer;
+}
+
 char* readString(FILE *file)
 {
 	uint32 stringLength;
@@ -226,6 +263,20 @@ char* readString(FILE *file)
 	return string;
 }
 
+UUID readStringAsUUID(FILE *file)
+{
+	uint32 stringLength;
+	fread(&stringLength, sizeof(uint32), 1, file);
+
+	char *string = malloc(stringLength);
+	fread(string, stringLength, 1, file);
+
+	UUID uuid = idFromName(string);
+	free(string);
+
+	return uuid;
+}
+
 void writeString(const char *string, FILE *file)
 {
 	uint32 stringLength = strlen(string) + 1;
@@ -233,7 +284,8 @@ void writeString(const char *string, FILE *file)
 	fwrite(string, stringLength, 1, file);
 }
 
-void writeJSON(const cJSON *json, const char *filename) {
+void writeJSON(const cJSON *json, const char *filename)
+{
 	char *jsonFilename = getFullFilePath(filename, "json", NULL);
 	FILE *file = fopen(jsonFilename, "w");
 
@@ -244,5 +296,285 @@ void writeJSON(const cJSON *json, const char *filename) {
 	fclose(file);
 
 	json_prettify_file(jsonFilename);
+	formatJSON(jsonFilename);
+
 	free(jsonFilename);
+}
+
+void writeCharacter(char character, uint32 n, FILE *file)
+{
+	for (uint32 i = 0; i < n; i++)
+	{
+		fwrite(&character, sizeof(char), 1, file);
+	}
+}
+
+void formatJSON(const char *filename)
+{
+	uint64 fileLength;
+	char *fileBuffer = readFile(filename, &fileLength);
+
+	FILE *file = fopen(filename, "w");
+
+	uint32 numSpaces;
+	uint32 currentIndent;
+	uint64 j;
+
+	for (uint64 i = 0; i < fileLength; i++)
+	{
+		char character = fileBuffer[i];
+
+		switch (character)
+		{
+			case '{':
+			case '[':
+				if (fileBuffer[i + 1] == '}')
+				{
+					fseek(file, -1, SEEK_CUR);
+					writeCharacter('\n', 1, file);
+					writeCharacter('\t', currentIndent, file);
+					writeCharacter(character, 1, file);
+					writeCharacter('\n', 1, file);
+					writeCharacter('\t', currentIndent + 1, file);
+					writeCharacter('\n', 1, file);
+					writeCharacter('\t', currentIndent, file);
+					character = fileBuffer[++i];
+				}
+				else if (i >= 2 &&
+					fileBuffer[i - 2] == ':' &&
+					fileBuffer[i + 1] != '}')
+				{
+					fseek(file, -1, SEEK_CUR);
+					writeCharacter('\n', 1, file);
+					writeCharacter('\t', currentIndent, file);
+				}
+
+				break;
+			default:
+				break;
+		}
+
+		writeCharacter(character, 1, file);
+
+		switch (character) {
+			case '\n':
+				if (i - 1 > 0 &&
+					fileBuffer[i - 1] == ',' &&
+					i - 2 > 0 &&
+					(fileBuffer[i - 2] == '}' || fileBuffer[i - 2] == ']'))
+				{
+					writeCharacter('\n', 1, file);
+				}
+				else
+				{
+					for (j = i + 1;
+						j < fileLength && fileBuffer[j] != '\n';
+						j++);
+
+					if ((fileBuffer[--j] == '{' ||
+						(fileBuffer[j - 1] == '{' && fileBuffer[j] == '}')) &&
+						fileBuffer[i - 1] != '{' &&
+						fileBuffer[i - 1] != '[')
+					{
+						writeCharacter('\n', 1, file);
+					}
+				}
+
+				numSpaces = 0;
+				for (j = i + 1; fileBuffer[j] == ' '; j++, i++)
+				{
+					numSpaces++;
+				}
+
+				currentIndent = numSpaces / 2;
+				writeCharacter('\t', currentIndent, file);
+
+				break;
+			default:
+				break;
+		}
+	}
+
+	fclose(file);
+	free(fileBuffer);
+
+	formatJSONArrays(filename);
+}
+
+void formatJSONArrays(const char *filename)
+{
+	uint64 fileLength;
+	char *fileBuffer = readFile(filename, &fileLength);
+
+	FILE *file = fopen(filename, "w");
+
+	uint64 j;
+	uint32 k;
+	uint32 currentLineLength;
+	char *array;
+	uint64 arrayStart;
+	uint32 arrayLength;
+	uint32 formattedArrayLength;
+	bool formatArray;
+	char arrayCharacter;
+	uint32 currentIndent;
+
+	for (uint64 i = 0; i < fileLength; i++)
+	{
+		char character = fileBuffer[i];
+
+		writeCharacter(character, 1, file);
+
+		if (character == '\t')
+		{
+			currentLineLength += 4;
+		}
+		else
+		{
+			currentLineLength++;
+		}
+
+		switch (character)
+		{
+			case '\n':
+				currentLineLength = 0;
+				break;
+			case ':':
+				for (j = i + 1;
+					fileBuffer[j] == '\n' || fileBuffer[j] == '\t';
+					j++);
+
+				if (fileBuffer[j] == '[')
+				{
+					arrayStart = j;
+
+					formatArray = true;
+					for (++j; fileBuffer[j] != ']'; j++)
+					{
+						if (fileBuffer[j] == '{' || fileBuffer[j] == '[')
+						{
+							formatArray = false;
+							break;
+						}
+					}
+
+					if (formatArray)
+					{
+						arrayLength = ++j - arrayStart;
+
+						if (arrayLength > 2)
+						{
+							array = malloc(arrayLength);
+							memcpy(array, &fileBuffer[arrayStart], arrayLength);
+
+							formattedArrayLength = 0;
+							for (j = 0; j < arrayLength; j++)
+							{
+								arrayCharacter = array[j];
+								if (arrayCharacter != '\t')
+								{
+									formattedArrayLength++;
+								}
+
+								if (arrayCharacter == ',')
+								{
+									formattedArrayLength--;
+								}
+							}
+
+							if (fileBuffer[arrayStart + arrayLength] == ',')
+							{
+								formattedArrayLength++;
+							}
+
+							if (++formattedArrayLength + currentLineLength
+								<= MAX_JSON_LINE_LENGTH)
+							{
+								writeCharacter(' ', 1, file);
+
+								for (j = 0; j < arrayLength; j++)
+								{
+									arrayCharacter = array[j];
+
+									if (arrayCharacter == '\n')
+									{
+										if (array[j - 1] == '[')
+										{
+											continue;
+										}
+
+										for (k = j + 1; array[k] == '\t'; k++);
+										if (array[k] == ']')
+										{
+											continue;
+										}
+
+										arrayCharacter = ' ';
+									}
+									else if (arrayCharacter == '\t')
+									{
+										continue;
+									}
+
+									writeCharacter(arrayCharacter, 1, file);
+								}
+
+								character = fileBuffer[
+									i = arrayStart + arrayLength - 1];
+
+								if (fileBuffer[i + 1] == ',')
+								{
+									writeCharacter(',', 1, file);
+
+									for (k = 0, j = i + 2; k < 3; j++)
+									{
+										if (fileBuffer[j] == '\n')
+										{
+											k++;
+										}
+									}
+
+									for (++j; fileBuffer[j] == '\t'; j++);
+
+									i++;
+									if (fileBuffer[j] != '{')
+									{
+										i++;
+									}
+								}
+							}
+
+							free(array);
+						}
+						else
+						{
+							for (currentIndent = 0, ++i; i <= arrayStart; i++)
+							{
+								character = fileBuffer[i];
+								if (character == '\t')
+								{
+									currentIndent++;
+								}
+
+								writeCharacter(character, 1, file);
+							}
+
+							writeCharacter('\n', 1, file);
+							writeCharacter('\t', currentIndent + 1, file);
+							writeCharacter('\n', 1, file);
+							writeCharacter('\t', currentIndent, file);
+
+							i--;
+						}
+					}
+				}
+
+				break;
+			default:
+				break;
+		}
+	}
+
+	fclose(file);
+	free(fileBuffer);
 }

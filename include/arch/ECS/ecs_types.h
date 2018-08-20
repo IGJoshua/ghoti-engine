@@ -5,14 +5,6 @@
 
 #include <ode/ode.h>
 
-#define UUID_LENGTH 63
-
-typedef union uuid_t
-{
-	char string[UUID_LENGTH + 1];
-	uint8 bytes[UUID_LENGTH + 1];
-} UUID;
-
 typedef struct component_data_entry_t
 {
 	UUID entity;
@@ -22,6 +14,8 @@ typedef struct component_data_entry_t
 
 typedef struct component_data_table_t
 {
+	// Name of component
+	UUID componentID;
 	// Maximum number of active components
 	uint32 numEntries;
 	// Byte size of the component structure

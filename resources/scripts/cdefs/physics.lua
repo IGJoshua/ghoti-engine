@@ -15,7 +15,7 @@ typedef enum joint_type_e
 
 typedef struct ray_collision_t
 {
-    Bool hasContact;
+    bool hasContact;
     real32 contact_pos[3];
 	real32 surface_normal[3];
 	real32 distance;

@@ -125,7 +125,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 
 		exportSceneSnapshot(scene, sceneFilename);
 
-		if (exportScene(sceneFilename) == -1)
+		if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
 		{
 			free(saveFolder);
 			free(sceneFolder);
@@ -142,7 +142,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 		free(jsonSceneFilename);
 
 		uint32 entityNumber = 0;
-		for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+		for (HashMapIterator itr = hashMapGetIterator(&scene->entities);
 			!hashMapIteratorAtEnd(itr);
 			hashMapMoveIterator(&itr))
 		{
@@ -157,7 +157,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 			UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 			exportEntitySnapshot(scene, *entity, entityFilename);
 
-			if (exportEntity(entityFilename) == -1)
+			if (exportEntity(entityFilename, LOG_FILE_NAME) == -1)
 			{
 				free(saveFolder);
 				free(sceneFolder);

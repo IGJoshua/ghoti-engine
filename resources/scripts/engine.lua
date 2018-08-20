@@ -15,8 +15,8 @@ io.write("Loaded ghoti library\n")
 
 engine.kazmath = ffi.load(
   ffi.os == "Windows"
-    and "./libkazmath.a"
-    or "lualib/libkazmath.so")
+    and "./kazmath.dll"
+    or "./lib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
 
@@ -37,11 +37,11 @@ io.write("Required scene\n")
 engine.components = require("resources/scripts/components")
 
 -- iterate over every file in resources/scripts/components/ and require them
-local testFile = io.popen(
+local componentFiles = io.popen(
   ffi.os == "Windows"
     and 'dir /b resources\\scripts\\components'
     or 'find resources/scripts/components -name "*.lua"')
-for line in testFile:lines() do
+for line in componentFiles:lines() do
   if ffi.os == "Windows" then
     line = 'resources/scripts/components/'..line
   end
@@ -54,11 +54,11 @@ engine.scenes = {}
 engine.systems = {}
 
 io.write("Searching for systems\n")
-local systemsFile = io.popen(
+local systemFiles = io.popen(
   ffi.os == "Windows"
     and 'dir /b resources\\scripts\\systems'
     or 'find resources/scripts/systems -name "*.lua"')
-for line in systemsFile:lines() do
+for line in systemFiles:lines() do
   if ffi.os == "Windows" then
     line = 'resources/scripts/systems/'..line
   end
@@ -148,7 +148,7 @@ function engine.runSystems(pScene, dt, physics)
 	  cdtItr = C.cdtGetIterator(
 		ffi.cast(
 		  "ComponentDataTable **",
-		C.hashMapGetData(scene.ptr.componentTypes, componentName))[0])
+		C.hashMapGetData(scene.ptr.componentTypes.ptr, componentName))[0])
 
 	  while C.cdtIteratorAtEnd(cdtItr) == 0 do
 		local valid = true
@@ -158,7 +158,7 @@ function engine.runSystems(pScene, dt, physics)
 		  local componentTable = ffi.cast(
 			"ComponentDataTable **",
 			C.hashMapGetData(
-			  scene.ptr.componentTypes,
+			  scene.ptr.componentTypes.ptr,
 			  componentID))
 
 		  if ffi.cast("int64", componentTable) ~= null
