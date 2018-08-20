@@ -1,0 +1,121 @@
+{
+	"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^=",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32":
+				[
+					0.296155720949173,
+					-0.64571702480316162,
+					-0.17098557949066162,
+					0.68271899223327637
+				]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"capsule":
+		[
+			{
+				"name": "radius",
+				"float32": 0.86602538824081421
+			},
+
+			{
+				"name": "length",
+				"float32": 0.99999988079071045
+			}
+		],
+
+		"collision_tree_node":
+		[
+			{
+				"name": "type",
+				"int32": 2
+			},
+
+			{
+				"name": "collision volume",
+				"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^="
+			},
+
+			{
+				"name": "next collider",
+				"uuid": ""
+			},
+
+			{
+				"name": "is trigger",
+				"bool": false
+			},
+
+			{
+				"name": "geometry ID",
+				"int64": 0
+			}
+		]
+	}
+}

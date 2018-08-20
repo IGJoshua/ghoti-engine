@@ -15,7 +15,9 @@ internal UUID transformComponentID = {};
 internal
 void initCleanGlobalTransformsSystem(Scene *scene)
 {
-	ComponentDataTable **table = hashMapGetData(scene->componentTypes, &transformComponentID);
+	ComponentDataTable **table = hashMapGetData(
+		&scene->componentTypes,
+		&transformComponentID);
 
 	for(ComponentDataTableIterator itr = cdtGetIterator(*table);
 		!cdtIteratorAtEnd(itr);

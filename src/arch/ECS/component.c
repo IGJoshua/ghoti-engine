@@ -1,6 +1,8 @@
 #include "ECS/component.h"
 #include "ECS/ecs_types.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "core/log.h"
 
 #include "data/hash_map.h"
@@ -20,6 +22,7 @@ ComponentDataEntry *getEntry(ComponentDataTable *table, uint32 index)
 }
 
 ComponentDataTable *createComponentDataTable(
+	UUID componentID,
 	uint32 numEntries,
 	uint32 componentSize)
 {
@@ -30,6 +33,7 @@ ComponentDataTable *createComponentDataTable(
 
 	ASSERT(ret != 0);
 
+	ret->componentID = componentID;
 	ret->componentSize = componentSize;
 	ret->firstFree = 0;
 	ret->numEntries = numEntries;
@@ -48,8 +52,9 @@ ComponentDataTable *createComponentDataTable(
 		entry->nextFree = i + 1;
 	}
 
-	LOG(
-		"Created a component data table with %d entries of %d bytes\n",
+	LOG("Created %s component data table to hold %d entries "
+		"with a size of %d bytes\n",
+		componentID.string,
 		numEntries,
 		componentSize);
 
@@ -67,7 +72,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
-	uint32 *indexPtr = hashMapGetData(table->idToIndex, &entityID);
+	uint32 *indexPtr = hashMapGetData(&table->idToIndex, &entityID);
 	if (!indexPtr)
 	{
 		// Find an empty slot in the component data table
@@ -84,7 +89,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 		ASSERT(i < table->numEntries);
 
 		// Associate the UUID with the index in the map
-		hashMapInsert(table->idToIndex, &entityID, &i);
+		hashMapInsert(&table->idToIndex, &entityID, &i);
 	}
 	// If the entity already exists in the table
 	else
@@ -104,6 +109,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	memcpy(entry->entity.string, &entityID, sizeof(UUID));
 	// Put the component data into the table
 	memcpy(entry->data, componentData, table->componentSize);
+	loadAssets(table->componentID, entry);
 
 	entry->nextFree = table->numEntries + 1;
 
@@ -117,11 +123,12 @@ void cdtRemove(
 	// If the entity exists in the table
 	uint32 *pIndex =
 		hashMapGetData(
-			table->idToIndex,
+			&table->idToIndex,
 			&entityID);
 	if (pIndex)
 	{
 		ComponentDataEntry *entry = getEntry(table, *pIndex);
+		freeAssets(table->componentID, entry);
 
 		memset(
 			entry->entity.string,
@@ -131,13 +138,13 @@ void cdtRemove(
 		entry->nextFree = table->firstFree;
 		table->firstFree = *pIndex;
 
-		hashMapDelete(table->idToIndex, &entityID);
+		hashMapDelete(&table->idToIndex, &entityID);
 	}
 }
 
 void *cdtGet(ComponentDataTable *table, UUID entityID)
 {
-	uint32 *index = hashMapGetData(table->idToIndex, &entityID);
+	uint32 *index = hashMapGetData(&table->idToIndex, &entityID);
 
 	if (index)
 	{

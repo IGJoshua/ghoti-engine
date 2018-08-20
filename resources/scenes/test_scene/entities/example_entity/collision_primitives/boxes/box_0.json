@@ -1,0 +1,116 @@
+{
+	"uuid": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32":
+				[
+					0.75533926486968994,
+					-0.44246748089790344,
+					0.22123374044895172,
+					0.4298149049282074
+				]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"box":
+		[
+			{
+				"name": "bounds",
+				"float32": [1.1858540773391724, 1.1858539581298828, 0.75]
+			}
+		],
+
+		"collision_tree_node":
+		[
+			{
+				"name": "type",
+				"int32": 0
+			},
+
+			{
+				"name": "collision volume",
+				"uuid": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka"
+			},
+
+			{
+				"name": "next collider",
+				"uuid": "RSw%Hv4XcwXLPFhGHi2tCd<vniRRl:yE7$c4-Alyv>P:$t`TgN%Ihx=WIlA`dte"
+			},
+
+			{
+				"name": "is trigger",
+				"bool": false
+			},
+
+			{
+				"name": "geometry ID",
+				"int64": 0
+			}
+		]
+	}
+}

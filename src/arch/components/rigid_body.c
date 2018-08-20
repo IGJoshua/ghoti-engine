@@ -97,6 +97,7 @@ void createCollisionGeom(
 			box->bounds.x * trans->globalScale.x * 2,
 			box->bounds.y * trans->globalScale.y * 2,
 			box->bounds.z * trans->globalScale.z * 2);
+		dGeomSetQuaternion(node->geomID, (dReal*)&trans->globalRotation);
 	} break;
 	case COLLISION_GEOM_TYPE_SPHERE:
 	{
@@ -114,7 +115,11 @@ void createCollisionGeom(
 			entity,
 			idFromName("capsule"));
 
-		node->geomID = dCreateCapsule(spaceID, capsule->radius, capsule->length);
+		node->geomID = dCreateCapsule(
+			spaceID,
+			capsule->radius,
+			capsule->length);
+		dGeomSetQuaternion(node->geomID, (dReal*)&trans->globalRotation);
 	} break;
 	default:
 	{

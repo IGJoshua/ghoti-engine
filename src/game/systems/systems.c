@@ -13,7 +13,7 @@
 #define SYSTEM(fn) System create ## fn ## System(void)
 #define REGISTER_SYSTEM(sys, name) System sys = create ## sys ## System();\
 	key = idFromName(name);\
-	hashMapInsert(systemRegistry, &key, &sys);
+	hashMapInsert(&systemRegistry, &key, &sys);
 
 
 SYSTEM(Renderer);
@@ -25,7 +25,6 @@ SYSTEM(SimulateRigidbodies);
 SYSTEM(CleanHitList);
 SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
-SYSTEM(Audio);
 
 extern HashMap systemRegistry;
 
@@ -48,7 +47,6 @@ void initSystems(void)
 	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
-	REGISTER_SYSTEM(Audio, "audio");
 
 }
 
@@ -57,7 +55,7 @@ void freeSystems(void)
 	// NOTE: If any of the systems have
 	//       global shutdown functions, call them here
 
-	for (HashMapIterator itr = hashMapGetIterator(systemRegistry);
+	for (HashMapIterator itr = hashMapGetIterator(&systemRegistry);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
 	{

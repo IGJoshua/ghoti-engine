@@ -83,7 +83,7 @@ void initJointInformationSystem(Scene *scene)
 {
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
-				 scene->componentTypes,
+				 &scene->componentTypes,
 				 &jointInfoComponentID));
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))

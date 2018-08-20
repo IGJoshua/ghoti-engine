@@ -18,6 +18,7 @@ typedef struct component_definition_t
 
 typedef struct component_data_table_t
 {
+  UUID componentID;
   uint32 numEntries;
   uint32 componentSize;
   uint32 firstFree;

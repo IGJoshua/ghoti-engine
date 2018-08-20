@@ -4,6 +4,8 @@
 #include "core/window.h"
 #include "core/input.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
@@ -29,15 +31,6 @@
 
 #include <ode/ode.h>
 
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <AL/efx-creative.h>
-#include <AL/efx.h>
-#include <AL/efx-presets.h>
-
-#include <stb/stb_vorbis.c>
-
 #include <time.h>
 #include <stdlib.h>
 
@@ -50,18 +43,18 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
-int32 main()
-{
-	int32 channels;
-	int32 sample_rate;
-	int16 *output;
-	stb_vorbis_decode_filename("resources/audio/distant_travels.ogg", &channels, &sample_rate, &output);
+#define WINDOW_TITLE "Ghoti 0.6.1"
 
+int32 main(int32 argc, char *argv[])
+{
 	srand(time(0));
 
-	remove(LOG_FILE_NAME);
+	if (LOG_FILE_NAME)
+	{
+		remove(LOG_FILE_NAME);
+	}
 
-	GLFWwindow *window = initWindow(640, 480, "Ghoti");
+	GLFWwindow *window = initWindow(640, 480, WINDOW_TITLE);
 
 	if (!window)
 	{
@@ -78,6 +71,8 @@ int32 main()
 	activeScenes = createList(sizeof(Scene *));
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
+
+	initializeAssetManager();
 
 	dInitODE();
 
@@ -345,6 +340,8 @@ int32 main()
 	}
 
 	freeSystems();
+
+	shutdownAssetManager();
 
 	dCloseODE();
 

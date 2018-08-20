@@ -4,4 +4,4 @@ math.randomseed(os.time())
 
 local C = engine.C
 
-C.loadScene("ray_test")
+C.loadScene("test_scene")

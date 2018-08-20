@@ -23,18 +23,11 @@ int32 unloadScene(const char *name);
 int32 shutdownScene(Scene **scene);
 int32 deactivateScene(Scene *scene);
 
-ComponentDefinition getComponentDefinition(const Scene *scene, UUID name);
-void freeComponentDefinition(ComponentDefinition *componentDefinition);
-
-uint32 getDataTypeSize(DataType type);
-char* getDataTypeString(
-	const ComponentValueDefinition *componentValueDefinition);
-
 void exportEntitySnapshot(
-	const Scene *scene,
+	Scene *scene,
 	UUID entity,
 	const char *filename);
-void exportSceneSnapshot(const Scene *scene, const char *filename);
+void exportSceneSnapshot(Scene *scene, const char *filename);
 
 void sceneAddRenderFrameSystem(
 	Scene *scene,

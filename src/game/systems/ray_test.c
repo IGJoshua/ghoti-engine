@@ -35,20 +35,6 @@ void runRayTestSystem(Scene *scene, UUID entityID, real64 dt)
     {
         return;
     }
-
-	TransformComponent *transform = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		transformComponentID);
-	RigidBodyComponent *body = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		rigidBodyComponentID);
-
-
-    
-
-
 }
 
 System createRayTestSystem(void)
