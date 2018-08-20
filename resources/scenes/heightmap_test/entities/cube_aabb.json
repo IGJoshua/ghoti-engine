@@ -1,5 +1,5 @@
 {
-	"uuid": "heightmap_test",
+	"uuid": "cube_aabb",
 
 	"components":
 	{
@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32": [0.0, 0.0, 0.0]
 			},
 
 			{
@@ -22,7 +22,7 @@
 
 			{
 				"name": "parent",
-				"uuid": ""
+				"uuid": "cube"
 			},
 
 			{
@@ -37,7 +37,7 @@
 
 			{
 				"name": "dirty",
-				"bool": false
+				"bool": true
 			},
 
 			{
@@ -71,59 +71,11 @@
 			}
 		],
 
-		"heightmap":
+		"box":
 		[
 			{
-				"name": "heightfield ptr",
-				"uint64": 0
-			},
-			{
-				"name": "heightmap name",
-				"char(1024)": "heightmap.tga"
-			},
-			{
-				"name": "texture name",
-				"char(1024)": "gold.png"
-			},
-			{
-				"name": "size x",
-				"uint32": 20
-			},
-			{
-				"name": "size z",
-				"uint32": 20
-			},
-			{
-				"name": "max height",
-				"uint32": 7
-			},
-			{
-				"name": "units per tile",
-				"float32": 3.0
-			},
-			{
-				"name": "uvScaleX",
-				"float32": 1.0
-			},
-			{
-				"name": "uvScaleZ",
-				"float32": 1.0
-			}
-		],
-
-		"collision":
-		[
-			{
-				"name": "collisionTree",
-				"uuid": "heightmap_test"
-			},
-			{
-				"name": "hitList",
-				"uuid": ""
-			},
-			{
-				"name": "lastHitList",
-				"uuid": ""
+				"name": "bounds",
+				"float32": [0.5, 0.5, 0.5]
 			}
 		],
 
@@ -134,8 +86,8 @@
 				"int32": 0
 			},
 			{
-				"name": "collision_volume",
-				"uuid": "heightmap_test"
+				"name": "collisionVolume",
+				"uuid": "cube"
 			},
 			{
 				"name": "nextCollider",

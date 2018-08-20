@@ -136,6 +136,10 @@ void initRenderHeightmapSystem(Scene *scene)
 	{
 		UUID entityID = cdtIteratorGetUUID(itr);
 		HeightmapComponent *heightmap = cdtIteratorGetData(itr);
+		TransformComponent *transform = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
 
 		ILuint imageID;
 		if (loadTextureWithFormat(
@@ -157,7 +161,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		uint32 numVerts = (heightmap->sizeX + 1) * (heightmap->sizeZ + 1);
 		Vertex *verts = calloc(numVerts, sizeof(Vertex));
 
-		// TODO: Load the image into ODE
+		// Load the image into ODE
 		dHeightfieldDataID heightfieldData = dGeomHeightfieldDataCreate();
 		dGeomHeightfieldDataBuildByte(
 			heightfieldData,
@@ -175,8 +179,32 @@ void initRenderHeightmapSystem(Scene *scene)
 			heightfieldData,
 			0,
 			255);
-		dGeomID heightfieldGeom = dCreateHeightfield(scene->physicsSpace, heightfieldData, 1);
-		dGeomHeightfieldSetHeightfieldData(heightfieldGeom, heightfieldData);
+		heightmap->heightfieldGeom = dCreateHeightfield(
+			scene->physicsSpace,
+			heightfieldData,
+			1);
+		dGeomHeightfieldSetHeightfieldData(
+			heightmap->heightfieldGeom,
+			heightfieldData);
+
+		// Position the heightfield correctly
+		dGeomSetPosition(
+			heightmap->heightfieldGeom,
+			transform->position.x,
+			transform->position.y,
+			transform->position.z);
+
+		dQuaternion q;
+		q[0] = transform->rotation.w;
+		q[1] = transform->rotation.x;
+		q[2] = transform->rotation.y;
+		q[3] = transform->rotation.z;
+
+		dGeomSetQuaternion(heightmap->heightfieldGeom, q);
+
+		void *userData = calloc(1, sizeof(UUID));
+		memcpy(userData, &entityID, sizeof(UUID));
+		dGeomSetData(heightmap->heightfieldGeom, userData);
 
 		// Create verts at the correct heights (currently it's doing it wrong)
 		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
@@ -260,7 +288,6 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		uint32 index = 0;
 
-		// TODO: Make this generate a more normal triangle mesh
 		for (uint32 triX = 0; triX < heightmap->sizeX; ++triX)
 		{
 			for (uint32 triZ = 0; triZ < heightmap->sizeZ; ++triZ)
@@ -474,24 +501,35 @@ void endRenderHeightmapSystem(Scene *scene, real64 dt)
 internal
 void shutdownRenderHeightmapSystem(Scene *scene)
 {
-	// TODO: free any information in the hash map with the scene, and delete the hash map entry
 	HashMap *map = hashMapGetData(heightmapModels, &scene);
 
-	for (HashMapIterator itr = hashMapGetIterator(*map);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
+	for (ComponentDataTableIterator itr = cdtGetIterator(
+			 *(ComponentDataTable **)hashMapGetData(
+				 scene->componentTypes,
+				 &heightmapComponentID));
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
 	{
-		Mesh *m = hashMapIteratorGetValue(itr);
+		HeightmapComponent *heightmap = cdtIteratorGetData(itr);
+		UUID entity = cdtIteratorGetUUID(itr);
+
+		// Delete the texture reference used for this heightmap
+		freeTexture(heightmap->textureName);
+
+		Mesh *m = hashMapGetData(*map, &entity);
 
 		glBindVertexArray(m->vertexArray);
 		glDeleteBuffers(1, &m->vertexBuffer);
 		glDeleteBuffers(1, &m->indexBuffer);
 		glBindVertexArray(0);
 
-		// TODO: destroy the geom from the heightmap, and the user data
-		//       this'll require changing the for loop to go over the cdt
-
 		glDeleteVertexArrays(1, &m->vertexArray);
+
+		free(dGeomGetData(heightmap->heightfieldGeom));
+		dHeightfieldDataID heightfieldData = dGeomHeightfieldGetHeightfieldData(
+			heightmap->heightfieldGeom);
+		dGeomDestroy(heightmap->heightfieldGeom);
+		dGeomHeightfieldDataDestroy(heightfieldData);
 	}
 
 	hashMapClear(*map);
