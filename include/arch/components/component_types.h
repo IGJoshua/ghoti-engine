@@ -108,7 +108,7 @@ typedef struct collision_tree_node_t
 	dGeomID geomID;
 } CollisionTreeNode;
 
-typedef struct aabb_component_t
+typedef struct obb_component_t
 {
 	kmVec3 bounds;
 } BoxComponent;

@@ -1,5 +1,5 @@
 {
-	"uuid": ":(@w/S?W)`;W)LXPk^-=w-'w?yPra`wv:l+j)`i^pFd:$2+W==LmHHc@9T'nIs.",
+	"uuid": "RSw%Hv4XcwXLPFhGHi2tCd<vniRRl:yE7$c4-Alyv>P:$t`TgN%Ihx=WIlA`dte",
 
 	"components":
 	{
@@ -71,39 +71,39 @@
 			}
 		],
 
-		"model":
+		"sphere":
 		[
 			{
-				"name": "name",
-				"char(1024)": "example_model"
-			},
-
-			{
-				"name": "visible",
-				"bool": true
+				"name": "radius",
+				"float32": 0.5
 			}
 		],
 
-		"wireframe":
+		"collision_tree_node":
 		[
 			{
-				"name": "visible",
+				"name": "type",
+				"int32": 1
+			},
+
+			{
+				"name": "collision volume",
+				"uuid": "RSw%Hv4XcwXLPFhGHi2tCd<vniRRl:yE7$c4-Alyv>P:$t`TgN%Ihx=WIlA`dte"
+			},
+
+			{
+				"name": "next collider",
+				"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^="
+			},
+
+			{
+				"name": "is trigger",
 				"bool": false
 			},
 
 			{
-				"name": "line width",
-				"float32": 1.0
-			},
-
-			{
-				"name": "custom color",
-				"bool": false
-			},
-
-			{
-				"name": "color",
-				"float32": [1.0, 1.0, 1.0]
+				"name": "geometry ID",
+				"int64": 0
 			}
 		]
 	}

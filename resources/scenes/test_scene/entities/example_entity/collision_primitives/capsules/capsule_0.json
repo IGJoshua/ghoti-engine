@@ -1,5 +1,5 @@
 {
-	"uuid": "&7T-g,IYLfPQLVW@*,nLLxj+%N7uvuy*7%nAKNb/s1POeeNnYp9WX9Q,MM)@(wH",
+	"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^=",
 
 	"components":
 	{
@@ -7,12 +7,18 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 5]
+				"float32": [0, 0, 0]
 			},
 
 			{
 				"name": "rotation",
-				"float32": [0, 0, 0, 1]
+				"float32":
+				[
+					0.296155720949173,
+					-0.64571702480316162,
+					-0.17098557949066162,
+					0.68271899223327637
+				]
 			},
 
 			{
@@ -71,31 +77,44 @@
 			}
 		],
 
-		"camera":
+		"capsule":
 		[
 			{
-				"name": "near plane",
-				"float32": 0.01
+				"name": "radius",
+				"float32": 0.86602538824081421
 			},
 
 			{
-				"name": "far plane",
-				"float32": 1000
+				"name": "length",
+				"float32": 0.99999988079071045
+			}
+		],
+
+		"collision_tree_node":
+		[
+			{
+				"name": "type",
+				"int32": 2
 			},
 
 			{
-				"name": "aspect ratio",
-				"float32": 1
+				"name": "collision volume",
+				"uuid": "D&pZooO+=f-0DVh)+bOhYj=(T>4OyNSg&@TJAo7C%PvbWvK$d*k''>WaYa6P5^="
 			},
 
 			{
-				"name": "field of view",
-				"float32": 80
+				"name": "next collider",
+				"uuid": ""
 			},
 
 			{
-				"name": "projection type",
-				"int32": 0
+				"name": "is trigger",
+				"bool": false
+			},
+
+			{
+				"name": "geometry ID",
+				"int64": 0
 			}
 		]
 	}
