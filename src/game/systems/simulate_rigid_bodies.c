@@ -70,7 +70,6 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			*volume2,
 			collisionTreeNodeComponentID);
 
-		/*
 		RigidBodyComponent *body1 = sceneGetComponentFromEntity(
 			scene,
 			node1->collisionVolume,
@@ -80,10 +79,10 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			scene,
 			node2->collisionVolume,
 			rigidBodyComponentID);
-		*/
 
 		// FIXME: This should not collide if both bodies are kinematic
-		if (node1->isTrigger && node2->isTrigger)
+		if ((node1->isTrigger && node2->isTrigger)
+			|| ((body1 && !body1->dynamic) && (body2 && !body2->dynamic)))
 		{
 			return;
 		}
