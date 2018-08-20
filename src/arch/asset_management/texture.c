@@ -17,7 +17,7 @@
 extern HashMap textures;
 
 #define NUM_TEXTURE_FILE_FORMATS 7
-const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
+internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
 	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
 };
 
@@ -28,11 +28,10 @@ int32 loadTexture(const char *filename, const char *name)
 	Texture *textureResource = getTexture(name);
 	if (!textureResource)
 	{
-		Texture texture = {};
-
 		char *textureName = strrchr(filename, '/') + 1;
-
 		LOG("Loading texture (%s)...\n", textureName);
+
+		Texture texture = {};
 
 		texture.name = idFromName(name);
 		texture.refCount = 1;

@@ -19,8 +19,6 @@ extern HashMap textures;
 
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
 internal void freeSubset(Subset *subset);
-internal int32 loadModelTextures(Model *model);
-internal UUID getMaskTextureName(Model *model, char suffix);
 
 internal void deleteModel(const char *name);
 
@@ -60,21 +58,39 @@ int32 loadModel(const char *name)
 					model.subsets[i].name = readStringAsUUID(assetFile);
 				}
 
-				model.materialTexture = getMaskTextureName(&model, 'm');
-				model.opacityTexture = getMaskTextureName(&model, 'o');
+				char *masksFolder = getFullFilePath("masks", NULL, modelFolder);
 
-				for (uint32 i = 0; i < model.numSubsets; i++)
-				{
-					error = loadSubset(&model.subsets[i], assetFile, meshFile);
-					if (error == -1)
-					{
-						break;
-					}
-				}
+				error = loadMaskTexture(
+					masksFolder,
+					&model,
+					'm',
+					&model.materialTexture);
 
 				if (error != -1)
 				{
-					error = loadModelTextures(&model);
+					error = loadMaskTexture(
+						masksFolder,
+						&model,
+						'o',
+						&model.opacityTexture);
+				}
+
+				free(masksFolder);
+
+				if (error != -1)
+				{
+					for (uint32 i = 0; i < model.numSubsets; i++)
+					{
+						error = loadSubset(
+							&model.subsets[i],
+							assetFile,
+							meshFile);
+
+						if (error == -1)
+						{
+							break;
+						}
+					}
 
 					if (error != -1)
 					{
@@ -200,68 +216,4 @@ void freeSubset(Subset *subset)
 	freeMesh(&subset->mesh);
 	freeMaterial(&subset->material);
 	freeMask(&subset->mask);
-}
-
-int32 loadModelTextures(Model *model)
-{
-	LOG("Loading textures...\n");
-
-	char *modelFolder = getFullFilePath(
-		model->name.string,
-		NULL,
-		"resources/models");
-	char *masksFolder = getFullFilePath("masks", NULL, modelFolder);
-	free(modelFolder);
-
-	if (loadMaskTexture(masksFolder, model->materialTexture) == -1)
-	{
-		free(masksFolder);
-		return -1;
-	}
-
-	if (loadMaskTexture(masksFolder, model->opacityTexture) == -1)
-	{
-		free(masksFolder);
-		return -1;
-	}
-
-	free(masksFolder);
-
-	for (uint32 i = 0; i < model->numSubsets; i++)
-	{
-		Subset *subset = &model->subsets[i];
-
-		if (loadMaterialTextures(&subset->material) == -1)
-		{
-			return -1;
-		}
-
-		Mask *mask = &subset->mask;
-
-		if (loadMaterialTextures(&mask->collectionMaterial) == -1)
-		{
-			return -1;
-		}
-
-		if (loadMaterialTextures(&mask->grungeMaterial) == -1)
-		{
-			return -1;
-		}
-
-		if (loadMaterialTextures(&mask->wearMaterial) == -1)
-		{
-			return -1;
-		}
-	}
-
-	LOG("Successfully loaded textures\n");
-
-	return 0;
-}
-
-UUID getMaskTextureName(Model *model, char suffix)
-{
-	UUID textureName = {};
-	sprintf(textureName.string, "%s_%c", model->name.string, suffix);
-	return textureName;
 }

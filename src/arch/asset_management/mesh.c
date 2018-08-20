@@ -3,6 +3,7 @@
 
 #include "core/log.h"
 
+#include <malloc.h>
 #include <stddef.h>
 
 int32 loadMesh(Mesh *mesh, FILE *file)

@@ -10,6 +10,7 @@
 #include "data/data_types.h"
 #include "data/hash_map.h"
 
+#include <malloc.h>
 #include <string.h>
 
 extern HashMap textures;
@@ -28,27 +29,30 @@ int32 loadMask(Mask *mask, FILE *file)
 	return 0;
 }
 
-int32 loadMaskTexture(const char *masksFolder, UUID textureName)
+int32 loadMaskTexture(const char *masksFolder,
+	Model *model,
+	char suffix,
+	UUID *textureName)
 {
-	if (!hashMapGetData(&textures, &textureName))
+	memset(textureName, 0, sizeof(UUID));
+	sprintf(textureName->string, "%s_%c", model->name.string, suffix);
+
+	char *filename = malloc(
+		strlen(masksFolder) + strlen(textureName->string) + 5);
+	sprintf(filename, "%s/mt_%s", masksFolder, textureName->string);
+
+	char *fullFilename = getFullTextureFilename(filename);
+	free(filename);
+
+	if (fullFilename)
 	{
-		char *filename = malloc(
-			strlen(masksFolder) + strlen(textureName.string) + 5);
-		sprintf(filename, "%s/mt_%s", masksFolder, textureName.string);
-
-		char *fullFilename = getFullTextureFilename(filename);
-		free(filename);
-
-		if (fullFilename)
+		if (loadTexture(fullFilename, textureName->string) == -1)
 		{
-			if (loadTexture(fullFilename, textureName.string) == -1)
-			{
-				free(fullFilename);
-				return -1;
-			}
-
 			free(fullFilename);
+			return -1;
 		}
+
+		free(fullFilename);
 	}
 
 	return 0;

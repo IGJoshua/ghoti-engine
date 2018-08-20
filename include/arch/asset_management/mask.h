@@ -7,5 +7,9 @@
 #include <stdio.h>
 
 int32 loadMask(Mask *mask, FILE *file);
-int32 loadMaskTexture(const char *masksFolder, UUID textureName);
+int32 loadMaskTexture(
+	const char *masksFolder,
+	Model *model,
+	char suffix,
+	UUID *textureName);
 void freeMask(Mask *mask);

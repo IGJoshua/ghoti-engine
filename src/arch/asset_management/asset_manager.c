@@ -63,7 +63,7 @@ void shutdownAssetManager(void) {
 			 !listIteratorAtEnd(listItr);
 			 listMoveIterator(&listItr))
 		{
-			free(*LIST_ITERATOR_GET_ELEMENT(char*, listItr));
+			free(LIST_ITERATOR_GET_ELEMENT(MaterialFolder, listItr)->folder);
 		}
 
 		listClear(materialFoldersList);

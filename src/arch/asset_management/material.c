@@ -18,11 +18,15 @@
 extern HashMap textures;
 extern HashMap materialFolders;
 
+internal const char materialComponentCharacters[] = {
+	'b', 'e', 'm', 'n', 'r'
+};
+
 internal void loadMaterialFolders(UUID name);
-internal UUID getMaterialComponentTextureName(
-	Material *material,
-	MaterialComponentType materialComponentType);
-internal int32 loadMaterialTexture(UUID materialName, UUID textureName);
+int32 loadMaterialComponentTexture(
+	UUID materialName,
+	MaterialComponentType materialComponentType,
+	UUID *textureName);
 
 int32 loadMaterial(Material *material, FILE *file)
 {
@@ -42,10 +46,13 @@ int32 loadMaterial(Material *material, FILE *file)
 			MaterialComponentType materialComponentType =
 				(MaterialComponentType)i;
 
-			materialComponent->texture =
-				getMaterialComponentTextureName(
-					material,
-					materialComponentType);
+			if (loadMaterialComponentTexture(
+				material->name,
+				materialComponentType,
+				&materialComponent->texture) == -1)
+			{
+				return -1;
+			}
 
 			fread(&materialComponent->value.x, sizeof(uint32), 1, file);
 			switch (materialComponentType)
@@ -68,25 +75,6 @@ int32 loadMaterial(Material *material, FILE *file)
 	return 0;
 }
 
-int32 loadMaterialTextures(Material *material)
-{
-	if (strlen(material->name.string) > 0)
-	{
-		for (uint32 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-		{
-			MaterialComponent *materialComponent = &material->components[j];
-			if (loadMaterialTexture(
-				material->name,
-				materialComponent->texture) == -1)
-			{
-				return -1;
-			}
-		}
-	}
-
-	return 0;
-}
-
 void freeMaterial(Material *material)
 {
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
@@ -101,140 +89,140 @@ void loadMaterialFolders(UUID name)
 	{
 		List materialNames = createList(sizeof(UUID));
 
-		UUID materialName = idFromName(strtok(name.string, "_"));
+		UUID fullMaterialName = name;
+		UUID materialName = idFromName(strtok(fullMaterialName.string, "_"));
 		while (strlen(materialName.string) > 0)
 		{
 			listPushBack(&materialNames, &materialName);
 			materialName = idFromName(strtok(NULL, "_"));
 		}
 
-		List materialFoldersList = createList(sizeof(char*));
+		List materialFoldersList = createList(sizeof(MaterialFolder));
 
-		char *materialFolder = NULL;
+		char *materialFolderPath = NULL;
+		fullMaterialName = idFromName("");
 		for (ListIterator itr = listGetIterator(&materialNames);
 			 !listIteratorAtEnd(itr);
 			 listMoveIterator(&itr))
 		{
 			materialName = *LIST_ITERATOR_GET_ELEMENT(UUID, itr);
-			if (!materialFolder)
+			if (!materialFolderPath)
 			{
-				materialFolder = malloc(strlen(materialName.string) + 3);
-				sprintf(materialFolder, "m_%s", materialName.string);
+				materialFolderPath = malloc(strlen(materialName.string) + 3);
+				sprintf(materialFolderPath, "m_%s", materialName.string);
 
-				char *folder = malloc(strlen(materialFolder) + 1);
-				strcpy(folder, materialFolder);
+				MaterialFolder materialFolder;
 
-				listPushFront(&materialFoldersList, &folder);
+				materialFolder.folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(materialFolder.folder, materialFolderPath);
+
+				fullMaterialName = materialName;
+				materialFolder.name = fullMaterialName;
+
+				listPushFront(&materialFoldersList, &materialFolder);
 			}
 			else
 			{
-				materialFolder = realloc(
-					materialFolder,
-					strlen(materialFolder) * 2
-					+ strlen(materialName.string) + 3);
+				MaterialFolder materialFolder;
 
-				char *folder = malloc(strlen(materialFolder) + 1);
-				strcpy(folder, materialFolder);
-
+				name = fullMaterialName;
 				sprintf(
-					materialFolder,
-					"%s/%s_%s",
-					folder,
-					folder,
+					fullMaterialName.string,
+					"%s_%s",
+					name.string,
 					materialName.string);
 
-				free(folder);
-				folder = malloc(strlen(materialFolder) + 1);
-				strcpy(folder, materialFolder);
+				materialFolder.name = fullMaterialName;
 
-				listPushFront(&materialFoldersList, &folder);
+				char *folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(folder, materialFolderPath);
+
+				materialFolderPath = realloc(
+					materialFolderPath,
+					strlen(materialFolderPath) +
+					strlen(fullMaterialName.string) + 4);
+
+				sprintf(
+					materialFolderPath,
+					"%s/m_%s",
+					folder,
+					fullMaterialName.string);
+
+				free(folder);
+
+				materialFolder.folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(materialFolder.folder, materialFolderPath);
+
+				listPushFront(&materialFoldersList, &materialFolder);
 			}
 		}
 
 		listClear(&materialNames);
-		free(materialFolder);
+		free(materialFolderPath);
 
-		hashMapInsert(&materialFolders, &name, &materialFoldersList);
-	}
-}
-
-UUID getMaterialComponentTextureName(
-	Material *material,
-	MaterialComponentType materialComponentType)
-{
-	UUID textureName = {};
-
-	char suffix = '\0';
-	switch (materialComponentType) {
-		case MATERIAL_COMPONENT_TYPE_BASE:
-			suffix = 'b';
-			break;
-		case MATERIAL_COMPONENT_TYPE_EMISSIVE:
-			suffix = 'e';
-			break;
-		case MATERIAL_COMPONENT_TYPE_METALLIC:
-			suffix = 'm';
-			break;
-		case MATERIAL_COMPONENT_TYPE_NORMAL:
-			suffix = 'n';
-			break;
-		case MATERIAL_COMPONENT_TYPE_ROUGHNESS:
-			suffix = 'r';
-			break;
-		default:
-			break;
-	}
-
-	sprintf(textureName.string, "%s_%c", material->name.string, suffix);
-
-	return textureName;
-}
-
-int32 loadMaterialTexture(UUID materialName, UUID textureName)
-{
-	if (!hashMapGetData(&textures, &textureName))
-	{
-		List *materialFoldersList = (List*)hashMapGetData(
+		hashMapInsert(
 			&materialFolders,
-			&materialName);
+			&fullMaterialName,
+			&materialFoldersList);
+	}
+}
 
-		char *fullFilename = NULL;
-		for (ListIterator itr = listGetIterator(materialFoldersList);
-			 !listIteratorAtEnd(itr);
-			 listMoveIterator(&itr))
-		{
-			char *materialFolder = *LIST_ITERATOR_GET_ELEMENT(char*, itr);
+int32 loadMaterialComponentTexture(
+	UUID materialName,
+	MaterialComponentType materialComponentType,
+	UUID *textureName
+) {
+	memset(textureName, 0, sizeof(UUID));
 
-			char *filename = malloc(
-				strlen(textureName.string) + strlen(materialFolder) + 24);
+	List *materialFoldersList = (List*)hashMapGetData(
+		&materialFolders,
+		&materialName);
 
-			sprintf(
-				filename,
-				"resources/materials/%s/t_%s",
-				materialFolder,
-				textureName.string);
+	char *fullFilename = NULL;
+	for (ListIterator itr = listGetIterator(materialFoldersList);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		MaterialFolder *materialFolder =
+			LIST_ITERATOR_GET_ELEMENT(MaterialFolder, itr);
 
-			fullFilename = getFullTextureFilename(filename);
-			free(filename);
+		char *filename = malloc(
+			strlen(materialFolder->folder) +
+			strlen(materialFolder->name.string) + 26);
 
-			if (fullFilename)
-			{
-				break;
-			}
+		sprintf(
+			filename,
+			"resources/materials/%s/t_%s_%c",
+			materialFolder->folder,
+			materialFolder->name.string,
+			materialComponentCharacters[materialComponentType]);
 
-			free(fullFilename);
-		}
+		fullFilename = getFullTextureFilename(filename);
+		free(filename);
 
 		if (fullFilename)
 		{
-			if (loadTexture(fullFilename, textureName.string) == -1)
-			{
-				free(fullFilename);
-				return -1;
-			}
+			sprintf(
+				textureName->string,
+				"%s_%c",
+				materialFolder->name.string,
+				materialComponentCharacters[materialComponentType]);
 
-			free(fullFilename);
+			break;
 		}
+
+		free(fullFilename);
+	}
+
+	if (fullFilename)
+	{
+		if (loadTexture(fullFilename, textureName->string) == -1)
+		{
+			free(fullFilename);
+			return -1;
+		}
+
+		free(fullFilename);
 	}
 
 	return 0;
