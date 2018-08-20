@@ -10,8 +10,8 @@ ghoti.so
 ghoti.dll
 *.entity
 *.scene
-!resources/saves/*.entity
-!resources/saves/*.scene
+!resources/saves/**/*.entity
+!resources/saves/**/*.scene
 
 # Editor specific files
 .dir-locals.el
