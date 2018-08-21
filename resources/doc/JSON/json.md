@@ -459,17 +459,14 @@ This utility generates a template for a scene by creating a folder containing fi
 	{
 		"update":
 		{
-			"external":
-			[
-
-			],
-
+			"external": ["basic_input"],
 			"internal":
 			[
 				"clean_hit_information",
 				"clean_hit_list",
 				"clean_global_transforms",
-				"apply_parent_transforms"
+				"apply_parent_transforms",
+				"simulate_rigid_bodies"
 			]
 		},
 
@@ -656,6 +653,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 		{
 			"external":
 			[
+				"basic_input",
 				"player_movement",
 				"enemy_movement"
 			],
@@ -665,7 +663,8 @@ This utility exports JSON scene files to binary scene files that can be used in 
 				"clean_hit_information",
 				"clean_hit_list",
 				"clean_global_transforms",
-				"apply_parent_transforms"
+				"apply_parent_transforms",
+				"simulate_rigid_bodies"
 			]
 		},
 

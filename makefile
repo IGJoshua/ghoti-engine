@@ -29,7 +29,9 @@ RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
 RELEASE_RESOURCES_FOLDER = release/resources
-RELEASE_INIT_FILE = $(RELEASE_RESOURCES_FOLDER)/scripts/init.lua
+RELEASE_SCRIPTS_FOLDER = $(RELEASE_RESOURCES_FOLDER)/scripts
+RELEASE_INIT_FILE = $(RELEASE_SCRIPTS_FOLDER)/init.lua
+RELEASE_DEBUG_FILES = $(RELEASE_SCRIPTS_FOLDER)/components/debug $(RELEASE_SCRIPTS_FOLDER)/systems/debug
 
 _LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
@@ -120,6 +122,7 @@ release : clean
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/saves/*
 	rm $(RELEASE_INIT_FILE)
 	echo "-- NOTE(Joshua): This is where you load the main scene\n" > $(RELEASE_INIT_FILE) && echo "math.randomseed(os.time())\n" >> $(RELEASE_INIT_FILE) && echo "local C = engine.C" >> $(RELEASE_INIT_FILE)
+	rm -rf $(RELEASE_DEBUG_FILES)
 	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
