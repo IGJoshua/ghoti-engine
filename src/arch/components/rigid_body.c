@@ -60,7 +60,7 @@ void updateCollisionGeoms(
 			collisionTreeNodeComponentID);
 
 		// Add each piece of collision geometry as a different geom
-		//updateCollisionGeom(bodyTrans, trans, node);
+		updateCollisionGeom(bodyTrans, trans, node);
 	}
 }
 
@@ -258,7 +258,10 @@ void updateRigidBodyPosition(
 
 	dBodySetQuaternion(body->bodyID, rot);
 
-	updateCollisionGeoms(scene, trans, coll);
+	if (coll)
+	{
+		updateCollisionGeoms(scene, trans, coll);
+	}
 }
 
 void updateRigidBody(
