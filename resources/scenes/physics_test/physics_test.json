@@ -5,10 +5,9 @@
 		{
 			"external":
 			[
-				"inputtest",
-				"spawner",
-				"oscillator",
-				"orbit"
+				"basic_input",
+				"debug/spawner",
+				"debug/orbit"
 			],
 
 			"internal":
@@ -42,14 +41,11 @@
 		"camera": 16,
 		"collision": 20000,
 		"box": 20000,
-		"sphere": 128,
 		"hit_information": 20000,
 		"hit_list": 40000,
 		"rigid_body": 20000,
 		"collision_tree_node": 20000,
-		"surface_information": 20000,
 		"spawner": 128,
-		"oscillator": 128,
 		"orbit": 128
 	},
 
