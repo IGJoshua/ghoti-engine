@@ -110,7 +110,7 @@ void initRenderBoxSystem(Scene *scene)
 	// }
 
 	// // Initialize the line renderer
-	// if(hashMapGetData(&sceneLineData, &scene))
+	// if(hashMapGetData(sceneLineData, &scene))
 	// {
 	// 	hashMapDelete(&sceneLineData, &scene);
 	// }
@@ -204,7 +204,7 @@ internal
 void beginRenderBoxSystem(Scene *scene, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 
 	// sceneLineAllocator->numVerts = 0;
@@ -226,7 +226,7 @@ void beginRenderBoxSystem(Scene *scene, real64 dt)
 void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 	// ASSERT(sceneLineAllocator);
 
@@ -389,7 +389,7 @@ void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 void endRenderBoxSystem(Scene *scene, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 	// ASSERT(sceneLineAllocator);
 
@@ -476,7 +476,7 @@ void endRenderBoxSystem(Scene *scene, real64 dt)
 void shutdownRenderBoxSystem(Scene *scene)
 {
 	// SceneLineAllocator *sceneLineAllocator =
-	// 	hashMapGetData(&sceneLineData, &scene);
+	// 	hashMapGetData(sceneLineData, &scene);
 	// ASSERT(sceneLineAllocator);
 	// glBindVertexArray(sceneLineAllocator->vertexArray);
 	// glDeleteBuffers(1, &sceneLineAllocator->vertexBuffer);

@@ -85,7 +85,7 @@ void freeMaterial(Material *material)
 
 void loadMaterialFolders(UUID name)
 {
-	if (!hashMapGetData(&materialFolders, &name))
+	if (!hashMapGetData(materialFolders, &name))
 	{
 		List materialNames = createList(sizeof(UUID));
 
@@ -175,7 +175,7 @@ int32 loadMaterialComponentTexture(
 	memset(textureName, 0, sizeof(UUID));
 
 	List *materialFoldersList = (List*)hashMapGetData(
-		&materialFolders,
+		materialFolders,
 		&materialName);
 
 	char *fullFilename = NULL;

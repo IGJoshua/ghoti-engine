@@ -16,7 +16,7 @@ internal
 void initCleanGlobalTransformsSystem(Scene *scene)
 {
 	ComponentDataTable **table = hashMapGetData(
-		&scene->componentTypes,
+		scene->componentTypes,
 		&transformComponentID);
 
 	for(ComponentDataTableIterator itr = cdtGetIterator(*table);

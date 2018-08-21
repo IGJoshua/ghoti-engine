@@ -155,7 +155,7 @@ Texture* getTexture(const char *name)
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
-		texture = hashMapGetData(&textures, &nameID);
+		texture = hashMapGetData(textures, &nameID);
 	}
 
 	return texture;
@@ -180,7 +180,7 @@ char* getFullTextureFilename(const char *filename)
 
 void freeTexture(UUID name)
 {
-	Texture *texture = (Texture*)hashMapGetData(&textures, &name);
+	Texture *texture = (Texture*)hashMapGetData(textures, &name);
 	if (texture)
 	{
 		if (--texture->refCount == 0)

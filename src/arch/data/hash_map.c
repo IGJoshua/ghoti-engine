@@ -95,21 +95,21 @@ void hashMapInsert(HashMap *map, void *key, void *value)
 	hashMapPush(map, key, value);
 }
 
-void *hashMapGetData(HashMap *map, void *key)
+void *hashMapGetData(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
-	uint32 bucketIndex = keyHash % (*map)->bucketCount;
+	uint32 bucketIndex = keyHash % map->bucketCount;
 
-	for (ListIterator itr = listGetIterator(&(*map)->buckets[bucketIndex]);
+	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
 			!listIteratorAtEnd(itr);
 			listMoveIterator(&itr))
 	{
-		if (!(*map)->comparison(
+		if (!map->comparison(
 				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
 				key))
 		{
 			return LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data
-				+ (*map)->keySizeBytes;
+				+ map->keySizeBytes;
 		}
 	}
 

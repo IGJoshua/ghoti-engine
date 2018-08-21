@@ -61,7 +61,7 @@ typedef struct hash_map_t
   HashMapBucket buckets[];
 } *HashMap;
 
-void *hashMapGetData(HashMap *map, void *key);
+void *hashMapGetData(HashMap map, void *key);
 
 typedef union uuid_t
 {

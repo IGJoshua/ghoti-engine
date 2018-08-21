@@ -116,7 +116,7 @@ void initRenderHeightmapSystem(Scene *scene)
 	// // iterate over all the heightmaps and load the images and create geometry for it
 	// for (ComponentDataTableIterator itr = cdtGetIterator(
 	// 		 *(ComponentDataTable **)hashMapGetData(
-	// 			 &scene->componentTypes,
+	// 			 scene->componentTypes,
 	// 			 &heightmapComponentID));
 	// 	 !cdtIteratorAtEnd(itr);
 	// 	 cdtMoveIterator(&itr))
@@ -364,7 +364,7 @@ internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	// Mesh *heightmap = hashMapGetData(
-	// 	(HashMap *)hashMapGetData(&heightmapModels, &scene),
+	// 	*(HashMap *)hashMapGetData(heightmapModels, &scene),
 	// 	&entityID);
 
 	// if (heightmap)
@@ -412,7 +412,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void shutdownRenderHeightmapSystem(Scene *scene)
 {
-	// HashMap *map = hashMapGetData(&heightmapModels, &scene);
+	// HashMap *map = hashMapGetData(heightmapModels, &scene);
 
 	// for (HashMapIterator itr = hashMapGetIterator(map);
 	// 	 !hashMapIteratorAtEnd(itr);

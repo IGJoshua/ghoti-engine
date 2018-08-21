@@ -33,7 +33,7 @@ void initSimulateRigidbodiesSystem(Scene *scene)
 	// for each rigidbody
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
-				 &scene->componentTypes,
+				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
@@ -253,7 +253,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	CollisionComponent *coll = 0;
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
-				 &scene->componentTypes,
+				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
@@ -324,7 +324,7 @@ void shutdownSimulateRigidbodiesSystem(Scene *scene)
 {
 	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
-				 &scene->componentTypes,
+				 scene->componentTypes,
 				 &rigidBodyComponentID));
 		 !cdtIteratorAtEnd(itr);
 		 cdtMoveIterator(&itr))
