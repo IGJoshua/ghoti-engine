@@ -60,7 +60,7 @@ void updateCollisionGeoms(
 			collisionTreeNodeComponentID);
 
 		// Add each piece of collision geometry as a different geom
-		//updateCollisionGeom(bodyTrans, trans, node);
+		updateCollisionGeom(bodyTrans, trans, node);
 	}
 }
 
