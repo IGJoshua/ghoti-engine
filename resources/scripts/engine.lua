@@ -45,6 +45,7 @@ for line in componentFiles:lines() do
   if ffi.os == "Windows" then
     line = 'resources/scripts/components/'..line
   end
+  io.write("Loading component "..string.sub(line, 0, -5).."\n")
   require(string.sub(line, 0, -5))
 end
 
@@ -87,7 +88,9 @@ function engine.initScene(pScene)
         ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
       if not system then
-        error("Unable to load system, panic")
+        error(string.format(
+				"Unable to load system %s, panic",
+				ffi.string(ffi.cast("UUID *", itr.curr.data).string)))
       end
 
       if system.init then
