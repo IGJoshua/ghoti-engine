@@ -11,15 +11,11 @@ system.shutdown = nil
 system.components = {}
 system.components[1] = "rigid_body"
 system.components[2] = "transform"
---system.components[3] = ""
 
 local rigid_body
 local transform
 
 function system.run(scene, uuid, dt)
-    --[[
-    --]]
-
     if (ffi.string(uuid.string) == "ray_caster") then
 
         transform = scene:getComponent("transform", uuid)

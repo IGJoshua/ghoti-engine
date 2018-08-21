@@ -149,7 +149,7 @@ Model* getModel(const char *name)
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
-		model = hashMapGetData(&models, &nameID);
+		model = hashMapGetData(models, &nameID);
 	}
 
 	return model;

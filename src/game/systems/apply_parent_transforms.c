@@ -148,7 +148,7 @@ internal
 void initApplyParentTransformsSystem(Scene *scene)
 {
 	ComponentDataTable **table = hashMapGetData(
-		&scene->componentTypes,
+		scene->componentTypes,
 		&transformComponentID);
 
 	for (ComponentDataTableIterator itr = cdtGetIterator(*table);

@@ -58,6 +58,14 @@ ComponentDataTable *createComponentDataTable(
 		numEntries,
 		componentSize);
 
+	if (componentSize == 0)
+	{
+		LOG("WARNING: Unable to load the definition for the %s component "
+		"because no entities in the scene have the %s component\n",
+		componentID.string,
+		componentID.string);
+	}
+
 	return ret;
 }
 
@@ -72,7 +80,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 {
 	uint32 i = 0;
 	// If the entity is not in the table
-	uint32 *indexPtr = hashMapGetData(&table->idToIndex, &entityID);
+	uint32 *indexPtr = hashMapGetData(table->idToIndex, &entityID);
 	if (!indexPtr)
 	{
 		// Find an empty slot in the component data table
@@ -123,7 +131,7 @@ void cdtRemove(
 	// If the entity exists in the table
 	uint32 *pIndex =
 		hashMapGetData(
-			&table->idToIndex,
+			table->idToIndex,
 			&entityID);
 	if (pIndex)
 	{
@@ -144,7 +152,7 @@ void cdtRemove(
 
 void *cdtGet(ComponentDataTable *table, UUID entityID)
 {
-	uint32 *index = hashMapGetData(&table->idToIndex, &entityID);
+	uint32 *index = hashMapGetData(table->idToIndex, &entityID);
 
 	if (index)
 	{

@@ -277,6 +277,13 @@ UUID readStringAsUUID(FILE *file)
 	return uuid;
 }
 
+UUID readUUID(FILE *file)
+{
+	UUID uuid = {};
+	fread(uuid.string, UUID_LENGTH + 1, 1, file);
+	return uuid;
+}
+
 void writeString(const char *string, FILE *file)
 {
 	uint32 stringLength = strlen(string) + 1;

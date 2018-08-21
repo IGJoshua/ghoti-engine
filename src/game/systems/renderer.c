@@ -168,7 +168,16 @@ extern real64 alpha;
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
-	cameraSetUniforms(scene, viewUniform, projectionUniform, pipeline);
+	bindShaderPipeline(pipeline);
+
+	if (cameraSetUniforms(
+		scene,
+		viewUniform,
+		projectionUniform,
+		pipeline) == -1)
+	{
+		return;
+	}
 
 	GLint textureIndex = 0;
 	setMaterialUniform(&materialUniform, &textureIndex);
@@ -186,6 +195,14 @@ extern real64 alpha;
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
+	if (!sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID))
+	{
+		return;
+	}
+
 	ModelComponent *modelComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,

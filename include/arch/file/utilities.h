@@ -26,6 +26,7 @@ int32 copyFolder(const char *folder, const char *destination);
 char* readFile(const char *filename, uint64 *fileLength);
 char* readString(FILE *file);
 UUID readStringAsUUID(FILE *file);
+UUID readUUID(FILE *file);
 void writeString(const char *string, FILE *file);
 
 void writeJSON(const cJSON *json, const char *filename);

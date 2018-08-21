@@ -110,7 +110,7 @@ void initRenderBoxSystem(Scene *scene)
 	// }
 
 	// // Initialize the line renderer
-	// if(hashMapGetData(&sceneLineData, &scene))
+	// if(hashMapGetData(sceneLineData, &scene))
 	// {
 	// 	hashMapDelete(&sceneLineData, &scene);
 	// }
@@ -204,7 +204,7 @@ internal
 void beginRenderBoxSystem(Scene *scene, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 
 	// sceneLineAllocator->numVerts = 0;
@@ -226,7 +226,7 @@ void beginRenderBoxSystem(Scene *scene, real64 dt)
 void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 	// ASSERT(sceneLineAllocator);
 
@@ -389,7 +389,7 @@ void runRenderBoxSystem(Scene *scene, UUID entityID, real64 dt)
 void endRenderBoxSystem(Scene *scene, real64 dt)
 {
 	// SceneLineAllocator *sceneLineAllocator = hashMapGetData(
-	// 	&sceneLineData,
+	// 	sceneLineData,
 	// 	&scene);
 	// ASSERT(sceneLineAllocator);
 
@@ -434,23 +434,13 @@ void endRenderBoxSystem(Scene *scene, real64 dt)
 
 	// bindShaderPipeline(pipeline);
 
-	// if (setUniform(viewUniform, &view) == -1)
-	// {
-	// 	LOG("Unable to set view uniform\n");
-	// }
-
-	// if (setUniform(projectionUniform, &projection) == -1)
-	// {
-	// 	LOG("Unable to set projection uniform\n");
-	// }
+	// setUniform(viewUniform, 1, &view);
+	// setUniform(projectionUniform, 1, &projection);
 
 	// kmMat4 model;
 	// kmMat4Identity(&model);
 
-	// if (setUniform(modelUniform, &model) == -1)
-	// {
-	// 	LOG("Unable to set the model uniform\n");
-	// }
+	// setUniform(modelUniform, 1, &model);
 
 	// glBindVertexArray(sceneLineAllocator->vertexArray);
 	// glBindBuffer(GL_ARRAY_BUFFER, sceneLineAllocator->vertexBuffer);
@@ -476,7 +466,7 @@ void endRenderBoxSystem(Scene *scene, real64 dt)
 void shutdownRenderBoxSystem(Scene *scene)
 {
 	// SceneLineAllocator *sceneLineAllocator =
-	// 	hashMapGetData(&sceneLineData, &scene);
+	// 	hashMapGetData(sceneLineData, &scene);
 	// ASSERT(sceneLineAllocator);
 	// glBindVertexArray(sceneLineAllocator->vertexArray);
 	// glDeleteBuffers(1, &sceneLineAllocator->vertexBuffer);

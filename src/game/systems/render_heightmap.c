@@ -116,7 +116,7 @@ void initRenderHeightmapSystem(Scene *scene)
 	// // iterate over all the heightmaps and load the images and create geometry for it
 	// for (ComponentDataTableIterator itr = cdtGetIterator(
 	// 		 *(ComponentDataTable **)hashMapGetData(
-	// 			 &scene->componentTypes,
+	// 			 scene->componentTypes,
 	// 			 &heightmapComponentID));
 	// 	 !cdtIteratorAtEnd(itr);
 	// 	 cdtMoveIterator(&itr))
@@ -352,10 +352,7 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 	// {
 	// 	if (textureUniforms[i].type != UNIFORM_INVALID)
 	// 	{
-	// 		if (setUniform(textureUniforms[i], 1, &i) == -1)
-	// 		{
-	// 			LOG("Unable to set texture uniform %d\n", i);
-	// 		}
+	// 		setUniform(textureUniforms[i], 1, &i);
 	// 	}
 	// }
 }
@@ -364,7 +361,7 @@ internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	// Mesh *heightmap = hashMapGetData(
-	// 	(HashMap *)hashMapGetData(&heightmapModels, &scene),
+	// 	*(HashMap *)hashMapGetData(heightmapModels, &scene),
 	// 	&entityID);
 
 	// if (heightmap)
@@ -381,11 +378,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 
 	// 	bindShaderPipeline(pipeline);
 
-	// 	if (setUniform(modelUniform, 1, &transformMat))
-	// 	{
-	// 		LOG("Unable to set model uniform\n");
-	// 		return;
-	// 	}
+	// 	setUniform(modelUniform, 1, &transformMat);
 
 	// 	glBindVertexArray(heightmap->vertexArray);
 
@@ -412,7 +405,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void shutdownRenderHeightmapSystem(Scene *scene)
 {
-	// HashMap *map = hashMapGetData(&heightmapModels, &scene);
+	// HashMap *map = hashMapGetData(heightmapModels, &scene);
 
 	// for (HashMapIterator itr = hashMapGetIterator(map);
 	// 	 !hashMapIteratorAtEnd(itr);
