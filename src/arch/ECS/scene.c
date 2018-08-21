@@ -225,9 +225,7 @@ int32 loadSceneEntities(
 
 						if (file)
 						{
-							UUID uuid;
-							memset(uuid.bytes, 0, UUID_LENGTH + 1);
-							fread(uuid.bytes, UUID_LENGTH + 1, 1, file);
+							UUID uuid = readUUID(file);
 
 							if (loadData)
 							{
@@ -614,9 +612,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		free(entityFolder);
 		free(componentLimitNumbers);
 
-		UUID activeCamera = {};
-		fread(activeCamera.bytes, UUID_LENGTH + 1, 1, file);
-		(*scene)->mainCamera = activeCamera;
+		(*scene)->mainCamera = readUUID(file);
 
 		fread(&(*scene)->gravity, sizeof(real32), 1, file);
 
