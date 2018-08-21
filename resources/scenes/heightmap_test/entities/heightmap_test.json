@@ -131,7 +131,7 @@
 		[
 			{
 				"name": "type",
-				"int32": 0
+				"int32": 3
 			},
 			{
 				"name": "collision_volume",
@@ -148,6 +148,38 @@
 			{
 				"name": "geomID",
 				"int64": 0
+			}
+		],
+
+		"surface_information":
+		[
+			{
+				"name": "finiteFriction",
+				"bool": true
+			},
+			{
+				"name": "friction",
+				"float32": 40
+			},
+			{
+				"name": "bounciness",
+				"float32": 0.1
+			},
+			{
+				"name": "bounce velocity",
+				"float32": 8
+			},
+			{
+				"name": "disable rolling",
+				"bool": false
+			},
+			{
+				"name": "rolling friction",
+				"float32": 1
+			},
+			{
+				"name": "spinning friction",
+				"float32": 1
 			}
 		]
 	}

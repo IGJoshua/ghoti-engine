@@ -171,6 +171,22 @@
 				"name": "lastHitList",
 				"uuid": ""
 			}
+		],
+
+		"movement":
+		[
+			{
+				"name": "speed",
+				"float32": 70
+			},
+			{
+				"name": "max velocity",
+				"float32": 80
+			},
+			{
+				"name": "jump height",
+				"float32": 8
+			}
 		]
 	}
 }

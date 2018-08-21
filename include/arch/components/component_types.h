@@ -88,7 +88,8 @@ typedef enum collision_geom_type_e
 {
 	COLLISION_GEOM_TYPE_BOX = 0,
 	COLLISION_GEOM_TYPE_SPHERE,
-	COLLISION_GEOM_TYPE_CAPSULE
+	COLLISION_GEOM_TYPE_CAPSULE,
+	COLLISION_GEOM_TYPE_HEIGHTFIELD
 } CollisionGeomType;
 
 typedef struct collision_tree_node_t

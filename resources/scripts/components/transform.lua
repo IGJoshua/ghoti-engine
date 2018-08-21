@@ -23,7 +23,7 @@ local component = engine.components:register("transform", "TransformComponent")
 
 local emptyID = engine.C.idFromName("")
 
-function component:markDirty(scene, entity)
+function component:markDirty(scene)
   self.dirty = true
 
   if ffi.C.strcmp(self.firstChild.string, emptyID.string) ~= 0 then
