@@ -16,7 +16,17 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum { false, true } bool;
+typedef unsigned char bool;
+#define true 1
+#define false 0
+
+#define UUID_LENGTH 63
+
+typedef union uuid_t
+{
+	char string[UUID_LENGTH + 1];
+	uint8 bytes[UUID_LENGTH + 1];
+} UUID;
 
 #define VSYNC 1
 

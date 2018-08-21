@@ -54,7 +54,7 @@ void keyCallback(
 
 		// Set the correct values in the table
 		// The key is down (or not)
-		lua_pushboolean(L, action != GLFW_RELEASE ? 1 : 0);
+		lua_pushboolean(L, action != GLFW_RELEASE ? true : false);
 		// stack: keyboard keytable bool
 		lua_setfield(L, -2, "keydown");
 		// stack: keyboard keytable(with keydown set)

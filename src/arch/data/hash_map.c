@@ -35,6 +35,7 @@ HashMap createHashMap(
 	map->valueSizeBytes = valueSize;
 	map->bucketCount = bucketCount;
 	map->comparison = comparison;
+	map->count = 0;
 
 	for (uint32 i = 0; i < map->bucketCount; ++i)
 	{
@@ -85,11 +86,12 @@ void hashMapPush(HashMap map, void *key, void *value)
 	memcpy(storage->data + map->keySizeBytes, value, map->valueSizeBytes);
 
 	listPushFront(&map->buckets[bucketIndex], storage);
+	map->count++;
 }
 
 void hashMapInsert(HashMap map, void *key, void *value)
 {
-	hashMapDeleteKey(map, key);
+	hashMapDelete(map, key);
 	hashMapPush(map, key, value);
 }
 
@@ -123,15 +125,18 @@ void hashMapPopKey(HashMap map, void *key)
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
+		if (!map->comparison(
+			LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+			key))
 		{
 			listRemove(&map->buckets[bucketIndex], &itr);
+			map->count--;
 			break;
 		}
 	}
 }
 
-void hashMapDeleteKey(HashMap map, void *key)
+void hashMapDelete(HashMap map, void *key)
 {
 	uint64 keyHash = hash(key);
 	uint32 bucketIndex = keyHash % map->bucketCount;
@@ -139,9 +144,12 @@ void hashMapDeleteKey(HashMap map, void *key)
 	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
 		 !listIteratorAtEnd(itr);)
 	{
-		if (!map->comparison(LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data, key))
+		if (!map->comparison(
+			LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,
+			key))
 		{
 			listRemove(&map->buckets[bucketIndex], &itr);
+			map->count--;
 		}
 		else
 		{
@@ -156,6 +164,8 @@ void hashMapClear(HashMap map)
 	{
 		listClear(&map->buckets[i]);
 	}
+
+	map->count = 0;
 }
 
 HashMapIterator hashMapGetIterator(HashMap map)
@@ -235,54 +245,17 @@ void *hashMapIteratorGetValue(HashMapIterator itr)
 		+ itr.map->keySizeBytes;
 }
 
-void hashMapDeleteAtIterator(HashMapIterator *itr)
+void hashMapFMap(HashMap *map, HashMapFunctorFn fn, ClosureData *data)
 {
-	ASSERT(false && "Hash map delete iterator not yet implemented.");
-
-	listRemove(&itr->map->buckets[itr->bucket], &itr->itr);
-
-	/*
-	 * If the iterator has to go to the next bucket,
-	 * find the next non-empty bucket
-	 */
-	while (listIteratorAtEnd(itr->itr))
+	for (uint32 bucket = 0; bucket < (*map)->bucketCount; ++bucket)
 	{
-		// move the iterator if the iterator is at a valid bucket index
-		if (++itr->bucket < itr->map->bucketCount)
-		{
-			itr->itr = listGetIterator(&itr->map->buckets[itr->bucket]);
-		}
-		// break the loop if the iterator is past the end of the hashmap
-		else
-		{
-			break;
-		}
-	}
-}
-
-void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
-{
-	for (uint32 bucket = 0; bucket < map->bucketCount; ++bucket)
-	{
-		for (ListIterator itr = listGetIterator(&map->buckets[bucket]);
+		for (ListIterator itr = listGetIterator(&(*map)->buckets[bucket]);
 			 !listIteratorAtEnd(itr);
 			 listMoveIterator(&itr))
 		{
 			HashMapStorage *element =
 				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr);
-			fn(element->data, element->data + map->keySizeBytes, data);
+			fn(element->data, element->data + (*map)->keySizeBytes, data);
 		}
 	}
-}
-
-uint32 hashMapCount(HashMap map)
-{
-	uint32 count = 0;
-	for (HashMapIterator itr = hashMapGetIterator(map);
-		 !hashMapIteratorAtEnd(itr);
-		 hashMapMoveIterator(&itr))
-	{
-		++count;
-	}
-	return count;
 }

@@ -12,12 +12,6 @@ typedef unsigned char uint8;
 typedef double real64;
 typedef float real32;
 
-typedef enum
-{
-  false,
-  true
-} Bool;
-
 char *strcpy(char *destination, const char *source);
 
 typedef struct list_node_t
@@ -63,6 +57,7 @@ typedef struct hash_map_t
   uint32 valueSizeBytes;
   uint32 bucketCount;
   ComparisonOp comparison;
+  uint32 count;
   HashMapBucket buckets[];
 } *HashMap;
 
@@ -96,6 +91,8 @@ typedef enum data_type_e {
 } DataType;
 
 int32 strcmp(const char *str1, const char *str2);
+
+
 ]]
 
 require("resources/scripts/cdefs/kazmath")

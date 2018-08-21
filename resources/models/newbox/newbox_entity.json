@@ -1,0 +1,128 @@
+{
+  "uuid": "<+Mox+Q02PJ#+i%Ju2r<t=jcE)KrQ?sk?GX5G'BVTaWUPQ%C`uTR0D3RKByp<b-",
+  "components": {
+    "transform": [
+      {
+        "name": "position",
+        "float32": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "rotation",
+        "float32": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": "scale",
+        "float32": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "name": "parent",
+        "uuid": ""
+      },
+      {
+        "name": "first child",
+        "uuid": ""
+      },
+      {
+        "name": "next sibling",
+        "uuid": ""
+      },
+      {
+        "name": "dirty",
+        "bool": true
+      },
+      {
+        "name": "global position",
+        "float32": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "global rotation",
+        "float32": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": "global scale",
+        "float32": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "name": "last global position",
+        "float32": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "last global rotation",
+        "float32": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": "last global scale",
+        "float32": [
+          1,
+          1,
+          1
+        ]
+      }
+    ],
+    "model": [
+      {
+        "name": "filename",
+        "char(1024)": "newbox"
+      },
+      {
+        "name": "visible",
+        "bool": true
+      },
+      {
+        "name": "wireframe",
+        "bool": false
+      },
+      {
+        "name": "wireframe line width",
+        "float32": 1
+      },
+      {
+        "name": "custom wireframe color",
+        "bool": false
+      },
+      {
+        "name": "wireframe color",
+        "float32": [
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  }
+}

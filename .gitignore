@@ -1,19 +1,13 @@
 # Project: Ghoti
 # Company: Broken Dinosaur Studios
 # Author: Joshua Suskalo, Pranav Sahani
-# Copyright: April 2018
+# Copyright: 2018
 
 # Binary resources
 build/
 release/
 ghoti.so
 ghoti.dll
-
-# Art assets
-resources/*
-!resources/shaders/
-!resources/scripts/
-!resources/scenes/
 
 # Editor specific files
 .dir-locals.el

@@ -14,6 +14,14 @@ typedef struct model_component_t
 	bool visible;
 } ModelComponent;
 
+typedef struct wireframe_component_t
+{
+	bool visible;
+	real32 lineWidth;
+	bool customColor;
+	kmVec3 color;
+} WireframeComponent;
+
 typedef struct transform_component_t
 {
 	kmVec3 position;
@@ -46,6 +54,72 @@ typedef struct camera_component_t
 	real32 fov;
 	CameraProjectionType projectionType;
 } CameraComponent;
+
+typedef enum joint_type_e
+{
+	JOINT_TYPE_BALL_SOCKET = 0,
+	JOINT_TYPE_HINGE,
+	JOINT_TYPE_SLIDER,
+	JOINT_TYPE_BALL_SOCKET2
+} JointType;
+
+typedef struct joint_information_component_t
+{
+	JointType type;
+	UUID object1;
+	UUID object2;
+} JointInformationComponent;
+
+typedef struct joint_list_component_t
+{
+	UUID jointInfo;
+	UUID next;
+} JointListComponent;
+
+typedef struct joint_constraint_component_t
+{
+	bool loStop_bool;
+	bool hiStop_bool;
+	bool bounce_bool;
+	bool CFM_bool;
+	bool stopERP_bool;
+	bool stopCFM_bool;
+
+	real32 loStop_val;
+	real32 hiStop_val;
+	real32 bounce_val;
+	real32 CFM_val;
+	real32 stopERP_val;
+	real32 stopCFM_val;
+
+} JointConstraintComponent;
+
+typedef struct hinge_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor;
+	kmVec3 axis;
+} HingeJointComponent;
+
+typedef struct slider_joint_component_t
+{
+	dJointID id;
+	kmVec3 axis;
+} SliderJointComponent;
+
+typedef struct ball_socket_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor;
+} BallSocketJointComponent;
+
+typedef struct ball_socket2_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor1;
+	kmVec3 anchor2;
+	real32 distance;
+} BallSocket2JointComponent;
 
 typedef enum moment_of_inertia_e
 {
@@ -101,7 +175,7 @@ typedef struct collision_tree_node_t
 	dGeomID geomID;
 } CollisionTreeNode;
 
-typedef struct aabb_component_t
+typedef struct obb_component_t
 {
 	kmVec3 bounds;
 } BoxComponent;

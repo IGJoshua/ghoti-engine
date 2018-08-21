@@ -1,5 +1,5 @@
 {
-   NOUVEAU_LIBRARY
+   LIB_DRM_NOUVEAU
    Memcheck:Param
    ioctl(generic)
    fun:ioctl
@@ -8,12 +8,12 @@
    obj:/usr/lib/libdrm_nouveau.so.2.0.0
    fun:nouveau_device_new
    fun:nouveau_drm_screen_create
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/libGLX_mesa.so.0.0.0
-   obj:/usr/lib/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/libGL.so.1.2.0
+   obj:/usr/lib/libGL.so.1.2.0
 }
 {
    NOUVEAU_DRIVER
@@ -25,40 +25,10 @@
    fun:nouveau_object_mthd
    fun:nouveau_device_new
    fun:nouveau_drm_screen_create
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/libGLX_mesa.so.0.0.0
-   obj:/usr/lib/libGLX_mesa.so.0.0.0
-}
-{
-   GL_GENMIPMAPS
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:calloc
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   obj:/usr/lib/dri/nouveau_dri.so
-   fun:loadMesh
-   fun:main
-}
-{
-   GL_INIT
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   obj:*
-   obj:*
-   fun:glXGetClientString
-   fun:glxewInit
-   fun:glewInit
-   fun:initWindow
-   fun:main
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+   obj:/usr/lib/libGL.so.1.2.0
+   obj:/usr/lib/libGL.so.1.2.0
 }

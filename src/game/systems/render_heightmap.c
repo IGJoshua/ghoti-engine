@@ -141,12 +141,17 @@ void initRenderHeightmapSystem(Scene *scene)
 			entityID,
 			transformComponentID);
 
+		persistent char *heightmapFolder = "resources/heightmaps/";
+		persistent uint32 heightmapFolderLength = 21;
+		char buffer[1024];
+		memcpy(buffer, heightmapFolder, heightmapFolderLength);
+		strcpy(buffer + heightmapFolderLength, heightmap->heightmapName);
+
 		ILuint imageID;
-		if (loadTextureWithFormat(
-			heightmap->heightmapName,
-			TEXTURE_FORMAT_R8,
-			false,
-			&imageID) == -1)
+		if (loadTextureData(
+				buffer,
+				TEXTURE_FORMAT_R8,
+				&imageID) == -1)
 		{
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);
@@ -235,8 +240,8 @@ void initRenderHeightmapSystem(Scene *scene)
 					(z - 0.5f * (heightmap->sizeZ + 1))
 					* heightmap->unitsPerTile;
 
-				vert.uv[0].x = uv.x * heightmap->uvScaleX;
-				vert.uv[0].y = uv.y * heightmap->uvScaleZ;
+				vert.materialUV.x = uv.x * heightmap->uvScaleX;
+				vert.materialUV.y = uv.y * heightmap->uvScaleZ;
 
 				verts[vertIndex] = vert;
 			}
@@ -296,11 +301,13 @@ void initRenderHeightmapSystem(Scene *scene)
 				// (-x, -z), (-x, z), (x, z)
 				indices[index++] = INDEX(triX, triZ, heightmap->sizeX + 1);
 				indices[index++] = INDEX(triX, triZ + 1, heightmap->sizeX + 1);
-				indices[index++] = INDEX(triX + 1, triZ + 1, heightmap->sizeX + 1);
+				indices[index++] = INDEX(
+					triX + 1, triZ + 1, heightmap->sizeX + 1);
 
 				// Create indices for the second triangle
 				// (x, z), (x, -z), (-x, -z)
-				indices[index++] = INDEX(triX + 1, triZ + 1, heightmap->sizeX + 1);
+				indices[index++] = INDEX(
+					triX + 1, triZ + 1, heightmap->sizeX + 1);
 				indices[index++] = INDEX(triX + 1, triZ, heightmap->sizeX + 1);
 				indices[index++] = INDEX(triX, triZ, heightmap->sizeX + 1);
 			}
@@ -308,8 +315,6 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		// Upload the model to the GPU
 		Mesh m = {};
-
-		m.materialIndex = 0;
 
 		glGenBuffers(1, &m.vertexBuffer);
 		glGenVertexArrays(1, &m.vertexArray);
@@ -361,16 +366,37 @@ void initRenderHeightmapSystem(Scene *scene)
 			sizeof(Vertex),
 			(GLvoid*)offsetof(Vertex, bitangent));
 
-		for (uint32 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
-		{
-			glVertexAttribPointer(
-				bufferIndex++,
-				2,
-				GL_FLOAT,
-				GL_FALSE,
-				sizeof(Vertex),
-				(GLvoid*)offsetof(Vertex, uv[j]));
-		}
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(Vertex),
+			(GLvoid*)offsetof(Vertex, materialUV));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(Vertex),
+			(GLvoid*)offsetof(Vertex, maskUV));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			NUM_BONES,
+			GL_UNSIGNED_INT,
+			GL_FALSE,
+			sizeof(Vertex),
+			(GLvoid*)offsetof(Vertex, bones));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			NUM_BONES,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(Vertex),
+			(GLvoid*)offsetof(Vertex, weights));
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
@@ -394,17 +420,20 @@ void initRenderHeightmapSystem(Scene *scene)
 		hashMapInsert(map, &entityID, &m);
 
 		// Load the texture onto the GPU
-		if (strcmp(heightmap->textureName, ""))
-		{
-			// Ensure that there is enough space for the texture
-			if (numTextures + 1 > texturesCapacity)
-			{
-				increaseTexturesCapacity(numTextures + 1);
-			}
+		// if (strcmp(heightmap->textureName, ""))
+		// {
+		// 	persistent char *heightmapFolder = "resources/heightmaps/";
+		// 	persistent uint32 heightmapFolderLength = 21;
+		// 	char *buffer = alloca(1024);
+		// 	memcpy(buffer, heightmapFolder, heightmapFolderLength);
+		// 	memcpy(
+		// 		buffer + heightmapFolderLength,
+		// 		heightmap->heightmapName,
+		// 		strlen(heightmap->textureName));
 
-			// Load the texture
-			loadTexture(heightmap->textureName, 1, 0);
-		}
+		// 	// Load the texture
+		// 	loadTexture(buffer, heightmap->textureName);
+		// }
 	}
 }
 
@@ -419,10 +448,7 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 	{
 		if (textureUniforms[i].type != UNIFORM_INVALID)
 		{
-			if (setUniform(textureUniforms[i], &i) == -1)
-			{
-				LOG("Unable to set texture uniform %d\n", i);
-			}
+			setUniform(textureUniforms[i], 1, &i);
 		}
 	}
 }
@@ -452,7 +478,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		transform,
 		alpha);
 
-	if (setUniform(modelUniform, &transformMat))
+	if (setUniform(modelUniform, 1, &transformMat))
 	{
 		LOG("Unable to set model uniform\n");
 		return;
@@ -463,12 +489,12 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		heightmapComponentID);
 
-	Texture *tex = getTexture(heightmapComponent->textureName);
-	if (tex)
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tex->id);
-	}
+	// Texture *tex = getTexture(heightmapComponent->textureName);
+	// if (tex)
+	// {
+	// 	glActiveTexture(GL_TEXTURE0);
+	// 	glBindTexture(GL_TEXTURE_2D, tex->id);
+	// }
 
 	glBindVertexArray(heightmap->vertexArray);
 
@@ -514,7 +540,7 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 		UUID entity = cdtIteratorGetUUID(itr);
 
 		// Delete the texture reference used for this heightmap
-		freeTexture(heightmap->textureName);
+		freeTexture(idFromName(heightmap->textureName));
 
 		Mesh *m = hashMapGetData(*map, &entity);
 
@@ -534,7 +560,7 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 
 	hashMapClear(*map);
 	freeHashMap(map);
-	hashMapDeleteKey(heightmapModels, &scene);
+	hashMapDelete(heightmapModels, &scene);
 }
 
 internal

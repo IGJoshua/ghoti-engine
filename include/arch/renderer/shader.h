@@ -28,4 +28,4 @@ int32 getUniform(
 	UniformType type,
 	Uniform *uniform);
 
-int32 setUniform(Uniform uniform, void *data);
+int32 setUniform(Uniform uniform, uint32 count, void *data);

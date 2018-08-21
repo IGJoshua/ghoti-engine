@@ -3,9 +3,7 @@
 
 #include <GL/glew.h>
 
-#include <kazmath/vec4.h>
-
-#define NUM_VERTEX_ATTRIBUTES 5 + MATERIAL_COMPONENT_TYPE_COUNT
+#include <kazmath/vec3.h>
 
 typedef struct mesh_t
 {
@@ -13,40 +11,47 @@ typedef struct mesh_t
 	GLuint vertexArray;
 	GLuint indexBuffer;
 	uint32 numIndices;
-	uint32 materialIndex;
 } Mesh;
-
-typedef enum material_type_e
-{
-	MATERIAL_TYPE_DEBUG,
-	MATERIAL_TYPE_PBR,
-	MATERIAL_TYPE_COUNT
-} MaterialType;
 
 typedef enum material_component_type_e
 {
 	INVALID_MATERIAL_COMPONENT_TYPE = -1,
-	MATERIAL_COMPONENT_TYPE_DIFFUSE = 0,
-	MATERIAL_COMPONENT_TYPE_SPECULAR,
-	MATERIAL_COMPONENT_TYPE_NORMAL,
+	MATERIAL_COMPONENT_TYPE_BASE = 0,
 	MATERIAL_COMPONENT_TYPE_EMISSIVE,
-	MATERIAL_COMPONENT_TYPE_AMBIENT,
+	MATERIAL_COMPONENT_TYPE_METALLIC,
+	MATERIAL_COMPONENT_TYPE_NORMAL,
+	MATERIAL_COMPONENT_TYPE_ROUGHNESS,
 	MATERIAL_COMPONENT_TYPE_COUNT
 } MaterialComponentType;
 
 typedef struct material_component_t
 {
-	char *texture;
-	uint32 uvMap;
-	kmVec4 value;
+	UUID texture;
+	kmVec3 value;
 } MaterialComponent;
 
 typedef struct material_t
 {
-	char *name;
-	MaterialType type;
+	UUID name;
+	bool doubleSided;
 	MaterialComponent components[MATERIAL_COMPONENT_TYPE_COUNT];
 } Material;
+
+typedef struct mask_t
+{
+	Material collectionMaterial;
+	Material grungeMaterial;
+	Material wearMaterial;
+	real32 opacity;
+} Mask;
+
+typedef struct subset_t
+{
+	UUID name;
+	Mesh mesh;
+	Material material;
+	Mask mask;
+} Subset;
 
 typedef enum shader_type_e
 {
@@ -78,6 +83,8 @@ typedef enum uniform_type_e
 {
 	UNIFORM_INVALID = -1,
 	UNIFORM_MAT4 = 0,
+	UNIFORM_VEC3,
+	UNIFORM_BOOL,
 	UNIFORM_TEXTURE_2D,
 	UNIFORM_COUNT
 } UniformType;

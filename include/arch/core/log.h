@@ -3,14 +3,14 @@
 
 #include <stdio.h>
 
+FILE *logFile;
+
 #ifdef _DEBUG
+#define LOG_FILE_NAME NULL
 #define LOG(...) printf(__VA_ARGS__)
 #else
-#define LOG(...) fprintf(getLogFile(), __VA_ARGS__)
-#endif
-
 #define LOG_FILE_NAME "engine.log"
-
-void initLog(void);
-FILE* getLogFile(void);
-void shutdownLog(void);
+#define LOG(...) logFile = fopen(LOG_FILE_NAME, "a"); \
+				 fprintf(logFile, __VA_ARGS__); \
+				 fclose(logFile)
+#endif

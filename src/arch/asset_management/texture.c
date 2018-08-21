@@ -1,313 +1,197 @@
+#include "asset_management/asset_manager_types.h"
 #include "asset_management/texture.h"
 
 #include "core/log.h"
 
-#include "file/utilities.h"
+#include "data/data_types.h"
+#include "data/hash_map.h"
+
+#include "ECS/scene.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
 
-#include <malloc.h>
 #include <string.h>
+#include <unistd.h>
 
-extern Texture *textures;
-extern uint32 numTextures;
-extern uint32 texturesCapacity;
+extern HashMap textures;
 
-// NOTE(Joshua): Loading a texture to CPU memory should really be a separate fn
-int32 loadTexture(const char *name, bool genMipmaps, ILuint *dataOut)
+#define NUM_TEXTURE_FILE_FORMATS 7
+internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
+	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
+};
+
+int32 loadTexture(const char *filename, const char *name)
 {
-	return loadTextureWithFormat(
-		name,
-		TEXTURE_FORMAT_RGBA8,
-		genMipmaps,
-		dataOut);
+	int32 error = 0;
+
+	Texture *textureResource = getTexture(name);
+	if (!textureResource)
+	{
+		char *textureName = strrchr(filename, '/') + 1;
+		LOG("Loading texture (%s)...\n", textureName);
+
+		Texture texture = {};
+
+		texture.name = idFromName(name);
+		texture.refCount = 1;
+
+		ILuint devilID;
+		error = loadTextureData(filename, TEXTURE_FORMAT_RGBA8, &devilID);
+
+		if (error != -1)
+		{
+			glGenTextures(1, &texture.id);
+			glBindTexture(GL_TEXTURE_2D, texture.id);
+
+			GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
+			GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
+
+			glTexStorage2D(
+				GL_TEXTURE_2D,
+				1,
+				GL_RGBA8,
+				textureWidth,
+				textureHeight);
+
+			const GLvoid *textureData = ilGetData();
+			glTexSubImage2D(
+				GL_TEXTURE_2D,
+				0,
+				0,
+				0,
+				textureWidth,
+				textureHeight,
+				GL_RGBA,
+				GL_UNSIGNED_BYTE,
+				textureData);
+
+			GLenum glError = glGetError();
+			if (glError != GL_NO_ERROR)
+			{
+				LOG("Error while transferring texture onto GPU: %s\n",
+					gluErrorString(glError));
+				error = -1;
+			}
+
+			if (error != -1)
+			{
+				glGenerateMipmap(GL_TEXTURE_2D);
+				glTexParameteri(
+					GL_TEXTURE_2D,
+					GL_TEXTURE_MAG_FILTER,
+					GL_LINEAR);
+				glTexParameteri(
+					GL_TEXTURE_2D,
+					GL_TEXTURE_MIN_FILTER,
+					GL_LINEAR_MIPMAP_LINEAR);
+
+				glBindTexture(GL_TEXTURE_2D, 0);
+				ilDeleteImages(1, &devilID);
+			}
+		}
+
+		if (error != - 1)
+		{
+			hashMapInsert(textures, &texture.name, &texture);
+
+			LOG("Successfully loaded texture (%s)\n", textureName);
+			LOG("Texture Count: %d\n", textures->count);
+		}
+		else
+		{
+			LOG("Failed to load texture (%s)\n", textureName);
+		}
+	}
+	else
+	{
+		textureResource->refCount++;
+	}
+
+	return error;
 }
 
-int32 loadTextureWithFormat(
-	const char *name,
+int32 loadTextureData(
+	const char *filename,
 	TextureFormat format,
-	bool genMipmaps,
-	ILuint *dataOut)
+	ILuint *devilID)
 {
-	if (dataOut)
+	ilGenImages(1, devilID);
+	ilBindImage(*devilID);
+
+	ilLoadImage(filename);
+
+	ILenum ilError = ilGetError();
+	if (ilError != IL_NO_ERROR)
 	{
-		ILuint devilID;
-		ilGenImages(1, &devilID);
-		ilBindImage(devilID);
+		LOG("Error while loading texture: %s\n", iluErrorString(ilError));
+		return -1;
+	}
 
-		char *filename = getFullFilePath(name, NULL, "resources/textures");
-		ilLoadImage(filename);
+	ILenum ilColorFormat = IL_RGBA;
+	ILenum ilByteFormat = IL_UNSIGNED_BYTE;
 
-		ILenum ilError = ilGetError();
-		LOG("Load %s: %s\n", filename, iluErrorString(ilError));
-		if (ilError != IL_NO_ERROR)
-		{
-			free(filename);
-			return -1;
-		}
-
-		free(filename);
-
-		ILenum ilColorFormat = IL_RGBA;
-		ILenum ilByteFormat = IL_UNSIGNED_BYTE;
-
-		switch (format)
-		{
+	switch (format)
+	{
 		case TEXTURE_FORMAT_R8:
-		{
 			ilColorFormat = IL_LUMINANCE;
 			ilByteFormat = IL_UNSIGNED_BYTE;
-		} break;
+			break;
 		case TEXTURE_FORMAT_RGBA8:
 		default:
-		{
 			ilColorFormat = IL_RGBA;
 			ilByteFormat = IL_UNSIGNED_BYTE;
-		} break;
-		}
-
-		ilConvertImage(ilColorFormat, ilByteFormat);
-
-		*dataOut = devilID;
-
-		return 0;
+			break;
 	}
 
-	Texture *texture = getTexture(name);
-
-	if (name && !texture)
-	{
-		LOG("Loading texture (%s)...\n", name);
-
-		texture = &textures[numTextures++];
-
-		texture->name = malloc(strlen(name) + 1);
-		strcpy(texture->name, name);
-
-		texture->format = format;
-
-		ILuint devilID;
-		ilGenImages(1, &devilID);
-		ilBindImage(devilID);
-
-		char *filename = getFullFilePath(name, NULL, "resources/textures");
-		ilLoadImage(filename);
-
-		ILenum ilError = ilGetError();
-		LOG("Load %s: %s\n", filename, iluErrorString(ilError));
-		if (ilError != IL_NO_ERROR)
-		{
-			free(filename);
-			return -1;
-		}
-
-		free(filename);
-
-		ILenum ilColorFormat = IL_RGBA;
-		ILenum ilByteFormat = IL_UNSIGNED_BYTE;
-
-		switch (format)
-		{
-		case TEXTURE_FORMAT_R8:
-		{
-			ilColorFormat = IL_LUMINANCE;
-			ilByteFormat = IL_UNSIGNED_BYTE;
-		} break;
-		case TEXTURE_FORMAT_RGBA8:
-		default:
-		{
-			ilColorFormat = IL_RGBA;
-			ilByteFormat = IL_UNSIGNED_BYTE;
-		} break;
-		}
-
-		ilConvertImage(ilColorFormat, ilByteFormat);
-
-		glGenTextures(1, &texture->id);
-		glBindTexture(GL_TEXTURE_2D, texture->id);
-
-		GLenum glInternalFormat = GL_RGBA8;
-		GLenum glColorFormat = GL_RGBA;
-
-		switch (format)
-		{
-		case TEXTURE_FORMAT_R8:
-		{
-			glInternalFormat = GL_R8;
-			glColorFormat = GL_R;
-		} break;
-		default:
-		case TEXTURE_FORMAT_RGBA8:
-		{
-			glInternalFormat = GL_RGBA8;
-			glColorFormat = GL_RGBA;
-		} break;
-		}
-
-		GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
-		GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-		const GLvoid *textureData = ilGetData();
-		glTexStorage2D(
-			GL_TEXTURE_2D,
-			1,
-			glInternalFormat,
-			textureWidth,
-			textureHeight);
-		glTexSubImage2D(
-			GL_TEXTURE_2D,
-			0,
-			0,
-			0,
-			textureWidth,
-			textureHeight,
-			glColorFormat,
-			GL_UNSIGNED_BYTE,
-			textureData);
-		GLenum glError = glGetError();
-		LOG(
-			"Load texture onto GPU: %s\n",
-			gluErrorString(glError));
-		if (glError != GL_NO_ERROR)
-		{
-			return -1;
-		}
-
-		if (genMipmaps)
-		{
-			glGenerateMipmap(GL_TEXTURE_2D);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(
-				GL_TEXTURE_2D,
-				GL_TEXTURE_MIN_FILTER,
-				GL_LINEAR_MIPMAP_LINEAR);
-		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		ilDeleteImages(1, &devilID);
-
-		LOG("Successfully loaded texture (%s)\n", name);
-
-		LOG("Texture Count: %d\n", numTextures);
-		LOG("Textures Capacity: %d\n", texturesCapacity);
-	}
-
-	if (texture)
-	{
-		texture->refCount++;
-	}
+	ilConvertImage(ilColorFormat, ilByteFormat);
 
 	return 0;
-}
-
-void increaseTexturesCapacity(uint32 amount)
-{
-	while (numTextures + amount > texturesCapacity)
-	{
-		texturesCapacity += RESOURCE_REALLOCATION_AMOUNT;
-	}
-
-	uint32 previousBufferSize = numTextures * sizeof(Texture);
-	uint32 newBufferSize = texturesCapacity * sizeof(Texture);
-
-	if (previousBufferSize == 0)
-	{
-		textures = calloc(newBufferSize, 1);
-	}
-	else
-	{
-		textures = realloc(textures, newBufferSize);
-		memset(
-			textures + previousBufferSize,
-			0,
-			newBufferSize - previousBufferSize);
-	}
-
-	if (numTextures + amount == 1)
-	{
-		LOG(
-			"Increased textures capacity to %d to hold 1 new texture\n",
-			texturesCapacity);
-	}
-	else
-	{
-		LOG(
-			"Increased textures capacity to %d to hold %d new textures\n",
-			texturesCapacity,
-			amount);
-	}
 }
 
 Texture* getTexture(const char *name)
 {
-	if (name && strlen(name) > 0)
+	Texture *texture = NULL;
+	if (strlen(name) > 0)
 	{
-		for (uint32 i = 0; i < numTextures; i++)
+		UUID nameID = idFromName(name);
+		texture = hashMapGetData(textures, &nameID);
+	}
+
+	return texture;
+}
+
+char* getFullTextureFilename(const char *filename)
+{
+	char *fullFilename = malloc(strlen(filename) + 5);
+	for (uint32 i = 0; i < NUM_TEXTURE_FILE_FORMATS; i++)
+	{
+		sprintf(fullFilename, "%s.%s", filename, textureFileFormats[i]);
+		if (access(fullFilename, F_OK) != -1)
 		{
-			if (!strcmp(textures[i].name, name))
-			{
-				return &textures[i];
-			}
+			return fullFilename;
 		}
 	}
+
+	free(fullFilename);
 
 	return NULL;
 }
 
-uint32 getTextureIndex(const char *name)
+void freeTexture(UUID name)
 {
-	if (name && strlen(name) > 0)
+	Texture *texture = (Texture*)hashMapGetData(textures, &name);
+	if (texture)
 	{
-		for (uint32 i = 0; i < numTextures; i++)
+		if (--texture->refCount == 0)
 		{
-			if (!strcmp(textures[i].name, name))
-			{
-				return i;
-			}
+			LOG("Freeing texture (%s)...\n", name.string);
+
+			glDeleteTextures(1, &texture->id);
+			hashMapDelete(textures, &name);
+
+			LOG("Successfully freed texture (%s)\n", name.string);
+			LOG("Texture Count: %d\n", textures->count);
 		}
 	}
-
-	return 0;
-}
-
-int32 freeTexture(const char *name)
-{
-	Texture *texture = getTexture(name);
-
-	if (!texture)
-	{
-		LOG("Could not find texture (%s)\n", name);
-		return -1;
-	}
-
-	uint32 index = getTextureIndex(name);
-
-	if (--(texture->refCount) == 0)
-	{
-		LOG("Freeing texture (%s)...\n", name);
-
-		free(texture->name);
-		glDeleteTextures(1, &texture->id);
-
-		numTextures--;
-		Texture *resizedTextures = calloc(texturesCapacity, sizeof(Texture));
-		memcpy(resizedTextures, textures, index * sizeof(Texture));
-
-		if (index < numTextures)
-		{
-			memcpy(
-				&resizedTextures[index],
-				&textures[index + 1],
-				(numTextures - index) * sizeof(Texture));
-		}
-
-		free(textures);
-		textures = resizedTextures;
-
-		LOG("Successfully freed texture (%s)\n", name);
-		LOG("Texture Count: %d\n", numTextures);
-	}
-
-	return 0;
 }

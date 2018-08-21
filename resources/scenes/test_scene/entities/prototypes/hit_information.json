@@ -1,0 +1,49 @@
+{
+    "uuid": "hit_information",
+
+    "components":
+    {
+        "hit_information":
+        [
+			{
+				"name": "age",
+				"int32": -1
+			},
+
+			{
+				"name": "volume 1",
+				"uuid": ""
+			},
+
+			{
+				"name": "volume 2",
+				"uuid": ""
+			},
+
+			{
+				"name": "object 1",
+				"uuid": ""
+			},
+
+			{
+				"name": "object 2",
+				"uuid": ""
+			},
+
+			{
+				"name": "contact normal",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "depth",
+				"float32": 0
+			}
+        ]
+    }
+}
