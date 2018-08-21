@@ -352,10 +352,7 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 	// {
 	// 	if (textureUniforms[i].type != UNIFORM_INVALID)
 	// 	{
-	// 		if (setUniform(textureUniforms[i], 1, &i) == -1)
-	// 		{
-	// 			LOG("Unable to set texture uniform %d\n", i);
-	// 		}
+	// 		setUniform(textureUniforms[i], 1, &i);
 	// 	}
 	// }
 }
@@ -381,11 +378,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 
 	// 	bindShaderPipeline(pipeline);
 
-	// 	if (setUniform(modelUniform, 1, &transformMat))
-	// 	{
-	// 		LOG("Unable to set model uniform\n");
-	// 		return;
-	// 	}
+	// 	setUniform(modelUniform, 1, &transformMat);
 
 	// 	glBindVertexArray(heightmap->vertexArray);
 
