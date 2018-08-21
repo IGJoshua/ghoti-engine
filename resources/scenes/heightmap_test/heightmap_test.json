@@ -5,7 +5,7 @@
 		{
 			"external":
 			[
-				"movement"
+				"debug/movement"
 			],
 
 			"internal":

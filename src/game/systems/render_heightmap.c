@@ -2,6 +2,8 @@
 
 #include "core/log.h"
 
+#include "file/utilities.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -11,9 +13,11 @@
 #include "ECS/component.h"
 
 #include "asset_management/asset_manager_types.h"
+#include "asset_management/material.h"
 #include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
+#include "renderer/renderer_utilities.h"
 #include "renderer/shader.h"
 
 #include "components/component_types.h"
@@ -39,7 +43,7 @@ internal UUID transformComponentID = {};
 
 internal bool rendererActive = false;
 
-internal HashMap heightmapModels = 0;
+internal HashMap heightmapModels = NULL;
 
 internal Shader vertShader = {};
 internal Shader fragShader = {};
@@ -49,10 +53,17 @@ internal ShaderPipeline pipeline = {};
 internal Uniform modelUniform = {};
 internal Uniform viewUniform = {};
 internal Uniform projectionUniform = {};
-internal Uniform textureUniforms[1] = {};
 
-extern uint32 numTextures;
-extern uint32 texturesCapacity;
+internal Uniform materialUniform = {};
+internal Uniform materialValuesUniform = {};
+
+typedef struct heightmap_model_t
+{
+	Mesh mesh;
+	Material material;
+} HeightmapModel;
+
+internal int32 createHeightmapMaterial(UUID name, Material *material);
 
 internal
 void initRenderHeightmapSystem(Scene *scene)
@@ -111,17 +122,27 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		if (getUniform(
 				pipeline,
-				"diffuseTexture",
+				"material",
 				UNIFORM_TEXTURE_2D,
-				textureUniforms) == -1)
+				&materialUniform) == -1)
 		{
-			LOG("Unable to get diffuse texture uniform for heightmap rendering\n");
+			LOG("Unable to get material uniform for heightmap rendering\n");
+		}
+
+		if (getUniform(
+				pipeline,
+				"materialValues",
+				UNIFORM_TEXTURE_2D,
+				&materialValuesUniform) == -1)
+		{
+			LOG("Unable to get material values uniform for "
+				"heightmap rendering\n");
 		}
 	}
 
 	HashMap map = createHashMap(
 		sizeof(UUID),
-		sizeof(Mesh),
+		sizeof(HeightmapModel),
 		SCENE_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	hashMapInsert(heightmapModels, &scene, &map);
@@ -141,22 +162,27 @@ void initRenderHeightmapSystem(Scene *scene)
 			entityID,
 			transformComponentID);
 
-		persistent char *heightmapFolder = "resources/heightmaps/";
-		persistent uint32 heightmapFolderLength = 21;
-		char buffer[1024];
-		memcpy(buffer, heightmapFolder, heightmapFolderLength);
-		strcpy(buffer + heightmapFolderLength, heightmap->heightmapName);
+		char *heightmapFilename = getFullFilePath(
+			heightmap->heightmapName,
+			NULL,
+			"resources/heightmaps");
+		char *fullHeightmapFilename = getFullTextureFilename(heightmapFilename);
+		free(heightmapFilename);
 
 		ILuint imageID;
 		if (loadTextureData(
-				buffer,
+				fullHeightmapFilename,
 				TEXTURE_FORMAT_R8,
 				&imageID) == -1)
 		{
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);
+			free(fullHeightmapFilename);
 			continue;
 		}
+
+		free(fullHeightmapFilename);
+
 		ilBindImage(imageID);
 		uint32 imageWidth = ilGetInteger(IL_IMAGE_WIDTH);
 		uint32 imageHeight = ilGetInteger(IL_IMAGE_HEIGHT);
@@ -314,21 +340,22 @@ void initRenderHeightmapSystem(Scene *scene)
 		}
 
 		// Upload the model to the GPU
-		Mesh m = {};
+		HeightmapModel hm = {};
+		Mesh *m = &hm.mesh;
 
-		glGenBuffers(1, &m.vertexBuffer);
-		glGenVertexArrays(1, &m.vertexArray);
+		glGenBuffers(1, &m->vertexBuffer);
+		glGenVertexArrays(1, &m->vertexArray);
 
 		uint32 bufferIndex = 0;
 
-		glBindBuffer(GL_ARRAY_BUFFER, m.vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m->vertexBuffer);
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			sizeof(Vertex) * numVerts,
 			verts,
 			GL_STATIC_DRAW);
 
-		glBindVertexArray(m.vertexArray);
+		glBindVertexArray(m->vertexArray);
 		glVertexAttribPointer(
 			bufferIndex++,
 			3,
@@ -401,39 +428,30 @@ void initRenderHeightmapSystem(Scene *scene)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 
-		glGenBuffers(1, &m.indexBuffer);
+		glGenBuffers(1, &m->indexBuffer);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexBuffer);
 		glBufferData(
 			GL_ELEMENT_ARRAY_BUFFER,
 			sizeof(uint32) * numIndices,
 			indices,
 			GL_STATIC_DRAW);
 
-		m.numIndices = numIndices;
+		m->numIndices = numIndices;
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		free(verts);
 		free(indices);
 
-		hashMapInsert(map, &entityID, &m);
+		if (createHeightmapMaterial(
+			idFromName(heightmap->materialName),
+			&hm.material) == -1)
+		{
+			continue;
+		}
 
-		// Load the texture onto the GPU
-		// if (strcmp(heightmap->textureName, ""))
-		// {
-		// 	persistent char *heightmapFolder = "resources/heightmaps/";
-		// 	persistent uint32 heightmapFolderLength = 21;
-		// 	char *buffer = alloca(1024);
-		// 	memcpy(buffer, heightmapFolder, heightmapFolderLength);
-		// 	memcpy(
-		// 		buffer + heightmapFolderLength,
-		// 		heightmap->heightmapName,
-		// 		strlen(heightmap->textureName));
-
-		// 	// Load the texture
-		// 	loadTexture(buffer, heightmap->textureName);
-		// }
+		hashMapInsert(map, &entityID, &hm);
 	}
 }
 
@@ -442,32 +460,47 @@ extern real64 alpha;
 internal
 void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 {
-	cameraSetUniforms(scene, viewUniform, projectionUniform, pipeline);
+	bindShaderPipeline(pipeline);
 
-	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	if (cameraSetUniforms(
+		scene,
+		viewUniform,
+		projectionUniform,
+		pipeline) == -1)
 	{
-		if (textureUniforms[i].type != UNIFORM_INVALID)
-		{
-			setUniform(textureUniforms[i], 1, &i);
-		}
+		return;
 	}
+
+	GLint textureIndex = 0;
+	setMaterialUniform(&materialUniform, &textureIndex);
 }
 
 internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
+	if (!sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID))
+	{
+		return;
+	}
+
 	HashMap *sceneMap = (HashMap *)hashMapGetData(heightmapModels, &scene);
 	ASSERT(sceneMap);
 
-	Mesh *heightmap = hashMapGetData(
+	HeightmapModel *heightmapModel = hashMapGetData(
 		*sceneMap,
 		&entityID);
-	if (!heightmap)
+	if (!heightmapModel)
 	{
 		LOG("No heightmap loaded for entity %s, skipping render\n",
 			entityID.string);
 		return;
 	}
+
+	Mesh *heightmap = &heightmapModel->mesh;
+	Material *material = &heightmapModel->material;
 
 	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
@@ -484,26 +517,18 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	HeightmapComponent *heightmapComponent = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		heightmapComponentID);
-
-	// Texture *tex = getTexture(heightmapComponent->textureName);
-	// if (tex)
-	// {
-	// 	glActiveTexture(GL_TEXTURE0);
-	// 	glBindTexture(GL_TEXTURE_2D, tex->id);
-	// }
-
 	glBindVertexArray(heightmap->vertexArray);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, heightmap->indexBuffer);
 
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; ++j)
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; ++i)
 	{
-		glEnableVertexAttribArray(j);
+		glEnableVertexAttribArray(i);
 	}
+
+	GLint textureIndex = 0;
+	activateMaterialTextures(material, &textureIndex);
+	setMaterialValuesUniform(&materialValuesUniform, material);
 
 	// Make this use a triangle list
 	glDrawElements(
@@ -516,6 +541,20 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		LOG("Error while drawing heightmap\n");
 	}
+
+	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+	{
+		glDisableVertexAttribArray(i);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 internal
@@ -539,10 +578,8 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 		HeightmapComponent *heightmap = cdtIteratorGetData(itr);
 		UUID entity = cdtIteratorGetUUID(itr);
 
-		// Delete the texture reference used for this heightmap
-		freeTexture(idFromName(heightmap->textureName));
-
-		Mesh *m = hashMapGetData(*map, &entity);
+		HeightmapModel *hm = hashMapGetData(*map, &entity);
+		Mesh *m = &hm->mesh;
 
 		glBindVertexArray(m->vertexArray);
 		glDeleteBuffers(1, &m->vertexBuffer);
@@ -550,6 +587,9 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 		glBindVertexArray(0);
 
 		glDeleteVertexArrays(1, &m->vertexArray);
+
+		// Delete the material used for this heightmap
+		freeMaterial(&hm->material);
 
 		free(dGeomGetData(heightmap->heightfieldGeom));
 		dHeightfieldDataID heightfieldData = dGeomHeightfieldGetHeightfieldData(
@@ -594,4 +634,36 @@ System createRenderHeightmapSystem(void)
 	ret.shutdown = &shutdownRenderHeightmapSystem;
 
 	return ret;
+}
+
+int32 createHeightmapMaterial(UUID name, Material *material)
+{
+	LOG("Loading material (%s)...\n", name.string);
+
+	material->name = name;
+
+	material->doubleSided = false;
+
+	loadMaterialFolders(material->name);
+
+	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		MaterialComponent *materialComponent = &material->components[i];
+		MaterialComponentType materialComponentType =
+			(MaterialComponentType)i;
+
+		if (loadMaterialComponentTexture(
+			material->name,
+			materialComponentType,
+			&materialComponent->texture) == -1)
+		{
+			return -1;
+		}
+
+		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
+	}
+
+	LOG("Successfully loaded material (%s)\n", name.string);
+
+	return 0;
 }

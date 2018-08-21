@@ -22,12 +22,6 @@ internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
 };
 
-internal void loadMaterialFolders(UUID name);
-int32 loadMaterialComponentTexture(
-	UUID materialName,
-	MaterialComponentType materialComponentType,
-	UUID *textureName);
-
 int32 loadMaterial(Material *material, FILE *file)
 {
 	material->name = readStringAsUUID(file);

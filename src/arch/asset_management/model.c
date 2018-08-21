@@ -40,13 +40,11 @@ int32 loadModel(const char *name)
 
 		char *assetFilename = getFullFilePath(name, "asset", modelFolder);
 		FILE *assetFile = fopen(assetFilename, "rb");
-		free(assetFilename);
 
 		if (assetFile)
 		{
 			char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
 			FILE *meshFile = fopen(meshFilename, "rb");
-			free(meshFilename);
 
 			if (meshFile)
 			{
@@ -109,6 +107,8 @@ int32 loadModel(const char *name)
 			{
 				fclose(meshFile);
 			}
+
+			free(meshFilename);
 		}
 		else
 		{
@@ -121,6 +121,7 @@ int32 loadModel(const char *name)
 			fclose(assetFile);
 		}
 
+		free(assetFilename);
 		free(modelFolder);
 
 		if (error != -1)

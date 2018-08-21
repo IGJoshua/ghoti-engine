@@ -79,11 +79,11 @@
 			},
 			{
 				"name": "heightmap name",
-				"char(1024)": "heightmap.tga"
+				"char(1024)": "heightmap"
 			},
 			{
 				"name": "texture name",
-				"char(1024)": "gold.png"
+				"char(1024)": "metal"
 			},
 			{
 				"name": "size x",
