@@ -484,10 +484,10 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	HeightmapComponent *heightmapComponent = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		heightmapComponentID);
+	// HeightmapComponent *heightmapComponent = sceneGetComponentFromEntity(
+	// 	scene,
+	// 	entityID,
+	// 	heightmapComponentID);
 
 	// Texture *tex = getTexture(heightmapComponent->textureName);
 	// if (tex)
