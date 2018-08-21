@@ -58,6 +58,14 @@ ComponentDataTable *createComponentDataTable(
 		numEntries,
 		componentSize);
 
+	if (componentSize == 0)
+	{
+		LOG("WARNING: Unable to load the definition for the %s component "
+		"because no entities in the scene have the %s component\n",
+		componentID.string,
+		componentID.string);
+	}
+
 	return ret;
 }
 

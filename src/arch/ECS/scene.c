@@ -458,7 +458,6 @@ int32 loadSceneFile(const char *name, Scene **scene)
 		fread(&numSystemGroups, sizeof(uint32), 1, file);
 
 		uint32 i, j;
-
 		for (i = 0; i < numSystemGroups; i++)
 		{
 			char *systemGroup = readString(file);
@@ -629,6 +628,33 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 	if (error != -1)
 	{
+		for (HashMapIterator itr =
+				hashMapGetIterator(&(*scene)->componentDefinitions);
+			!hashMapIteratorAtEnd(itr);
+			hashMapMoveIterator(&itr))
+		{
+			ComponentDefinition *componentDefintion =
+				(ComponentDefinition*)hashMapIteratorGetValue(itr);
+
+			bool found = false;
+			for (uint32 i = 0; i < (*scene)->numComponentLimitNames; i++)
+			{
+				char *componentLimitName = (*scene)->componentLimitNames[i];
+				if (!strcmp(componentDefintion->name, componentLimitName))
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				LOG("WARNING: Component limit for the %s component "
+					"is missing from the scene\n",
+					componentDefintion->name);
+			}
+		}
+
 		LOG("Successfully loaded scene (%s)\n", name);
 	}
 
