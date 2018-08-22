@@ -258,7 +258,10 @@ void updateRigidBodyPosition(
 
 	dBodySetQuaternion(body->bodyID, rot);
 
-	updateCollisionGeoms(scene, trans, coll);
+	if (coll)
+	{
+		updateCollisionGeoms(scene, trans, coll);
+	}
 }
 
 void updateRigidBody(
