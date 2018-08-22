@@ -39,7 +39,7 @@ engine.components = require("resources/scripts/components")
 -- iterate over every file in resources/scripts/components/ and require them
 local componentFiles = io.popen(
   ffi.os == "Windows"
-    and 'dir /b resources\\scripts\\components'
+    and 'dir resources\\scripts\\components /b /a-d'
     or 'find resources/scripts/components -name "*.lua"')
 for line in componentFiles:lines() do
   if ffi.os == "Windows" then
@@ -57,7 +57,7 @@ engine.systems = {}
 io.write("Searching for systems\n")
 local systemFiles = io.popen(
   ffi.os == "Windows"
-    and 'dir /b resources\\scripts\\systems'
+    and 'dir resources\\scripts\\systems /b /a-d'
     or 'find resources/scripts/systems -name "*.lua"')
 for line in systemFiles:lines() do
   if ffi.os == "Windows" then
