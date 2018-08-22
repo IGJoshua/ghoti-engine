@@ -245,17 +245,17 @@ void *hashMapIteratorGetValue(HashMapIterator itr)
 		+ itr.map->keySizeBytes;
 }
 
-void hashMapFMap(HashMap *map, HashMapFunctorFn fn, ClosureData *data)
+void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data)
 {
-	for (uint32 bucket = 0; bucket < (*map)->bucketCount; ++bucket)
+	for (uint32 bucket = 0; bucket < map->bucketCount; ++bucket)
 	{
-		for (ListIterator itr = listGetIterator(&(*map)->buckets[bucket]);
+		for (ListIterator itr = listGetIterator(&map->buckets[bucket]);
 			 !listIteratorAtEnd(itr);
 			 listMoveIterator(&itr))
 		{
 			HashMapStorage *element =
 				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr);
-			fn(element->data, element->data + (*map)->keySizeBytes, data);
+			fn(element->data, element->data + map->keySizeBytes, data);
 		}
 	}
 }

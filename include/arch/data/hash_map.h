@@ -25,4 +25,4 @@ int32 hashMapIteratorAtEnd(HashMapIterator itr);
 void *hashMapIteratorGetKey(HashMapIterator itr);
 void *hashMapIteratorGetValue(HashMapIterator itr);
 
-void hashMapFMap(HashMap *map, HashMapFunctorFn fn, ClosureData *data);
+void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data);
