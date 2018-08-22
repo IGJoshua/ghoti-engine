@@ -121,8 +121,8 @@ release : clean
 	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/saves/*
 	rm $(RELEASE_INIT_FILE)
-	echo "-- NOTE(Joshua): This is where you load the main scene\n" > $(RELEASE_INIT_FILE) && echo "math.randomseed(os.time())\n" >> $(RELEASE_INIT_FILE) && echo "local C = engine.C" >> $(RELEASE_INIT_FILE)
-	rm -rf $(RELEASE_DEBUG_FILES)
+	echo "-- NOTE(Joshua): This is where you load the main scene" > $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "math.randomseed(os.time())" >> $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "local C = engine.C" >> $(RELEASE_INIT_FILE)
+	rm -rf $(RELEASE_DEBUG_FILES) && echo "" >> $(RELEASE_INIT_FILE)
 	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
