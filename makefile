@@ -15,9 +15,7 @@ GAMEOBJDIR = $(OBJDIR)/game
 _LIBDIRS = lib
 LIBDIRS = $(foreach LIBDIR,$(_LIBDIRS),-L$(LIBDIR) -Wl,-rpath-link,$(LIBDIR))
 
-LUALIBDIR = lualib
-
-_WINLIBDIRS = winlib
+_WINLIBDIRS = winlib winlib/static
 WINLIBDIRS = $(foreach LIBDIR,$(_WINLIBDIRS),-L$(LIBDIR))
 
 ARCHDIRS = $(foreach DIR,$(shell find $(ARCHDIR) -type d -printf '%d\t%P\n' | sort -r -nk1 | cut -f2-),mkdir $(ARCHOBJDIR)/$(DIR) &&) :
@@ -30,7 +28,12 @@ DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
 
-_LIBS = json-utilities model-utility cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode openal
+RELEASE_RESOURCES_FOLDER = release/resources
+RELEASE_SCRIPTS_FOLDER = $(RELEASE_RESOURCES_FOLDER)/scripts
+RELEASE_INIT_FILE = $(RELEASE_SCRIPTS_FOLDER)/init.lua
+RELEASE_DEBUG_FILES = $(RELEASE_SCRIPTS_FOLDER)/components/debug $(RELEASE_SCRIPTS_FOLDER)/systems/debug
+
+_LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)
@@ -61,6 +64,8 @@ $(LIBNAME).so : $(BUILDDIR)/$(LIBNAME).so
 
 arch : $(LIBNAME).so
 
+SUPPRESSIONS = $(PROJ).supp
+
 .PHONY: clean
 
 clean:
@@ -72,18 +77,17 @@ clean:
 	mkdir -p $(GAMEOBJDIR)
 	$(ARCHDIRS)
 	$(GAMEDIRS)
+	touch local-$(SUPPRESSIONS)
 
 .PHONY: run
 
 run : build
 	LD_LIBRARY_PATH=.:./lib $(BUILDDIR)/$(PROJ)
 
-SUPPRESSIONS = $(PROJ).supp
-
 .PHONY: leakcheck
 
 leakcheck : build
-	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(BUILDDIR)/$(PROJ)
+	LD_LIBRARY_PATH=.:./lib valgrind --leak-check=full --track-origins=yes --suppressions=$(SUPPRESSIONS) --suppressions=local-$(SUPPRESSIONS) --gen-suppressions=$(if $(GENSUPPRESSIONS),$(GENSUPPRESSIONS),no) $(if $(VGDB),--vgdb=yes --vgdb-error=0,) $(BUILDDIR)/$(PROJ)
 
 .PHONY: callgrind
 
@@ -112,14 +116,21 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
-	cp -r lualib/ release/
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*
+	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/saves/*
+	rm $(RELEASE_INIT_FILE)
+	echo "-- NOTE(Joshua): This is where you load the main scene" > $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "math.randomseed(os.time())" >> $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "local C = engine.C" >> $(RELEASE_INIT_FILE)
+	rm -rf $(RELEASE_DEBUG_FILES) && echo "" >> $(RELEASE_INIT_FILE)
 	$(if $(WINDOWS),,cp -r lib/ release/)
 	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
 
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
-WINFLAGS = -DGLFW_DLL -I/usr/local/include -Wl,-subsystem,windows
-_WINLIBS = glew32 glfw3 opengl32 kazmath glu32 DevIL ILU pthread luajit mingw32 SDL2main SDL2 cjson frozen json-utilities model-utility ode-6
+WINFLAGS = -I/usr/local/include -Wl,-subsystem,windows
+_WINLIBS = mingw32 SDL2main json-utilities cjson frozen glfw3 glew32 glu32 opengl32 ILU DevIL kazmath pthread luajit ode-6 SDL2
+
 WINLIBS = $(foreach LIB,$(_WINLIBS),-l$(LIB))
 
 WINARCHOBJ = $(patsubst %.o,%.obj,$(ARCHOBJ))
@@ -141,7 +152,7 @@ $(LIBNAME).dll : $(BUILDDIR)/$(LIBNAME).dll
 
 windows : $(WINGAMEOBJ) $(LIBNAME).dll
 	$(WINCC) $(WINCFLAGS) $(if $(RELEASE),$(RELFLAGS),$(DBFLAGS)) $(WINFLAGS) $(WINLIBDIRS) -o $(BUILDDIR)/$(PROJ).exe $^ $(WINLIBS)
-	cp winlib/* $(BUILDDIR)/
+	find winlib/* -not -path '*/static*' -exec cp {} $(BUILDDIR)/ \;
 
 .PHONY: wine
 

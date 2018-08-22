@@ -1,6 +1,8 @@
 #include "ECS/component.h"
 #include "ECS/ecs_types.h"
 
+#include "asset_management/asset_manager.h"
+
 #include "core/log.h"
 
 #include "data/hash_map.h"
@@ -20,6 +22,7 @@ ComponentDataEntry *getEntry(ComponentDataTable *table, uint32 index)
 }
 
 ComponentDataTable *createComponentDataTable(
+	UUID componentID,
 	uint32 numEntries,
 	uint32 componentSize)
 {
@@ -30,6 +33,7 @@ ComponentDataTable *createComponentDataTable(
 
 	ASSERT(ret != 0);
 
+	ret->componentID = componentID;
 	ret->componentSize = componentSize;
 	ret->firstFree = 0;
 	ret->numEntries = numEntries;
@@ -48,10 +52,19 @@ ComponentDataTable *createComponentDataTable(
 		entry->nextFree = i + 1;
 	}
 
-	LOG(
-		"Created a component data table with %d entries of %d bytes\n",
+	LOG("Created %s component data table to hold %d entries "
+		"with a size of %d bytes\n",
+		componentID.string,
 		numEntries,
 		componentSize);
+
+	if (componentSize == 0)
+	{
+		LOG("WARNING: Unable to load the definition for the %s component "
+		"because no entities in the scene have the %s component\n",
+		componentID.string,
+		componentID.string);
+	}
 
 	return ret;
 }
@@ -104,6 +117,7 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	memcpy(entry->entity.string, &entityID, sizeof(UUID));
 	// Put the component data into the table
 	memcpy(entry->data, componentData, table->componentSize);
+	loadAssets(table->componentID, entry);
 
 	entry->nextFree = table->numEntries + 1;
 
@@ -122,6 +136,7 @@ void cdtRemove(
 	if (pIndex)
 	{
 		ComponentDataEntry *entry = getEntry(table, *pIndex);
+		freeAssets(table->componentID, entry);
 
 		memset(
 			entry->entity.string,

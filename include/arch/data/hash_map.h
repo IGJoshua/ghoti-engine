@@ -24,7 +24,5 @@ void hashMapMoveIterator(HashMapIterator *itr);
 int32 hashMapIteratorAtEnd(HashMapIterator itr);
 void *hashMapIteratorGetKey(HashMapIterator itr);
 void *hashMapIteratorGetValue(HashMapIterator itr);
-void hashMapDeleteAtIterator(HashMapIterator *itr);
 
 void hashMapFMap(HashMap map, HashMapFunctorFn fn, ClosureData *data);
-uint32 hashMapCount(HashMap map);

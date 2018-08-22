@@ -58,7 +58,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 	{
 		// TODO: Make this work using indices into the tables instead of UUIDs
 		UUID *volume1 = dGeomGetData(o1);
-		UUID *volume2 = dGeomGetData(o1);
+		UUID *volume2 = dGeomGetData(o2);
 
 		CollisionTreeNode *node1 = sceneGetComponentFromEntity(
 			scene,
@@ -70,7 +70,6 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			*volume2,
 			collisionTreeNodeComponentID);
 
-		/*
 		RigidBodyComponent *body1 = sceneGetComponentFromEntity(
 			scene,
 			node1->collisionVolume,
@@ -80,10 +79,10 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			scene,
 			node2->collisionVolume,
 			rigidBodyComponentID);
-		*/
 
 		// FIXME: This should not collide if both bodies are kinematic
-		if (node1->isTrigger && node2->isTrigger)
+		if ((node1->isTrigger && node2->isTrigger)
+			|| ((body1 && !body1->dynamic) && (body2 && !body2->dynamic)))
 		{
 			return;
 		}

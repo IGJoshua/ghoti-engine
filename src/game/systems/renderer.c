@@ -7,6 +7,7 @@
 #include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
+#include "renderer/renderer_utilities.h"
 #include "renderer/shader.h"
 
 #include "ECS/ecs_types.h"
@@ -27,8 +28,8 @@
 #include <malloc.h>
 #include <stdio.h>
 
-internal Shader vertShader;
-internal Shader fragShader;
+internal Shader vertexShader;
+internal Shader fragmentShader;
 
 internal ShaderPipeline pipeline;
 
@@ -36,12 +37,25 @@ internal Uniform modelUniform;
 internal Uniform viewUniform;
 internal Uniform projectionUniform;
 
-internal Uniform textureUniforms[MATERIAL_COMPONENT_TYPE_COUNT];
+internal Uniform materialUniform;
+internal Uniform materialValuesUniform;
+internal Uniform materialMaskUniform;
+internal Uniform opacityMaskUniform;
+internal Uniform collectionMaterialUniform;
+internal Uniform collectionMaterialValuesUniform;
+internal Uniform grungeMaterialUniform;
+internal Uniform grungeMaterialValuesUniform;
+internal Uniform wearMaterialUniform;
+internal Uniform wearMaterialValuesUniform;
+
+internal Uniform useCustomColorUniform;
+internal Uniform customColorUniform;
 
 internal bool rendererActive;
 
 internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
+internal UUID wireframeComponentID = {};
 internal UUID cameraComponentID = {};
 
 internal
@@ -52,7 +66,7 @@ void initRendererSystem(Scene *scene)
 		if (compileShaderFromFile(
 			"resources/shaders/base.vert",
 			SHADER_VERTEX,
-			&vertShader) == -1)
+			&vertexShader) == -1)
 		{
 			LOG("Unable to compile vertex shader from file\n");
 		}
@@ -60,84 +74,86 @@ void initRendererSystem(Scene *scene)
 		if (compileShaderFromFile(
 			"resources/shaders/color.frag",
 			SHADER_FRAGMENT,
-			&fragShader) == -1)
+			&fragmentShader) == -1)
 		{
 			LOG("Unable to compile fragment shader from file\n");
 		}
 
 		Shader *program[2];
-		program[0] = &vertShader;
-		program[1] = &fragShader;
+		program[0] = &vertexShader;
+		program[1] = &fragmentShader;
 
 		if (composeShaderPipeline(program, 2, &pipeline) == -1)
 		{
 			LOG("Unable to compose shader program\n");
 		}
 
-		freeShader(vertShader);
-		freeShader(fragShader);
+		freeShader(vertexShader);
+		freeShader(fragmentShader);
 		free(pipeline.shaders);
 		pipeline.shaderCount = 0;
 
-		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
-		{
-			LOG("Unable to get model component uniform\n");
-		}
+		getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform);
+		getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform);
+		getUniform(pipeline, "projection", UNIFORM_MAT4, &projectionUniform);
 
-		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
-		{
-			LOG("Unable to get view component uniform\n");
-		}
-
-		if (getUniform(
+		getUniform(pipeline, "material", UNIFORM_TEXTURE_2D, &materialUniform);
+		getUniform(
 			pipeline,
-			"projection",
-			UNIFORM_MAT4,
-			&projectionUniform) == -1)
-		{
-			LOG("Unable to get projection component uniform\n");
-		}
-
-		for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-		{
-			textureUniforms[i].type = UNIFORM_INVALID;
-		}
-
-		if (getUniform(
+			"materialValues",
+			UNIFORM_VEC3,
+			&materialValuesUniform);
+		getUniform(
 			pipeline,
-			"diffuseTexture",
+			"materialMask",
 			UNIFORM_TEXTURE_2D,
-			&textureUniforms[MATERIAL_COMPONENT_TYPE_DIFFUSE]) == -1)
-		{
-			LOG("Unable to get diffuse texture uniform\n");
-		}
-
-		if (getUniform(
+			&materialMaskUniform);
+		getUniform(
 			pipeline,
-			"specularTexture",
+			"opacityMask",
 			UNIFORM_TEXTURE_2D,
-			&textureUniforms[MATERIAL_COMPONENT_TYPE_SPECULAR]) == -1)
-		{
-			LOG("Unable to get specular texture uniform\n");
-		}
-
-		if (getUniform(
+			&opacityMaskUniform);
+		getUniform(
 			pipeline,
-			"normalTexture",
+			"collectionMaterial",
 			UNIFORM_TEXTURE_2D,
-			&textureUniforms[MATERIAL_COMPONENT_TYPE_NORMAL]) == -1)
-		{
-			LOG("Unable to get normal texture uniform\n");
-		}
-
-		if (getUniform(
+			&collectionMaterialUniform);
+		getUniform(
 			pipeline,
-			"emissiveTexture",
+			"collectionMaterialValues",
+			UNIFORM_VEC3,
+			&collectionMaterialValuesUniform);
+		getUniform(
+			pipeline,
+			"grungeMaterial",
 			UNIFORM_TEXTURE_2D,
-			&textureUniforms[MATERIAL_COMPONENT_TYPE_EMISSIVE]) == -1)
-		{
-			LOG("Unable to get emissive texture uniform\n");
-		}
+			&grungeMaterialUniform);
+		getUniform(
+			pipeline,
+			"grungeMaterialValues",
+			UNIFORM_VEC3,
+			&grungeMaterialValuesUniform);
+		getUniform(
+			pipeline,
+			"wearMaterial",
+			UNIFORM_TEXTURE_2D,
+			&wearMaterialUniform);
+		getUniform(
+			pipeline,
+			"wearMaterialValues",
+			UNIFORM_VEC3,
+			&wearMaterialValuesUniform);
+
+		getUniform(
+			pipeline,
+			"useCustomColor",
+			UNIFORM_BOOL,
+			&useCustomColorUniform);
+		getUniform(
+			pipeline,
+			"customColor",
+			UNIFORM_VEC3,
+			&customColorUniform);
 
 		rendererActive = true;
 	}
@@ -148,18 +164,26 @@ extern real64 alpha;
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
-	cameraSetUniforms(scene, viewUniform, projectionUniform, pipeline);
+	bindShaderPipeline(pipeline);
 
-	for (GLint i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	if (cameraSetUniforms(
+		scene,
+		viewUniform,
+		projectionUniform,
+		pipeline) == -1)
 	{
-		if (textureUniforms[i].type != UNIFORM_INVALID)
-		{
-			if (setUniform(textureUniforms[i], &i) == -1)
-			{
-				LOG("Unable to set texture uniform %d\n", i);
-			}
-		}
+		return;
 	}
+
+	GLint textureIndex = 0;
+	setMaterialUniform(&materialUniform, &textureIndex);
+	setUniform(materialMaskUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(opacityMaskUniform, 1, &textureIndex);
+	textureIndex++;
+	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
+	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
+	setMaterialUniform(&wearMaterialUniform, &textureIndex);
 }
 
 extern real64 alpha;
@@ -167,10 +191,23 @@ extern real64 alpha;
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
+	if (!sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID))
+	{
+		return;
+	}
+
 	ModelComponent *modelComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
 		modelComponentID);
+
+	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		wireframeComponentID);
 
 	Model *model = getModel(modelComponent->name);
 	if (!model)
@@ -178,7 +215,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	if (!modelComponent->visible)
+	bool wireframe = wireframeComponent && wireframeComponent->visible;
+	if (!modelComponent->visible && !wireframe)
 	{
 		return;
 	}
@@ -192,18 +230,16 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		transform,
 		alpha);
 
-	if (setUniform(modelUniform, &worldMatrix) == -1)
-	{
-		LOG("Unable to set model uniform\n");
-		return;
-	}
+	setUniform(modelUniform, 1, &worldMatrix);
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
-		Mesh *mesh = &model->meshes[i];
+		Subset *subset = &model->subsets[i];
+		Mesh *mesh = &subset->mesh;
+		Material *material = &subset->material;
+		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
-
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
 
 		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
@@ -211,38 +247,91 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glEnableVertexAttribArray(j);
 		}
 
-		Material *material = &model->materials[mesh->materialIndex];
+		GLint textureIndex = 0;
+		activateMaterialTextures(material, &textureIndex);
+		activateTexture(model->materialTexture, &textureIndex);
+		activateTexture(model->opacityTexture, &textureIndex);
+		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
+		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
+		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
 
-		Texture *textures[MATERIAL_COMPONENT_TYPE_COUNT];
-		memset(textures, 0, sizeof(Texture*) * MATERIAL_COMPONENT_TYPE_COUNT);
+		setMaterialValuesUniform(&materialValuesUniform, material);
+		setMaterialValuesUniform(
+			&collectionMaterialValuesUniform,
+			&mask->collectionMaterial);
+		setMaterialValuesUniform(
+			&grungeMaterialValuesUniform,
+			&mask->grungeMaterial);
+		setMaterialValuesUniform(
+			&wearMaterialValuesUniform,
+			&mask->wearMaterial);
 
-		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		if (material->doubleSided)
 		{
-			textures[j] = getTexture(material->components[j].texture);
+			glDisable(GL_CULL_FACE);
+		}
 
-			if (textures[j])
+		if (modelComponent->visible)
+		{
+			bool useCustomColor = false;
+			setUniform(useCustomColorUniform, 1, &useCustomColor);
+
+			glDrawElements(
+				GL_TRIANGLES,
+				mesh->numIndices,
+				GL_UNSIGNED_INT,
+				NULL);
+
+			GLenum glError = glGetError();
+			if (glError != GL_NO_ERROR)
 			{
-				glActiveTexture(GL_TEXTURE0 + j);
-				glBindTexture(GL_TEXTURE_2D, textures[j]->id);
+				LOG("Error when drawing model (%s), subset (%s): %s\n",
+					model->name.string,
+					subset->name.string,
+					gluErrorString(glError));
 			}
 		}
 
-		glDrawElements(
-			GL_TRIANGLES,
-			mesh->numIndices,
-			GL_UNSIGNED_INT,
-			NULL);
-		GLenum glError = glGetError();
-		if (glError != GL_NO_ERROR)
+		if (wireframe)
 		{
-			LOG(
-				"Error in Draw Subset %s in Model (%s): %s\n",
-				material->name,
-				modelComponent->name,
-				gluErrorString(glError));
+			setUniform(
+				useCustomColorUniform,
+				1,
+				&wireframeComponent->customColor);
+			setUniform(customColorUniform, 1, &wireframeComponent->color);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+			real32 lineWidth;
+			glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+			glLineWidth(wireframeComponent->lineWidth);
+
+			glDrawElements(
+				GL_TRIANGLES,
+				mesh->numIndices,
+				GL_UNSIGNED_INT,
+				NULL);
+
+			GLenum glError = glGetError();
+			if (glError != GL_NO_ERROR)
+			{
+				LOG("Error when drawing wireframe for model (%s), "
+					"subset (%s): %s\n",
+					model->name.string,
+					subset->name.string,
+					gluErrorString(glError));
+			}
+
+			glLineWidth(lineWidth);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 
-		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT; j++)
+		if (material->doubleSided)
+		{
+			glEnable(GL_CULL_FACE);
+		}
+
+		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
 		{
 			glActiveTexture(GL_TEXTURE0 + j);
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -278,6 +367,7 @@ System createRendererSystem(void)
 
 	transformComponentID = idFromName("transform");
 	modelComponentID = idFromName("model");
+	wireframeComponentID = idFromName("wireframe");
 	cameraComponentID = idFromName("camera");
 
 	listPushFront(&componentList, &transformComponentID);

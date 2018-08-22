@@ -1,134 +1,223 @@
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
+#include "renderer/renderer_types.h"
+
 #include "core/log.h"
 
 #include "file/utilities.h"
 
-#include <malloc.h>
+#include "data/data_types.h"
+#include "data/hash_map.h"
+#include "data/list.h"
+
+#include "ECS/scene.h"
+
 #include <string.h>
 
-internal const char *getMaterialComponentName(
-	MaterialComponentType materialComponentType);
+extern HashMap textures;
+extern HashMap materialFolders;
+
+internal const char materialComponentCharacters[] = {
+	'b', 'e', 'm', 'n', 'r'
+};
 
 int32 loadMaterial(Material *material, FILE *file)
 {
-	material->type = MATERIAL_TYPE_DEBUG;
-	material->name = readString(file);
+	material->name = readStringAsUUID(file);
 
-	LOG("Loading subset material (%s)...\n", material->name);
-
-	uint32 numMaterialComponents;
-	fread(&numMaterialComponents, sizeof(uint32), 1, file);
-
-	memset(
-		&material->components,
-		0,
-		sizeof(MaterialComponent) * MATERIAL_COMPONENT_TYPE_COUNT);
-
-	for (uint32 i = 0; i < numMaterialComponents; i++)
+	if (strlen(material->name.string) > 0)
 	{
-		int8 materialComponentType;
-		fread(&materialComponentType, sizeof(int8), 1, file);
+		LOG("Loading material (%s)...\n", material->name.string);
 
-		const char *materialComponentName =
-			getMaterialComponentName(
-				(MaterialComponentType)materialComponentType);
+		fread(&material->doubleSided, sizeof(bool), 1, file);
 
-		LOG("Loading %s material component...\n", materialComponentName);
+		loadMaterialFolders(material->name);
 
-		MaterialComponent *materialComponent =
-			&material->components[(uint32)materialComponentType];
-
-		switch ((MaterialComponentType)materialComponentType)
+		for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 		{
-			case MATERIAL_COMPONENT_TYPE_DIFFUSE:
-			case MATERIAL_COMPONENT_TYPE_SPECULAR:
-			case MATERIAL_COMPONENT_TYPE_NORMAL:
-			case MATERIAL_COMPONENT_TYPE_EMISSIVE:
-				materialComponent->texture = readString(file);
-				fread(&materialComponent->uvMap, sizeof(uint32), 1, file);
-				break;
-			default:
-				break;
+			MaterialComponent *materialComponent = &material->components[i];
+			MaterialComponentType materialComponentType =
+				(MaterialComponentType)i;
+
+			if (loadMaterialComponentTexture(
+				material->name,
+				materialComponentType,
+				&materialComponent->texture) == -1)
+			{
+				return -1;
+			}
+
+			fread(&materialComponent->value.x, sizeof(uint32), 1, file);
+			switch (materialComponentType)
+			{
+				case MATERIAL_COMPONENT_TYPE_BASE:
+				case MATERIAL_COMPONENT_TYPE_EMISSIVE:
+					fread(&materialComponent->value.y, sizeof(uint32), 1, file);
+					fread(&materialComponent->value.z, sizeof(uint32), 1, file);
+					break;
+				default:
+					materialComponent->value.y = materialComponent->value.x;
+					materialComponent->value.z = materialComponent->value.y;
+					break;
+			}
 		}
 
-		switch ((MaterialComponentType)materialComponentType)
-		{
-			case MATERIAL_COMPONENT_TYPE_NORMAL:
-				break;
-			default:
-				fread(&materialComponent->value.x, sizeof(real32), 1, file);
-				fread(&materialComponent->value.y, sizeof(real32), 1, file);
-				fread(&materialComponent->value.z, sizeof(real32), 1, file);
-				break;
-		}
-
-		switch ((MaterialComponentType)materialComponentType)
-		{
-			case MATERIAL_COMPONENT_TYPE_SPECULAR:
-				fread(&materialComponent->value.w, sizeof(real32), 1, file);
-				break;
-			default:
-				break;
-		}
-
-		LOG("Successfully loaded %s material component\n",
-			materialComponentName);
+		LOG("Successfully loaded material (%s)\n", material->name.string);
 	}
-
-	LOG("Successfully loaded subset material (%s)\n", material->name);
 
 	return 0;
 }
 
-const char *getMaterialComponentName(
-	MaterialComponentType materialComponentType)
+void freeMaterial(Material *material)
 {
-	switch (materialComponentType)
-	{
-		case MATERIAL_COMPONENT_TYPE_DIFFUSE:
-			return "diffuse";
-		case MATERIAL_COMPONENT_TYPE_SPECULAR:
-			return "specular";
-		case MATERIAL_COMPONENT_TYPE_NORMAL:
-			return "normal";
-		case MATERIAL_COMPONENT_TYPE_EMISSIVE:
-			return "emissive";
-		case MATERIAL_COMPONENT_TYPE_AMBIENT:
-			return "ambient";
-		default:
-			break;
-	}
-
-	return NULL;
-}
-
-int32 freeMaterial(Material *material)
-{
-	int32 error = 0;
-
-	free(material->name);
-
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
-		char *texture = material->components[i].texture;
+		freeTexture(material->components[i].texture);
+	}
+}
 
-		if (texture)
+void loadMaterialFolders(UUID name)
+{
+	if (!hashMapGetData(materialFolders, &name))
+	{
+		List materialNames = createList(sizeof(UUID));
+
+		UUID fullMaterialName = name;
+		UUID materialName = idFromName(strtok(fullMaterialName.string, "_"));
+		while (strlen(materialName.string) > 0)
 		{
-			if (strlen(texture) > 0)
+			listPushBack(&materialNames, &materialName);
+			materialName = idFromName(strtok(NULL, "_"));
+		}
+
+		List materialFoldersList = createList(sizeof(MaterialFolder));
+
+		char *materialFolderPath = NULL;
+		fullMaterialName = idFromName("");
+		for (ListIterator itr = listGetIterator(&materialNames);
+			 !listIteratorAtEnd(itr);
+			 listMoveIterator(&itr))
+		{
+			materialName = *LIST_ITERATOR_GET_ELEMENT(UUID, itr);
+			if (!materialFolderPath)
 			{
-				error = freeTexture(texture);
+				materialFolderPath = malloc(strlen(materialName.string) + 3);
+				sprintf(materialFolderPath, "m_%s", materialName.string);
+
+				MaterialFolder materialFolder;
+
+				materialFolder.folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(materialFolder.folder, materialFolderPath);
+
+				fullMaterialName = materialName;
+				materialFolder.name = fullMaterialName;
+
+				listPushFront(&materialFoldersList, &materialFolder);
 			}
-
-			free(texture);
-
-			if (error == -1)
+			else
 			{
-				break;
+				MaterialFolder materialFolder;
+
+				name = fullMaterialName;
+				sprintf(
+					fullMaterialName.string,
+					"%s_%s",
+					name.string,
+					materialName.string);
+
+				materialFolder.name = fullMaterialName;
+
+				char *folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(folder, materialFolderPath);
+
+				materialFolderPath = realloc(
+					materialFolderPath,
+					strlen(materialFolderPath) +
+					strlen(fullMaterialName.string) + 4);
+
+				sprintf(
+					materialFolderPath,
+					"%s/m_%s",
+					folder,
+					fullMaterialName.string);
+
+				free(folder);
+
+				materialFolder.folder = malloc(strlen(materialFolderPath) + 1);
+				strcpy(materialFolder.folder, materialFolderPath);
+
+				listPushFront(&materialFoldersList, &materialFolder);
 			}
 		}
+
+		listClear(&materialNames);
+		free(materialFolderPath);
+
+		hashMapInsert(
+			materialFolders,
+			&fullMaterialName,
+			&materialFoldersList);
+	}
+}
+
+int32 loadMaterialComponentTexture(
+	UUID materialName,
+	MaterialComponentType materialComponentType,
+	UUID *textureName
+) {
+	memset(textureName, 0, sizeof(UUID));
+
+	List *materialFoldersList = (List*)hashMapGetData(
+		materialFolders,
+		&materialName);
+
+	char *fullFilename = NULL;
+	for (ListIterator itr = listGetIterator(materialFoldersList);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
+	{
+		MaterialFolder *materialFolder =
+			LIST_ITERATOR_GET_ELEMENT(MaterialFolder, itr);
+
+		char *filename = malloc(
+			strlen(materialFolder->folder) +
+			strlen(materialFolder->name.string) + 26);
+
+		sprintf(
+			filename,
+			"resources/materials/%s/t_%s_%c",
+			materialFolder->folder,
+			materialFolder->name.string,
+			materialComponentCharacters[materialComponentType]);
+
+		fullFilename = getFullTextureFilename(filename);
+		free(filename);
+
+		if (fullFilename)
+		{
+			sprintf(
+				textureName->string,
+				"%s_%c",
+				materialFolder->name.string,
+				materialComponentCharacters[materialComponentType]);
+
+			break;
+		}
+
+		free(fullFilename);
 	}
 
-	return error;
+	if (fullFilename)
+	{
+		if (loadTexture(fullFilename, textureName->string) == -1)
+		{
+			free(fullFilename);
+			return -1;
+		}
+
+		free(fullFilename);
+	}
+
+	return 0;
 }

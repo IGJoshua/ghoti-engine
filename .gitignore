@@ -1,7 +1,7 @@
 # Project: Ghoti
 # Company: Broken Dinosaur Studios
 # Author: Joshua Suskalo, Pranav Sahani
-# Copyright: April 2018
+# Copyright: 2018
 
 # Binary resources
 build/
@@ -19,16 +19,8 @@ GPATH
 .vscode
 *.cap
 
-resources/*
-!resources/doc/
-!resources/scripts/
-!resources/scenes/
-!resources/shaders/
-
 # Other files
 *.log
 vgcore.*
 *.scene
 *.entity
-*.asset
-*.mesh

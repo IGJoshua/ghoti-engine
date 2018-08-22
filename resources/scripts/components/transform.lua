@@ -7,7 +7,7 @@ typedef struct transform_component_t
   UUID parent;
   UUID firstChild;
   UUID nextSibling;
-  Bool dirty;
+  bool dirty;
   kmVec3 globalPosition;
   kmQuaternion globalRotation;
   kmVec3 globalScale;
@@ -23,7 +23,7 @@ local component = engine.components:register("transform", "TransformComponent")
 
 local emptyID = engine.C.idFromName("")
 
-function component:markDirty(scene, entity)
+function component:markDirty(scene)
   self.dirty = true
 
   if ffi.C.strcmp(self.firstChild.string, emptyID.string) ~= 0 then

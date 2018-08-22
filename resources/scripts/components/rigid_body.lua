@@ -12,14 +12,14 @@ typedef struct rigid_body_component_t
 {
   int64 bodyID;
   int64 spaceID;
-  Bool enabled;
-  Bool dynamic;
-  Bool gravity;
+  bool enabled;
+  bool dynamic;
+  bool gravity;
   real32 mass;
   kmVec3 centerOfMass;
   kmVec3 velocity;
   kmVec3 angularVel;
-  Bool defaultDamping;
+  bool defaultDamping;
   real32 linearDamping;
   real32 angularDamping;
   real32 linearDampingThreshold;

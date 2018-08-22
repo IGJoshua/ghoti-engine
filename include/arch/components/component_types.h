@@ -5,9 +5,6 @@
 
 #include <ode/ode.h>
 
-#include <AL/alc.h>
-#include <AL/al.h>
-
 #include <kazmath/vec3.h>
 #include <kazmath/quaternion.h>
 
@@ -16,6 +13,14 @@ typedef struct model_component_t
 	char name[1024];
 	bool visible;
 } ModelComponent;
+
+typedef struct wireframe_component_t
+{
+	bool visible;
+	real32 lineWidth;
+	bool customColor;
+	kmVec3 color;
+} WireframeComponent;
 
 typedef struct transform_component_t
 {
@@ -176,7 +181,8 @@ typedef enum collision_geom_type_e
 {
 	COLLISION_GEOM_TYPE_BOX = 0,
 	COLLISION_GEOM_TYPE_SPHERE,
-	COLLISION_GEOM_TYPE_CAPSULE
+	COLLISION_GEOM_TYPE_CAPSULE,
+	COLLISION_GEOM_TYPE_HEIGHTFIELD
 } CollisionGeomType;
 
 typedef struct collision_tree_node_t
@@ -188,7 +194,7 @@ typedef struct collision_tree_node_t
 	dGeomID geomID;
 } CollisionTreeNode;
 
-typedef struct aabb_component_t
+typedef struct obb_component_t
 {
 	kmVec3 bounds;
 } BoxComponent;
@@ -235,8 +241,9 @@ typedef struct surface_information_component_t
 
 typedef struct heightmap_component_t
 {
-	char textureName[1024];
+	dGeomID heightfieldGeom;
 	char heightmapName[1024];
+	char materialName[1024];
 	uint32 sizeX;
 	uint32 sizeZ;
 	uint32 maxHeight;

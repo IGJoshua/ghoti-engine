@@ -20,14 +20,17 @@ int32 cameraSetUniforms(
 	Uniform projectionUniform,
 	ShaderPipeline pipeline)
 {
-	CameraComponent *camera = 0;
-	TransformComponent *cameraTransform = 0;
-
-	camera = sceneGetComponentFromEntity(
+	CameraComponent *camera = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
 		idFromName("camera"));
-	cameraTransform = sceneGetComponentFromEntity(
+
+	if (!camera)
+	{
+		return -1;
+	}
+
+	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
 		idFromName("transform"));
@@ -66,17 +69,8 @@ int32 cameraSetUniforms(
 		camera->nearPlane,
 		camera->farPlane);
 
-	bindShaderPipeline(pipeline);
-
-	if (setUniform(viewUniform, &view) == -1)
-	{
-		LOG("Unable to set view uniform\n");
-	}
-
-	if (setUniform(projectionUniform, &projection) == -1)
-	{
-		LOG("Unable to set projection uniform\n");
-	}
+	setUniform(viewUniform, 1, &view);
+	setUniform(projectionUniform, 1, &projection);
 
 	return 0;
 }

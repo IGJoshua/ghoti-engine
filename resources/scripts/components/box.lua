@@ -1,5 +1,5 @@
 ffi.cdef[[
-typedef struct aabb_component_t
+typedef struct obb_component_t
 {
   kmVec3 bounds;
 } BoxComponent;

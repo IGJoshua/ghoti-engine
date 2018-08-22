@@ -1,0 +1,216 @@
+{
+	"uuid": "1x#KFG#t_Ikg=wO$nwg^88XUiY;s)$Z0#SX>oX9Lwy:2nf+cg?q%lLcDJ^5OV&i",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "name",
+				"char(1024)": "example_model"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"wireframe":
+		[
+			{
+				"name": "visible",
+				"bool": false
+			},
+
+			{
+				"name": "line width",
+				"float32": 1.0
+			},
+
+			{
+				"name": "custom color",
+				"bool": false
+			},
+
+			{
+				"name": "color",
+				"float32": [1.0, 1.0, 1.0]
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "body ID",
+				"int64": 0
+			},
+
+			{
+				"name": "space ID",
+				"int64": 0
+			},
+
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "dynamic",
+				"bool": true
+			},
+
+			{
+				"name": "gravity",
+				"bool": false
+			},
+
+			{
+				"name": "mass",
+				"float32": 1
+			},
+
+			{
+				"name": "center of mass",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "angular velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "default damping",
+				"bool": true
+			},
+
+			{
+				"name": "linear damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "linear damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "max angular speed",
+				"float32": 0
+			},
+
+			{
+				"name": "inertia type",
+				"int32": 0
+			},
+
+			{
+				"name": "moment of inertia",
+				"float32": [0, 0, 0, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collision tree",
+				"uuid": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka"
+			},
+
+			{
+				"name": "hit list",
+				"uuid": ""
+			},
+
+			{
+				"name": "last hit list",
+				"uuid": ""
+			}
+		]
+	}
+}

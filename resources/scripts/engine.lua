@@ -15,8 +15,8 @@ io.write("Loaded ghoti library\n")
 
 engine.kazmath = ffi.load(
   ffi.os == "Windows"
-    and "./libkazmath.a"
-    or "lualib/libkazmath.so")
+    and "./kazmath.dll"
+    or "./lib/libkazmath.so")
 
 io.write("Loaded kazmath library\n")
 
@@ -37,14 +37,15 @@ io.write("Required scene\n")
 engine.components = require("resources/scripts/components")
 
 -- iterate over every file in resources/scripts/components/ and require them
-local testFile = io.popen(
+local componentFiles = io.popen(
   ffi.os == "Windows"
     and 'dir /b resources\\scripts\\components'
     or 'find resources/scripts/components -name "*.lua"')
-for line in testFile:lines() do
+for line in componentFiles:lines() do
   if ffi.os == "Windows" then
     line = 'resources/scripts/components/'..line
   end
+  io.write("Loading component "..string.sub(line, 0, -5).."\n")
   require(string.sub(line, 0, -5))
 end
 
@@ -54,11 +55,11 @@ engine.scenes = {}
 engine.systems = {}
 
 io.write("Searching for systems\n")
-local systemsFile = io.popen(
+local systemFiles = io.popen(
   ffi.os == "Windows"
     and 'dir /b resources\\scripts\\systems'
     or 'find resources/scripts/systems -name "*.lua"')
-for line in systemsFile:lines() do
+for line in systemFiles:lines() do
   if ffi.os == "Windows" then
     line = 'resources/scripts/systems/'..line
   end
@@ -87,7 +88,9 @@ function engine.initScene(pScene)
         ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
 
       if not system then
-        error("Unable to load system, panic")
+        error(string.format(
+				"Unable to load system %s, panic",
+				ffi.string(ffi.cast("UUID *", itr.curr.data).string)))
       end
 
       if system.init then

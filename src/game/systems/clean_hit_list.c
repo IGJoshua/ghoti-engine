@@ -33,6 +33,9 @@ void runCleanHitListSystem(Scene *scene, UUID entityID, real64 dt)
 
 		sceneRemoveEntity(scene, currentListItem);
 	}
+
+	collision->lastHitList = collision->hitList;
+	collision->hitList = idFromName("");
 }
 
 System createCleanHitListSystem(void)

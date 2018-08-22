@@ -30,6 +30,7 @@ typedef struct hash_map_t
 	uint32 keySizeBytes;
 	uint32 valueSizeBytes;
 	uint32 bucketCount;
+	uint32 count;
 	HashMapBucket buckets[];
 } *HashMap;
 
