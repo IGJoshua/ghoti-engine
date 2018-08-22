@@ -5,6 +5,7 @@
 		{
 			"external":
 			[
+				"basic_input",
 				"debug/movement"
 			],
 
