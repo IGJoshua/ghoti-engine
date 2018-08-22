@@ -52,18 +52,21 @@ typedef struct camera_component_t
 
 typedef struct audio_manager_t
 {
-	int32 buffers;
-
+	uint32 buffers;
+	uint32 sources;
 } AudioManagerComonent;
 
 typedef struct audio_source_t
 {
-
+	uint32 id;
+	real32 pitch;
+	real32 gain;
 } AudioSourceComponent;
 
-typedef struct audio_file_t
+typedef struct audio_file__t
 {
-
+	char name[1024];
+	bool looping;
 } AudioFileComponent;
 
 typedef enum joint_type_e

@@ -29,25 +29,7 @@ internal UUID surfaceInformationComponentID = {};
 internal
 void runRayTestSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	// update the rest of the rigidbody information
-
-    if(!strcmp(entityID.string, "ray_caster"))
-    {
-        return;
-    }
-
-	TransformComponent *transform = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		transformComponentID);
-	RigidBodyComponent *body = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		rigidBodyComponentID);
-
-
-    
-
+	
 
 }
 

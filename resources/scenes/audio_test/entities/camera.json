@@ -7,12 +7,12 @@
 		[
 			{
 				"name": "position",
-				"float32": [1.0, 25.0, 3.0]
+				"float32": [1.0, 3.0, 10.0]
 			},
 
 			{
 				"name": "rotation",
-				"float32": [1.0, 0.0, 0.0, 1.0]
+				"float32": [0.0, 0.0, 0.0, 1.0]
 			},
 
 			{
@@ -96,6 +96,19 @@
 			{
 				"name": "projection type",
 				"int32": 0
+			}
+		],
+
+		"audio_manager":
+		[
+			{
+				"name": "buffers",
+				"uint32": 32
+			},
+
+			{
+				"name": "sources",
+				"uint32": 32
 			}
 		]
 	}

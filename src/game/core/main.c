@@ -36,8 +36,6 @@
 #include <AL/efx.h>
 #include <AL/efx-presets.h>
 
-#include <stb/stb_vorbis.c>
-
 #include <time.h>
 #include <stdlib.h>
 
@@ -52,11 +50,6 @@ extern List savedScenes;
 
 int32 main()
 {
-	int32 channels;
-	int32 sample_rate;
-	int16 *output;
-	stb_vorbis_decode_filename("resources/audio/distant_travels.ogg", &channels, &sample_rate, &output);
-
 	srand(time(0));
 
 	remove(LOG_FILE_NAME);

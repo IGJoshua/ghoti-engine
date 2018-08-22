@@ -1,0 +1,19 @@
+{
+	"uuid": "audio_manager",
+
+	"components":
+	{
+		"audio_manager":
+		[
+			{
+				"name": "buffers",
+				"uint32": 32
+			},
+
+			{
+				"name": "sources",
+				"uint32": 32
+			}
+		]
+	}
+}
