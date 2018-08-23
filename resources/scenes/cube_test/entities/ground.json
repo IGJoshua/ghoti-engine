@@ -1,0 +1,177 @@
+{
+	"uuid": "ground",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0.0, -5.0, -3.0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [100, 1, 100]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "firstChild",
+				"uuid": "ground_aabb"
+			},
+
+			{
+				"name": "nextSibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "globalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "globalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "globalScale",
+				"float32": [1.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "lastGlobalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalScale",
+				"float32": [1.0, 1.0, 1.0]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "filename",
+				"char(1024)": "cube"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "bodyID",
+				"int64": 0
+			},
+			{
+				"name": "spaceID",
+				"int64": 0
+			},
+			{
+				"name": "enabled",
+				"bool": true
+			},
+			{
+				"name": "dynamic",
+				"bool": false
+			},
+			{
+				"name": "gravity",
+				"bool": true
+			},
+			{
+				"name": "mass",
+				"float32": 100000000
+			},
+			{
+				"name": "centerOfMass",
+				"float32": [0, 0, 0]
+			},
+			{
+				"name": "velocity",
+				"float32": [0, 0, 0]
+			},
+			{
+				"name": "angularVel",
+				"float32": [0, 0, 0]
+			},
+			{
+				"name": "defaultDamping",
+				"bool": true
+			},
+			{
+				"name": "linearDamping",
+				"float32": 0.1
+			},
+			{
+				"name": "angularDamping",
+				"float32": 0.1
+			},
+			{
+				"name": "linearDampingThreshold",
+				"float32": 0.1
+			},
+			{
+				"name": "angularDampingThreshold",
+				"float32": 0.1
+			},
+			{
+				"name": "maxAngularSpeed",
+				"float32": 0
+			},
+			{
+				"name": "inertiaType",
+				"int32": 2
+			},
+			{
+				"name": "moiParams",
+				"float32": [1, 1, 1, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collisionTree",
+				"uuid": "ground_aabb"
+			},
+
+			{
+				"name": "hitList",
+				"uuid": ""
+			},
+
+			{
+				"name": "lastHitList",
+				"uuid": ""
+			}
+		]
+	}
+}

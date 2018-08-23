@@ -58,4 +58,10 @@ void sceneAddComponentType(
   uint32 componentSize,
   uint32 maxComponents);
 
+void exportSceneSnapshot(Scene *scene, const char *filename);
+void exportEntitySnapshot(
+	Scene *scene,
+	UUID entity,
+	const char *filename);
+
 ]]

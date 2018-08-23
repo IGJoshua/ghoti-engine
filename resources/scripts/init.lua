@@ -4,4 +4,4 @@ math.randomseed(os.time())
 
 local C = engine.C
 
-C.loadScene("heightmap_test")
+C.loadScene("cube_test")
