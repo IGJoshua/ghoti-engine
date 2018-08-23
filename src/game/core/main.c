@@ -43,7 +43,7 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
-#define WINDOW_TITLE "Ghoti 0.7.1"
+#define WINDOW_TITLE "Ghoti 0.7.2"
 
 int32 main(int32 argc, char *argv[])
 {
