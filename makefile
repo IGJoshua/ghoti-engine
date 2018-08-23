@@ -116,6 +116,8 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*
 	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/
