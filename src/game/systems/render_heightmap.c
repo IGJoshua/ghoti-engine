@@ -273,42 +273,49 @@ void initRenderHeightmapSystem(Scene *scene)
 			}
 		}
 
-		// Create valid normals for all the verts
-		for (uint32 x = 0; x <= heightmap->sizeX; ++x)
+		// TODO: Fix generation of normals
+		// // Create valid normals for all the verts
+		// for (uint32 x = 0; x <= heightmap->sizeX; ++x)
+		// {
+		// 	for (uint32 z = 0; z <= heightmap->sizeZ; ++z)
+		// 	{
+		// 		// Get all the stuff around this point and get a normal from it
+		// 		uint32 tempx = MAX(1, MIN(heightmap->sizeX, x));
+		// 		uint32 tempz = MAX(1, MIN(heightmap->sizeZ, z));
+
+		// 		real32 hl =
+		// 			verts[
+		// 				INDEX(tempx - 1, tempz, heightmap->sizeX + 1)
+		// 			].position.y;
+		// 		real32 hr =
+		// 			verts[
+		// 				INDEX(tempx + 1, tempz, heightmap->sizeX + 1)
+		// 			].position.y;
+		// 		real32 hd =
+		// 			verts[
+		// 				INDEX(tempx, tempz + 1, heightmap->sizeX + 1)
+		// 			].position.y;
+		// 		real32 hu =
+		// 			verts[
+		// 				INDEX(tempx, tempz - 1, heightmap->sizeX + 1)
+		// 			].position.y;
+
+		// 		kmVec3 normal;
+		// 		kmVec3Fill(&normal, hl - hr, 2, hd - hu);
+		// 		kmVec3Normalize(&normal, &normal);
+
+		// 		uint32 vertIndex = INDEX(x, z, heightmap->sizeX + 1);
+		// 		Vertex *vert = &verts[vertIndex];
+
+		// 		// TODO: Calculate tangent and bitangent for normal mapping
+		// 		vert->normal = normal;
+		// 	}
+		// }
+
+		for (uint32 i = 0; i < numVerts; i++)
 		{
-			for (uint32 z = 0; z <= heightmap->sizeZ; ++z)
-			{
-				// Get all the stuff around this point and get a normal from it
-				uint32 tempx = MAX(1, MIN(heightmap->sizeX, x));
-				uint32 tempz = MAX(1, MIN(heightmap->sizeZ, z));
-
-				real32 hl =
-					verts[
-						INDEX(tempx - 1, tempz, heightmap->sizeX + 1)
-					].position.y;
-				real32 hr =
-					verts[
-						INDEX(tempx + 1, tempz, heightmap->sizeX + 1)
-					].position.y;
-				real32 hd =
-					verts[
-						INDEX(tempx, tempz + 1, heightmap->sizeX + 1)
-					].position.y;
-				real32 hu =
-					verts[
-						INDEX(tempx, tempz - 1, heightmap->sizeX + 1)
-					].position.y;
-
-				kmVec3 normal;
-				kmVec3Fill(&normal, hl - hr, 2, hd - hu);
-				kmVec3Normalize(&normal, &normal);
-
-				uint32 vertIndex = INDEX(x, z, heightmap->sizeX + 1);
-				Vertex *vert = &verts[vertIndex];
-
-				// TODO: Calculate tangent and bitangent for normal mapping
-				vert->normal = normal;
-			}
+			Vertex *vert = &verts[i];
+			kmVec3Fill(&vert->normal, 0.0f, 1.0f, 0.0f);
 		}
 
 		ilDeleteImage(imageID);
