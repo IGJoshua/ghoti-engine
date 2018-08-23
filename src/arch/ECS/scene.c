@@ -1790,6 +1790,7 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 	listClear(entityComponentList);
 }
 
+// TODO: Make this recursive so that it handles parenting
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
 	sceneRemoveEntityComponents(s, entity);
