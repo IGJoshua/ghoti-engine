@@ -764,10 +764,6 @@ void freeScene(Scene **scene)
 		exportRuntimeScene(*scene);
 	}
 
-	dJointGroupDestroy((*scene)->contactGroup);
-	dSpaceDestroy((*scene)->physicsSpace);
-	dWorldDestroy((*scene)->physicsWorld);
-
 	listClear(&(*scene)->luaPhysicsFrameSystemNames);
 	listClear(&(*scene)->luaRenderFrameSystemNames);
 	listClear(&(*scene)->physicsFrameSystems);
@@ -824,6 +820,10 @@ void freeScene(Scene **scene)
 	}
 
 	free((*scene)->componentLimitNames);
+
+	dJointGroupDestroy((*scene)->contactGroup);
+	dSpaceDestroy((*scene)->physicsSpace);
+	dWorldDestroy((*scene)->physicsWorld);
 
 	LOG("Successfully unloaded scene (%s)\n", (*scene)->name);
 	free((*scene)->name);
@@ -1790,9 +1790,36 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 	listClear(entityComponentList);
 }
 
-// TODO: Make this recursive so that it handles parenting
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
+	TransformComponent *transform =
+		(TransformComponent*)sceneGetComponentFromEntity(
+			s,
+			entity,
+			idFromName("transform"));
+
+	if (transform && strlen(transform->firstChild.string) > 0)
+	{
+		sceneRemoveEntity(s, transform->firstChild);
+
+		transform =
+			(TransformComponent*)sceneGetComponentFromEntity(
+				s,
+				transform->firstChild,
+				idFromName("transform"));
+
+		while (transform && strlen(transform->nextSibling.string) > 0)
+		{
+			sceneRemoveEntity(s, transform->nextSibling);
+
+			transform =
+				(TransformComponent*)sceneGetComponentFromEntity(
+					s,
+					transform->nextSibling,
+					idFromName("transform"));
+		}
+	}
+
 	sceneRemoveEntityComponents(s, entity);
 	hashMapDelete(s->entities, &entity);
 }
@@ -1830,8 +1857,7 @@ int32 sceneAddComponentToEntity(
 
 	if (listContains(l, &componentType))
 	{
-		LOG(
-			"\n\nOverwriting component data of %s on entity %s\n\n\n",
+		LOG("\n\nOverwriting component data of %s on entity %s\n\n\n",
 			componentType.string,
 			entity.string);
 	}
