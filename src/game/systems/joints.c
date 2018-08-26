@@ -116,7 +116,6 @@ void initJointInformationSystem(Scene *scene)
 
 		dJointID jointID = 0;
 
-		// TODO: Create all the joints
 		switch (joint->type)
 		{
 		case JOINT_TYPE_SLIDER:
@@ -188,7 +187,6 @@ void initJointInformationSystem(Scene *scene)
 			dJointAttach(jointID, 0, object2->bodyID);
 		}
 
-		// TODO: Set all the joint-specific values
 		switch (joint->type)
 		{
 		case JOINT_TYPE_SLIDER:
@@ -313,7 +311,6 @@ System createJointInformationSystem(void)
 	jointSliderComponentID = idFromName("slider_joint");
 	jointBallSocketComponentID = idFromName("ball_socket_joint");
 	jointBallSocket2ComponentID = idFromName("ball_socket2_joint");
-
 
 	System sys = {};
 

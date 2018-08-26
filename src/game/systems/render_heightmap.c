@@ -41,14 +41,11 @@ internal UUID heightmapComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID transformComponentID = {};
 
-internal bool rendererActive = false;
+internal uint32 rendererRefCount = 0;
 
 internal HashMap heightmapModels = NULL;
 
-internal Shader vertShader = {};
-internal Shader fragShader = {};
-
-internal ShaderPipeline pipeline = {};
+internal GLuint shaderProgram = 0;
 
 internal Uniform modelUniform = {};
 internal Uniform viewUniform = {};
@@ -68,51 +65,33 @@ internal int32 createHeightmapMaterial(UUID name, Material *material);
 internal
 void initRenderHeightmapSystem(Scene *scene)
 {
-	if (!rendererActive)
+	if (rendererRefCount == 0)
 	{
-		// create and compile the shader pipeline
-		if (compileShaderFromFile(
-				"resources/shaders/base.vert",
-				SHADER_VERTEX,
-				&vertShader) == -1)
-		{
-			LOG("Unable to compile vertex shader for heightmap rendering\n");
-		}
+		createShaderProgram(
+			"resources/shaders/base.vert",
+			NULL,
+			NULL,
+			NULL,
+			"resources/shaders/color.frag",
+			NULL,
+			&shaderProgram);
 
-		if (compileShaderFromFile(
-				"resources/shaders/color.frag",
-				SHADER_FRAGMENT,
-				&fragShader) == -1)
-		{
-			LOG("Unable to compile fragment shader for heightmap rendering\n");
-		}
-
-		Shader *program[2];
-		program[0] = &vertShader;
-		program[1] = &fragShader;
-
-		if (composeShaderPipeline(program, 2, &pipeline) == -1)
-		{
-			LOG("Unable to compose shader pipeline for heightmap rendering\n");
-		}
-
-		freeShader(vertShader);
-		freeShader(fragShader);
-		free(pipeline.shaders);
-		pipeline.shaderCount = 0;
-
-		if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
+		if (getUniform(
+			shaderProgram,
+			"model",
+			UNIFORM_MAT4,
+			&modelUniform) == -1)
 		{
 			LOG("Unable to get model uniform for heightmap rendering\n");
 		}
 
-		if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
+		if (getUniform(shaderProgram, "view", UNIFORM_MAT4, &viewUniform) == -1)
 		{
 			LOG("Unable to get view uniform for heightmap rendering\n");
 		}
 
 		if (getUniform(
-				pipeline,
+				shaderProgram,
 				"projection",
 				UNIFORM_MAT4,
 				&projectionUniform) == -1)
@@ -121,7 +100,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		}
 
 		if (getUniform(
-				pipeline,
+				shaderProgram,
 				"material",
 				UNIFORM_TEXTURE_2D,
 				&materialUniform) == -1)
@@ -130,7 +109,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		}
 
 		if (getUniform(
-				pipeline,
+				shaderProgram,
 				"materialValues",
 				UNIFORM_TEXTURE_2D,
 				&materialValuesUniform) == -1)
@@ -139,6 +118,8 @@ void initRenderHeightmapSystem(Scene *scene)
 				"heightmap rendering\n");
 		}
 	}
+
+	rendererRefCount++;
 
 	HashMap map = createHashMap(
 		sizeof(UUID),
@@ -467,13 +448,12 @@ extern real64 alpha;
 internal
 void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 {
-	bindShaderPipeline(pipeline);
+	glUseProgram(shaderProgram);
 
 	if (cameraSetUniforms(
 		scene,
 		viewUniform,
-		projectionUniform,
-		pipeline) == -1)
+		projectionUniform) == -1)
 	{
 		return;
 	}
@@ -567,7 +547,10 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRenderHeightmapSystem(Scene *scene, real64 dt)
 {
-	unbindShaderPipeline();
+	if (--rendererRefCount == 0)
+	{
+		glUseProgram(0);
+	}
 }
 
 internal
@@ -608,6 +591,8 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 	hashMapClear(*map);
 	freeHashMap(map);
 	hashMapDelete(heightmapModels, &scene);
+
+	glDeleteProgram(shaderProgram);
 }
 
 internal
@@ -648,7 +633,6 @@ int32 createHeightmapMaterial(UUID name, Material *material)
 	LOG("Loading material (%s)...\n", name.string);
 
 	material->name = name;
-
 	material->doubleSided = false;
 
 	loadMaterialFolders(material->name);

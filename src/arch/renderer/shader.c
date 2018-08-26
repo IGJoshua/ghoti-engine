@@ -8,8 +8,29 @@
 #include <stdio.h>
 #include <string.h>
 
-int32 compileShaderFromFile(char *filename, ShaderType type, Shader *shader)
+internal int32 compileShaderFromFile(
+	const char *filename,
+	ShaderType type,
+	Shader *shader);
+internal int32 compileShaderFromSource(
+	char *source,
+	ShaderType type,
+	Shader *shader);
+
+internal void freeShader(Shader shader);
+
+int32 compileShaderFromFile(
+	const char *filename,
+	ShaderType type,
+	Shader *shader)
 {
+	shader->source = NULL;
+
+	if (!filename)
+	{
+		return 0;
+	}
+
 	uint64 fileLength;
 	char *source = readFile(filename, &fileLength);
 	if (source)
@@ -59,79 +80,105 @@ int32 compileShaderFromSource(char *source, ShaderType type, Shader *shader)
 	return 0;
 }
 
-int32 composeShaderPipeline(Shader **shaders, uint32 numShaders, ShaderPipeline *pipeline)
-{
-	GLuint programObject = glCreateProgram();
-
-	GLenum glError = glGetError();
-	LOG("Shader Pipeline Creation: %s\n", gluErrorString(glError));
-	if (glError != GL_NO_ERROR)
-	{
-		return -1;
-	}
-
-	for (uint32 i = 0; i < numShaders; ++i)
-	{
-		glAttachShader(programObject, shaders[i]->object);
-	}
-
-	glLinkProgram(programObject);
-
-	glError = glGetError();
-	LOG("Shader Pipeline Linking: %s\n", gluErrorString(glError));
-	if (glError != GL_NO_ERROR)
-	{
-		return -1;
-	}
-
-	glValidateProgram(programObject);
-
-	glError = glGetError();
-	LOG("Shader Pipeline Validation: %s\n", gluErrorString(glError));
-	if (glError != GL_NO_ERROR)
-	{
-		return -1;
-	}
-
-	for (uint32 i = 0; i < numShaders; ++i)
-	{
-		glDetachShader(programObject, shaders[i]->object);
-	}
-
-	pipeline->object = programObject;
-	pipeline->shaders = malloc(numShaders * sizeof(Shader *));
-	memcpy(pipeline->shaders, shaders, numShaders * sizeof(Shader *));
-	pipeline->shaderCount = numShaders;
-
-	return 0;
-}
-
 void freeShader(Shader shader)
 {
-	glDeleteShader(shader.object);
-	free(shader.source);
-	shader.type = SHADER_INVALID;
+	if (shader.source)
+	{
+		glDeleteShader(shader.object);
+		free(shader.source);
+		shader.type = SHADER_INVALID;
+	}
 }
 
-void freeShaderPipeline(ShaderPipeline pipeline)
+int32 createShaderProgram(
+	const char *vertexShader,
+	const char *controlShader,
+	const char *evaluationShader,
+	const char *geometryShader,
+	const char *fragmentShader,
+	const char *computeShader,
+	GLuint *program)
 {
-	glDeleteProgram(pipeline.object);
-	free(pipeline.shaders);
-	pipeline.shaderCount = 0;
-}
+	int32 error = 0;
 
-void bindShaderPipeline(ShaderPipeline pipeline)
-{
-	glUseProgram(pipeline.object);
-}
+	const char *shaderFiles[SHADER_TYPE_COUNT] =
+	{
+		vertexShader,
+		controlShader,
+		evaluationShader,
+		geometryShader,
+		fragmentShader,
+		computeShader
+	};
 
-void unbindShaderPipeline(void)
-{
-	glUseProgram(0);
+	Shader shaders[SHADER_TYPE_COUNT];
+
+	for (uint8 i = 0; i < SHADER_TYPE_COUNT; i++)
+	{
+		error = compileShaderFromFile(
+			shaderFiles[i],
+			(ShaderType)i,
+			&shaders[i]);
+		if (error == -1)
+		{
+			break;
+		}
+	}
+
+	if (error != -1)
+	{
+		*program = glCreateProgram();
+
+		GLenum glError = glGetError();
+		LOG("Shader Program Creation: %s\n", gluErrorString(glError));
+		if (glError != GL_NO_ERROR)
+		{
+			error = -1;
+		}
+
+		if (error != -1)
+		{
+			for (uint8 i = 0; i < SHADER_TYPE_COUNT; i++)
+			{
+				if (shaders[i].source)
+				{
+					glAttachShader(*program, shaders[i].object);
+				}
+			}
+
+			glLinkProgram(*program);
+
+			glError = glGetError();
+			LOG("Shader Program Linking: %s\n", gluErrorString(glError));
+			if (glError != GL_NO_ERROR)
+			{
+				error = -1;
+			}
+
+			if (error != -1)
+			{
+				glValidateProgram(*program);
+
+				glError = glGetError();
+				LOG("Shader Program Validation: %s\n", gluErrorString(glError));
+				if (glError != GL_NO_ERROR)
+				{
+					return -1;
+				}
+			}
+		}
+	}
+
+	for (uint8 i = 0; i < SHADER_TYPE_COUNT; i++)
+	{
+		freeShader(shaders[i]);
+	}
+
+	return error;
 }
 
 int32 getUniform(
-	ShaderPipeline pipeline,
+	GLuint program,
 	char *name,
 	UniformType type,
 	Uniform *uniform)
@@ -139,7 +186,7 @@ int32 getUniform(
 	uniform->type = type;
 	uniform->name = name;
 
-	uniform->location = glGetUniformLocation(pipeline.object, name);
+	uniform->location = glGetUniformLocation(program, name);
 	GLenum glError = glGetError();
 	LOG("Get Uniform (%s): %s\n", name, gluErrorString(glError));
 	if (glError != GL_NO_ERROR)

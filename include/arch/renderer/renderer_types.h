@@ -55,13 +55,13 @@ typedef struct subset_t
 
 typedef enum shader_type_e
 {
+	SHADER_INVALID = -1,
 	SHADER_VERTEX = 0,
-	SHADER_GEOMETRY,
 	SHADER_CONTROL,
 	SHADER_EVALUATION,
+	SHADER_GEOMETRY,
 	SHADER_FRAGMENT,
 	SHADER_COMPUTE,
-	SHADER_INVALID,
 	SHADER_TYPE_COUNT
 } ShaderType;
 
@@ -71,13 +71,6 @@ typedef struct shader_t
 	ShaderType type;
 	char *source;
 } Shader;
-
-typedef struct shader_pipeline_t
-{
-	GLuint object;
-	uint32 shaderCount;
-	Shader **shaders;
-} ShaderPipeline;
 
 typedef enum uniform_type_e
 {
