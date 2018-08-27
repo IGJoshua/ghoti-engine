@@ -1,10 +1,10 @@
 ffi.cdef[[
 typedef struct orbit_component_t
 {
-  kmVec3 origin;
-  float speed;
-  float radius;
-  float time;
+	kmVec3 origin;
+	real32 speed;
+	real32 radius;
+	real32 time;
 } OrbitComponent;
 ]]
 

@@ -32,7 +32,8 @@ uniform vec3 customColor;
 
 const vec3 lightDirection = normalize(vec3(0.25, -0.5, -0.25));
 
-void main() {
+void main()
+{
 	if (useCustomColor)
 	{
 		color = vec4(customColor, 1);

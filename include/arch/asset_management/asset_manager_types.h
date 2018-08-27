@@ -7,6 +7,14 @@
 #include <kazmath/vec3.h>
 #include <kazmath/vec4.h>
 
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+
+#include <nuklear/nuklear.h>
+
 #define NUM_VERTEX_ATTRIBUTES 9
 #define NUM_BONES 4
 #define MAX_BONE_COUNT 128
@@ -51,3 +59,12 @@ typedef struct model_t
 	uint32 numSubsets;
 	Subset *subsets;
 } Model;
+
+typedef struct font_t
+{
+	UUID name;
+	struct nk_font_atlas atlas;
+	struct nk_font *font;
+	struct nk_draw_null_texture null;
+	GLuint texture;
+} Font;

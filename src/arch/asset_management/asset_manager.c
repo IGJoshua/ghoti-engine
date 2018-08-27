@@ -1,6 +1,7 @@
 #include "asset_management/asset_manager.h"
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
+#include "asset_management/font.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -13,6 +14,7 @@
 extern HashMap models;
 extern HashMap textures;
 extern HashMap materialFolders;
+extern HashMap fonts;
 
 void initializeAssetManager(void) {
 	models = createHashMap(
@@ -32,6 +34,12 @@ void initializeAssetManager(void) {
 		sizeof(List),
 		MATERIAL_FOLDERS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+
+	fonts = createHashMap(
+		sizeof(UUID),
+		sizeof(Font),
+		FONTS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
 }
 
 void loadAssets(UUID componentID, ComponentDataEntry *entry)
@@ -39,6 +47,11 @@ void loadAssets(UUID componentID, ComponentDataEntry *entry)
 	if (!strcmp(componentID.string, "model"))
 	{
 		loadModel(((ModelComponent*)entry->data)->name);
+	}
+	else if (!strcmp(componentID.string, "panel"))
+	{
+		PanelComponent *panelComponent = (PanelComponent*)entry->data;
+		loadFont(panelComponent->font, panelComponent->fontSize);
 	}
 }
 
@@ -70,4 +83,14 @@ void shutdownAssetManager(void) {
 	}
 
 	freeHashMap(&materialFolders);
+
+	for (HashMapIterator itr = hashMapGetIterator(fonts);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		Font *font = (Font*)hashMapIteratorGetValue(itr);
+		hashMapMoveIterator(&itr);
+		freeFont(font);
+	}
+
+	freeHashMap(&fonts);
 }

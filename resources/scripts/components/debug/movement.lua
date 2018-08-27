@@ -1,9 +1,9 @@
 ffi.cdef[[
 typedef struct movement_component_t
 {
-    float speed;
-    float maxSpeed;
-    float jumpHeight;
+	real32 speed;
+	real32 maxSpeed;
+	real32 jumpHeight;
 } MovementComponent;
 ]]
 

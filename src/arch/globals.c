@@ -13,6 +13,7 @@
 HashMap models;
 HashMap textures;
 HashMap materialFolders;
+HashMap fonts;
 
 // NOTE(Joshua): Globals for ECS
 
