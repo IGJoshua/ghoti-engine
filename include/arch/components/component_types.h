@@ -289,3 +289,10 @@ typedef struct text_component_t
 	kmVec4 color;
 	TextAlignment alignment;
 } TextComponent;
+
+typedef struct button_component_t
+{
+	char text[1024];
+	bool pressedLastFrame;
+	bool pressed;
+} ButtonComponent;

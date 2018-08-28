@@ -5,15 +5,13 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/font.h"
 
+#include "components/component_types.h"
+
 #include "data/data_types.h"
 #include "data/list.h"
 
-#include "renderer/renderer_utilities.h"
-
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
-
-#include "components/component_types.h"
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -25,23 +23,26 @@
 
 #include <GL/glew.h>
 
-#include <kazmath/mat4.h>
-
 internal UUID guiTransformComponentID = {};
 internal UUID panelComponentID = {};
 internal UUID widgetListComponentID = {};
 internal UUID textComponentID = {};
+internal UUID buttonComponentID = {};
 
-internal uint32 guiRefCount = 0;
+uint32 guiRefCount = 0;
+
+struct nk_context ctx;
+struct nk_buffer cmds;
+
+#define DEFAULT_FONT "default_font"
+#define DEFAULT_FONT_SIZE 18
+
+internal Font *defaultFont;
 
 internal uint32 viewportWidth;
 internal uint32 viewportHeight;
 
-internal struct nk_context ctx;
-internal struct nk_buffer cmds;
 internal struct nk_convert_config config;
-
-internal Font *defaultFont;
 
 #define MAX_GUI_VERTEX_COUNT 512 * 2048
 #define MAX_GUI_INDEX_COUNT 128 * 2048
@@ -76,26 +77,9 @@ const struct nk_draw_vertex_layout_element vertex_layout[] = {
 	{ NK_VERTEX_LAYOUT_END }
 };
 
-internal GLuint vertexBuffer;
-internal GLuint vertexArray;
-internal GLuint indexBuffer;
-
-internal GLuint shaderProgram;
-
-internal Uniform projectionUniform;
-
-#define DEFAULT_FONT "default_font"
-#define DEFAULT_FONT_SIZE 18
-
-internal Uniform fontUniform;
-
-internal GLboolean glBlendValue;
-internal GLint glBlendEquationValue;
-internal GLint glSrcBlendFuncValue;
-internal GLint glDstBlendFuncValue;
-internal GLboolean glCullFaceValue;
-internal GLboolean glDepthTestValue;
-internal GLboolean glScissorTestValue;
+GLuint vertexBuffer;
+GLuint vertexArray;
+GLuint indexBuffer;
 
 internal struct nk_color getColor(kmVec4 *color);
 internal struct nk_rect getRect(
@@ -109,6 +93,7 @@ internal void addWidgets(
 	real32 panelWidth,
 	real32 panelHeight);
 internal void addText(Scene *scene, UUID entity);
+internal void addButton(Scene *scene, UUID entity);
 
 internal void initGUISystem(Scene *scene)
 {
@@ -116,7 +101,7 @@ internal void initGUISystem(Scene *scene)
 	{
 		if (!nk_init_default(&ctx, NULL))
 		{
-			LOG("Failed to initialize the GUI");
+			LOG("Failed to initialize the GUI\n");
 		}
 		else
 		{
@@ -172,27 +157,6 @@ internal void initGUISystem(Scene *scene)
 			glBindVertexArray(0);
 
 			glGenBuffers(1, &indexBuffer);
-
-			createShaderProgram(
-				"resources/shaders/gui.vert",
-				NULL,
-				NULL,
-				NULL,
-				"resources/shaders/gui.frag",
-				NULL,
-				&shaderProgram);
-
-			getUniform(
-				shaderProgram,
-				"projection",
-				UNIFORM_MAT4,
-				&projectionUniform);
-
-			getUniform(
-				shaderProgram,
-				"font",
-				UNIFORM_TEXTURE_2D,
-				&fontUniform);
 		}
 	}
 
@@ -201,63 +165,11 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
-	// TODO: Input
-	// nk_input_begin(&ctx);
-
-	// real64 x, y;
-	// glfwGetCursorPos(window, &x, &y);
-	// nk_input_motion(&ctx, x, y);
-
-	// nk_input_button(
-	// 	&ctx,
-	// 	NK_BUTTON_LEFT,
-	// 	x,
-	// 	y,
-	// 	glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS
-	// );
-
-	// nk_input_button(
-	// 	&ctx,
-	// 	NK_BUTTON_MIDDLE,
-	// 	x,
-	// 	y,
-	// 	glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
-	// );
-
-	// nk_input_button(
-	// 	&ctx,
-	// 	NK_BUTTON_RIGHT,
-	// 	x,
-	// 	y,
-	// 	glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
-	// );
-
-	// nk_input_end(&ctx);
-
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 
 	viewportWidth = viewport[2];
 	viewportHeight = viewport[3];
-
-	kmMat4 projectionMatrix;
-	kmMat4OrthographicProjection(
-		&projectionMatrix,
-		0.0f,
-		viewportWidth,
-		viewportHeight,
-		0.0f,
-		0.0f,
-		2.0f);
-
-	glUseProgram(shaderProgram);
-
-	setUniform(projectionUniform, 1, &projectionMatrix);
-
-	glActiveTexture(GL_TEXTURE0);
-
-	GLint textureIndex = 0;
-	setUniform(fontUniform, 1, &textureIndex);
 
 	glBindVertexArray(vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -275,26 +187,6 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT,
 		NULL,
 		GL_STREAM_DRAW);
-
-	for (uint8 i = 0; i < NUM_GUI_VERTEX_ATTRIBUTES; i++)
-	{
-		glEnableVertexAttribArray(i);
-	}
-
-	glGetBooleanv(GL_BLEND, &glBlendValue);
-	glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &glBlendEquationValue);
-	glGetIntegerv(GL_BLEND_SRC_ALPHA, &glSrcBlendFuncValue);
-	glGetIntegerv(GL_BLEND_DST_ALPHA, &glDstBlendFuncValue);
-	glGetBooleanv(GL_CULL_FACE, &glCullFaceValue);
-	glGetBooleanv(GL_DEPTH_TEST, &glDepthTestValue);
-	glGetBooleanv(GL_SCISSOR_TEST, &glScissorTestValue);
-
-	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_SCISSOR_TEST);
 }
 
 internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
@@ -318,6 +210,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		font = defaultFont;
 	}
 
+	// TODO: Set before each draw call or here?
 	nk_style_set_font(&ctx, &font->font->handle);
 	config.null = font->null;
 
@@ -361,56 +254,15 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
-	const struct nk_draw_command *cmd;
-	const nk_draw_index *offset = NULL;
-
-	nk_draw_foreach(cmd, &ctx, &cmds)
-	{
-		if (!cmd->elem_count)
-		{
-			continue;
-		}
-
-		glBindTexture(GL_TEXTURE_2D, cmd->texture.id);
-
-		glScissor(
-			cmd->clip_rect.x,
-			viewportHeight - (cmd->clip_rect.y + cmd->clip_rect.h),
-			cmd->clip_rect.w,
-			cmd->clip_rect.h);
-
-		glDrawElements(
-			GL_TRIANGLES,
-			cmd->elem_count,
-			GL_UNSIGNED_SHORT,
-			offset);
-
-		GLenum glError = glGetError();
-		if (glError != GL_NO_ERROR)
-		{
-			LOG("Error when drawing GUI: %s\n", gluErrorString(glError));
-		}
-
-		offset += cmd->elem_count;
-	}
+	nk_buffer_free(&vertexBufferData);
+	nk_buffer_free(&indexBufferData);
 }
 
 internal void endGUISystem(Scene *scene, real64 dt)
 {
-	glBlendValue ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
-	glBlendEquation(glBlendEquationValue);
-	glBlendFunc(glSrcBlendFuncValue, glDstBlendFuncValue);
-	glCullFaceValue ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
-	glDepthTestValue ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
-	glScissorTestValue ? glEnable(GL_SCISSOR_TEST) : glDisable(GL_SCISSOR_TEST);
-
-	for (uint8 i = 0; i < NUM_GUI_VERTEX_ATTRIBUTES; i++)
-	{
-		glDisableVertexAttribArray(i);
-	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUseProgram(0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	nk_clear(&ctx);
 }
@@ -437,6 +289,7 @@ System createGUISystem(void)
 	panelComponentID = idFromName("panel");
 	widgetListComponentID = idFromName("widget_list");
 	textComponentID = idFromName("text");
+	buttonComponentID = idFromName("button");
 
 	System system = {};
 
@@ -535,6 +388,7 @@ void addWidgets(
 				getRect(guiTransform, panelWidth, panelHeight));
 
 			addText(scene, entity);
+			addButton(scene, entity);
 
 			entity = widgetList->nextWidget;
 		}
@@ -552,53 +406,71 @@ void addText(Scene *scene, UUID entity)
 		entity,
 		textComponentID);
 
-	if (text)
+	if (!text)
 	{
-		if (text->alignment == TEXT_ALIGNMENT_WRAP)
-		{
-			nk_label_colored_wrap(
-				&ctx,
-				text->text,
-				getColor(&text->color));
-		}
-		else
-		{
-			enum nk_text_align alignment = (enum nk_text_align)NK_TEXT_CENTERED;
-			switch (text->alignment)
-			{
-				case TEXT_ALIGNMENT_TOP_LEFT:
-					alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_LEFT;
-					break;
-				case TEXT_ALIGNMENT_TOP:
-					alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_CENTERED;
-					break;
-				case TEXT_ALIGNMENT_TOP_RIGHT:
-					alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_RIGHT;
-					break;
-				case TEXT_ALIGNMENT_LEFT:
-					alignment = (enum nk_text_align)NK_TEXT_LEFT;
-					break;
-				case TEXT_ALIGNMENT_RIGHT:
-					alignment = (enum nk_text_align)NK_TEXT_RIGHT;
-					break;
-				case TEXT_ALIGNMENT_BOTTOM_LEFT:
-					alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_LEFT;
-					break;
-				case TEXT_ALIGNMENT_BOTTOM:
-					alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_CENTERED;
-					break;
-				case TEXT_ALIGNMENT_BOTTOM_RIGHT:
-					alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_RIGHT;
-					break;
-				default:
-					break;
-			}
-
-			nk_label_colored(
-				&ctx,
-				text->text,
-				alignment,
-				getColor(&text->color));
-		}
+		return;
 	}
+
+	if (text->alignment == TEXT_ALIGNMENT_WRAP)
+	{
+		nk_label_colored_wrap(
+			&ctx,
+			text->text,
+			getColor(&text->color));
+	}
+	else
+	{
+		enum nk_text_align alignment = (enum nk_text_align)NK_TEXT_CENTERED;
+		switch (text->alignment)
+		{
+			case TEXT_ALIGNMENT_TOP_LEFT:
+				alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_LEFT;
+				break;
+			case TEXT_ALIGNMENT_TOP:
+				alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_CENTERED;
+				break;
+			case TEXT_ALIGNMENT_TOP_RIGHT:
+				alignment = NK_TEXT_ALIGN_TOP | NK_TEXT_ALIGN_RIGHT;
+				break;
+			case TEXT_ALIGNMENT_LEFT:
+				alignment = (enum nk_text_align)NK_TEXT_LEFT;
+				break;
+			case TEXT_ALIGNMENT_RIGHT:
+				alignment = (enum nk_text_align)NK_TEXT_RIGHT;
+				break;
+			case TEXT_ALIGNMENT_BOTTOM_LEFT:
+				alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_LEFT;
+				break;
+			case TEXT_ALIGNMENT_BOTTOM:
+				alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_CENTERED;
+				break;
+			case TEXT_ALIGNMENT_BOTTOM_RIGHT:
+				alignment = NK_TEXT_ALIGN_BOTTOM | NK_TEXT_ALIGN_RIGHT;
+				break;
+			default:
+				break;
+		}
+
+		nk_label_colored(
+			&ctx,
+			text->text,
+			alignment,
+			getColor(&text->color));
+	}
+}
+
+void addButton(Scene *scene, UUID entity)
+{
+	ButtonComponent *button = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		buttonComponentID);
+
+	if (!button)
+	{
+		return;
+	}
+
+	button->pressedLastFrame = button->pressed;
+	button->pressed = nk_button_label(&ctx, button->text);
 }

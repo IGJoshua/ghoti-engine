@@ -12,8 +12,19 @@
 
 #include <SDL2/SDL.h>
 
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+
+#include <nuklear/nuklear.h>
+
 extern lua_State *L;
 SDL_GameController *controller;
+
+extern uint32 guiRefCount;
+extern struct nk_context ctx;
 
 internal
 void keyCallback(
@@ -80,6 +91,11 @@ void cursorPositionCallback(
 	double xpos,
 	double ypos)
 {
+	if (guiRefCount > 0)
+	{
+		nk_input_motion(&ctx, xpos, ypos);
+	}
+
 	if (L)
 	{
 		lua_checkstack(L, 3);
@@ -108,6 +124,33 @@ void mouseButtonCallback(
 	int action,
 	int mods)
 {
+	if (guiRefCount > 0)
+	{
+		enum nk_buttons nkButton = -1;
+		switch (button)
+		{
+			case GLFW_MOUSE_BUTTON_LEFT:
+				nkButton = NK_BUTTON_LEFT;
+				break;
+			case GLFW_MOUSE_BUTTON_MIDDLE:
+				nkButton = NK_BUTTON_MIDDLE;
+				break;
+			case GLFW_MOUSE_BUTTON_RIGHT:
+				nkButton = NK_BUTTON_RIGHT;
+				break;
+			default:
+				break;
+		}
+
+		if (nkButton != -1)
+		{
+			real64 x, y;
+			glfwGetCursorPos(window, &x, &y);
+
+			nk_input_button(&ctx, nkButton, x, y, action == GLFW_PRESS);
+		}
+	}
+
 	if (L)
 	{
 		lua_checkstack(L, 4);
@@ -553,6 +596,16 @@ void shutdownInput()
 
 void inputHandleEvents()
 {
+	if (guiRefCount > 0)
+	{
+		nk_input_begin(&ctx);
+	}
+
 	glfwPollEvents();
 	handleSDLEvents();
+
+	if (guiRefCount > 0)
+	{
+		nk_input_end(&ctx);
+	}
 }
