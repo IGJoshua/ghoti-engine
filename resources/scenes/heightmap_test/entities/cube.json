@@ -75,7 +75,7 @@
 		[
 			{
 				"name": "filename",
-				"char(1024)": "newbox"
+				"char(64)": "newbox"
 			},
 			{
 				"name": "visible",

@@ -83,7 +83,7 @@
 			},
 			{
 				"name": "texture name",
-				"char(1024)": "metal"
+				"char(64)": "metal"
 			},
 			{
 				"name": "size x",

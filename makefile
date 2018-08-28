@@ -2,6 +2,7 @@ PROJ = ghoti
 LIBNAME = ghoti
 
 CONFIG_FILE = config.json
+DEFAULT_FONT = default_font.ttf
 
 IDIRS = include/arch include/game vendor
 
@@ -118,6 +119,7 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
+	find $(RELEASE_RESOURCES_FOLDER)/fonts/* -type f -not -path '*$(DEFAULT_FONT)' -exec rm {} \;
 	cp $(CONFIG_FILE) release/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*

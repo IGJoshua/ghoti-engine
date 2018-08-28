@@ -1,7 +1,7 @@
 ffi.cdef[[
 typedef struct model_component_t
 {
-	char name[1024];
+	char name[64];
 	bool visible;
 } ModelComponent;
 ]]

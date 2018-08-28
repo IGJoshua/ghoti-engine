@@ -12,7 +12,7 @@
 
 typedef struct model_component_t
 {
-	char name[1024];
+	char name[64];
 	bool visible;
 } ModelComponent;
 
@@ -226,7 +226,7 @@ typedef struct heightmap_component_t
 {
 	dGeomID heightfieldGeom;
 	char heightmapName[1024];
-	char materialName[1024];
+	char materialName[64];
 	uint32 sizeX;
 	uint32 sizeZ;
 	uint32 maxHeight;
@@ -259,7 +259,7 @@ typedef struct panel_component_t
 {
 	bool enabled;
 	kmVec4 color;
-	char font[1024];
+	char font[64];
 	uint32 fontSize;
 	UUID widgetList;
 } PanelComponent;
