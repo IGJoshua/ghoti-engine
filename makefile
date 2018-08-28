@@ -1,6 +1,8 @@
 PROJ = ghoti
 LIBNAME = ghoti
 
+CONFIG_FILE = config.json
+
 IDIRS = include/arch include/game vendor
 
 SRCDIR = src
@@ -116,6 +118,7 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
+	cp $(CONFIG_FILE) release/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*

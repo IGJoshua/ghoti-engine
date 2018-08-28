@@ -73,7 +73,7 @@ int32 compileShaderFromSource(char *source, ShaderType type, Shader *shader)
 	glCompileShader(shaderObject);
 	logShaderInfo(shaderObject);
 
-	if (logGLError("Compilation of Shader") == -1)
+	if (logGLError(true, "Compilation of Shader") == -1)
 	{
 		return -1;
 	}
@@ -133,12 +133,7 @@ int32 createShaderProgram(
 	{
 		*program = glCreateProgram();
 
-		GLenum glError = glGetError();
-		LOG("Shader Program Creation: %s\n", gluErrorString(glError));
-		if (glError != GL_NO_ERROR)
-		{
-			error = -1;
-		}
+		error = logGLError(true, "Shader Program Creation");
 
 		if (error != -1)
 		{
@@ -153,24 +148,14 @@ int32 createShaderProgram(
 			glLinkProgram(*program);
 			logProgramInfo(*program);
 
-			glError = glGetError();
-			LOG("Shader Program Linking: %s\n", gluErrorString(glError));
-			if (glError != GL_NO_ERROR)
-			{
-				error = -1;
-			}
+			error = logGLError(true, "Shader Program Linking");
 
 			if (error != -1)
 			{
 				glValidateProgram(*program);
 				logProgramInfo(*program);
 
-				glError = glGetError();
-				LOG("Shader Program Validation: %s\n", gluErrorString(glError));
-				if (glError != GL_NO_ERROR)
-				{
-					return -1;
-				}
+				error = logGLError(true, "Shader Program Validation");
 			}
 		}
 	}
@@ -193,9 +178,8 @@ int32 getUniform(
 	uniform->name = name;
 
 	uniform->location = glGetUniformLocation(program, name);
-	GLenum glError = glGetError();
-	LOG("Get Uniform (%s): %s\n", name, gluErrorString(glError));
-	if (glError != GL_NO_ERROR)
+
+	if (logGLError(true, "Get Uniform (%s)", name) == -1)
 	{
 		return -1;
 	}
@@ -227,12 +211,8 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 				break;
 		}
 
-		GLenum glError = glGetError();
-		if (glError != GL_NO_ERROR)
+		if (logGLError(false, "Set Uniform (%s)", uniform.name) == -1)
 		{
-			LOG("Set Uniform (%s): %s\n",
-				uniform.name,
-				gluErrorString(glError));
 			return -1;
 		}
 	}

@@ -1,6 +1,7 @@
 #include "defines.h"
 
 #include "core/log.h"
+#include "core/config.h"
 #include "core/window.h"
 #include "core/input.h"
 
@@ -34,6 +35,7 @@
 #include <time.h>
 #include <stdlib.h>
 
+extern Config config;
 extern lua_State *L;
 extern real64 alpha;
 extern List activeScenes;
@@ -43,10 +45,13 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
-#define WINDOW_TITLE "Ghoti 0.7.4"
-
 int32 main(int32 argc, char *argv[])
 {
+	if (loadConfig() == -1)
+	{
+		return -1;
+	}
+
 	srand(time(0));
 
 	if (LOG_FILE_NAME)
@@ -54,16 +59,21 @@ int32 main(int32 argc, char *argv[])
 		remove(LOG_FILE_NAME);
 	}
 
-	GLFWwindow *window = initWindow(640, 480, WINDOW_TITLE);
+	GLFWwindow *window = initWindow(
+		config.windowConfig.size.x,
+		config.windowConfig.size.y,
+		config.windowConfig.title);
 
 	if (!window)
 	{
+		freeConfig();
 		return -1;
 	}
 
 	int32 err = initInput(window);
 	if (err)
 	{
+		freeConfig();
 		freeWindow(window);
 		return err;
 	}
@@ -76,12 +86,14 @@ int32 main(int32 argc, char *argv[])
 
 	dInitODE();
 
-	glfwSwapInterval(VSYNC);
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(
+		config.graphicsConfig.backgroundColor.x,
+		config.graphicsConfig.backgroundColor.y,
+		config.graphicsConfig.backgroundColor.z,
+		1.0f);
 
 	initSystems();
 
@@ -99,7 +111,7 @@ int32 main(int32 argc, char *argv[])
 		lua_getglobal(L, "io");
 		lua_getfield(L, -1, "output");
 		lua_remove(L, -2);
-		lua_pushstring(L, "lua.log");
+		lua_pushstring(L, config.logConfig.luaFile);
 		luaError = lua_pcall(L, 1, 0, 0);
 		if (luaError)
 		{
@@ -119,6 +131,7 @@ int32 main(int32 argc, char *argv[])
 
 		lua_close(L);
 		freeWindow(window);
+		freeConfig();
 		return 1;
 	}
 
@@ -127,7 +140,7 @@ int32 main(int32 argc, char *argv[])
 	// total accumulated fixed timestep
 	real64 t = 0.0;
 	// Fixed timestep
-	real64 dt = 1.0 / 24.0;
+	real64 dt = 1.0 / config.physicsConfig.fps;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
@@ -347,6 +360,8 @@ int32 main(int32 argc, char *argv[])
 	shutdownInput();
 
 	freeWindow(window);
+
+	freeConfig();
 
 	return 0;
 }

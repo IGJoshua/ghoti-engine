@@ -42,7 +42,7 @@ internal Font *defaultFont;
 internal uint32 viewportWidth;
 internal uint32 viewportHeight;
 
-internal struct nk_convert_config config;
+internal struct nk_convert_config nkConfig;
 
 #define MAX_GUI_VERTEX_COUNT 512 * 2048
 #define MAX_GUI_INDEX_COUNT 128 * 2048
@@ -111,17 +111,17 @@ internal void initGUISystem(Scene *scene)
 			defaultFont = getFont(DEFAULT_FONT, DEFAULT_FONT_SIZE);
 			nk_style_set_font(&ctx, &defaultFont->font->handle);
 
-			memset(&config, 0, sizeof(struct nk_convert_config));
-			config.shape_AA = NK_ANTI_ALIASING_ON;
-			config.line_AA = NK_ANTI_ALIASING_ON;
-			config.vertex_layout = vertex_layout;
-			config.vertex_size = sizeof(GUIVertex);
-			config.vertex_alignment = NK_ALIGNOF(GUIVertex);
-			config.circle_segment_count = 22;
-			config.curve_segment_count = 22;
-			config.arc_segment_count = 22;
-			config.global_alpha = 1.0f;
-			config.null = defaultFont->null;
+			memset(&nkConfig, 0, sizeof(struct nk_convert_config));
+			nkConfig.shape_AA = NK_ANTI_ALIASING_ON;
+			nkConfig.line_AA = NK_ANTI_ALIASING_ON;
+			nkConfig.vertex_layout = vertex_layout;
+			nkConfig.vertex_size = sizeof(GUIVertex);
+			nkConfig.vertex_alignment = NK_ALIGNOF(GUIVertex);
+			nkConfig.circle_segment_count = 22;
+			nkConfig.curve_segment_count = 22;
+			nkConfig.arc_segment_count = 22;
+			nkConfig.global_alpha = 1.0f;
+			nkConfig.null = defaultFont->null;
 
 			glGenBuffers(1, &vertexBuffer);
 			glGenVertexArrays(1, &vertexArray);
@@ -212,7 +212,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	// TODO: Set before each draw call or here?
 	nk_style_set_font(&ctx, &font->font->handle);
-	config.null = font->null;
+	nkConfig.null = font->null;
 
 	GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
 		scene,
@@ -254,7 +254,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		&cmds,
 		&vertexBufferData,
 		&indexBufferData,
-		&config) != NK_CONVERT_SUCCESS)
+		&nkConfig) != NK_CONVERT_SUCCESS)
 	{
 		LOG("Failed to fill GUI command buffer\n");
 	}

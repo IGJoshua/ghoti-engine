@@ -8,6 +8,7 @@
 #include "ECS/ecs_types.h"
 
 #include "renderer/renderer_types.h"
+#include "renderer/renderer_utilities.h"
 #include "renderer/shader.h"
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -153,11 +154,7 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 			GL_UNSIGNED_SHORT,
 			offset);
 
-		GLenum glError = glGetError();
-		if (glError != GL_NO_ERROR)
-		{
-			LOG("Error when drawing GUI: %s\n", gluErrorString(glError));
-		}
+		logGLError(false, "Error when drawing GUI");
 
 		offset += cmd->elem_count;
 	}

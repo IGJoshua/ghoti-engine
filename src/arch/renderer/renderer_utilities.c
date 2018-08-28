@@ -7,16 +7,35 @@
 
 #include <GL/glu.h>
 
-int32 logGLError(const char *message)
+#include <stdarg.h>
+#include <malloc.h>
+#include <string.h>
+
+int32 logGLError(bool logNoError, const char *message, ...)
 {
+	int32 error = 0;
+
+	va_list args;
+    va_start(args, message);
+
+	char *messageBuffer = malloc(strlen(message) + 4096);
+	vsprintf(messageBuffer, message, args);
+    va_end(args);
+
 	GLenum glError = glGetError();
-	LOG("%s: %s\n", message, gluErrorString(glError));
 	if (glError != GL_NO_ERROR)
 	{
-		return -1;
+		error = -1;
 	}
 
-	return 0;
+	if (logNoError || error == -1)
+	{
+		LOG("%s: %s\n", messageBuffer, gluErrorString(glError));
+	}
+
+	free(messageBuffer);
+
+	return error;
 }
 
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)

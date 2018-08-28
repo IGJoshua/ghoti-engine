@@ -87,24 +87,13 @@ void initRenderBoxSystem(Scene *scene)
 	// 	free(pipeline.shaders);
 	// 	pipeline.shaderCount = 0;
 
-	// 	if (getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform) == -1)
-	// 	{
-	// 		LOG("Unable to get model component uniform\n");
-	// 	}
-
-	// 	if (getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform) == -1)
-	// 	{
-	// 		LOG("Unable to get view component uniform\n");
-	// 	}
-
-	// 	if (getUniform(
-	// 			pipeline,
-	// 			"projection",
-	// 			UNIFORM_MAT4,
-	// 			&projectionUniform) == -1)
-	// 	{
-	// 		LOG("Unable to get projection component uniform\n");
-	// 	}
+	//  getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform);
+	//  getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform);
+	//  getUniform(
+	//  	pipeline,
+	//  	"projection",
+	//  	UNIFORM_MAT4,
+	//  	&projectionUniform);
 
 	// 	rendererActive = true;
 	// }
