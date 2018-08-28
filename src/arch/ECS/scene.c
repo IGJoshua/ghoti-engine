@@ -652,6 +652,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 				LOG("ERROR: Component limit for the %s component "
 					"is missing from the scene\n",
 					componentDefintion->name);
+				ASSERT(false);
 			}
 		}
 
