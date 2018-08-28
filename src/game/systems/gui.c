@@ -249,7 +249,15 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		indices,
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT);
 
-	nk_convert(&ctx, &cmds, &vertexBufferData, &indexBufferData, &config);
+	if (nk_convert(
+		&ctx,
+		&cmds,
+		&vertexBufferData,
+		&indexBufferData,
+		&config) != NK_CONVERT_SUCCESS)
+	{
+		LOG("Failed to fill GUI command buffer\n")
+	}
 
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
