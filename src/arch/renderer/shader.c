@@ -1,4 +1,5 @@
 #include "renderer/shader.h"
+#include "renderer/renderer_utilities.h"
 
 #include "core/log.h"
 
@@ -18,6 +19,9 @@ internal int32 compileShaderFromSource(
 	Shader *shader);
 
 internal void freeShader(Shader shader);
+
+internal void logShaderInfo(GLuint shader);
+internal void logProgramInfo(GLuint program);
 
 int32 compileShaderFromFile(
 	const char *filename,
@@ -67,9 +71,9 @@ int32 compileShaderFromSource(char *source, ShaderType type, Shader *shader)
 	glShaderSource(shaderObject, 1, (const GLchar * const *)&source, 0);
 
 	glCompileShader(shaderObject);
-	GLenum glError = glGetError();
-	LOG("Compilation of Shader: %s\n", gluErrorString(glError));
-	if (glError != GL_NO_ERROR)
+	logShaderInfo(shaderObject);
+
+	if (logGLError("Compilation of Shader") == -1)
 	{
 		return -1;
 	}
@@ -147,6 +151,7 @@ int32 createShaderProgram(
 			}
 
 			glLinkProgram(*program);
+			logProgramInfo(*program);
 
 			glError = glGetError();
 			LOG("Shader Program Linking: %s\n", gluErrorString(glError));
@@ -158,6 +163,7 @@ int32 createShaderProgram(
 			if (error != -1)
 			{
 				glValidateProgram(*program);
+				logProgramInfo(*program);
 
 				glError = glGetError();
 				LOG("Shader Program Validation: %s\n", gluErrorString(glError));
@@ -232,4 +238,44 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 	}
 
 	return 0;
+}
+
+void logShaderInfo(GLuint shader)
+{
+	GLint shaderInfoLogLength;
+	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &shaderInfoLogLength);
+
+	if (shaderInfoLogLength > 0)
+	{
+		char *shaderInfoLog = malloc(shaderInfoLogLength);
+
+		glGetShaderInfoLog(
+			shader,
+			shaderInfoLogLength,
+			NULL,
+			shaderInfoLog);
+
+		LOG("%s", shaderInfoLog);
+		free(shaderInfoLog);
+	}
+}
+
+void logProgramInfo(GLuint program)
+{
+	GLint programInfoLogLength;
+	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &programInfoLogLength);
+
+	if (programInfoLogLength > 0)
+	{
+		char *programInfoLog = malloc(programInfoLogLength);
+
+		glGetProgramInfoLog(
+			program,
+			programInfoLogLength,
+			NULL,
+			programInfoLog);
+
+		LOG("%s", programInfoLog);
+		free(programInfoLog);
+	}
 }

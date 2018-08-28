@@ -6,6 +6,8 @@
 
 #include <GL/glew.h>
 
+int32 logGLError(const char *message);
+
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex);
 int32 setMaterialValuesUniform(Uniform *uniform, Material *material);
 void activateMaterialTextures(Material *material, GLint *textureIndex);

@@ -256,7 +256,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		&indexBufferData,
 		&config) != NK_CONVERT_SUCCESS)
 	{
-		LOG("Failed to fill GUI command buffer\n")
+		LOG("Failed to fill GUI command buffer\n");
 	}
 
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);

@@ -76,7 +76,6 @@ int32 main(int32 argc, char *argv[])
 
 	dInitODE();
 
-	glfwMakeContextCurrent(window);
 	glfwSwapInterval(VSYNC);
 
 	glEnable(GL_DEPTH_TEST);

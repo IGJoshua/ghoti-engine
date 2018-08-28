@@ -3,6 +3,22 @@
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
+#include "core/log.h"
+
+#include <GL/glu.h>
+
+int32 logGLError(const char *message)
+{
+	GLenum glError = glGetError();
+	LOG("%s: %s\n", message, gluErrorString(glError));
+	if (glError != GL_NO_ERROR)
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)
 {
 	GLint materialTextureIndices[MATERIAL_COMPONENT_TYPE_COUNT];
