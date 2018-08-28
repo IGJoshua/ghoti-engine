@@ -81,6 +81,8 @@ clean:
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 	touch local-$(SUPPRESSIONS)
+	find resources -name '*.entity' -type f -not -path '*/saves/*' -exec rm {} \;
+	find resources -name '*.scene' -type f -not -path '*/saves/*' -exec rm {} \;
 
 .PHONY: run
 
