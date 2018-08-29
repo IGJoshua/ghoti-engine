@@ -9,6 +9,7 @@
 #include "data/list.h"
 
 #include "components/component_types.h"
+#include "components/rigid_body.h"
 
 #include "asset_management/model.h"
 
@@ -1770,21 +1771,12 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 	}
 
 	// For each component type
-	for (ListIterator listIterator = listGetIterator(entityComponentList);
-		 !listIteratorAtEnd(listIterator);
-		 listMoveIterator(&listIterator))
+	while (entityComponentList->front)
 	{
-		ComponentDataTable **table = hashMapGetData(
-			s->componentTypes,
-			LIST_ITERATOR_GET_ELEMENT(void, listIterator));
-
-		if (!table || !*table)
-		{
-			continue;
-		}
-
-		// Remove this entity from the components
-		cdtRemove(*table, entity);
+		sceneRemoveComponentFromEntity(
+			s,
+			entity,
+			*(UUID *)entityComponentList->front->data);
 	}
 
 	// Clear component list
@@ -1883,6 +1875,20 @@ void sceneRemoveComponentFromEntity(
 		return;
 	}
 
+	// NOTE(Joshua): So this is where I'd want a generic component
+	//               cleanup function, but we can't have that with how
+	//               we load components.
+
+	// Check to ensure that the component has been properly freed
+	if (!strcmp(componentType.string, "model"))
+	{
+		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
+	}
+	if (!strcmp(componentType.string, "rigid_body"))
+	{
+		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
+	}
+
 	cdtRemove(*table, entity);
 
 	List *componentTypeList = hashMapGetData(s->entities, &entity);
@@ -1892,17 +1898,7 @@ void sceneRemoveComponentFromEntity(
 		return;
 	}
 
-	for (ListIterator itr = listGetIterator(componentTypeList);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		if (strcmp(
-			LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string,
-			componentType.string))
-		{
-			listRemove(componentTypeList, &itr);
-		}
-	}
+	listRemoveData(componentTypeList, &componentType);
 }
 
 void *sceneGetComponentFromEntity(

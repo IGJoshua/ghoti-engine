@@ -55,14 +55,6 @@ void loadAssets(UUID componentID, ComponentDataEntry *entry)
 	}
 }
 
-void freeAssets(UUID componentID, ComponentDataEntry *entry)
-{
-	if (!strcmp(componentID.string, "model"))
-	{
-		freeModel(((ModelComponent*)entry->data)->name);
-	}
-}
-
 void shutdownAssetManager(void) {
 	freeHashMap(&models);
 	freeHashMap(&textures);
