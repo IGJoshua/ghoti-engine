@@ -44,6 +44,8 @@ internal uint32 viewportHeight;
 
 internal struct nk_convert_config nkConfig;
 
+internal bool clearCommandBuffer;
+
 #define MAX_GUI_VERTEX_COUNT 512 * 2048
 #define MAX_GUI_INDEX_COUNT 128 * 2048
 
@@ -94,6 +96,8 @@ internal void addWidgets(
 	real32 panelHeight);
 internal void addText(Scene *scene, UUID entity);
 internal void addButton(Scene *scene, UUID entity);
+
+internal void fillCommandBuffer(void);
 
 internal void initGUISystem(Scene *scene)
 {
@@ -187,6 +191,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT,
 		NULL,
 		GL_STREAM_DRAW);
+
+	clearCommandBuffer = true;
 }
 
 internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
@@ -200,6 +206,8 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		return;
 	}
+
+	clearCommandBuffer = false;
 
 	ctx.style.window.fixed_background = nk_style_item_color(
 		getColor(&panel->color));
@@ -233,40 +241,19 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	nk_end(&ctx);
 
-	void *vertices = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	void *indices = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-
-	struct nk_buffer vertexBufferData;
-	nk_buffer_init_fixed(
-		&vertexBufferData,
-		vertices,
-		sizeof(GUIVertex) * MAX_GUI_VERTEX_COUNT);
-
-	struct nk_buffer indexBufferData;
-	nk_buffer_init_fixed(
-		&indexBufferData,
-		indices,
-		sizeof(uint16) * MAX_GUI_INDEX_COUNT);
-
-	if (nk_convert(
-		&ctx,
-		&cmds,
-		&vertexBufferData,
-		&indexBufferData,
-		&nkConfig) != NK_CONVERT_SUCCESS)
-	{
-		LOG("Failed to fill GUI command buffer\n");
-	}
-
-	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-	glUnmapBuffer(GL_ARRAY_BUFFER);
-
-	nk_buffer_free(&vertexBufferData);
-	nk_buffer_free(&indexBufferData);
+	fillCommandBuffer();
 }
 
 internal void endGUISystem(Scene *scene, real64 dt)
 {
+	if (clearCommandBuffer)
+	{
+		nk_style_set_font(&ctx, &defaultFont->font->handle);
+		nkConfig.null = defaultFont->null;
+
+		fillCommandBuffer();
+	}
+
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -480,4 +467,38 @@ void addButton(Scene *scene, UUID entity)
 
 	button->pressedLastFrame = button->pressed;
 	button->pressed = nk_button_label(&ctx, button->text);
+}
+
+void fillCommandBuffer(void)
+{
+	void *vertices = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	void *indices = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+
+	struct nk_buffer vertexBufferData;
+	nk_buffer_init_fixed(
+		&vertexBufferData,
+		vertices,
+		sizeof(GUIVertex) * MAX_GUI_VERTEX_COUNT);
+
+	struct nk_buffer indexBufferData;
+	nk_buffer_init_fixed(
+		&indexBufferData,
+		indices,
+		sizeof(uint16) * MAX_GUI_INDEX_COUNT);
+
+	if (nk_convert(
+		&ctx,
+		&cmds,
+		&vertexBufferData,
+		&indexBufferData,
+		&nkConfig) != NK_CONVERT_SUCCESS)
+	{
+		LOG("Failed to fill GUI command buffer\n");
+	}
+
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	nk_buffer_free(&vertexBufferData);
+	nk_buffer_free(&indexBufferData);
 }
