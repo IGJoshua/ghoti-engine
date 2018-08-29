@@ -1793,31 +1793,29 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
+	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform =
 		(TransformComponent*)sceneGetComponentFromEntity(
 			s,
 			entity,
-			idFromName("transform"));
+			transformComponentID);
 
-	if (transform && strlen(transform->firstChild.string) > 0)
+	// Loop through all the children and delete them
+	if (transform && transform->firstChild.string[0] != 0)
 	{
-		sceneRemoveEntity(s, transform->firstChild);
-
-		transform =
-			(TransformComponent*)sceneGetComponentFromEntity(
-				s,
-				transform->firstChild,
-				idFromName("transform"));
-
-		while (transform && strlen(transform->nextSibling.string) > 0)
+		UUID child = transform->firstChild;
+		UUID sibling = {};
+		while (child.string[0] != 0)
 		{
-			sceneRemoveEntity(s, transform->nextSibling);
+			transform = (TransformComponent *)sceneGetComponentFromEntity(
+				s,
+				child,
+				transformComponentID);
 
-			transform =
-				(TransformComponent*)sceneGetComponentFromEntity(
-					s,
-					transform->nextSibling,
-					idFromName("transform"));
+			sibling = transform->nextSibling;
+
+			sceneRemoveEntity(s, child);
+			child = sibling;
 		}
 	}
 
