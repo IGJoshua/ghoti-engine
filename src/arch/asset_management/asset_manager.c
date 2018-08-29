@@ -1,6 +1,7 @@
 #include "asset_management/asset_manager.h"
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
+#include "asset_management/audio.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -13,6 +14,7 @@
 extern HashMap models;
 extern HashMap textures;
 extern HashMap materialFolders;
+extern HashMap audioFiles;
 
 void initializeAssetManager(void) {
 	models = createHashMap(
@@ -31,6 +33,12 @@ void initializeAssetManager(void) {
 		sizeof(UUID),
 		sizeof(List),
 		MATERIAL_FOLDERS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+
+	audioFiles = createHashMap(
+		sizeof(UUID),
+		sizeof(AudioFile),
+		AUDIO_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 }
 
@@ -53,6 +61,17 @@ void freeAssets(UUID componentID, ComponentDataEntry *entry)
 void shutdownAssetManager(void) {
 	freeHashMap(&models);
 	freeHashMap(&textures);
+
+	for (HashMapIterator itr = hashMapGetIterator(audioFiles);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		AudioFile * audio = (AudioFile*)hashMapIteratorGetValue(itr);
+		hashMapMoveIterator(&itr);
+		freeAudio(audio);
+	}
+
+
+	freeHashMap(&audioFiles);
 
 	for (HashMapIterator itr = hashMapGetIterator(materialFolders);
 		 !hashMapIteratorAtEnd(itr);

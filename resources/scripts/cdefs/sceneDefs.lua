@@ -58,4 +58,6 @@ void sceneAddComponentType(
   uint32 componentSize,
   uint32 maxComponents);
 
+ void setListenerScene(const char *name);
+
 ]]

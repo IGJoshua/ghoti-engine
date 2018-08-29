@@ -33,7 +33,7 @@ RELEASE_SCRIPTS_FOLDER = $(RELEASE_RESOURCES_FOLDER)/scripts
 RELEASE_INIT_FILE = $(RELEASE_SCRIPTS_FOLDER)/init.lua
 RELEASE_DEBUG_FILES = $(RELEASE_SCRIPTS_FOLDER)/components/debug $(RELEASE_SCRIPTS_FOLDER)/systems/debug
 
-_LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
+_LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode openal
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
 
 VENDORDEPS = $(shell find vendor -name *.h)

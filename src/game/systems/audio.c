@@ -2,6 +2,8 @@
 
 #include "core/log.h"
 
+#include "asset_management/audio.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -11,6 +13,7 @@
 #include "ECS/component.h"
 
 #include "components/component_types.h"
+#include "components/audio.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -20,34 +23,36 @@
 #include <AL/efx.h>
 #include <AL/efx-presets.h>
 
-#include <stb/stb_vorbis.c>
-
-
 internal UUID transformComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID audioManagerComonentID = {};
 internal UUID audioSourceComonentID = {};
-internal UUID audioFileComonentID = {};
 
-internal ALCdevice * device = NULL;
-internal ALCcontext * context = NULL;
-internal ALCboolean g_bEAX = 0;
-internal ALuint * g_Buffers = 0;
-internal ALuint * g_Sources = 0;
-internal ALenum errorCode = 0;
+ALCdevice *device = NULL;
+ALCcontext *context = NULL;
+ALCboolean g_bEAX = 0;
+ALuint *g_Buffers = 0;
+ALuint *g_Sources = 0;
+ALenum errorCode = 0;
+uint64 freeBuffer = 0;
+uint64 NUM_BUFF = 32;
+uint64 NUM_SRC = 32;
+bool system_setup = false;
 
-internal uint64 NUM_BUFF = 64;
-internal uint64 NUM_SRC = 64;
-
-internal bool system_setup = false;
+extern Scene *listenerScene;
 
 internal
 void initAudioSystem(Scene *scene)
 {
+    if (system_setup)
+    {
+        return;
+    }
+
     //Init
     device = alcOpenDevice(NULL);
 
-    if(device)
+    if (device)
     {
         context = alcCreateContext(device, NULL);
 
@@ -77,7 +82,7 @@ void initAudioSystem(Scene *scene)
     alGenBuffers(NUM_BUFF, g_Buffers);
 
     errorCode = alGetError();
-    if(errorCode != AL_NO_ERROR)
+    if (errorCode != AL_NO_ERROR)
     {
         LOG("alGenBuffers has errored: %s\n", alGetString(errorCode));
         return;
@@ -88,21 +93,28 @@ void initAudioSystem(Scene *scene)
     alGenSources(NUM_SRC, g_Sources);
 
     errorCode = alGetError();
-    if(errorCode != AL_NO_ERROR)
+    if (errorCode != AL_NO_ERROR)
     {
         LOG("alGenSources has errored : %s\n", alGetString(errorCode));
         return;
     }
 
+    system_setup = true;
+
+    if (!listenerScene)
+    {
+        return;
+    }
+
     TransformComponent * camTrans = sceneGetComponentFromEntity(
         scene,
-        scene->mainCamera,
+        listenerScene->mainCamera,
         transformComponentID);
 
     ALfloat listenerPos[3]={};
     ALfloat	listenerOri[6]={0,0,0, 0,1,0};
 
-    if(camTrans)
+    if (camTrans)
     {
         listenerPos[0] = camTrans->globalPosition.x;
         listenerPos[1] = camTrans->globalPosition.y;
@@ -128,11 +140,11 @@ void initAudioSystem(Scene *scene)
 
     RigidBodyComponent * camRigid = sceneGetComponentFromEntity(
         scene,
-        scene->mainCamera,
+        listenerScene->mainCamera,
         rigidBodyComponentID);
 
     ALfloat listenerVel[3]={};
-    if(camRigid)
+    if (camRigid)
     {
         listenerVel[0] = camRigid->velocity.x;
         listenerVel[1] = camRigid->velocity.y;
@@ -140,8 +152,20 @@ void initAudioSystem(Scene *scene)
     }
     alListenerfv(AL_VELOCITY,listenerVel);
 
-    system_setup = true;
+/*
+    AudioFileComponent *audioEntity;
 
+    for (ComponentDataTableIterator itr = cdtGetIterator(
+			 *(ComponentDataTable **)hashMapGetData(
+				 scene->componentTypes,
+				 &audioFileComonentID));
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+    {
+        audioEntity = (AudioFileComponent *)cdtIteratorGetData(itr);
+        loadAudio(audioEntity->name, audioEntity->looping);
+    }
+*/
     /*
 
     int32 channels;
@@ -149,7 +173,7 @@ void initAudioSystem(Scene *scene)
 	int16 *output;
 	int32 audio_size = stb_vorbis_decode_filename("resources/audio/BattlePrep.ogg", &channels, &sample_rate, &output);
 
-    if(!output)
+    if (!output)
     {
         LOG("Audio Output is NULL");
         return;
@@ -157,7 +181,7 @@ void initAudioSystem(Scene *scene)
 
     ALenum format;
 
-    if(channels == 1)
+    if (channels == 1)
     {
         format = AL_FORMAT_MONO16;
     }
@@ -170,7 +194,7 @@ void initAudioSystem(Scene *scene)
 
     alBufferData(g_Buffers[0], format, output, audio_size * sizeof(int16) * channels, sample_rate);
     errorCode = alGetError();
-    if(errorCode != AL_NO_ERROR)
+    if (errorCode != AL_NO_ERROR)
     {
         LOG("alBufferData buffer 0 : %s\n", alGetString(errorCode));
         alDeleteBuffers(NUM_BUFF, g_Buffers);
@@ -182,7 +206,7 @@ void initAudioSystem(Scene *scene)
     alSourcei(g_Sources[0], AL_BUFFER, g_Buffers[0]);
 
     errorCode = alGetError();
-    if(errorCode != AL_NO_ERROR)
+    if (errorCode != AL_NO_ERROR)
     {
         LOG("alSourcei AL_BUFFER 0 : %s\n", alGetString(errorCode));
     }
@@ -203,7 +227,7 @@ void initAudioSystem(Scene *scene)
 internal
 void beginAudioSystem(Scene *scene, real64 dt)
 {
-    if(!system_setup)
+    if (!system_setup || !listenerScene)
     {
         return;
     }
@@ -236,7 +260,7 @@ void beginAudioSystem(Scene *scene, real64 dt)
 
         ALfloat sourcePos[3] = {};
 
-        if(transformComp)
+        if (transformComp)
         {
             sourcePos[0] = transformComp->globalPosition.x;
             sourcePos[1] = transformComp->globalPosition.y;
@@ -250,7 +274,7 @@ void beginAudioSystem(Scene *scene, real64 dt)
 
         ALfloat sourceVel[3]={};
 
-        if(rigidBodyComp)
+        if (rigidBodyComp)
         {
             sourceVel[0] = rigidBodyComp->velocity.x;
             sourceVel[1] = rigidBodyComp->velocity.y;
@@ -262,13 +286,41 @@ void beginAudioSystem(Scene *scene, real64 dt)
 
         alSourcei(g_Sources[sourceID], AL_LOOPING, AL_FALSE);
 
+        if (!strcmp(entityID.string, listenerScene->mainCamera.string))
+        {
+            ALfloat	listenerOri[6]={0,0,0, 0,1,0};
+
+            if (transformComp)
+            {
+                kmVec3 atVec, upVec;
+
+                kmQuaternionGetForwardVec3RH(
+                    &atVec,
+                    &transformComp->globalRotation);
+
+                kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
+
+                listenerOri[0] = atVec.x;
+                listenerOri[1] = atVec.y;
+                listenerOri[2] = atVec.z;
+
+                listenerOri[3] = upVec.x;
+                listenerOri[4] = upVec.y;
+                listenerOri[5] = upVec.z;
+            }
+
+            alListenerfv(AL_POSITION,sourcePos);
+            alListenerfv(AL_ORIENTATION,listenerOri);
+            alListenerfv(AL_VELOCITY,sourceVel);
+        }
+
     }
 }
 
 internal
 void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
 {
-    if(!system_setup)
+    if (!system_setup || !listenerScene)
     {
         return;
     }
@@ -286,6 +338,7 @@ void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
 
     alSourcef(g_Sources[sourceID], AL_PITCH, sourceComp->pitch);
     alSourcef(g_Sources[sourceID], AL_GAIN, sourceComp->gain);
+    alSourcef(g_Sources[sourceID], AL_LOOPING, sourceComp->looping);
 
     transformComp = sceneGetComponentFromEntity(
         scene,
@@ -294,7 +347,7 @@ void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
 
     ALfloat sourcePos[3] = {};
 
-    if(transformComp)
+    if (transformComp)
     {
         sourcePos[0] = transformComp->globalPosition.x;
         sourcePos[1] = transformComp->globalPosition.y;
@@ -308,7 +361,7 @@ void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
 
     ALfloat sourceVel[3]={};
 
-    if(rigidBodyComp)
+    if (rigidBodyComp)
     {
         sourceVel[0] = rigidBodyComp->velocity.x;
         sourceVel[1] = rigidBodyComp->velocity.y;
@@ -318,16 +371,42 @@ void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
     alSourcefv(g_Sources[sourceID], AL_POSITION, sourcePos);
     alSourcefv(g_Sources[sourceID], AL_VELOCITY, sourceVel);
 
+    if (!strcmp(entityID.string, listenerScene->mainCamera.string))
+    {
+        ALfloat	listenerOri[6]={0,0,0, 0,1,0};
+
+        kmVec3 atVec, upVec;
+
+        kmQuaternionGetForwardVec3RH(&atVec, &transformComp->globalRotation);
+
+        kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
+
+        listenerOri[0] = atVec.x;
+        listenerOri[1] = atVec.y;
+        listenerOri[2] = atVec.z;
+
+        listenerOri[3] = upVec.x;
+        listenerOri[4] = upVec.y;
+        listenerOri[5] = upVec.z;
+
+        alListenerfv(AL_POSITION,sourcePos);
+        alListenerfv(AL_ORIENTATION,listenerOri);
+        alListenerfv(AL_VELOCITY,sourceVel);
+    }
+
 }
 
 internal
 void shutdownAudioSystem(Scene *scene)
 {
-    if(!system_setup)
+    if (!system_setup)
     {
         return;
     }
 
+    system_setup = false;
+
+    alSourceStopv(NUM_SRC, g_Sources);
     alDeleteBuffers(NUM_BUFF, g_Buffers);
     alDeleteSources(NUM_SRC, g_Sources);
     context = alcGetCurrentContext();
@@ -335,6 +414,21 @@ void shutdownAudioSystem(Scene *scene)
     alcMakeContextCurrent(NULL);
     alcDestroyContext(context);
     alcCloseDevice(device);
+
+/*
+    AudioFileComponent *audioEntity;
+
+    for (ComponentDataTableIterator itr = cdtGetIterator(
+			 *(ComponentDataTable **)hashMapGetData(
+				 scene->componentTypes,
+				 &audioFileComonentID));
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+    {
+        audioEntity = (AudioFileComponent *)cdtIteratorGetData(itr);
+        freeAudio(audioEntity->name);
+    }
+    */
 }
 
 System createAudioSystem(void)
@@ -343,8 +437,6 @@ System createAudioSystem(void)
 	rigidBodyComponentID = idFromName("rigid_body");
     audioManagerComonentID = idFromName("audio_manager");
     audioSourceComonentID = idFromName("audio_source");
-    audioFileComonentID = idFromName("audio_file");
-
 
 	System sys = {};
 

@@ -1,0 +1,19 @@
+{
+	"uuid": "music",
+
+	"components":
+	{
+		"audio_file":
+		[
+			{
+				"name": "name",
+				"uuid": "BattlePrep.ogg"
+			},
+
+			{
+				"name": "looping",
+				"bool": true
+			}
+		]
+	}
+}

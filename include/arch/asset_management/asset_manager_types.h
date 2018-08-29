@@ -3,6 +3,8 @@
 
 #include "renderer/renderer_types.h"
 
+#include <AL/al.h>
+
 #include <kazmath/vec2.h>
 #include <kazmath/vec3.h>
 #include <kazmath/vec4.h>
@@ -51,3 +53,14 @@ typedef struct model_t
 	uint32 numSubsets;
 	Subset *subsets;
 } Model;
+
+typedef struct audio_file_t
+{
+	UUID name;
+	ALuint id;
+	int32 channels;
+	int32 sample_rate;
+	int32 size;
+	int16 *output;
+	ALenum format;
+} AudioFile;

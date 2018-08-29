@@ -13,6 +13,7 @@
 HashMap models;
 HashMap textures;
 HashMap materialFolders;
+HashMap audioFiles;
 
 // NOTE(Joshua): Globals for ECS
 
@@ -33,3 +34,5 @@ bool reloadingScene;
 List unloadedScenes;
 bool loadingSave;
 List savedScenes;
+
+Scene *listenerScene = NULL;

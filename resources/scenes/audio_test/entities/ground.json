@@ -75,7 +75,7 @@
 		[
 			{
 				"name": "filename",
-				"char(1024)": "box"
+				"char(1024)": "cube"
 			},
 
 			{

@@ -52,6 +52,8 @@ extern List savedScenes;
 
 #define WINDOW_TITLE "Ghoti 0.7.1"
 
+extern Scene *listenerScene;
+
 int32 main(int32 argc, char *argv[])
 {
 	srand(time(0));
@@ -252,6 +254,11 @@ int32 main(int32 argc, char *argv[])
 					if (deactivateScene(*scene) == -1)
 					{
 						continue;
+					}
+
+					if (*scene == listenerScene && !reloadingScene)
+					{
+						listenerScene = NULL;
 					}
 
 					shutdownScene(scene);

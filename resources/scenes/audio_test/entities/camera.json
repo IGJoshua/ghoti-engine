@@ -99,16 +99,26 @@
 			}
 		],
 
-		"audio_manager":
+		"audio_source":
 		[
 			{
-				"name": "buffers",
-				"uint32": 32
+				"name": "id",
+				"uint32": 0
 			},
 
 			{
-				"name": "sources",
-				"uint32": 32
+				"name": "pitch",
+				"float32": 1.0
+			},
+
+			{
+				"name": "gain",
+				"float32": 1.0
+			},
+
+			{
+				"name": "looping",
+				"bool": false
 			}
 		]
 	}

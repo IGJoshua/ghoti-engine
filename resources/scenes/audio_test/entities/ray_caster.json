@@ -93,7 +93,7 @@
 		[
 			{
 				"name": "filename",
-				"char(1024)": "box"
+				"char(1024)": "cube"
 			},
 
 			{
@@ -188,18 +188,6 @@
 
 			{
 				"name": "lastHitList",
-				"uuid": ""
-			}
-		],
-
-		"joint_list":
-		[
-			{
-				"name": "jointInfo",
-				"uuid": ""
-			},
-			{
-				"name": "next",
 				"uuid": ""
 			}
 		]

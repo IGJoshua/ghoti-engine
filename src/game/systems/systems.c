@@ -25,6 +25,7 @@ SYSTEM(SimulateRigidbodies);
 SYSTEM(CleanHitList);
 SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
+SYSTEM(Audio);
 
 extern HashMap systemRegistry;
 
@@ -47,6 +48,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
+	REGISTER_SYSTEM(Audio, "audio");
 
 }
 
