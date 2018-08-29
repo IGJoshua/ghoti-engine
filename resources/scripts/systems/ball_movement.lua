@@ -11,8 +11,7 @@ local ballComponentID = ffi.new("UUID[1]", C.idFromName("ball"))
 local paddleComponentID = ffi.new("UUID[1]", C.idFromName("paddle"))
 
 function system.init(scene)
-  for itr in scene:getComponentIterator("ball") do
-	ball = itr.component
+  for ball in scene:getComponentIterator("ball") do
 	ball.velocity.x = math.random(-200, 200) / 10.0
 	ball.velocity.y = math.random(-200, 200) / 10.0
 
@@ -79,9 +78,8 @@ function system.run(scene, uuid, dt)
   end
 
   -- Check if it hit a paddle
-  for itr in scene:getComponentIterator("paddle") do
-	paddle = itr.component
-	paddleTransform = scene:getComponent("transform", itr.uuid)
+  for paddle, puuid in scene:getComponentIterator("paddle") do
+	paddleTransform = scene:getComponent("transform", puuid)
 
 	-- If it hits the paddle, then go to the other side
 	if (transform.position.x < paddleTransform.position.x + paddle.bounds.x)
