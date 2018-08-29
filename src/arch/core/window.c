@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 
-static GLFWwindow *wnd;
+internal GLFWwindow *wnd;
 
 internal bool isVSYNCEnabled;
 

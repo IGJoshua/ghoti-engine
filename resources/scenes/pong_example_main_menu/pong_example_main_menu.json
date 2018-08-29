@@ -5,11 +5,12 @@
 		{
 			"external":
 			[
-				"reload_input"
+				"main_menu"
 			],
 
 			"internal":
 			[
+				"gui"
 			]
 		},
 
@@ -22,16 +23,20 @@
 
 			"internal":
 			[
-
+				"gui_renderer"
 			]
 		}
 	},
 
 	"component_limits":
 	{
-
+		"gui_transform": 2048,
+		"panel": 512,
+		"widget_list": 1024,
+		"text": 1024,
+		"button": 1024
 	},
 
 	"active_camera": "",
-	"gravity": 0
+	"gravity": -9.81
 }

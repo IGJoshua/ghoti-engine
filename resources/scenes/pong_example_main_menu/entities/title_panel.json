@@ -1,0 +1,52 @@
+{
+	"uuid": "title_panel",
+
+	"components":
+	{
+		"gui_transform":
+		[
+			{
+				"name": "position",
+				"float32": [0.0, 1.0]
+			},
+
+			{
+				"name": "size",
+				"float32": [0.1, 0.1]
+			},
+
+			{
+				"name": "pivot",
+				"int32": 1
+			}
+		],
+
+		"panel":
+		[
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "color",
+				"float32": [0.0, 0.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "font",
+				"char(64)": "f"
+			},
+
+			{
+				"name": "font size",
+				"uint32": 172
+			},
+
+			{
+				"name": "widget list",
+				"uuid": ""
+			}
+		]
+	}
+}

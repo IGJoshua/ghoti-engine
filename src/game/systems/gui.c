@@ -228,11 +228,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	struct nk_rect rect = getRect(guiTransform, viewportWidth, viewportHeight);
 
-	if (nk_begin(
-		&ctx,
-		entityID.string,
-		rect,
-		NK_WINDOW_NO_INPUT | NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(&ctx, entityID.string, rect, NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_space_begin(&ctx, NK_STATIC, 0, INT_MAX);
 		addWidgets(scene, panel->widgetList, rect.w, rect.h);
