@@ -29,4 +29,31 @@ function Scene:addComponentToEntity(component, entity, componentData)
   C.sceneAddComponentToEntity(self.ptr, entity, componentID, componentData)
 end
 
+function Scene:getComponentIterator(component)
+  local itrOut = ffi.new("ComponentDataTableIterator[1]")
+  local itr = ffi.new(
+	"ComponentDataTableIterator",
+	C.cdtGetIterator(
+	  ffi.cast(
+		"ComponentDataTable**",
+		C.hashMapGetData(
+		  self.ptr.componentTypes,
+		  C.idFromName(component)))[0]))
+  local first = true
+  return function ()
+	if not first then
+	  itrOut[0] = itr
+	  C.cdtMoveIterator(itrOut)
+	  itr = itrOut[0]
+	else
+	  first = false
+	end
+	if C.cdtIteratorAtEnd(itr) == 0 then
+	  return {uuid = C.cdtIteratorGetUUID(itr),
+			  component = engine.components[component]:new(
+				C.cdtIteratorGetData(itr))}
+	end
+  end
+end
+
 return Scene
