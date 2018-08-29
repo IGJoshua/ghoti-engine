@@ -30,7 +30,16 @@ int32 loadTexture(const char *filename, const char *name)
 	Texture *textureResource = getTexture(name);
 	if (!textureResource)
 	{
-		char *textureName = strrchr(filename, '/') + 1;
+		const char *textureName = strrchr(filename, '/');
+		if (!textureName)
+		{
+			textureName = filename;
+		}
+		else
+		{
+			textureName += 1;
+		}
+
 		LOG("Loading texture (%s)...\n", textureName);
 
 		Texture texture = {};
