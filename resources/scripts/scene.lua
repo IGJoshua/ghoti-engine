@@ -49,9 +49,9 @@ function Scene:getComponentIterator(component)
 	  first = false
 	end
 	if C.cdtIteratorAtEnd(itr) == 0 then
-	  return {uuid = C.cdtIteratorGetUUID(itr),
-			  component = engine.components[component]:new(
-				C.cdtIteratorGetData(itr))}
+	  return engine.components[component]:new(
+			   C.cdtIteratorGetData(itr)),
+			 C.cdtIteratorGetUUID(itr)
 	end
   end
 end
