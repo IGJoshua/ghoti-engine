@@ -81,11 +81,16 @@ function system.run(scene, uuid, dt)
   for paddle, puuid in scene:getComponentIterator("paddle") do
 	paddleTransform = scene:getComponent("transform", puuid)
 
-	-- If it hits the paddle, then go to the other side
+	-- If it hits the paddle, then reverse your x velocity
 	if (transform.position.x < paddleTransform.position.x + paddle.bounds.x)
 	  and (transform.position.x > paddleTransform.position.x - paddle.bounds.x)
 	  and (transform.position.y < paddleTransform.position.y + paddle.bounds.y)
 	and (transform.position.y > paddleTransform.position.y - paddle.bounds.y) then
+	  transform.position.x =
+		paddleTransform.position.x
+		+ -(ball.velocity.x / math.abs(ball.velocity.x))
+		* paddle.bounds.x * 1.1
+
 	  -- The paddle has hit the ball
 	  ball.velocity.x = -ball.velocity.x + math.random(-300, 300) / 100.0
 	  ball.velocity.y = ball.velocity.y + math.random(-300, 300) / 100.0

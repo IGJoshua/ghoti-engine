@@ -10,6 +10,8 @@
 
 #include "ECS/scene.h"
 
+#include "renderer/renderer_utilities.h"
+
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
 #define NK_INCLUDE_STANDARD_IO
@@ -80,14 +82,7 @@ int32 loadFont(const char *name, uint32 size)
 				GL_UNSIGNED_BYTE,
 				image);
 
-			GLenum glError = glGetError();
-			if (glError != GL_NO_ERROR)
-			{
-				LOG("Error while transferring font onto GPU: %s\n",
-					gluErrorString(glError));
-
-				error = -1;
-			}
+			error = logGLError(false, "Error while transferring font onto GPU");
 
 			glBindTexture(GL_TEXTURE_2D, 0);
 

@@ -138,8 +138,6 @@ void cdtRemove(
 	if (pIndex)
 	{
 		ComponentDataEntry *entry = getEntry(table, *pIndex);
-		freeAssets(table->componentID, entry);
-		freeRigidBody(table->componentID, entry);
 
 		memset(
 			entry->entity.string,

@@ -19,6 +19,7 @@ function system.begin(scene)
   end
 end
 
+local direction
 local value
 local transform
 local player
@@ -27,15 +28,23 @@ function system.run(scene, uuid, dt)
   transform = scene:getComponent("transform", uuid)
   player = scene:getComponent("player", uuid)
 
-  value = 0
+  direction = 0
   if input.vertical.value ~= 0 then
-	value = input.vertical.value
+	direction = input.vertical.value
   elseif input.verticalarrows.value ~= 0 then
-	value = input.verticalarrows.value
+	direction = input.verticalarrows.value
   end
 
-  if value ~= 0 then
-	transform.position.y = transform.position.y + value * dt * player.speed
+  if direction ~= 0 then
+	value = direction * dt * player.speed
+
+	if transform.position.y + value > player.worldHeight / 2 then
+	  transform.position.y = player.worldHeight / 2
+	elseif transform.position.y + value < -player.worldHeight / 2 then
+	  transform.position.y = -player.worldHeight / 2
+	else
+	  transform.position.y = transform.position.y + value
+	end
 	transform:markDirty(scene)
   end
 end

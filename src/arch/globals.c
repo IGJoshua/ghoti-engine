@@ -1,3 +1,5 @@
+#include "core/config.h"
+
 #include "asset_management/asset_manager_types.h"
 
 #include "ECS/ecs_types.h"
@@ -7,6 +9,8 @@
 #include "data/data_types.h"
 
 #include <luajit-2.0/lua.h>
+
+Config config;
 
 // NOTE(Joshua): Asset Management globals
 

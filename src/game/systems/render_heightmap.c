@@ -76,47 +76,27 @@ void initRenderHeightmapSystem(Scene *scene)
 			NULL,
 			&shaderProgram);
 
-		if (getUniform(
+		getUniform(
 			shaderProgram,
 			"model",
 			UNIFORM_MAT4,
-			&modelUniform) == -1)
-		{
-			LOG("Unable to get model uniform for heightmap rendering\n");
-		}
-
-		if (getUniform(shaderProgram, "view", UNIFORM_MAT4, &viewUniform) == -1)
-		{
-			LOG("Unable to get view uniform for heightmap rendering\n");
-		}
-
-		if (getUniform(
-				shaderProgram,
-				"projection",
-				UNIFORM_MAT4,
-				&projectionUniform) == -1)
-		{
-			LOG("Unable to get projection uniform for heightmap rendering\n");
-		}
-
-		if (getUniform(
-				shaderProgram,
-				"material",
-				UNIFORM_TEXTURE_2D,
-				&materialUniform) == -1)
-		{
-			LOG("Unable to get material uniform for heightmap rendering\n");
-		}
-
-		if (getUniform(
-				shaderProgram,
-				"materialValues",
-				UNIFORM_TEXTURE_2D,
-				&materialValuesUniform) == -1)
-		{
-			LOG("Unable to get material values uniform for "
-				"heightmap rendering\n");
-		}
+			&modelUniform);
+		getUniform(shaderProgram, "view", UNIFORM_MAT4, &viewUniform);
+		getUniform(
+			shaderProgram,
+			"projection",
+			UNIFORM_MAT4,
+			&projectionUniform);
+		getUniform(
+			shaderProgram,
+			"material",
+			UNIFORM_TEXTURE_2D,
+			&materialUniform);
+		getUniform(
+			shaderProgram,
+			"materialValues",
+			UNIFORM_TEXTURE_2D,
+			&materialValuesUniform);
 	}
 
 	rendererRefCount++;
@@ -523,11 +503,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		heightmap->numIndices,
 		GL_UNSIGNED_INT,
 		NULL);
-	GLenum glError = glGetError();
-	if (glError != GL_NO_ERROR)
-	{
-		LOG("Error while drawing heightmap\n");
-	}
+	logGLError(false, "Error while drawing heightmap");
 
 	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{

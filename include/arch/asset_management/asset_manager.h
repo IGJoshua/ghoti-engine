@@ -10,5 +10,4 @@
 
 void initializeAssetManager(void);
 void loadAssets(UUID componentID, ComponentDataEntry *entry);
-void freeAssets(UUID componentID, ComponentDataEntry *entry);
 void shutdownAssetManager(void);

@@ -26,9 +26,16 @@ function system.run(scene, uuid, dt)
 	direction = 0
   end
 
-  value = opponent.speed * direction
+  value = opponent.speed * direction * dt
 
-  transform.position.y = transform.position.y + value * dt
+  if (transform.position.y < ballTransform.position.y
+		and transform.position.y + value > ballTransform.position.y)
+	or (transform.position.y > ballTransform.position.y
+		and transform.position.y + value < ballTransform.position.y)then
+	transform.position.y = ballTransform.position.y
+  else
+	transform.position.y = transform.position.y + value
+  end
   transform:markDirty(scene)
 end
 

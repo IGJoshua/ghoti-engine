@@ -9,6 +9,7 @@
 #include "data/list.h"
 
 #include "components/component_types.h"
+#include "components/rigid_body.h"
 
 #include "asset_management/model.h"
 
@@ -652,8 +653,13 @@ int32 loadSceneFile(const char *name, Scene **scene)
 				LOG("ERROR: Component limit for the %s component "
 					"is missing from the scene\n",
 					componentDefintion->name);
-				ASSERT(false);
+				error = -2;
 			}
+		}
+
+		if (error == -2)
+		{
+			ASSERT(false);
 		}
 
 		LOG("Successfully loaded scene (%s)\n", name);
@@ -1770,21 +1776,12 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 	}
 
 	// For each component type
-	for (ListIterator listIterator = listGetIterator(entityComponentList);
-		 !listIteratorAtEnd(listIterator);
-		 listMoveIterator(&listIterator))
+	while (entityComponentList->front)
 	{
-		ComponentDataTable **table = hashMapGetData(
-			s->componentTypes,
-			LIST_ITERATOR_GET_ELEMENT(void, listIterator));
-
-		if (!table || !*table)
-		{
-			continue;
-		}
-
-		// Remove this entity from the components
-		cdtRemove(*table, entity);
+		sceneRemoveComponentFromEntity(
+			s,
+			entity,
+			*(UUID *)entityComponentList->front->data);
 	}
 
 	// Clear component list
@@ -1793,31 +1790,29 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
+	UUID transformComponentID = idFromName("transform");
 	TransformComponent *transform =
 		(TransformComponent*)sceneGetComponentFromEntity(
 			s,
 			entity,
-			idFromName("transform"));
+			transformComponentID);
 
-	if (transform && strlen(transform->firstChild.string) > 0)
+	// Loop through all the children and delete them
+	if (transform && transform->firstChild.string[0] != 0)
 	{
-		sceneRemoveEntity(s, transform->firstChild);
-
-		transform =
-			(TransformComponent*)sceneGetComponentFromEntity(
-				s,
-				transform->firstChild,
-				idFromName("transform"));
-
-		while (transform && strlen(transform->nextSibling.string) > 0)
+		UUID child = transform->firstChild;
+		UUID sibling = {};
+		while (child.string[0] != 0)
 		{
-			sceneRemoveEntity(s, transform->nextSibling);
+			transform = (TransformComponent *)sceneGetComponentFromEntity(
+				s,
+				child,
+				transformComponentID);
 
-			transform =
-				(TransformComponent*)sceneGetComponentFromEntity(
-					s,
-					transform->nextSibling,
-					idFromName("transform"));
+			sibling = transform->nextSibling;
+
+			sceneRemoveEntity(s, child);
+			child = sibling;
 		}
 	}
 
@@ -1885,6 +1880,20 @@ void sceneRemoveComponentFromEntity(
 		return;
 	}
 
+	// NOTE(Joshua): So this is where I'd want a generic component
+	//               cleanup function, but we can't have that with how
+	//               we load components.
+
+	// Check to ensure that the component has been properly freed
+	if (!strcmp(componentType.string, "model"))
+	{
+		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
+	}
+	if (!strcmp(componentType.string, "rigid_body"))
+	{
+		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
+	}
+
 	cdtRemove(*table, entity);
 
 	List *componentTypeList = hashMapGetData(s->entities, &entity);
@@ -1894,17 +1903,7 @@ void sceneRemoveComponentFromEntity(
 		return;
 	}
 
-	for (ListIterator itr = listGetIterator(componentTypeList);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
-	{
-		if (strcmp(
-			LIST_ITERATOR_GET_ELEMENT(UUID, itr)->string,
-			componentType.string))
-		{
-			listRemove(componentTypeList, &itr);
-		}
-	}
+	listRemoveData(componentTypeList, &componentType);
 }
 
 void *sceneGetComponentFromEntity(

@@ -75,7 +75,7 @@
 		[
 			{
 				"name": "Model name",
-				"char(1024)": "metalbox"
+				"uuid": "metalbox"
 			},
 			{
 				"name": "visible?",
@@ -87,6 +87,10 @@
 		[
 			{
 				"name": "speed",
+				"float32": 30
+			},
+			{
+				"name": "world height",
 				"float32": 30
 			}
 		],
