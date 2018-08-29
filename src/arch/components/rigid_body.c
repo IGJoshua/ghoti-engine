@@ -376,3 +376,11 @@ void updateRigidBody(
 		dBodyDisable(body->bodyID);
 	}
 }
+
+void freeRigidBody(UUID componentID, ComponentDataEntry *entry)
+{
+	if (!strcmp(componentID.string, "rigid_body"))
+	{
+		destroyRigidBody((RigidBodyComponent*)entry->data);
+	}
+}

@@ -318,20 +318,6 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 	tMarkDirty(scene, entityID);
 }
 
-internal
-void shutdownSimulateRigidbodiesSystem(Scene *scene)
-{
-	for (ComponentDataTableIterator itr = cdtGetIterator(
-			 *(ComponentDataTable **)hashMapGetData(
-				 scene->componentTypes,
-				 &rigidBodyComponentID));
-		 !cdtIteratorAtEnd(itr);
-		 cdtMoveIterator(&itr))
-	{
-		destroyRigidBody(cdtIteratorGetData(itr));
-	}
-}
-
 System createSimulateRigidbodiesSystem(void)
 {
 	transformComponentID = idFromName("transform");
@@ -351,7 +337,6 @@ System createSimulateRigidbodiesSystem(void)
 	sys.init = &initSimulateRigidbodiesSystem;
 	sys.begin = &beginSimulateRigidbodiesSystem;
 	sys.run = &runSimulateRigidbodiesSystem;
-	sys.shutdown = &shutdownSimulateRigidbodiesSystem;
 
 	return sys;
 }

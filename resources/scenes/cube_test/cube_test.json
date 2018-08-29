@@ -27,7 +27,8 @@
 
 			"internal":
 			[
-				"renderer"
+				"renderer",
+				"gui"
 			]
 		}
 	},
@@ -46,7 +47,11 @@
 		"collision_tree_node": 20000,
 		"surface_information": 20000,
 		"oscillator": 128,
-		"orbit": 128
+		"orbit": 128,
+		"gui_transform": 128,
+		"panel": 128,
+		"widget_list": 128,
+		"text": 128
 	},
 
 	"active_camera": "09Uw29Vy`b_dc,hmF#%3/VUM39nUylXa^fZm|3h_M${i-eX+@[;LinQy_B,50as",

@@ -5,7 +5,9 @@
 
 #include <ode/ode.h>
 
+#include <kazmath/vec2.h>
 #include <kazmath/vec3.h>
+#include <kazmath/vec4.h>
 #include <kazmath/quaternion.h>
 
 typedef struct model_component_t
@@ -232,3 +234,58 @@ typedef struct heightmap_component_t
 	real32 uvScaleX;
 	real32 uvScaleZ;
 } HeightmapComponent;
+
+typedef enum anchor_e
+{
+	ANCHOR_TOP_LEFT,
+	ANCHOR_TOP,
+	ANCHOR_TOP_RIGHT,
+	ANCHOR_LEFT,
+	ANCHOR_CENTER,
+	ANCHOR_RIGHT,
+	ANCHOR_BOTTOM_LEFT,
+	ANCHOR_BOTTOM,
+	ANCHOR_BOTTOM_RIGHT
+} Anchor;
+
+typedef struct gui_transform_component_t
+{
+	kmVec2 position;
+	kmVec2 size;
+	Anchor anchor;
+} GUITransformComponent;
+
+typedef struct panel_component_t
+{
+	bool enabled;
+	kmVec4 color;
+	char font[1024];
+	uint32 fontSize;
+	UUID widgetList;
+} PanelComponent;
+
+typedef struct widget_list_component_t
+{
+	UUID nextWidget;
+} WidgetListComponent;
+
+typedef enum text_alignment_e
+{
+	TEXT_ALIGNMENT_TOP_LEFT,
+	TEXT_ALIGNMENT_TOP,
+	TEXT_ALIGNMENT_TOP_RIGHT,
+	TEXT_ALIGNMENT_LEFT,
+	TEXT_ALIGNMENT_CENTER,
+	TEXT_ALIGNMENT_RIGHT,
+	TEXT_ALIGNMENT_BOTTOM_LEFT,
+	TEXT_ALIGNMENT_BOTTOM,
+	TEXT_ALIGNMENT_BOTTOM_RIGHT,
+	TEXT_ALIGNMENT_WRAP
+} TextAlignment;
+
+typedef struct text_component_t
+{
+	char text[4096];
+	kmVec4 color;
+	TextAlignment alignment;
+} TextComponent;

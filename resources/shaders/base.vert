@@ -20,7 +20,8 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-void main() {
+void main()
+{
 	fragColor = color;
 	fragPosition = (model * vec4(position, 1)).xyz;
 	fragNormal = normalize((model * vec4(normal, 0)).xyz);

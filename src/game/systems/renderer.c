@@ -28,10 +28,7 @@
 #include <malloc.h>
 #include <stdio.h>
 
-internal Shader vertexShader;
-internal Shader fragmentShader;
-
-internal ShaderPipeline pipeline;
+internal GLuint shaderProgram;
 
 internal Uniform modelUniform;
 internal Uniform viewUniform;
@@ -51,7 +48,7 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 internal Uniform customColorUniform;
 
-internal bool rendererActive;
+internal uint32 rendererRefCount = 0;
 
 internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
@@ -61,102 +58,89 @@ internal UUID cameraComponentID = {};
 internal
 void initRendererSystem(Scene *scene)
 {
-	if (!rendererActive)
+	if (rendererRefCount == 0)
 	{
-		if (compileShaderFromFile(
+		createShaderProgram(
 			"resources/shaders/base.vert",
-			SHADER_VERTEX,
-			&vertexShader) == -1)
-		{
-			LOG("Unable to compile vertex shader from file\n");
-		}
-
-		if (compileShaderFromFile(
+			NULL,
+			NULL,
+			NULL,
 			"resources/shaders/color.frag",
-			SHADER_FRAGMENT,
-			&fragmentShader) == -1)
-		{
-			LOG("Unable to compile fragment shader from file\n");
-		}
+			NULL,
+			&shaderProgram);
 
-		Shader *program[2];
-		program[0] = &vertexShader;
-		program[1] = &fragmentShader;
-
-		if (composeShaderPipeline(program, 2, &pipeline) == -1)
-		{
-			LOG("Unable to compose shader program\n");
-		}
-
-		freeShader(vertexShader);
-		freeShader(fragmentShader);
-		free(pipeline.shaders);
-		pipeline.shaderCount = 0;
-
-		getUniform(pipeline, "model", UNIFORM_MAT4, &modelUniform);
-		getUniform(pipeline, "view", UNIFORM_MAT4, &viewUniform);
-		getUniform(pipeline, "projection", UNIFORM_MAT4, &projectionUniform);
-
-		getUniform(pipeline, "material", UNIFORM_TEXTURE_2D, &materialUniform);
+		getUniform(shaderProgram, "model", UNIFORM_MAT4, &modelUniform);
+		getUniform(shaderProgram, "view", UNIFORM_MAT4, &viewUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
+			"projection",
+			UNIFORM_MAT4,
+			&projectionUniform);
+
+		getUniform(
+			shaderProgram,
+			"material",
+			UNIFORM_TEXTURE_2D,
+			&materialUniform);
+		getUniform(
+			shaderProgram,
 			"materialValues",
 			UNIFORM_VEC3,
 			&materialValuesUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"materialMask",
 			UNIFORM_TEXTURE_2D,
 			&materialMaskUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"opacityMask",
 			UNIFORM_TEXTURE_2D,
 			&opacityMaskUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"collectionMaterial",
 			UNIFORM_TEXTURE_2D,
 			&collectionMaterialUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"collectionMaterialValues",
 			UNIFORM_VEC3,
 			&collectionMaterialValuesUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"grungeMaterial",
 			UNIFORM_TEXTURE_2D,
 			&grungeMaterialUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"grungeMaterialValues",
 			UNIFORM_VEC3,
 			&grungeMaterialValuesUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"wearMaterial",
 			UNIFORM_TEXTURE_2D,
 			&wearMaterialUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"wearMaterialValues",
 			UNIFORM_VEC3,
 			&wearMaterialValuesUniform);
 
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"useCustomColor",
 			UNIFORM_BOOL,
 			&useCustomColorUniform);
 		getUniform(
-			pipeline,
+			shaderProgram,
 			"customColor",
 			UNIFORM_VEC3,
 			&customColorUniform);
-
-		rendererActive = true;
 	}
+
+	rendererRefCount++;
 }
 
 extern real64 alpha;
@@ -164,13 +148,12 @@ extern real64 alpha;
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
-	bindShaderPipeline(pipeline);
+	glUseProgram(shaderProgram);
 
 	if (cameraSetUniforms(
 		scene,
 		viewUniform,
-		projectionUniform,
-		pipeline) == -1)
+		projectionUniform) == -1)
 	{
 		return;
 	}
@@ -350,13 +333,16 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
-	unbindShaderPipeline();
+	glUseProgram(0);
 }
 
 internal
 void shutdownRendererSystem(Scene *scene)
 {
-	rendererActive = false;
+	if (--rendererRefCount == 0)
+	{
+		glDeleteProgram(shaderProgram);
+	}
 }
 
 System createRendererSystem(void)

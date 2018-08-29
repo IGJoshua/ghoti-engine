@@ -1,7 +1,6 @@
 #pragma once
 
 #define internal static
-#define persistent static
 
 typedef unsigned long long int64;
 typedef int int32;

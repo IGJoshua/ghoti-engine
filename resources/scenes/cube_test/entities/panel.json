@@ -1,0 +1,52 @@
+{
+	"uuid": "`*i`E(@@`,G.xnqgjWuFZ^@e@&kQ9#6vyuU=#rRX$vcqjSVZ(Q'W6<;K8,qN$.B",
+
+	"components":
+	{
+		"gui_transform":
+		[
+			{
+				"name": "position",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "size",
+				"float32": [0.75, 0.75]
+			},
+
+			{
+				"name": "anchor",
+				"int32": 4
+			}
+		],
+
+		"panel":
+		[
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "color",
+				"float32": [0.0, 0.0, 0.0, 0.5]
+			},
+
+			{
+				"name": "font",
+				"char(1024)": "default_font"
+			},
+
+			{
+				"name": "font size",
+				"uint32": 36
+			},
+
+			{
+				"name": "widget list",
+				"uuid": "Na1A(#%ZCV'OMR9UbF+_JKP%'MZ?kM.754V24PiU-eyW58*tS*R$RwuVBUj3(mH"
+			}
+		]
+	}
+}

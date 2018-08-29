@@ -1,34 +1,35 @@
 {
-   LIB_DRM_NOUVEAU
-   Memcheck:Param
-   ioctl(generic)
-   fun:ioctl
-   fun:drmIoctl
-   fun:drmCommandWriteRead
-   obj:/usr/lib/libdrm_nouveau.so.2.0.0
-   fun:nouveau_device_new
-   fun:nouveau_drm_screen_create
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/libGL.so.1.2.0
-   obj:/usr/lib/libGL.so.1.2.0
+	LIB_DRM_NOUVEAU
+	Memcheck:Param
+	ioctl(generic)
+	fun:ioctl
+	fun:drmIoctl
+	fun:drmCommandWriteRead
+	obj:/usr/lib/libdrm_nouveau.so.2.0.0
+	fun:nouveau_device_new
+	fun:nouveau_drm_screen_create
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/libGL.so.1.2.0
+	obj:/usr/lib/libGL.so.1.2.0
 }
+
 {
-   NOUVEAU_DRIVER
-   Memcheck:Param
-   ioctl(generic)
-   fun:ioctl
-   fun:drmIoctl
-   fun:drmCommandWriteRead
-   fun:nouveau_object_mthd
-   fun:nouveau_device_new
-   fun:nouveau_drm_screen_create
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
-   obj:/usr/lib/libGL.so.1.2.0
-   obj:/usr/lib/libGL.so.1.2.0
+	NOUVEAU_DRIVER
+	Memcheck:Param
+	ioctl(generic)
+	fun:ioctl
+	fun:drmIoctl
+	fun:drmCommandWriteRead
+	fun:nouveau_object_mthd
+	fun:nouveau_device_new
+	fun:nouveau_drm_screen_create
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/xorg/modules/drivers/nouveau_dri.so
+	obj:/usr/lib/libGL.so.1.2.0
+	obj:/usr/lib/libGL.so.1.2.0
 }

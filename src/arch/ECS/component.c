@@ -3,6 +3,8 @@
 
 #include "asset_management/asset_manager.h"
 
+#include "components/rigid_body.h"
+
 #include "core/log.h"
 
 #include "data/hash_map.h"
@@ -137,6 +139,7 @@ void cdtRemove(
 	{
 		ComponentDataEntry *entry = getEntry(table, *pIndex);
 		freeAssets(table->componentID, entry);
+		freeRigidBody(table->componentID, entry);
 
 		memset(
 			entry->entity.string,

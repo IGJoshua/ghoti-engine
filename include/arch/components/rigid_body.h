@@ -18,3 +18,5 @@ void updateRigidBody(
 	CollisionComponent *coll,
 	RigidBodyComponent *body,
 	TransformComponent *trans);
+
+void freeRigidBody(UUID componentID, ComponentDataEntry *entry);

@@ -30,9 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct kmMat4;
 
-#pragma pack(push)  /* push current alignment to stack */
-#pragma pack(1)     /* set alignment to 1 byte boundary */
-
 typedef struct kmVec4
 {
 	kmScalar x;
@@ -40,8 +37,6 @@ typedef struct kmVec4
 	kmScalar z;
 	kmScalar w;
 } kmVec4;
-
-#pragma pack(pop)
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,8 +74,8 @@ kmVec4* kmVec4Scale(kmVec4* pOut, const kmVec4* pIn, const kmScalar s);
 /** Subtracts one 4D pV2 from pV1. The result is stored in pOut. pOut
  * is returned*/
 kmVec4* kmVec4Subtract(kmVec4* pOut, const kmVec4* pV1, const kmVec4* pV2);
-kmVec4* kmVec4Mul( kmVec4* pOut,const kmVec4* pV1, const kmVec4* pV2 ); 
-kmVec4* kmVec4Div( kmVec4* pOut,const kmVec4* pV1, const kmVec4* pV2 ); 
+kmVec4* kmVec4Mul( kmVec4* pOut,const kmVec4* pV1, const kmVec4* pV2 );
+kmVec4* kmVec4Div( kmVec4* pOut,const kmVec4* pV1, const kmVec4* pV2 );
 
 /** Multiplies a 4D vector by a matrix, the result is stored in pOut,
  * and pOut is returned.*/

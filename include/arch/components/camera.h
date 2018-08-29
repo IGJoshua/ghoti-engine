@@ -8,5 +8,4 @@
 int32 cameraSetUniforms(
 	Scene *scene,
 	Uniform viewUniform,
-	Uniform projectionUniform,
-	ShaderPipeline pipeline);
+	Uniform projectionUniform);
