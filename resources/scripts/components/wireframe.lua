@@ -8,8 +8,4 @@ typedef struct wireframe_component_t
 } WireframeComponent;
 ]]
 
-io.write("Defined Wireframe component for FFI\n")
-
 local component = engine.components:register("wireframe", "WireframeComponent")
-
-io.write("Registered Wireframe component\n")

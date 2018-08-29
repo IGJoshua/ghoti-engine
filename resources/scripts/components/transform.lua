@@ -17,8 +17,6 @@ typedef struct transform_component_t
 } TransformComponent;
 ]]
 
-io.write("Defined Transform component for FFI\n")
-
 local component = engine.components:register("transform", "TransformComponent")
 
 local emptyID = engine.C.idFromName("")
@@ -46,5 +44,3 @@ function component:parent(scene, child, parent)
 
   self:markDirty(scene, child)
 end
-
-io.write("Registered Transform component\n")
