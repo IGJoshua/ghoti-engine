@@ -210,7 +210,6 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		font = defaultFont;
 	}
 
-	// TODO: Set before each draw call or here?
 	nk_style_set_font(&ctx, &font->font->handle);
 	nkConfig.null = font->null;
 
