@@ -71,6 +71,14 @@ typedef union uuid_t
 
 UUID idFromName(const char *name);
 
+bool getVSYNCMode(void);
+void switchVSYNCMode(void);
+void setVSYNCMode(bool vsync);
+
+bool getFullscreenMode(void);
+void switchFullscreenMode(void);
+void setFullscreenMode(bool fullscreen);
+
 int32 closeWindow();
 
 typedef enum data_type_e {

@@ -27,8 +27,6 @@ typedef union uuid_t
 	uint8 bytes[UUID_LENGTH + 1];
 } UUID;
 
-#define VSYNC 1
-
 #define ASSERTION_FAILED 1
 
 #ifdef _DEBUG

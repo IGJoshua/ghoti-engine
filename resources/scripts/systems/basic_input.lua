@@ -9,6 +9,7 @@ local C = engine.C
 function system.init(scene)
   input:register("close", input.BUTTON(keyboard.ESCAPE, gamepad.buttons.guide))
   input:register("reload", input.BUTTON(keyboard.R))
+  input:register("fullscreen", input.BUTTON(keyboard.F))
   input:register("save", input.BUTTON(keyboard.S))
   input:register("load_save", input.BUTTON(keyboard.Z))
 end
@@ -19,7 +20,11 @@ function system.begin(scene, dt)
   end
 
   if input.reload.updated and input.reload.keydown then
-    C.reloadAllScenes()
+	C.reloadAllScenes()
+  end
+
+  if input.fullscreen.updated and input.fullscreen.keydown then
+	C.switchFullscreenMode()
   end
 
   if input.save.updated and input.save.keydown then

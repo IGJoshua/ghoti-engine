@@ -1,5 +1,5 @@
 {
-	"uuid": "Na1A(#%ZCV'OMR9UbF+_JKP%'MZ?kM.754V24PiU-eyW58*tS*R$RwuVBUj3(mH",
+	"uuid": "v0#<:1LWvA95_VSAdB5Ub(Hv3F9a:-CG-TW;v,krJy.'NVE8vOb^T(ReKaDZkew",
 
 	"components":
 	{
@@ -12,7 +12,7 @@
 
 			{
 				"name": "size",
-				"float32": [0.9, 0.9]
+				"float32": [0.4, 0.15]
 			},
 
 			{
@@ -29,21 +29,21 @@
 			}
 		],
 
-		"text":
+		"button":
 		[
 			{
 				"name": "text",
-				"char(4096)": "Hello World!"
+				"char(1024)": "Button"
 			},
 
 			{
-				"name": "color",
-				"float32": [1.0, 1.0, 1.0, 1.0]
+				"name": "pressed last frame",
+				"bool": false
 			},
 
 			{
-				"name": "alignment",
-				"int32": 4
+				"name": "pressed",
+				"bool": false
 			}
 		]
 	}

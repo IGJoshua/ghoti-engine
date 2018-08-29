@@ -1,4 +1,5 @@
 #include "core/window.h"
+#include "core/config.h"
 #include "core/log.h"
 
 #include <GL/glew.h>
@@ -11,6 +12,13 @@
 #include <stdio.h>
 
 static GLFWwindow *wnd;
+
+internal bool isVSYNCEnabled;
+
+internal int32 x, y, w, h;
+internal bool isFullscreen;
+
+extern Config config;
 
 internal
 void errorCallback(
@@ -47,20 +55,86 @@ GLFWwindow *initWindow(
 
 	glfwMakeContextCurrent(window);
 
-	glewExperimental = GL_TRUE;
-	GLenum err = glewInit();
+	wnd = window;
 
-	if (GLEW_OK != err)
+	isFullscreen = false;
+
+	setVSYNCMode(config.windowConfig.vsync);
+	setFullscreenMode(config.windowConfig.fullscreen);
+
+	glewExperimental = GL_TRUE;
+	GLenum glewError = glewInit();
+
+	if (GLEW_OK != glewError)
 	{
-		LOG("Error: %s\n", glewGetErrorString(err));
+		LOG("Error: %s\n", glewGetErrorString(glewError));
 	}
 
 	ilInit();
 	iluInit();
 
-	wnd = window;
-
 	return window;
+}
+
+bool getVSYNCMode(void)
+{
+	return isVSYNCEnabled;
+}
+
+void switchVSYNCMode(void)
+{
+	setVSYNCMode(!isVSYNCEnabled);
+}
+
+void setVSYNCMode(bool vsync)
+{
+	if (vsync)
+	{
+		glfwSwapInterval(1);
+	}
+	else
+	{
+		glfwSwapInterval(0);
+	}
+
+	isVSYNCEnabled = vsync;
+}
+
+bool getFullscreenMode(void)
+{
+	return isFullscreen;
+}
+
+void switchFullscreenMode(void)
+{
+	setFullscreenMode(!isFullscreen);
+}
+
+void setFullscreenMode(bool fullscreen)
+{
+	if (fullscreen && !isFullscreen)
+	{
+		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+		glfwGetWindowPos(wnd, &x, &y);
+		glfwGetWindowSize(wnd, &w, &h);
+
+		glfwSetWindowMonitor(
+			wnd,
+			monitor,
+			0,
+			0,
+			mode->width,
+			mode->height,
+			GLFW_DONT_CARE);
+	}
+	else if (isFullscreen)
+	{
+		glfwSetWindowMonitor(wnd, NULL, x, y, w, h, GLFW_DONT_CARE);
+	}
+
+	isFullscreen = fullscreen;
 }
 
 int32 closeWindow(void)

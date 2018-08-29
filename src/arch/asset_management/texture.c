@@ -8,6 +8,8 @@
 
 #include "ECS/scene.h"
 
+#include "renderer/renderer_utilities.h"
+
 #include <IL/il.h>
 #include <IL/ilu.h>
 
@@ -66,13 +68,9 @@ int32 loadTexture(const char *filename, const char *name)
 				GL_UNSIGNED_BYTE,
 				textureData);
 
-			GLenum glError = glGetError();
-			if (glError != GL_NO_ERROR)
-			{
-				LOG("Error while transferring texture onto GPU: %s\n",
-					gluErrorString(glError));
-				error = -1;
-			}
+			error = logGLError(
+				false,
+				"Error while transferring texture onto GPU");
 
 			if (error != -1)
 			{

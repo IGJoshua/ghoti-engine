@@ -158,7 +158,7 @@ This utility exports JSON entity files to binary entity files that can be used i
 		[
 			{
 				"name": "name",
-				"char(1024)": "player"
+				"char(64)": "player"
 			},
 
 			{

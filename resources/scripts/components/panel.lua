@@ -3,7 +3,7 @@ typedef struct panel_component_t
 {
 	bool enabled;
 	kmVec4 color;
-	char font[1024];
+	char font[64];
 	uint32 fontSize;
 	UUID widgetList;
 } PanelComponent;

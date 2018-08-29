@@ -1,6 +1,9 @@
 PROJ = ghoti
 LIBNAME = ghoti
 
+CONFIG_FILE = config.json
+DEFAULT_FONT = default_font.ttf
+
 IDIRS = include/arch include/game vendor
 
 SRCDIR = src
@@ -78,6 +81,8 @@ clean:
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 	touch local-$(SUPPRESSIONS)
+	find resources -name '*.entity' -type f -not -path '*/saves/*' -exec rm {} \;
+	find resources -name '*.scene' -type f -not -path '*/saves/*' -exec rm {} \;
 
 .PHONY: run
 
@@ -116,6 +121,8 @@ release : clean
 	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
+	find $(RELEASE_RESOURCES_FOLDER)/fonts/* -type f -not -path '*$(DEFAULT_FONT)' -exec rm {} \;
+	cp $(CONFIG_FILE) release/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*

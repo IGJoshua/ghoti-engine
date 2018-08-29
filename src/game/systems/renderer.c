@@ -265,14 +265,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				GL_UNSIGNED_INT,
 				NULL);
 
-			GLenum glError = glGetError();
-			if (glError != GL_NO_ERROR)
-			{
-				LOG("Error when drawing model (%s), subset (%s): %s\n",
-					model->name.string,
-					subset->name.string,
-					gluErrorString(glError));
-			}
+			logGLError(
+				false,
+				"Error when drawing model (%s), subset (%s)",
+				model->name.string,
+				subset->name.string);
 		}
 
 		if (wireframe)
@@ -295,15 +292,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				GL_UNSIGNED_INT,
 				NULL);
 
-			GLenum glError = glGetError();
-			if (glError != GL_NO_ERROR)
-			{
-				LOG("Error when drawing wireframe for model (%s), "
-					"subset (%s): %s\n",
-					model->name.string,
-					subset->name.string,
-					gluErrorString(glError));
-			}
+			logGLError(
+				false,
+				"Error when drawing wireframe for model (%s), subset (%s)",
+				model->name.string,
+				subset->name.string);
 
 			glLineWidth(lineWidth);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

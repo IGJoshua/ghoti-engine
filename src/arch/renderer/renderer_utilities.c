@@ -3,6 +3,41 @@
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
+#include "core/log.h"
+
+#include <GL/glu.h>
+
+#include <stdarg.h>
+#include <malloc.h>
+#include <string.h>
+
+int32 logGLError(bool logNoError, const char *message, ...)
+{
+	int32 error = 0;
+
+	va_list args;
+    va_start(args, message);
+
+	char *messageBuffer = malloc(strlen(message) + 4096);
+	vsprintf(messageBuffer, message, args);
+    va_end(args);
+
+	GLenum glError = glGetError();
+	if (glError != GL_NO_ERROR)
+	{
+		error = -1;
+	}
+
+	if (logNoError || error == -1)
+	{
+		LOG("%s: %s\n", messageBuffer, gluErrorString(glError));
+	}
+
+	free(messageBuffer);
+
+	return error;
+}
+
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)
 {
 	GLint materialTextureIndices[MATERIAL_COMPONENT_TYPE_COUNT];

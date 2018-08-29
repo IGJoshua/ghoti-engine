@@ -25,6 +25,7 @@ SYSTEM(CleanHitList);
 SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
 SYSTEM(GUI);
+SYSTEM(GUIRenderer);
 
 extern HashMap systemRegistry;
 
@@ -48,6 +49,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
 	REGISTER_SYSTEM(GUI, "gui");
+	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
 }
 
 void freeSystems(void)
