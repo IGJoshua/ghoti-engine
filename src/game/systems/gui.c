@@ -335,32 +335,32 @@ struct nk_rect getRect(
 	rect.w = guiTransform->size.x * width;
 	rect.h = guiTransform->size.y * height;
 
-	switch (guiTransform->anchor)
+	switch (guiTransform->pivot)
 	{
-		case ANCHOR_TOP:
-		case ANCHOR_CENTER:
-		case ANCHOR_BOTTOM:
+		case PIVOT_TOP:
+		case PIVOT_CENTER:
+		case PIVOT_BOTTOM:
 			rect.x -= rect.w / 2.0f;
 			break;
-		case ANCHOR_TOP_RIGHT:
-		case ANCHOR_RIGHT:
-		case ANCHOR_BOTTOM_RIGHT:
+		case PIVOT_TOP_RIGHT:
+		case PIVOT_RIGHT:
+		case PIVOT_BOTTOM_RIGHT:
 			rect.x -= rect.w;
 			break;
 		default:
 			break;
 	}
 
-	switch (guiTransform->anchor)
+	switch (guiTransform->pivot)
 	{
-		case ANCHOR_LEFT:
-		case ANCHOR_CENTER:
-		case ANCHOR_RIGHT:
+		case PIVOT_LEFT:
+		case PIVOT_CENTER:
+		case PIVOT_RIGHT:
 			rect.y -= rect.h / 2.0f;
 			break;
-		case ANCHOR_BOTTOM_LEFT:
-		case ANCHOR_BOTTOM:
-		case ANCHOR_BOTTOM_RIGHT:
+		case PIVOT_BOTTOM_LEFT:
+		case PIVOT_BOTTOM:
+		case PIVOT_BOTTOM_RIGHT:
 			rect.y -= rect.h;
 			break;
 		default:

@@ -1,22 +1,22 @@
 ffi.cdef[[
-typedef enum anchor_e
+typedef enum pivot_e
 {
-	ANCHOR_TOP_LEFT,
-	ANCHOR_TOP,
-	ANCHOR_TOP_RIGHT,
-	ANCHOR_LEFT,
-	ANCHOR_CENTER,
-	ANCHOR_RIGHT,
-	ANCHOR_BOTTOM_LEFT,
-	ANCHOR_BOTTOM,
-	ANCHOR_BOTTOM_RIGHT
-} Anchor;
+	PIVOT_TOP_LEFT,
+	PIVOT_TOP,
+	PIVOT_TOP_RIGHT,
+	PIVOT_LEFT,
+	PIVOT_CENTER,
+	PIVOT_RIGHT,
+	PIVOT_BOTTOM_LEFT,
+	PIVOT_BOTTOM,
+	PIVOT_BOTTOM_RIGHT
+} Pivot;
 
 typedef struct gui_transform_component_t
 {
 	kmVec2 position;
 	kmVec2 size;
-	Anchor anchor;
+	Pivot pivot;
 } GUITransformComponent;
 ]]
 

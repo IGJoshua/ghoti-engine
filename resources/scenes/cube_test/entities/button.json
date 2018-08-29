@@ -16,7 +16,7 @@
 			},
 
 			{
-				"name": "anchor",
+				"name": "pivot",
 				"int32": 4
 			}
 		],
