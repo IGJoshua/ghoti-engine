@@ -9,5 +9,4 @@
 #define FONTS_BUCKET_COUNT 257
 
 void initializeAssetManager(void);
-void loadAssets(UUID componentID, ComponentDataEntry *entry);
 void shutdownAssetManager(void);

@@ -1,6 +1,5 @@
 #include "asset_management/asset_manager.h"
 #include "asset_management/asset_manager_types.h"
-#include "asset_management/model.h"
 #include "asset_management/font.h"
 
 #include "data/data_types.h"
@@ -40,19 +39,6 @@ void initializeAssetManager(void) {
 		sizeof(Font),
 		FONTS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-}
-
-void loadAssets(UUID componentID, ComponentDataEntry *entry)
-{
-	if (!strcmp(componentID.string, "model"))
-	{
-		loadModel(((ModelComponent*)entry->data)->name);
-	}
-	else if (!strcmp(componentID.string, "panel"))
-	{
-		PanelComponent *panelComponent = (PanelComponent*)entry->data;
-		loadFont(panelComponent->font, panelComponent->fontSize);
-	}
 }
 
 void shutdownAssetManager(void) {

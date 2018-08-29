@@ -12,6 +12,7 @@
 #include "components/rigid_body.h"
 
 #include "asset_management/model.h"
+#include "asset_management/font.h"
 
 #include "file/utilities.h"
 
@@ -1842,6 +1843,16 @@ int32 sceneAddComponentToEntity(
 
 	List *l = hashMapGetData(s->entities, &entity);
 
+	if (!strcmp(componentType.string, "model"))
+	{
+		loadModel(((ModelComponent*)componentData)->name);
+	}
+	else if (!strcmp(componentType.string, "panel"))
+	{
+		PanelComponent *panelComponent = (PanelComponent*)componentData;
+		loadFont(panelComponent->font, panelComponent->fontSize);
+	}
+
 	// Add the component to the data table
 	if(cdtInsert(
 		   *dataTable,
@@ -1889,7 +1900,7 @@ void sceneRemoveComponentFromEntity(
 	{
 		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
 	}
-	if (!strcmp(componentType.string, "rigid_body"))
+	else if (!strcmp(componentType.string, "rigid_body"))
 	{
 		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
 	}
