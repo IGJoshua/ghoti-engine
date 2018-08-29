@@ -1,5 +1,5 @@
 {
-	"uuid": "cube_aabb",
+	"uuid": "ground",
 
 	"components":
 	{
@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [0.0, 0.0, 0.0]
+				"float32": [0, 0, -5]
 			},
 
 			{
@@ -17,12 +17,12 @@
 
 			{
 				"name": "scale",
-				"float32": [1, 1, 1]
+				"float32": [100, 100, 1]
 			},
 
 			{
 				"name": "parent",
-				"uuid": "cube"
+				"uuid": ""
 			},
 
 			{
@@ -71,35 +71,16 @@
 			}
 		],
 
-		"box":
+		"model":
 		[
 			{
-				"name": "bounds",
-				"float32": [0.5, 0.5, 0.5]
-			}
-		],
+				"name": "filename",
+				"char(1024)": "cube"
+			},
 
-		"collision_tree_node":
-		[
 			{
-				"name": "type",
-				"int32": 0
-			},
-			{
-				"name": "collisionVolume",
-				"uuid": "cube"
-			},
-			{
-				"name": "nextCollider",
-				"uuid": ""
-			},
-			{
-				"name": "isTrigger",
-				"bool": false
-			},
-			{
-				"name": "geomID",
-				"int64": 0
+				"name": "visible",
+				"bool": true
 			}
 		]
 	}

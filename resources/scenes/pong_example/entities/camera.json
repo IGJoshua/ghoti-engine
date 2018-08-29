@@ -1,0 +1,102 @@
+{
+	"uuid": "09Uw29Vy`b_dc,hmF#%3/VUM39nUylXa^fZm|3h_M${i-eX+@[;LinQy_B,50as",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 20]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1.0, 1.0, 1.0]
+			},
+
+			{
+                "name": "parent",
+                "uuid": ""
+			},
+
+            {
+                "name": "firstChild",
+                "uuid": ""
+			},
+
+            {
+                "name": "nextSibling",
+                "uuid": ""
+			},
+
+            {
+                "name": "dirty",
+                "bool": true
+			},
+
+            {
+                "name": "globalPosition",
+                "float32": [0.0, 0.0, 0.0]
+			},
+
+            {
+                "name": "globalRotation",
+                "float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+            {
+                "name": "globalScale",
+                "float32": [1.0, 1.0, 1.0]
+			},
+
+            {
+                "name": "lastGlobalPosition",
+                "float32": [0.0, 0.0, 0.0]
+			},
+
+            {
+                "name": "lastGlobalRotation",
+                "float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+            {
+                "name": "lastGlobalScale",
+                "float32": [1.0, 1.0, 1.0]
+            }
+		],
+
+		"camera":
+		[
+			{
+				"name": "near plane",
+				"float32": 0.1
+			},
+
+			{
+				"name": "far plane",
+				"float32": 1000.0
+			},
+
+			{
+				"name": "aspect ratio",
+				"float32": 1.0
+			},
+
+			{
+				"name": "fov",
+				"float32": 80.0
+			},
+
+			{
+				"name": "projection type",
+				"int32": 0
+			}
+		]
+	}
+}

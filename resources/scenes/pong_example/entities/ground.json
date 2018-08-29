@@ -1,0 +1,87 @@
+{
+	"uuid": "ground",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, -5]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [100, 100, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "firstChild",
+				"uuid": ""
+			},
+
+			{
+				"name": "nextSibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "globalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "globalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "globalScale",
+				"float32": [1.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalPosition",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "lastGlobalRotation",
+				"float32": [0.0, 0.0, 0.0, 1.0]
+			},
+
+			{
+				"name": "lastGlobalScale",
+				"float32": [1.0, 1.0, 1.0]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "filename",
+				"char(1024)": "cube"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		]
+	}
+}
