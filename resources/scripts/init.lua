@@ -4,5 +4,4 @@ math.randomseed(os.time())
 
 local C = engine.C
 
-C.loadScene("reloader")
-C.loadScene("pong_example_main_menu")
+C.loadScene("cube_test")
