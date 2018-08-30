@@ -39,35 +39,21 @@ engine.components = require("resources/scripts/components")
 -- iterate over every file in resources/scripts/components/ and require them
 local componentFiles = io.popen(
   ffi.os == "Windows"
-    and 'dir resources\\scripts\\components /b /a-d'
-    or 'find resources/scripts/components -name "*.lua"')
+	and 'dir resources\\scripts\\components /b /a-d'
+	or 'find resources/scripts/components -name "*.lua"')
 for line in componentFiles:lines() do
   if ffi.os == "Windows" then
-    line = 'resources/scripts/components/'..line
+	line = 'resources/scripts/components/'..line
   end
   io.write("Loading component "..string.sub(line, 0, -5).."\n")
-  require(string.sub(line, 0, -5))
+  local componentName = string.sub(line, 0, -5)
+  require(componentName)
 end
 
 require("resources/scripts/componentUtils")
 
 engine.scenes = {}
 engine.systems = {}
-
-io.write("Searching for systems\n")
-local systemFiles = io.popen(
-  ffi.os == "Windows"
-    and 'dir resources\\scripts\\systems /b /a-d'
-    or 'find resources/scripts/systems -name "*.lua"')
-for line in systemFiles:lines() do
-  if ffi.os == "Windows" then
-    line = 'resources/scripts/systems/'..line
-  end
-  local system = require(string.sub(line, 0, -5))
-  local systemName = string.sub(line, 27, -5)
-
-  engine.systems[systemName] = system
-end
 
 function engine.initScene(pScene)
   local scene = Scene:new(pScene)
@@ -84,8 +70,12 @@ function engine.initScene(pScene)
     end
 
     while C.listIteratorAtEnd(itr) == 0 do
-      local system = engine.systems[
-        ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
+	  local systemName =
+		ffi.string(
+		  ffi.cast("UUID *", itr.curr.data).string)
+	  package.loaded["resources/scripts/systems/"..systemName] = nil
+	  local system = require("resources/scripts/systems/"..systemName)
+      engine.systems[systemName] = system
 
       if not system then
         error(string.format(
@@ -127,11 +117,11 @@ function engine.runSystems(pScene, dt, physics)
   end
 
   while C.listIteratorAtEnd(itr) == 0 do
-    local system = engine.systems[
-      ffi.string(ffi.cast("UUID *", itr.curr.data).string)]
+	local systemName = ffi.string(ffi.cast("UUID *", itr.curr.data).string)
+    local system = engine.systems[systemName]
 
     if not system then
-      error("Unable to load system, panic")
+      error(string.format("Unable to load system %s, panic", systemName))
     end
 
     if system.begin then
@@ -142,35 +132,12 @@ function engine.runSystems(pScene, dt, physics)
     end
 
     if system.run then
-      local componentName = ffi.new(
-        "UUID[1]",
-        C.idFromName(system.components[1]))
-
-	  local cdtItr = ffi.new("ComponentDataTableIterator")
-	  local itrOut = ffi.new("ComponentDataTableIterator[1]")
-	  cdtItr = C.cdtGetIterator(
-		ffi.cast(
-		  "ComponentDataTable **",
-		C.hashMapGetData(scene.ptr.componentTypes, componentName))[0])
-
-	  while C.cdtIteratorAtEnd(cdtItr) == 0 do
+	  for component, uuid in scene:getComponentIterator(system.components[1]) do
 		local valid = true
 
 		for k = 2,#system.components do
-		  local componentID = C.idFromName(system.components[k])
-		  local componentTable = ffi.cast(
-			"ComponentDataTable **",
-			C.hashMapGetData(
-			  scene.ptr.componentTypes,
-			  componentID))
-
-		  if ffi.cast("int64", componentTable) ~= null
-		  and ffi.cast("int64", componentTable[0]) ~= null then
-			local index = ffi.cast("int64", C.cdtIteratorGetData(cdtItr))
-			if index == null then
-			  valid = false
-			  break
-			end
+		  if scene:getComponent(system.components[k], uuid) == nil then
+			valid = false
 		  end
 		end
 
@@ -178,7 +145,7 @@ function engine.runSystems(pScene, dt, physics)
 		  local err, message = pcall(
 			system.run,
 			scene,
-			C.cdtIteratorGetUUID(cdtItr),
+			uuid,
 			dt)
 		  if err == false then
 			io.write(string.format(
@@ -186,10 +153,6 @@ function engine.runSystems(pScene, dt, physics)
 					   message))
 		  end
 		end
-
-		itrOut[0] = cdtItr
-		C.cdtMoveIterator(itrOut)
-		cdtItr = itrOut[0]
 	  end
 
       if system.clean then

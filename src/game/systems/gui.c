@@ -44,8 +44,6 @@ internal uint32 viewportHeight;
 
 internal struct nk_convert_config nkConfig;
 
-internal bool clearCommandBuffer;
-
 #define MAX_GUI_VERTEX_COUNT 512 * 2048
 #define MAX_GUI_INDEX_COUNT 128 * 2048
 
@@ -169,6 +167,8 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
+	nk_clear(&ctx);
+
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 
@@ -191,8 +191,6 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT,
 		NULL,
 		GL_STREAM_DRAW);
-
-	clearCommandBuffer = true;
 }
 
 internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
@@ -207,8 +205,6 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	clearCommandBuffer = false;
-
 	ctx.style.window.fixed_background = nk_style_item_color(
 		getColor(&panel->color));
 
@@ -219,7 +215,6 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 	}
 
 	nk_style_set_font(&ctx, &font->font->handle);
-	nkConfig.null = font->null;
 
 	GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
 		scene,
@@ -228,11 +223,7 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	struct nk_rect rect = getRect(guiTransform, viewportWidth, viewportHeight);
 
-	if (nk_begin(
-		&ctx,
-		entityID.string,
-		rect,
-		NK_WINDOW_NO_INPUT | NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(&ctx, entityID.string, rect, NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_space_begin(&ctx, NK_STATIC, 0, INT_MAX);
 		addWidgets(scene, panel->widgetList, rect.w, rect.h);
@@ -240,25 +231,15 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 	}
 
 	nk_end(&ctx);
-
-	fillCommandBuffer();
 }
 
 internal void endGUISystem(Scene *scene, real64 dt)
 {
-	if (clearCommandBuffer)
-	{
-		nk_style_set_font(&ctx, &defaultFont->font->handle);
-		nkConfig.null = defaultFont->null;
-
-		fillCommandBuffer();
-	}
+	fillCommandBuffer();
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	nk_clear(&ctx);
 }
 
 internal void shutdownGUISystem(Scene *scene)
