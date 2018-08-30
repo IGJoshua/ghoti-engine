@@ -1,10 +1,6 @@
 #include "ECS/component.h"
 #include "ECS/ecs_types.h"
 
-#include "asset_management/asset_manager.h"
-
-#include "components/rigid_body.h"
-
 #include "core/log.h"
 
 #include "data/hash_map.h"
@@ -119,7 +115,6 @@ int32 cdtInsert(ComponentDataTable *table, UUID entityID, void *componentData)
 	memcpy(entry->entity.string, &entityID, sizeof(UUID));
 	// Put the component data into the table
 	memcpy(entry->data, componentData, table->componentSize);
-	loadAssets(table->componentID, entry);
 
 	entry->nextFree = table->numEntries + 1;
 
