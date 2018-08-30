@@ -27,7 +27,7 @@
 			},
 			{
 				"name": "color",
-				"float32": [0, 0, 0, 0]
+				"float32": [0, 0, 0, 0.5]
 			},
 			{
 				"name": "font",
@@ -35,7 +35,7 @@
 			},
 			{
 				"name": "font size",
-				"uint32": 32
+				"uint32": 48
 			},
 			{
 				"name": "widget list",

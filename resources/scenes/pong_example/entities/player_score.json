@@ -18,6 +18,14 @@
 			}
 		],
 
+		"widget_list":
+		[
+			{
+				"name": "next widget",
+				"uuid": ""
+			}
+		],
+
 		"text":
 		[
 			{
