@@ -1889,9 +1889,42 @@ void sceneRemoveComponentFromEntity(
 	{
 		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
 	}
-	if (!strcmp(componentType.string, "rigid_body"))
+	else if (!strcmp(componentType.string, "rigid_body"))
 	{
+		sceneRemoveComponentFromEntity(s, entity, idFromName("collision"));
+
 		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
+	}
+	else if (!strcmp(componentType.string, "collision"))
+	{
+		CollisionComponent *coll = (CollisionComponent *)cdtGet(*table, entity);
+		if (coll)
+		{
+			CollisionTreeNode *node = 0;
+			UUID collisionTreeNodeID = idFromName("collision_tree_node");
+			UUID currentCollider = coll->collisionTree;
+			UUID nextCollider = {};
+			while (currentCollider.string[0] != 0)
+			{
+				node = (CollisionTreeNode *)sceneGetComponentFromEntity(
+					s,
+					currentCollider,
+					collisionTreeNodeID);
+
+				if (!node)
+				{
+					break;
+				}
+
+				nextCollider = node->nextCollider;
+				sceneRemoveEntity(s, currentCollider);
+				currentCollider = nextCollider;
+			}
+		}
+	}
+	else if (!strcmp(componentType.string, "collision_tree_node"))
+	{
+		dGeomDestroy(((CollisionTreeNode *)cdtGet(*table, entity))->geomID);
 	}
 
 	cdtRemove(*table, entity);
