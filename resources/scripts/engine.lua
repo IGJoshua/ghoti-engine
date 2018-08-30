@@ -132,18 +132,7 @@ function engine.runSystems(pScene, dt, physics)
     end
 
     if system.run then
-      local componentName = ffi.new(
-        "UUID[1]",
-        C.idFromName(system.components[1]))
-
-	  local cdtItr = ffi.new("ComponentDataTableIterator")
-	  local itrOut = ffi.new("ComponentDataTableIterator[1]")
-	  cdtItr = C.cdtGetIterator(
-		ffi.cast(
-		  "ComponentDataTable **",
-		C.hashMapGetData(scene.ptr.componentTypes, componentName))[0])
-
-	  while C.cdtIteratorAtEnd(cdtItr) == 0 do
+	  for component, uuid in scene:getComponentIterator(system.components[1]) do
 		local valid = true
 
 		for k = 2,#system.components do
@@ -156,7 +145,7 @@ function engine.runSystems(pScene, dt, physics)
 
 		  if ffi.cast("int64", componentTable) ~= null
 		  and ffi.cast("int64", componentTable[0]) ~= null then
-			local index = ffi.cast("int64", C.cdtIteratorGetData(cdtItr))
+			local index = ffi.cast("int64", component)
 			if index == null then
 			  valid = false
 			  break
@@ -168,7 +157,7 @@ function engine.runSystems(pScene, dt, physics)
 		  local err, message = pcall(
 			system.run,
 			scene,
-			C.cdtIteratorGetUUID(cdtItr),
+			uuid,
 			dt)
 		  if err == false then
 			io.write(string.format(
@@ -176,10 +165,6 @@ function engine.runSystems(pScene, dt, physics)
 					   message))
 		  end
 		end
-
-		itrOut[0] = cdtItr
-		C.cdtMoveIterator(itrOut)
-		cdtItr = itrOut[0]
 	  end
 
       if system.clean then
