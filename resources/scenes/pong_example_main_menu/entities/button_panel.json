@@ -12,7 +12,7 @@
 
 			{
 				"name": "size",
-				"float32": [0.2, 0.2]
+				"float32": [0.3, 0.1]
 			},
 
 			{
@@ -35,17 +35,17 @@
 
 			{
 				"name": "font",
-				"char(64)": "default_font"
+				"char(64)": "pong"
 			},
 
 			{
 				"name": "font size",
-				"uint32": 72
+				"uint32": 36
 			},
 
 			{
 				"name": "widget list",
-				"uuid": ""
+				"uuid": "play_button"
 			}
 		]
 	}

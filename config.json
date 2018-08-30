@@ -14,7 +14,7 @@
 
 	"graphics":
 	{
-		"background_color": [0.0, 0.0, 0.0]
+		"background_color": [0.0, 1.0, 0.0]
 	},
 
 	"logging":

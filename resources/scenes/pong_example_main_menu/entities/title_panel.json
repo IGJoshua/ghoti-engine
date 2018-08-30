@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [0.0, 1.0]
+				"float32": [0.0, 0.8]
 			},
 
 			{
@@ -17,7 +17,7 @@
 
 			{
 				"name": "pivot",
-				"int32": 1
+				"int32": 4
 			}
 		],
 
@@ -35,17 +35,17 @@
 
 			{
 				"name": "font",
-				"char(64)": "f"
+				"char(64)": "default_font"
 			},
 
 			{
 				"name": "font size",
-				"uint32": 172
+				"uint32": 56
 			},
 
 			{
 				"name": "widget list",
-				"uuid": ""
+				"uuid": "title"
 			}
 		]
 	}
