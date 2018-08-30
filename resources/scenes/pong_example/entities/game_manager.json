@@ -1,0 +1,29 @@
+{
+	"uuid": "game_manager",
+	"components":
+	{
+		"game_manager":
+		[
+			{
+				"name": "player score",
+				"uint32": 0
+			},
+			{
+				"name": "opponent score",
+				"uint32": 0
+			},
+			{
+				"name": "player score text",
+				"uuid": "player_score"
+			},
+			{
+				"name": "opponent score text",
+				"uuid": "opponent_score"
+			},
+			{
+				"name": "number of balls",
+				"uint32": 1
+			}
+		]
+	}
+}

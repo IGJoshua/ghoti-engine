@@ -1,12 +1,12 @@
 {
-	"uuid": "player_score",
+	"uuid": "opponent_score",
 	"components":
 	{
 		"gui_transform":
 		[
 			{
 				"name": "position",
-				"float32": [-1.0, 0]
+				"float32": [1.0, 0]
 			},
 			{
 				"name": "size",
@@ -14,7 +14,7 @@
 			},
 			{
 				"name": "anchor",
-				"int32": 3
+				"int32": 5
 			}
 		],
 
@@ -22,7 +22,7 @@
 		[
 			{
 				"name": "next widget",
-				"uuid": "opponent_score"
+				"uuid": ""
 			}
 		],
 

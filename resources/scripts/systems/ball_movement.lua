@@ -40,33 +40,6 @@ function system.run(scene, uuid, dt)
 	return
   end
 
-  -- Check if out of bounds
-
-  if (transform.position.x < ball.bounds.x
-		and ball.velocity.x < 0)
-	or (transform.position.x > ball.bounds.z
-		and ball.velocity.x > 0) then
-	  -- Out of bounds
-	  ball.delay = 1
-
-	  transform.position.x = 0
-	  transform.position.y = 0
-	  transform:markDirty(scene)
-
-	  ball.velocity.x = ball.velocity.x + math.random(-200, 200) / 100.0
-	  ball.velocity.y = math.random(-200, 200) / 10.0
-
-	  if ball.velocity.x == 0 then
-		ball.velocity.x = 10
-	  end
-
-	  if math.abs(ball.velocity.x) < 5 then
-		ball.velocity.x = ball.velocity.x * 10
-	  end
-
-	  return
-  end
-
   -- Check if hit top or bottom
 
   if (transform.position.y < ball.bounds.y
