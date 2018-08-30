@@ -136,20 +136,8 @@ function engine.runSystems(pScene, dt, physics)
 		local valid = true
 
 		for k = 2,#system.components do
-		  local componentID = C.idFromName(system.components[k])
-		  local componentTable = ffi.cast(
-			"ComponentDataTable **",
-			C.hashMapGetData(
-			  scene.ptr.componentTypes,
-			  componentID))
-
-		  if ffi.cast("int64", componentTable) ~= null
-		  and ffi.cast("int64", componentTable[0]) ~= null then
-			local index = ffi.cast("int64", component)
-			if index == null then
-			  valid = false
-			  break
-			end
+		  if scene:getComponent(system.components[k], uuid) == nil then
+			valid = false
 		  end
 		end
 

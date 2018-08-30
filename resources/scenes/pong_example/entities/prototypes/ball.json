@@ -1,0 +1,21 @@
+{
+	"uuid": "ball_prototype",
+	"components":
+	{
+		"ball":
+		[
+			{
+				"name": "delay",
+				"float32": 0.0
+			},
+			{
+				"name": "velocity",
+				"float32": [0, 0]
+			},
+			{
+				"name": "world bounds",
+				"float32": [-25, -17, 25, 17]
+			}
+		]
+	}
+}

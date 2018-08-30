@@ -10,21 +10,6 @@ system.components[2] = "transform"
 local ballComponentID = ffi.new("UUID[1]", C.idFromName("ball"))
 local paddleComponentID = ffi.new("UUID[1]", C.idFromName("paddle"))
 
-function system.init(scene)
-  for ball in scene:getComponentIterator("ball") do
-	ball.velocity.x = math.random(-200, 200) / 10.0
-	ball.velocity.y = math.random(-200, 200) / 10.0
-
-	if ball.velocity.x == 0 then
-	  ball.velocity.x = 10
-	end
-
-	if math.abs(ball.velocity.x) < 5 then
-	  ball.velocity.x = ball.velocity.x * 10
-	end
-  end
-end
-
 local transform
 local paddle
 local paddleTransform
@@ -32,12 +17,25 @@ local paddleUUID
 local ball
 
 function system.run(scene, uuid, dt)
-  transform = scene:getComponent("transform", uuid)
   ball = scene:getComponent("ball", uuid)
+  transform = scene:getComponent("transform", uuid)
 
   if ball.delay > 0 then
 	ball.delay = ball.delay - dt
 	return
+  end
+
+  -- Ensure velocity is high enough
+  if math.abs(ball.velocity.x) < 5 then
+	ball.velocity.x = 5 * (math.random(1, 2) * 2 - 4)
+  end
+  local length = kazmath.kmVec2Length(ball.velocity)
+  if length < 10 then
+	if length < 0.01 then
+	  ball.velocity.x = 1
+	end
+	kazmath.kmVec2Normalize(ball.velocity, ball.velocity)
+	kazmath.kmVec2Scale(ball.velocity, ball.velocity, 10)
   end
 
   -- Check if hit top or bottom

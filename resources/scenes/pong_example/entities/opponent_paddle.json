@@ -95,10 +95,6 @@
 			{
 				"name": "speed",
 				"float32": 10
-			},
-			{
-				"name": "target",
-				"uuid": "ball"
 			}
 		]
 	}

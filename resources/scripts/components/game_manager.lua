@@ -6,6 +6,7 @@ typedef struct game_manager_component_t
     UUID playerScoreText;
     UUID opponentScoreText;
     uint32 numBalls;
+    UUID opponentPaddle;
 } GameManagerComponent;
 ]]
 

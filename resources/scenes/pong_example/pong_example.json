@@ -39,7 +39,7 @@
 		"transform": 20,
 		"model": 20,
 		"camera": 1,
-		"ball": 1,
+		"ball": 5,
 		"player": 1,
 		"opponent": 1,
 		"paddle": 2,

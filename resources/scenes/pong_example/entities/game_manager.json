@@ -22,7 +22,11 @@
 			},
 			{
 				"name": "number of balls",
-				"uint32": 1
+				"uint32": 2
+			},
+			{
+				"name": "opponent",
+				"uuid": "opponent_paddle"
 			}
 		]
 	}
