@@ -1,0 +1,34 @@
+{
+	"systems":
+	{
+		"update":
+		{
+			"external":
+			[
+				"reload_input"
+			],
+
+			"internal":
+			[
+			]
+		},
+
+		"draw":
+		{
+			"external":
+			[
+			],
+
+			"internal":
+			[
+			]
+		}
+	},
+
+	"component_limits":
+	{
+	},
+
+	"active_camera": "",
+	"gravity": 0
+}

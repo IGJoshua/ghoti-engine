@@ -10,13 +10,6 @@ system.components[2] = "transform"
 function system.init(scene)
   input:register("vertical", input.AXIS(keyboard.S, keyboard.W))
   input:register("verticalarrows", input.AXIS(keyboard.DOWN, keyboard.UP))
-  input:register("close", input.BUTTON(keyboard.ESCAPE))
-end
-
-function system.begin(scene)
-  if input.close.keydown then
-	engine.C.closeWindow()
-  end
 end
 
 local direction
