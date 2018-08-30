@@ -43,10 +43,10 @@
 		"player": 1,
 		"opponent": 1,
 		"paddle": 2,
-		"gui_transform": 3,
-		"panel": 1,
-		"text": 2,
-		"widget_list": 2,
+		"gui_transform": 7,
+		"panel": 3,
+		"text": 4,
+		"widget_list": 4,
 		"game_manager": 1
 	},
 
