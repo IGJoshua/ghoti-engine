@@ -160,6 +160,8 @@ int32 main(int32 argc, char *argv[])
 
 		while (accumulator >= dt && !glfwWindowShouldClose(window))
 		{
+			inputHandleEvents();
+
 			for (itr = listGetIterator(&activeScenes);
 				 !listIteratorAtEnd(itr);
 				 listMoveIterator(&itr))
@@ -277,8 +279,6 @@ int32 main(int32 argc, char *argv[])
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
-
-			inputHandleEvents();
 		}
 
 		alpha = accumulator / dt;

@@ -6,8 +6,12 @@ typedef struct model_component_t
 } ModelComponent;
 ]]
 
-io.write("Defined Model component for FFI\n")
-
 local component = engine.components:register("model", "ModelComponent")
 
-io.write("Registered Model component\n")
+local C = engine.C
+
+function component:changeModel(name)
+  C.freeModel(self.name)
+  self.name = name
+  C.loadModel(name)
+end

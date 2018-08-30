@@ -10,3 +10,12 @@ typedef struct panel_component_t
 ]]
 
 local component = engine.components:register("panel", "PanelComponent")
+
+local C = engine.C
+
+function component:changeFont(font, size)
+  C.freeFont(C.getFont(self.font, self.fontSize))
+  self.font = font
+  self.fontSize = size
+  C.loadFont(font, size)
+end
