@@ -49,7 +49,8 @@
 		"hit_list": 8192,
 		"gui_transform": 2048,
 		"panel": 512,
-		"widget_list": 1024,
+		"font": 1024,
+		"widget": 1024,
 		"text": 1024,
 		"button": 1024
 	},

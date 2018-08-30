@@ -259,15 +259,21 @@ typedef struct panel_component_t
 {
 	bool enabled;
 	kmVec4 color;
-	char font[64];
-	uint32 fontSize;
-	UUID widgetList;
+	UUID firstWidget;
 } PanelComponent;
 
-typedef struct widget_list_component_t
+typedef struct widget_component_t
 {
+	bool enabled;
 	UUID nextWidget;
-} WidgetListComponent;
+} WidgetComponent;
+
+typedef struct font_component_t
+{
+	char name[64];
+	uint32 size;
+	kmVec4 color;
+} FontComponent;
 
 typedef enum text_alignment_e
 {
@@ -286,13 +292,13 @@ typedef enum text_alignment_e
 typedef struct text_component_t
 {
 	char text[4096];
-	kmVec4 color;
 	TextAlignment alignment;
 } TextComponent;
 
 typedef struct button_component_t
 {
 	char text[1024];
-	bool pressedLastFrame;
 	bool pressed;
+	bool held;
+	bool released;
 } ButtonComponent;

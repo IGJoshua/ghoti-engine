@@ -16,7 +16,6 @@ typedef enum text_alignment_e
 typedef struct text_component_t
 {
 	char text[4096];
-	kmVec4 color;
 	TextAlignment alignment;
 } TextComponent;
 ]]

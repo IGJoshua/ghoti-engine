@@ -1,5 +1,5 @@
 {
-	"uuid": "`*i`E(@@`,G.xnqgjWuFZ^@e@&kQ9#6vyuU=#rRX$vcqjSVZ(Q'W6<;K8,qN$.B",
+	"uuid": "panel",
 
 	"components":
 	{
@@ -34,18 +34,8 @@
 			},
 
 			{
-				"name": "font",
-				"char(64)": "default_font"
-			},
-
-			{
-				"name": "font size",
-				"uint32": 24
-			},
-
-			{
-				"name": "widget list",
-				"uuid": "v0#<:1LWvA95_VSAdB5Ub(Hv3F9a:-CG-TW;v,krJy.'NVE8vOb^T(ReKaDZkew"
+				"name": "first widget",
+				"uuid": "text"
 			}
 		]
 	}

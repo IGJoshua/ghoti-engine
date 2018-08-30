@@ -1848,10 +1848,10 @@ int32 sceneAddComponentToEntity(
 	{
 		loadModel(((ModelComponent*)componentData)->name);
 	}
-	else if (!strcmp(componentType.string, "panel"))
+	else if (!strcmp(componentType.string, "font"))
 	{
-		PanelComponent *panelComponent = (PanelComponent*)componentData;
-		loadFont(panelComponent->font, panelComponent->fontSize);
+		FontComponent *fontComponent = (FontComponent*)componentData;
+		loadFont(fontComponent->name, fontComponent->size);
 	}
 
 	// Add the component to the data table
@@ -1904,7 +1904,6 @@ void sceneRemoveComponentFromEntity(
 	else if (!strcmp(componentType.string, "rigid_body"))
 	{
 		sceneRemoveComponentFromEntity(s, entity, idFromName("collision"));
-
 		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "collision"))

@@ -25,7 +25,8 @@
 
 internal UUID guiTransformComponentID = {};
 internal UUID panelComponentID = {};
-internal UUID widgetListComponentID = {};
+internal UUID widgetComponentID = {};
+internal UUID fontComponentID = {};
 internal UUID textComponentID = {};
 internal UUID buttonComponentID = {};
 
@@ -37,6 +38,7 @@ struct nk_buffer cmds;
 #define DEFAULT_FONT "default_font"
 #define DEFAULT_FONT_SIZE 18
 
+internal FontComponent *defaultFontComponent;
 internal Font *defaultFont;
 
 internal uint32 viewportWidth;
@@ -81,6 +83,12 @@ GLuint vertexBuffer;
 GLuint vertexArray;
 GLuint indexBuffer;
 
+internal Font* getEntityFont(
+	Scene *scene,
+	UUID entity,
+	FontComponent *fallbackFontComponent,
+	Font *fallBackFont,
+	FontComponent **fontComponent);
 internal struct nk_color getColor(kmVec4 *color);
 internal struct nk_rect getRect(
 	GUITransformComponent *guiTransform,
@@ -90,9 +98,10 @@ internal struct nk_rect getRect(
 internal void addWidgets(
 	Scene *scene,
 	UUID entity,
+	UUID panel,
 	real32 panelWidth,
 	real32 panelHeight);
-internal void addText(Scene *scene, UUID entity);
+internal void addText(Scene *scene, UUID entity, FontComponent *font);
 internal void addButton(Scene *scene, UUID entity);
 
 internal void fillCommandBuffer(void);
@@ -109,8 +118,13 @@ internal void initGUISystem(Scene *scene)
 		{
 			nk_buffer_init_default(&cmds);
 
-			loadFont(DEFAULT_FONT, DEFAULT_FONT_SIZE);
-			defaultFont = getFont(DEFAULT_FONT, DEFAULT_FONT_SIZE);
+			defaultFontComponent = sceneGetComponentFromEntity(
+				scene,
+				idFromName("default_font"),
+				fontComponentID);
+			defaultFont = getFont(
+				defaultFontComponent->name,
+				defaultFontComponent->size);
 			nk_style_set_font(&ctx, &defaultFont->font->handle);
 
 			memset(&nkConfig, 0, sizeof(struct nk_convert_config));
@@ -124,6 +138,8 @@ internal void initGUISystem(Scene *scene)
 			nkConfig.arc_segment_count = 22;
 			nkConfig.global_alpha = 1.0f;
 			nkConfig.null = defaultFont->null;
+
+			nk_button_set_behavior(&ctx, NK_BUTTON_REPEATER);
 
 			glGenBuffers(1, &vertexBuffer);
 			glGenVertexArrays(1, &vertexArray);
@@ -208,14 +224,6 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 	ctx.style.window.fixed_background = nk_style_item_color(
 		getColor(&panel->color));
 
-	Font *font = getFont(panel->font, panel->fontSize);
-	if (!font)
-	{
-		font = defaultFont;
-	}
-
-	nk_style_set_font(&ctx, &font->font->handle);
-
 	GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -223,10 +231,14 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	struct nk_rect rect = getRect(guiTransform, viewportWidth, viewportHeight);
 
-	if (nk_begin(&ctx, entityID.string, rect, NK_WINDOW_NO_SCROLLBAR))
+	if (nk_begin(
+		&ctx,
+		entityID.string,
+		rect,
+		NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_space_begin(&ctx, NK_STATIC, 0, INT_MAX);
-		addWidgets(scene, panel->widgetList, rect.w, rect.h);
+		addWidgets(scene, panel->firstWidget, entityID, rect.w, rect.h);
 		nk_layout_space_end(&ctx);
 	}
 
@@ -262,7 +274,8 @@ System createGUISystem(void)
 {
 	guiTransformComponentID = idFromName("gui_transform");
 	panelComponentID = idFromName("panel");
-	widgetListComponentID = idFromName("widget_list");
+	widgetComponentID = idFromName("widget");
+	fontComponentID = idFromName("font");
 	textComponentID = idFromName("text");
 	buttonComponentID = idFromName("button");
 
@@ -279,6 +292,38 @@ System createGUISystem(void)
 	system.shutdown = &shutdownGUISystem;
 
 	return system;
+}
+
+Font* getEntityFont(
+	Scene *scene,
+	UUID entity,
+	FontComponent *fallbackFontComponent,
+	Font *fallBackFont,
+	FontComponent **fontComponent)
+{
+	FontComponent *entityFontComponent = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		fontComponentID);
+
+	if (fontComponent)
+	{
+		if (entityFontComponent)
+		{
+			*fontComponent = entityFontComponent;
+		}
+		else
+		{
+			*fontComponent = fallbackFontComponent;
+		}
+	}
+
+	if (entityFontComponent)
+	{
+		return getFont(entityFontComponent->name, entityFontComponent->size);
+	}
+
+	return fallBackFont;
 }
 
 struct nk_color getColor(kmVec4 *color)
@@ -341,9 +386,18 @@ struct nk_rect getRect(
 void addWidgets(
 	Scene *scene,
 	UUID entity,
+	UUID panel,
 	real32 panelWidth,
 	real32 panelHeight)
 {
+	FontComponent *panelFontComponent;
+	Font *panelFont = getEntityFont(
+		scene,
+		panel,
+		defaultFontComponent,
+		defaultFont,
+		&panelFontComponent);
+
 	// TODO: Add all types of widgets
 	do
 	{
@@ -351,21 +405,34 @@ void addWidgets(
 			scene,
 			entity,
 			guiTransformComponentID);
-		WidgetListComponent *widgetList = sceneGetComponentFromEntity(
+		WidgetComponent *widget = sceneGetComponentFromEntity(
 			scene,
 			entity,
-			widgetListComponentID);
+			widgetComponentID);
 
-		if (widgetList && guiTransform)
+		if (widget && guiTransform)
 		{
-			nk_layout_space_push(
-				&ctx,
-				getRect(guiTransform, panelWidth, panelHeight));
+			if (widget->enabled)
+			{
+				nk_layout_space_push(
+					&ctx,
+					getRect(guiTransform, panelWidth, panelHeight));
 
-			addText(scene, entity);
-			addButton(scene, entity);
+				FontComponent *fontComponent;
+				Font *font = getEntityFont(
+					scene,
+					entity,
+					panelFontComponent,
+					panelFont,
+					&fontComponent);
 
-			entity = widgetList->nextWidget;
+				nk_style_set_font(&ctx, &font->font->handle);
+
+				addText(scene, entity, fontComponent);
+				addButton(scene, entity);
+			}
+
+			entity = widget->nextWidget;
 		}
 		else
 		{
@@ -374,7 +441,7 @@ void addWidgets(
 	} while (true);
 }
 
-void addText(Scene *scene, UUID entity)
+void addText(Scene *scene, UUID entity, FontComponent *font)
 {
 	TextComponent *text = sceneGetComponentFromEntity(
 		scene,
@@ -391,7 +458,7 @@ void addText(Scene *scene, UUID entity)
 		nk_label_colored_wrap(
 			&ctx,
 			text->text,
-			getColor(&text->color));
+			getColor(&font->color));
 	}
 	else
 	{
@@ -430,7 +497,7 @@ void addText(Scene *scene, UUID entity)
 			&ctx,
 			text->text,
 			alignment,
-			getColor(&text->color));
+			getColor(&font->color));
 	}
 }
 
@@ -446,8 +513,10 @@ void addButton(Scene *scene, UUID entity)
 		return;
 	}
 
-	button->pressedLastFrame = button->pressed;
-	button->pressed = nk_button_label(&ctx, button->text);
+	bool held = button->held;
+	button->held = nk_button_label(&ctx, button->text);
+	button->pressed = !held && button->held;
+	button->released = held && !button->held;
 }
 
 void fillCommandBuffer(void)

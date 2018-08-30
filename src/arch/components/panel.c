@@ -4,20 +4,20 @@
 
 void removePanelWidgets(Scene *scene, PanelComponent *panel)
 {
-	UUID entity = panel->widgetList;
+	UUID entity = panel->firstWidget;
 
 	do
 	{
-		WidgetListComponent *widgetList = sceneGetComponentFromEntity(
+		WidgetComponent *widget = sceneGetComponentFromEntity(
 			scene,
 			entity,
-			idFromName("widget_list"));
+			idFromName("widget"));
 
-		if (widgetList)
+		if (widget)
 		{
-			UUID widget = entity;
-			entity = widgetList->nextWidget;
-			sceneRemoveEntity(scene, widget);
+			UUID widgetID = entity;
+			entity = widget->nextWidget;
+			sceneRemoveEntity(scene, widgetID);
 		}
 		else
 		{
