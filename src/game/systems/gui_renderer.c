@@ -28,8 +28,8 @@ internal uint32 guiRendererRefCount = 0;
 extern struct nk_context ctx;
 extern struct nk_buffer cmds;
 
-internal uint32 viewportWidth;
-internal uint32 viewportHeight;
+extern uint32 viewportWidth;
+extern uint32 viewportHeight;
 
 #define NUM_GUI_VERTEX_ATTRIBUTES 3
 
@@ -81,12 +81,6 @@ internal void initGUIRendererSystem(Scene *scene)
 
 internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 {
-	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport);
-
-	viewportWidth = viewport[2];
-	viewportHeight = viewport[3];
-
 	kmMat4 projectionMatrix;
 	kmMat4OrthographicProjection(
 		&projectionMatrix,

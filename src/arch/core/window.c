@@ -20,6 +20,9 @@ internal bool isFullscreen;
 
 extern Config config;
 
+extern int32 viewportWidth;
+extern int32 viewportHeight;
+
 internal
 void errorCallback(
 	int error,
@@ -45,17 +48,17 @@ GLFWwindow *initWindow(
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
-
 	if (!window)
 	{
 		glfwTerminate();
-
 		return 0;
 	}
 
 	glfwMakeContextCurrent(window);
 
 	wnd = window;
+	viewportWidth = width;
+	viewportHeight = height;
 
 	isFullscreen = false;
 

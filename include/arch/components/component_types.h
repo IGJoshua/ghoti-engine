@@ -271,7 +271,7 @@ typedef struct widget_component_t
 typedef struct font_component_t
 {
 	char name[64];
-	uint32 size;
+	real32 size;
 	kmVec4 color;
 } FontComponent;
 

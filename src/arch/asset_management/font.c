@@ -23,9 +23,12 @@
 
 extern HashMap fonts;
 
-internal UUID getFontName(const char *name, uint32 size);
+extern int32 viewportHeight;
 
-int32 loadFont(const char *name, uint32 size)
+internal uint32 getFontPixelSize(real32 size);
+internal UUID getFontName(const char *name, real32 size);
+
+int32 loadFont(const char *name, real32 size)
 {
 	int32 error = 0;
 
@@ -47,7 +50,7 @@ int32 loadFont(const char *name, uint32 size)
 		font.font = nk_font_atlas_add_from_file(
 			&font.atlas,
 			filename,
-			size,
+			getFontPixelSize(size),
 			NULL);
 
 		free(filename);
@@ -111,7 +114,7 @@ int32 loadFont(const char *name, uint32 size)
 	return error;
 }
 
-Font* getFont(const char *name, uint32 size)
+Font* getFont(const char *name, real32 size)
 {
 	Font *font = NULL;
 	if (strlen(name) > 0)
@@ -137,9 +140,20 @@ void freeFont(Font *font)
 	LOG("Font Count: %d\n", fonts->count);
 }
 
-UUID getFontName(const char *name, uint32 size)
+uint32 getFontPixelSize(real32 size)
+{
+	int32 pixelSize = size * viewportHeight;
+	if (pixelSize < 1)
+	{
+		pixelSize = 1;
+	}
+
+	return pixelSize;
+}
+
+UUID getFontName(const char *name, real32 size)
 {
 	UUID fullName = {};
-	sprintf(fullName.string, "%s_%dpt", name, size);
+	sprintf(fullName.string, "%s_%dpx", name, getFontPixelSize(size));
 	return fullName;
 }

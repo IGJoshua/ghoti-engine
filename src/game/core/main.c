@@ -35,7 +35,13 @@
 #include <time.h>
 #include <stdlib.h>
 
+internal int32 previousViewportWidth = 0;
+internal int32 previousViewportHeight = 0;
+
 extern Config config;
+extern int32 viewportWidth;
+extern int32 viewportHeight;
+extern bool viewportUpdated;
 extern lua_State *L;
 extern real64 alpha;
 extern List activeScenes;
@@ -281,18 +287,21 @@ int32 main(int32 argc, char *argv[])
 			accumulator -= dt;
 		}
 
+		// Lerp state between previous and next
 		alpha = accumulator / dt;
 
-		// Lerp state between previous and next
+		viewportUpdated = viewportWidth != previousViewportWidth ||
+						  viewportHeight != previousViewportHeight;
+		previousViewportWidth = viewportWidth;
+		previousViewportHeight = viewportHeight;
 
-		int32 width, height;
-		glfwGetFramebufferSize(window, &width, &height);
+		glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
 
-		glViewport(0, 0, width, height);
+		glViewport(0, 0, viewportWidth, viewportHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		real32 aspectRatio = (real32)width / (real32)height;
+		real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
 
 		for (itr = listGetIterator(&activeScenes);
 			 !listIteratorAtEnd(itr);

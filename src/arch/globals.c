@@ -19,6 +19,10 @@ HashMap textures;
 HashMap materialFolders;
 HashMap fonts;
 
+int32 viewportWidth;
+int32 viewportHeight;
+bool viewportUpdated;
+
 // NOTE(Joshua): Globals for ECS
 
 // Lua

@@ -8,9 +8,11 @@
 #include "components/component_types.h"
 
 #include "data/data_types.h"
+#include "data/hash_map.h"
 #include "data/list.h"
 
 #include "ECS/ecs_types.h"
+#include "ECS/component.h"
 #include "ECS/scene.h"
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -41,8 +43,10 @@ struct nk_buffer cmds;
 internal FontComponent *defaultFontComponent;
 internal Font *defaultFont;
 
-internal uint32 viewportWidth;
-internal uint32 viewportHeight;
+extern uint32 viewportWidth;
+extern uint32 viewportHeight;
+
+extern bool viewportUpdated;
 
 internal struct nk_convert_config nkConfig;
 
@@ -185,11 +189,24 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 {
 	nk_clear(&ctx);
 
-	GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport);
+	if (viewportUpdated)
+	{
+		ComponentDataTable *fontComponents =
+			*(ComponentDataTable**)hashMapGetData(
+					scene->componentTypes,
+					&fontComponentID);
 
-	viewportWidth = viewport[2];
-	viewportHeight = viewport[3];
+		for (ComponentDataTableIterator itr = cdtGetIterator(fontComponents);
+			 !cdtIteratorAtEnd(itr);
+			 cdtMoveIterator(&itr))
+		{
+			FontComponent *fontComponent = cdtIteratorGetData(itr);
+			if (!getFont(fontComponent->name, fontComponent->size))
+			{
+				loadFont(fontComponent->name, fontComponent->size);
+			}
+		}
+	}
 
 	glBindVertexArray(vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
