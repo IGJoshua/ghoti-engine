@@ -21,7 +21,7 @@ function system.run(scene, uuid, dt)
   -- Search for balls heading in our direction
   local possibleTargets = {}
   for ball, uuid in scene:getComponentIterator("ball") do
-	if ball.velocity.x > 0 then
+	if ball.velocity.x > 0 and ball.delay <= 0 then
 	  possibleTargets[#possibleTargets + 1] = uuid
 	end
   end

@@ -23,6 +23,9 @@ function system.run(scene, uuid, dt)
 		game_manager.opponentScore = game_manager.opponentScore + 1
 		to_remove[#to_remove + 1] = uuid
 		num_balls = num_balls - 1
+
+		local opponentPaddle = scene:getComponent("opponent", game_manager.opponentPaddle)
+		opponentPaddle.speed = opponentPaddle.speed - 1
 	  elseif ballTransform.position.x > ball.bounds.z then
 		-- Ball is off right side of screen
 		game_manager.playerScore = game_manager.playerScore + 1
@@ -30,7 +33,7 @@ function system.run(scene, uuid, dt)
 		num_balls = num_balls - 1
 
 		local opponentPaddle = scene:getComponent("opponent", game_manager.opponentPaddle)
-		opponentPaddle.speed = opponentPaddle.speed + 1
+		opponentPaddle.speed = opponentPaddle.speed + 2
 	  end
 	end
   end
@@ -44,6 +47,13 @@ function system.run(scene, uuid, dt)
   local opponentText = scene:getComponent("text", game_manager.opponentScoreText)
   playerText.text = tostring(game_manager.playerScore)
   opponentText.text = tostring(game_manager.opponentScore)
+
+  -- End the game if needed
+  if game_manager.playerScore > 10 then
+	-- Player has won
+  elseif game_manager.opponentScore > 10 then
+	-- Player has lost
+  end
 
   -- Spawn a ball if needed
   if num_balls < game_manager.numBalls then
