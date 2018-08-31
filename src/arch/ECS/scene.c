@@ -11,6 +11,7 @@
 #include "components/component_types.h"
 #include "components/rigid_body.h"
 #include "components/panel.h"
+#include "components/widget.h"
 
 #include "asset_management/model.h"
 #include "asset_management/font.h"
@@ -1949,6 +1950,10 @@ void sceneRemoveComponentFromEntity(
 	else if (!strcmp(componentType.string, "panel"))
 	{
 		removePanelWidgets(s, (PanelComponent*)cdtGet(*table, entity));
+	}
+	else if (!strcmp(componentType.string, "widget"))
+	{
+		removeWidget(s, entity, (WidgetComponent*)cdtGet(*table, entity));
 	}
 
 	cdtRemove(*table, entity);
