@@ -1,9 +1,8 @@
 ffi.cdef[[
 
-int generateEntity(const char *filename);
-int exportEntity(const char *filename);
-int exportAsset(const char *filename);
-int generateScene(const char *filename);
-int exportScene(const char *filename);
+int32 generateEntity(const char *filename, const char *logFilename);
+int32 exportEntity(const char *filename, const char *logFilename);
+int32 generateScene(const char *filename, const char *logFilename);
+int32 exportScene(const char *filename, const char *logFilename);
 
 ]]
