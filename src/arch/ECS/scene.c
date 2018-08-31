@@ -14,6 +14,7 @@
 
 #include "asset_management/model.h"
 #include "asset_management/font.h"
+#include "asset_management/image.h"
 
 #include "file/utilities.h"
 
@@ -1853,6 +1854,10 @@ int32 sceneAddComponentToEntity(
 		FontComponent *fontComponent = (FontComponent*)componentData;
 		loadFont(fontComponent->name, fontComponent->size);
 	}
+	else if (!strcmp(componentType.string, "image"))
+	{
+		loadImage(((ImageComponent*)componentData)->name);
+	}
 
 	// Add the component to the data table
 	if(cdtInsert(
@@ -1900,6 +1905,10 @@ void sceneRemoveComponentFromEntity(
 	if (!strcmp(componentType.string, "model"))
 	{
 		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
+	}
+	else if (!strcmp(componentType.string, "image"))
+	{
+		freeImage(((ImageComponent *)cdtGet(*table, entity))->name);
 	}
 	else if (!strcmp(componentType.string, "rigid_body"))
 	{

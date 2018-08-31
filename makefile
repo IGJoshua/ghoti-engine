@@ -124,6 +124,7 @@ release : clean
 	cp $(CONFIG_FILE) release/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
+	rm -rf $(RELEASE_RESOURCES_FOLDER)/images/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*
 	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/

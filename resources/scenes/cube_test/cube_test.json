@@ -52,6 +52,7 @@
 		"font": 1024,
 		"widget": 1024,
 		"text": 1024,
+		"image": 1024,
 		"button": 1024
 	},
 

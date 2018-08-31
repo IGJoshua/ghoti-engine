@@ -1,0 +1,60 @@
+{
+	"uuid": "button",
+
+	"components":
+	{
+		"gui_transform":
+		[
+			{
+				"name": "position",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "size",
+				"float32": [0.5, 0.5]
+			},
+
+			{
+				"name": "pivot",
+				"int32": 4
+			}
+		],
+
+		"widget":
+		[
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "next widget",
+				"uuid": ""
+			}
+		],
+
+		"button":
+		[
+			{
+				"name": "text",
+				"char(4096)": "Button"
+			},
+
+			{
+				"name": "pressed",
+				"bool": false
+			},
+
+			{
+				"name": "held",
+				"bool": false
+			},
+
+			{
+				"name": "released",
+				"bool": false
+			}
+		]
+	}
+}

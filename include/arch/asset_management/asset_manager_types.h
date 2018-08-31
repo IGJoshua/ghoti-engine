@@ -68,3 +68,12 @@ typedef struct font_t
 	struct nk_draw_null_texture null;
 	GLuint texture;
 } Font;
+
+typedef struct image_t
+{
+	UUID name;
+	GLuint id;
+	uint32 refCount;
+	GLsizei width;
+	GLsizei height;
+} Image;

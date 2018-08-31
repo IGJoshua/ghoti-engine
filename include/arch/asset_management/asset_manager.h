@@ -7,6 +7,7 @@
 #define TEXTURES_BUCKET_COUNT 5501
 #define MATERIAL_FOLDERS_BUCKET_COUNT 521
 #define FONTS_BUCKET_COUNT 257
+#define IMAGES_BUCKET_COUNT 1031
 
 void initializeAssetManager(void);
 void shutdownAssetManager(void);

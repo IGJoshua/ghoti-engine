@@ -14,6 +14,7 @@ extern HashMap models;
 extern HashMap textures;
 extern HashMap materialFolders;
 extern HashMap fonts;
+extern HashMap images;
 
 void initializeAssetManager(void) {
 	models = createHashMap(
@@ -38,6 +39,12 @@ void initializeAssetManager(void) {
 		sizeof(UUID),
 		sizeof(Font),
 		FONTS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+
+	images = createHashMap(
+		sizeof(UUID),
+		sizeof(Image),
+		IMAGES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 }
 
@@ -71,4 +78,5 @@ void shutdownAssetManager(void) {
 	}
 
 	freeHashMap(&fonts);
+	freeHashMap(&images);
 }

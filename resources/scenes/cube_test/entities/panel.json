@@ -30,12 +30,12 @@
 
 			{
 				"name": "color",
-				"float32": [0.0, 0.0, 0.0, 0.5]
+				"float32": [0.0, 0.0, 0.0, 0.0]
 			},
 
 			{
 				"name": "first widget",
-				"uuid": "text"
+				"uuid": "image"
 			}
 		]
 	}

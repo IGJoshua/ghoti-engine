@@ -35,9 +35,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-internal int32 previousViewportWidth = 0;
-internal int32 previousViewportHeight = 0;
-
 extern Config config;
 extern int32 viewportWidth;
 extern int32 viewportHeight;
@@ -289,11 +286,6 @@ int32 main(int32 argc, char *argv[])
 
 		// Lerp state between previous and next
 		alpha = accumulator / dt;
-
-		viewportUpdated = viewportWidth != previousViewportWidth ||
-						  viewportHeight != previousViewportHeight;
-		previousViewportWidth = viewportWidth;
-		previousViewportHeight = viewportHeight;
 
 		glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
 

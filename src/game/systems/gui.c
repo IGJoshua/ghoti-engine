@@ -4,6 +4,7 @@
 
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/font.h"
+#include "asset_management/image.h"
 
 #include "components/component_types.h"
 
@@ -30,6 +31,7 @@ internal UUID panelComponentID = {};
 internal UUID widgetComponentID = {};
 internal UUID fontComponentID = {};
 internal UUID textComponentID = {};
+internal UUID imageComponentID = {};
 internal UUID buttonComponentID = {};
 
 uint32 guiRefCount = 0;
@@ -43,10 +45,11 @@ struct nk_buffer cmds;
 internal FontComponent *defaultFontComponent;
 internal Font *defaultFont;
 
-extern uint32 viewportWidth;
-extern uint32 viewportHeight;
+internal int32 previousViewportWidth = 0;
+internal int32 previousViewportHeight = 0;
 
-extern bool viewportUpdated;
+extern int32 viewportWidth;
+extern int32 viewportHeight;
 
 internal struct nk_convert_config nkConfig;
 
@@ -105,8 +108,13 @@ internal void addWidgets(
 	UUID panel,
 	real32 panelWidth,
 	real32 panelHeight);
-internal void addText(Scene *scene, UUID entity, FontComponent *font);
-internal void addButton(Scene *scene, UUID entity);
+internal void addText(TextComponent *text, FontComponent *font);
+internal void addImage(
+	ImageComponent *imageComponent,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight);
+internal void addButton(ButtonComponent *button);
 
 internal void fillCommandBuffer(void);
 
@@ -142,6 +150,14 @@ internal void initGUISystem(Scene *scene)
 			nkConfig.arc_segment_count = 22;
 			nkConfig.global_alpha = 1.0f;
 			nkConfig.null = defaultFont->null;
+
+			// TODO: Move styles to components
+
+			ctx.style.window.padding.x = 0.0f;
+			ctx.style.window.padding.y = 0.0f;
+
+			ctx.style.button.border = 0.0f;
+			ctx.style.button.rounding = 0.0f;
 
 			nk_button_set_behavior(&ctx, NK_BUTTON_REPEATER);
 
@@ -189,7 +205,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 {
 	nk_clear(&ctx);
 
-	if (viewportUpdated)
+	if (viewportWidth != previousViewportWidth ||
+		viewportHeight != previousViewportHeight)
 	{
 		ComponentDataTable *fontComponents =
 			*(ComponentDataTable**)hashMapGetData(
@@ -206,7 +223,14 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 				loadFont(fontComponent->name, fontComponent->size);
 			}
 		}
+
+		defaultFont = getFont(
+			defaultFontComponent->name,
+			defaultFontComponent->size);
 	}
+
+	previousViewportWidth = viewportWidth;
+	previousViewportHeight = viewportHeight;
 
 	glBindVertexArray(vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -294,6 +318,7 @@ System createGUISystem(void)
 	widgetComponentID = idFromName("widget");
 	fontComponentID = idFromName("font");
 	textComponentID = idFromName("text");
+	imageComponentID = idFromName("image");
 	buttonComponentID = idFromName("button");
 
 	System system = {};
@@ -431,10 +456,6 @@ void addWidgets(
 		{
 			if (widget->enabled)
 			{
-				nk_layout_space_push(
-					&ctx,
-					getRect(guiTransform, panelWidth, panelHeight));
-
 				FontComponent *fontComponent;
 				Font *font = getEntityFont(
 					scene,
@@ -445,8 +466,38 @@ void addWidgets(
 
 				nk_style_set_font(&ctx, &font->font->handle);
 
-				addText(scene, entity, fontComponent);
-				addButton(scene, entity);
+				TextComponent *text = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					textComponentID);
+				ImageComponent *image = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					imageComponentID);
+				ButtonComponent *button = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					buttonComponentID);
+
+				if (!image)
+				{
+					nk_layout_space_push(
+						&ctx,
+						getRect(guiTransform, panelWidth, panelHeight));
+				}
+
+				if (text)
+				{
+					addText(text, fontComponent);
+				}
+				else if (image)
+				{
+					addImage(image, guiTransform, panelWidth, panelHeight);
+				}
+				else if (button)
+				{
+					addButton(button);
+				}
 			}
 
 			entity = widget->nextWidget;
@@ -458,18 +509,8 @@ void addWidgets(
 	} while (true);
 }
 
-void addText(Scene *scene, UUID entity, FontComponent *font)
+void addText(TextComponent *text, FontComponent *font)
 {
-	TextComponent *text = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		textComponentID);
-
-	if (!text)
-	{
-		return;
-	}
-
 	if (text->alignment == TEXT_ALIGNMENT_WRAP)
 	{
 		nk_label_colored_wrap(
@@ -518,18 +559,56 @@ void addText(Scene *scene, UUID entity, FontComponent *font)
 	}
 }
 
-void addButton(Scene *scene, UUID entity)
+void addImage(
+	ImageComponent *imageComponent,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight)
 {
-	ButtonComponent *button = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		buttonComponentID);
+	Image *image = getImage(imageComponent->name);
 
-	if (!button)
+	if (!image)
 	{
 		return;
 	}
 
+	GUITransformComponent imageTransform;
+	imageTransform.position = imageComponent->position;
+	imageTransform.pivot = imageComponent->pivot;
+
+	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
+
+	real32 width = (image->width / widgetRect.w) * imageComponent->scale.x;
+	real32 height = (image->height / widgetRect.h) * imageComponent->scale.x;
+
+	if (width > 1.0f)
+	{
+		height /= width;
+		width = 1.0f;
+	}
+
+	if (height > 1.0f)
+	{
+		width /= height;
+		height = 1.0f;
+	}
+
+	kmVec2Fill(&imageTransform.size, width, height);
+
+	struct nk_rect rect = getRect(&imageTransform, widgetRect.w, widgetRect.h);
+	rect.x += widgetRect.x;
+	rect.y += widgetRect.y;
+
+	nk_layout_space_push(&ctx, rect);
+
+	nk_image_color(
+		&ctx,
+		nk_image_id(image->id),
+		getColor(&imageComponent->color));
+}
+
+void addButton(ButtonComponent *button)
+{
 	bool held = button->held;
 	button->held = nk_button_label(&ctx, button->text);
 	button->pressed = !held && button->held;

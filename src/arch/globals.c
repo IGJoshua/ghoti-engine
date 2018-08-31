@@ -18,10 +18,10 @@ HashMap models;
 HashMap textures;
 HashMap materialFolders;
 HashMap fonts;
+HashMap images;
 
 int32 viewportWidth;
 int32 viewportHeight;
-bool viewportUpdated;
 
 // NOTE(Joshua): Globals for ECS
 

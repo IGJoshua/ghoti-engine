@@ -28,8 +28,8 @@ internal uint32 guiRendererRefCount = 0;
 extern struct nk_context ctx;
 extern struct nk_buffer cmds;
 
-extern uint32 viewportWidth;
-extern uint32 viewportHeight;
+extern int32 viewportWidth;
+extern int32 viewportHeight;
 
 #define NUM_GUI_VERTEX_ATTRIBUTES 3
 

@@ -1,0 +1,65 @@
+{
+	"uuid": "image",
+
+	"components":
+	{
+		"gui_transform":
+		[
+			{
+				"name": "position",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "size",
+				"float32": [1.0, 1.0]
+			},
+
+			{
+				"name": "pivot",
+				"int32": 4
+			}
+		],
+
+		"widget":
+		[
+			{
+				"name": "enabled",
+				"bool": false
+			},
+
+			{
+				"name": "next widget",
+				"uuid": "button"
+			}
+		],
+
+		"image":
+		[
+			{
+				"name": "name",
+				"char(64)": "voxel_cone_tracing"
+			},
+
+			{
+				"name": "color",
+				"float32": [1.0, 1.0, 1.0, 0.75]
+			},
+
+			{
+				"name": "position",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1.0, 1.0]
+			},
+
+			{
+				"name": "pivot",
+				"int32": 4
+			}
+		]
+	}
+}

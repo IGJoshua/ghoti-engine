@@ -295,6 +295,15 @@ typedef struct text_component_t
 	TextAlignment alignment;
 } TextComponent;
 
+typedef struct image_component_t
+{
+	char name[64];
+	kmVec4 color;
+	kmVec2 position;
+	kmVec2 scale;
+	Pivot pivot;
+} ImageComponent;
+
 typedef struct button_component_t
 {
 	char text[1024];
