@@ -1905,9 +1905,10 @@ void sceneRemoveComponentFromEntity(
 	}
 	else if (!strcmp(componentType.string, "collision_tree_node"))
 	{
-		CollisionTreeNode *node = (CollisionTreeNode*)cdtGet(*table, entity);
-		removeCollisionTreeNode(s, entity, node);
-		dGeomDestroy(node->geomID);
+		removeCollisionTreeNode(
+			s,
+			entity,
+			(CollisionTreeNode*)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "panel"))
 	{

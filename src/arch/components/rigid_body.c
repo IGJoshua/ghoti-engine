@@ -214,7 +214,9 @@ void freeUserData(dGeomID geom)
 		for (uint32 i = 0; i < count; ++i)
 		{
 			// free all the stuff in the user data ptr
-			freeUserData(dSpaceGetGeom(space, i));
+			dGeomID geom = dSpaceGetGeom(space, i);
+			freeUserData(geom);
+			dGeomDestroy(geom);
 		}
 	}
 }
