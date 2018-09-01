@@ -195,35 +195,8 @@ void registerRigidBody(Scene *scene, UUID entity)
 	updateRigidBody(scene, coll, body, trans);
 }
 
-internal
-void freeUserData(dGeomID geom)
-{
-	// if it's not a space
-	if (!dGeomIsSpace(geom))
-	{
-		free(dGeomGetData(geom));
-		dGeomSetData(geom, 0);
-	}
-	// if it's a space
-	else
-	{
-		dSpaceID space = (dSpaceID)geom;
-
-		uint32 count = dSpaceGetNumGeoms(space);
-		// For each geom in the space
-		for (uint32 i = 0; i < count; ++i)
-		{
-			// free all the stuff in the user data ptr
-			dGeomID geom = dSpaceGetGeom(space, i);
-			freeUserData(geom);
-			dGeomDestroy(geom);
-		}
-	}
-}
-
 void destroyRigidBody(RigidBodyComponent *body)
 {
-	freeUserData((dGeomID)body->spaceID);
 	dSpaceDestroy(body->spaceID);
 	dBodyDestroy(body->bodyID);
 }

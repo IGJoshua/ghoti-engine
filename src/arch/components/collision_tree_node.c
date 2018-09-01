@@ -5,6 +5,8 @@
 #include "ECS/scene.h"
 #include "ECS/component.h"
 
+#include <ode/ode.h>
+
 void removeCollisionTreeNode(
 	Scene *scene,
 	UUID entity,
@@ -61,4 +63,8 @@ void removeCollisionTreeNode(
 			}
 		}
 	}
+
+	free(dGeomGetData(node->geomID));
+	dGeomSetData(node->geomID, 0);
+	dGeomDestroy(node->geomID);
 }
