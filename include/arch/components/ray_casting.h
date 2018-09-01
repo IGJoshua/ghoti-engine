@@ -3,7 +3,7 @@
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
-#include "component_types.h"
+#include "components/component_types.h"
 
 typedef struct ray_collision_t
 {

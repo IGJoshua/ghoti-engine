@@ -9,9 +9,12 @@
 #include "data/list.h"
 
 #include "components/component_types.h"
+#include "components/transform.h"
 #include "components/rigid_body.h"
 #include "components/panel.h"
 #include "components/widget.h"
+#include "components/collision.h"
+#include "components/collision_tree_node.h"
 
 #include "asset_management/model.h"
 #include "asset_management/font.h"
@@ -1794,32 +1797,6 @@ void sceneRemoveEntityComponents(Scene *s, UUID entity)
 
 void sceneRemoveEntity(Scene *s, UUID entity)
 {
-	UUID transformComponentID = idFromName("transform");
-	TransformComponent *transform =
-		(TransformComponent*)sceneGetComponentFromEntity(
-			s,
-			entity,
-			transformComponentID);
-
-	// Loop through all the children and delete them
-	if (transform && transform->firstChild.string[0] != 0)
-	{
-		UUID child = transform->firstChild;
-		UUID sibling = {};
-		while (child.string[0] != 0)
-		{
-			transform = (TransformComponent *)sceneGetComponentFromEntity(
-				s,
-				child,
-				transformComponentID);
-
-			sibling = transform->nextSibling;
-
-			sceneRemoveEntity(s, child);
-			child = sibling;
-		}
-	}
-
 	sceneRemoveEntityComponents(s, entity);
 	hashMapDelete(s->entities, &entity);
 }
@@ -1903,7 +1880,11 @@ void sceneRemoveComponentFromEntity(
 	//               we load components.
 
 	// Check to ensure that the component has been properly freed
-	if (!strcmp(componentType.string, "model"))
+	if (!strcmp(componentType.string, "transform"))
+	{
+		removeTransform(s, entity, (TransformComponent*)cdtGet(*table, entity));
+	}
+	else if (!strcmp(componentType.string, "model"))
 	{
 		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
 	}
@@ -1918,34 +1899,15 @@ void sceneRemoveComponentFromEntity(
 	}
 	else if (!strcmp(componentType.string, "collision"))
 	{
-		CollisionComponent *coll = (CollisionComponent *)cdtGet(*table, entity);
-		if (coll)
-		{
-			CollisionTreeNode *node = 0;
-			UUID collisionTreeNodeID = idFromName("collision_tree_node");
-			UUID currentCollider = coll->collisionTree;
-			UUID nextCollider = {};
-			while (currentCollider.string[0] != 0)
-			{
-				node = (CollisionTreeNode *)sceneGetComponentFromEntity(
-					s,
-					currentCollider,
-					collisionTreeNodeID);
-
-				if (!node)
-				{
-					break;
-				}
-
-				nextCollider = node->nextCollider;
-				sceneRemoveEntity(s, currentCollider);
-				currentCollider = nextCollider;
-			}
-		}
+		removeCollisionComponent(
+			s,
+			(CollisionComponent*)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "collision_tree_node"))
 	{
-		dGeomDestroy(((CollisionTreeNode *)cdtGet(*table, entity))->geomID);
+		CollisionTreeNode *node = (CollisionTreeNode*)cdtGet(*table, entity);
+		removeCollisionTreeNode(s, entity, node);
+		dGeomDestroy(node->geomID);
 	}
 	else if (!strcmp(componentType.string, "panel"))
 	{
@@ -1953,7 +1915,7 @@ void sceneRemoveComponentFromEntity(
 	}
 	else if (!strcmp(componentType.string, "widget"))
 	{
-		removeWidget(s, entity, (WidgetComponent*)cdtGet(*table, entity));
+		removeWidget(s, entity);
 	}
 
 	cdtRemove(*table, entity);

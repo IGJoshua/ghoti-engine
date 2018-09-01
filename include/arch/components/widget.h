@@ -1,5 +1,5 @@
 #include "defines.h"
 
-#include "component_types.h"
+#include "ECS/ecs_types.h"
 
-void removeWidget(Scene *scene, UUID entity, WidgetComponent *widget);
+void removeWidget(Scene *scene, UUID entity);

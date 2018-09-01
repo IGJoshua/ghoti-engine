@@ -1,11 +1,12 @@
 #include "components/widget.h"
+#include "components/component_types.h"
 
 #include "data/hash_map.h"
 
 #include "ECS/scene.h"
 #include "ECS/component.h"
 
-void removeWidget(Scene *scene, UUID entity, WidgetComponent *widget)
+void removeWidget(Scene *scene, UUID entity)
 {
 	UUID panelComponentID = idFromName("panel");
 	UUID widgetComponentID = idFromName("widget");

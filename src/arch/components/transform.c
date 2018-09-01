@@ -189,3 +189,61 @@ void tGetInverseGlobalTransform(
 	scale->y = 1.0f / transform->globalScale.y;
 	scale->z = 1.0f / transform->globalScale.z;
 }
+
+void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
+{
+	UUID transformComponentID = idFromName("transform");
+
+	UUID child = transform->firstChild;
+	UUID sibling = {};
+
+	// Loop through all the children and delete them
+	while (child.string[0] != 0)
+	{
+		TransformComponent *transformComponent = sceneGetComponentFromEntity(
+			scene,
+			child,
+			transformComponentID);
+
+		sibling = transformComponent->nextSibling;
+
+		sceneRemoveEntity(scene, child);
+		child = sibling;
+	}
+
+	if (transform->parent.string[0] != 0)
+	{
+		transform = sceneGetComponentFromEntity(
+			scene,
+			transform->parent,
+			transformComponentID);
+		TransformComponent *previousTransform = transform;
+		transform = sceneGetComponentFromEntity(
+			scene,
+			transform->firstChild,
+			transformComponentID);
+
+		if (!strcmp(entity.string, previousTransform->firstChild.string))
+		{
+			previousTransform->firstChild = transform->nextSibling;
+		}
+		else
+		{
+			do
+			{
+				previousTransform = transform;
+				sibling = transform->nextSibling;
+				transform = sceneGetComponentFromEntity(
+					scene,
+					sibling,
+					transformComponentID);
+
+				if (!strcmp(entity.string, sibling.string))
+				{
+					previousTransform->nextSibling = transform->nextSibling;
+					break;
+				}
+			} while (transform);
+		}
+	}
+}

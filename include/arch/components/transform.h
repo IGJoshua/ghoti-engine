@@ -3,7 +3,7 @@
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
-#include "component_types.h"
+#include "components/component_types.h"
 
 #include <kazmath/mat4.h>
 
@@ -39,3 +39,5 @@ void tGetInverseGlobalTransform(
 	kmVec3 *position,
 	kmQuaternion *rotation,
 	kmVec3 *scale);
+
+void removeTransform(Scene *scene, UUID entity, TransformComponent *transform);
