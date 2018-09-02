@@ -4,7 +4,7 @@
 #include <kazmath/vec2.h>
 #include <kazmath/vec3.h>
 
-#define CONFIG_FILE "config"
+#define CONFIG_FILE "ghoti"
 
 typedef struct window_config_t
 {

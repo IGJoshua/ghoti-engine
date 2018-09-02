@@ -1,6 +1,8 @@
 #pragma once
 #include "defines.h"
 
+#include "components/component_types.h"
+
 #include <cjson/cJSON.h>
 
 #include <stdio.h>
@@ -27,6 +29,7 @@ char* readFile(const char *filename, uint64 *fileLength);
 char* readString(FILE *file);
 UUID readStringAsUUID(FILE *file);
 UUID readUUID(FILE *file);
+TransformComponent readTransform(FILE *file);
 void writeString(const char *string, FILE *file);
 
 cJSON* loadJSON(const char *filename);

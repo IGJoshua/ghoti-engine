@@ -58,6 +58,9 @@ typedef struct model_t
 	UUID opacityTexture;
 	uint32 numSubsets;
 	Subset *subsets;
+	Skeleton skeleton;
+	uint32 numAnimations;
+	Animation *animations;
 } Model;
 
 typedef struct font_t

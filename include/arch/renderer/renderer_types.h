@@ -1,6 +1,8 @@
 #pragma once
 #include "defines.h"
 
+#include "components/component_types.h"
+
 #include <GL/glew.h>
 
 #include <kazmath/vec3.h>
@@ -52,6 +54,44 @@ typedef struct subset_t
 	Material material;
 	Mask mask;
 } Subset;
+
+typedef struct vec3_key_frame_t {
+	real64 time;
+	kmVec3 value;
+} Vec3KeyFrame;
+
+typedef struct quaternion_key_frame_t {
+	real64 time;
+	kmQuaternion value;
+} QuaternionKeyFrame;
+
+typedef struct bone_t {
+	UUID name;
+	uint32 numPositionKeyFrames;
+	Vec3KeyFrame *positionKeyFrames;
+	uint32 numRotationKeyFrames;
+	QuaternionKeyFrame *rotationKeyFrames;
+	uint32 numScaleKeyFrames;
+	Vec3KeyFrame *scaleKeyFrames;
+} Bone;
+
+typedef struct animation_t {
+	UUID name;
+	real64 duration;
+	real64 fps;
+	uint32 numBones;
+	Bone *bones;
+} Animation;
+
+typedef struct bone_offset_t {
+	UUID name;
+	TransformComponent transform;
+} BoneOffset;
+
+typedef struct skeleton_t {
+	uint32 numBoneOffsets;
+	BoneOffset *boneOffsets;
+} Skeleton;
 
 typedef enum shader_type_e
 {

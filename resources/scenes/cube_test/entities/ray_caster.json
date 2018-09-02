@@ -75,7 +75,7 @@
 		[
 			{
 				"name": "filename",
-				"char(64)": "cube"
+				"char(64)": "character"
 			},
 
 			{

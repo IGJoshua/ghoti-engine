@@ -3,6 +3,7 @@
 #include "asset_management/material.h"
 #include "asset_management/mask.h"
 #include "asset_management/mesh.h"
+#include "asset_management/animation.h"
 #include "asset_management/texture.h"
 
 #include "core/log.h"
@@ -92,8 +93,11 @@ int32 loadModel(const char *name)
 
 					if (error != -1)
 					{
-						// TODO: Add animation loading
-						// error = loadAnimations(meshFile);
+						error = loadAnimations(
+							&model.numAnimations,
+							&model.animations,
+							&model.skeleton,
+							meshFile);
 					}
 				}
 			}
@@ -180,6 +184,12 @@ void freeModel(const char *name)
 			}
 
 			free(model->subsets);
+
+			freeAnimations(
+				model->numAnimations,
+				model->animations,
+				&model->skeleton);
+
 			deleteModel(name);
 
 			LOG("Successfully freed model (%s)\n", name);

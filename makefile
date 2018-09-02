@@ -1,7 +1,7 @@
 PROJ = ghoti
 LIBNAME = ghoti
 
-CONFIG_FILE = config.json
+CONFIG_FILE = $(PROJ).json
 DEFAULT_FONT = default_font.ttf
 
 IDIRS = include/arch include/game vendor

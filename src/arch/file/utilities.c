@@ -284,6 +284,15 @@ UUID readUUID(FILE *file)
 	return uuid;
 }
 
+TransformComponent readTransform(FILE *file)
+{
+	TransformComponent transform = {};
+	fread(&transform.position, sizeof(kmVec3), 1, file);
+	fread(&transform.rotation, sizeof(kmQuaternion), 1, file);
+	fread(&transform.scale, sizeof(kmVec3), 1, file);
+	return transform;
+}
+
 void writeString(const char *string, FILE *file)
 {
 	uint32 stringLength = strlen(string) + 1;

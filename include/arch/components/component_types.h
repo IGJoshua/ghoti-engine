@@ -57,6 +57,17 @@ typedef struct camera_component_t
 	CameraProjectionType projectionType;
 } CameraComponent;
 
+typedef struct animation_component_t
+{
+	char name[64];
+	UUID skeleton;
+} AnimationComponent;
+
+typedef struct joint_component_t
+{
+	char name[64];
+} JointComponent;
+
 typedef enum joint_type_e
 {
 	JOINT_TYPE_BALL_SOCKET = 0,
