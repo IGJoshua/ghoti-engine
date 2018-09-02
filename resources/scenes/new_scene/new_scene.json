@@ -1,0 +1,55 @@
+{
+	"systems":
+	{
+		"update":
+		{
+			"external": ["basic_input"],
+			"internal":
+			[
+				"clean_hit_information",
+				"clean_hit_list",
+				"clean_global_transforms",
+				"apply_parent_transforms",
+				"simulate_rigid_bodies",
+				"gui"
+			]
+		},
+
+		"draw":
+		{
+			"external":
+			[
+
+			],
+
+			"internal": ["renderer", "gui_renderer"]
+		}
+	},
+
+	"component_limits":
+	{
+		"transform": 4096,
+		"camera": 16,
+		"model": 2048,
+		"rigid_body": 1024,
+		"collision": 1024,
+		"collision_tree_node": 4096,
+		"box": 1024,
+		"sphere": 1024,
+		"capsule": 1024,
+		"hit_information": 4096,
+		"hit_list": 8192,
+		"gui_transform": 2048,
+		"panel": 512,
+		"font": 1024,
+		"widget": 1024,
+		"text": 1024,
+		"image": 1024,
+		"button": 1024,
+		"animation": 2048,
+		"joint": 4096
+	},
+
+	"active_camera": "Mv75O;Z&+EApW+*ygT_ZB`q))b;a#8M,h_P*7T*Yrw.rv-XPj0hH(nNg(6g5g2>",
+	"gravity": -9.81
+}
