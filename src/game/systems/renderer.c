@@ -286,6 +286,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glGetFloatv(GL_LINE_WIDTH, &lineWidth);
 			glLineWidth(wireframeComponent->lineWidth);
 
+			glDisable(GL_CULL_FACE);
+
 			glDrawElements(
 				GL_TRIANGLES,
 				mesh->numIndices,
@@ -302,10 +304,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 
-		if (material->doubleSided)
-		{
-			glEnable(GL_CULL_FACE);
-		}
+		glEnable(GL_CULL_FACE);
 
 		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
 		{

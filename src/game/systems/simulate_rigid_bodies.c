@@ -269,11 +269,7 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 			cdtIteratorGetUUID(itr),
 			collisionComponentID);
 
-		updateRigidBodyPosition(
-			scene,
-			coll,
-			body,
-			trans);
+		updateRigidBody(scene, coll, body, trans);
 	}
 
 	dSpaceCollide(scene->physicsSpace, scene, &nearCallback);
@@ -289,21 +285,40 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 		scene,
 		entityID,
 		transformComponentID);
+	TransformComponent *parentTransform = sceneGetComponentFromEntity(
+		scene,
+		transform->parent,
+		transformComponentID);
 	RigidBodyComponent *body = sceneGetComponentFromEntity(
 		scene,
 		entityID,
 		rigidBodyComponentID);
 
-	const dReal *pos = dBodyGetPosition(body->bodyID);
-	transform->position.x = pos[0];
-	transform->position.y = pos[1];
-	transform->position.z = pos[2];
+	const dReal *dPos = dBodyGetPosition(body->bodyID);
+	kmVec3Assign(&transform->position, (kmVec3*)dPos);
 
-	const dReal *rot = dBodyGetQuaternion(body->bodyID);
-	transform->rotation.w = rot[0];
-	transform->rotation.x = rot[1];
-	transform->rotation.y = rot[2];
-	transform->rotation.z = rot[3];
+	const dReal *dRot = dBodyGetQuaternion(body->bodyID);
+	kmQuaternionFill(&transform->rotation, dRot[1], dRot[2], dRot[3], dRot[0]);
+
+	if (parentTransform)
+	{
+		kmQuaternion invParentRot;
+		kmQuaternionInverse(&invParentRot, &parentTransform->globalRotation);
+
+		kmVec3Subtract(
+			&transform->position,
+			&transform->position,
+			&parentTransform->globalPosition);
+		kmQuaternionMultiplyVec3(
+			&transform->position,
+			&invParentRot,
+			&transform->position);
+
+		kmQuaternionMultiply(
+			&transform->rotation,
+			&invParentRot,
+			&transform->rotation);
+	}
 
 	const dReal *vel = dBodyGetLinearVel(body->bodyID);
 	body->velocity.x = vel[0];
@@ -311,9 +326,9 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 	body->velocity.z = vel[2];
 
 	const dReal *angularVel = dBodyGetAngularVel(body->bodyID);
-	body->angularVel.x = angularVel[0];
-	body->angularVel.y = angularVel[1];
-	body->angularVel.z = angularVel[2];
+	body->angularVel.x = -angularVel[0];
+	body->angularVel.y = -angularVel[1];
+	body->angularVel.z = -angularVel[2];
 
 	tMarkDirty(scene, entityID);
 }
