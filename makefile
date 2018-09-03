@@ -121,6 +121,7 @@ release : clean
 	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
 	cp -r resources/ release/
 	find $(RELEASE_RESOURCES_FOLDER)/fonts/* -type f -not -path '*$(DEFAULT_FONT)' -exec rm {} \;
+	cp -r doc/ release/
 	cp $(CONFIG_FILE) release/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
