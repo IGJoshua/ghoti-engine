@@ -4,6 +4,11 @@
 
 void removeCollisionComponent(Scene *scene, CollisionComponent *coll)
 {
+	if (!coll)
+	{
+		return;
+	}
+
 	CollisionTreeNode *node = NULL;
 	UUID collisionTreeNodeID = idFromName("collision_tree_node");
 	UUID currentCollider = coll->collisionTree;

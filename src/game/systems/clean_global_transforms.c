@@ -28,8 +28,12 @@ void initCleanGlobalTransformsSystem(Scene *scene)
 		transform->lastGlobalPosition = transform->globalPosition;
 		transform->lastGlobalRotation = transform->globalRotation;
 		transform->lastGlobalScale = transform->globalScale;
-		kmQuaternionNormalize(&transform->globalRotation, &transform->globalRotation);
-		kmQuaternionNormalize(&transform->lastGlobalRotation, &transform->lastGlobalRotation);
+		kmQuaternionNormalize(
+			&transform->globalRotation,
+			&transform->globalRotation);
+		kmQuaternionNormalize(
+			&transform->lastGlobalRotation,
+			&transform->lastGlobalRotation);
 	}
 }
 
@@ -44,8 +48,12 @@ void runCleanGlobalTransformsSystem(Scene *scene, UUID entityID, real64 dt)
 	transform->lastGlobalPosition = transform->globalPosition;
 	transform->lastGlobalRotation = transform->globalRotation;
 	transform->lastGlobalScale = transform->globalScale;
-	kmQuaternionNormalize(&transform->globalRotation, &transform->globalRotation);
-	kmQuaternionNormalize(&transform->lastGlobalRotation, &transform->lastGlobalRotation);
+	kmQuaternionNormalize(
+		&transform->globalRotation,
+		&transform->globalRotation);
+	kmQuaternionNormalize(
+		&transform->lastGlobalRotation,
+		&transform->lastGlobalRotation);
 }
 
 System createCleanGlobalTransformsSystem(void)

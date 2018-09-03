@@ -523,10 +523,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRenderHeightmapSystem(Scene *scene, real64 dt)
 {
-	if (--rendererRefCount == 0)
-	{
-		glUseProgram(0);
-	}
+	glUseProgram(0);
 }
 
 internal
@@ -568,7 +565,11 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 	freeHashMap(map);
 	hashMapDelete(heightmapModels, &scene);
 
-	glDeleteProgram(shaderProgram);
+	if (--rendererRefCount == 0)
+	{
+		glDeleteProgram(shaderProgram);
+		freeHashMap(&heightmapModels);
+	}
 }
 
 internal
