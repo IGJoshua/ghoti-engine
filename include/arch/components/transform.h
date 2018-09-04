@@ -20,13 +20,13 @@ kmMat4 tComposeMat4(
 	kmVec3 const *scale);
 
 void tGetInterpolatedTransform(
-	TransformComponent const *transform,
+	TransformComponent *transform,
 	kmVec3 *position,
 	kmQuaternion *rotation,
 	kmVec3 *scale,
 	real64 alpha);
 kmMat4 tGetInterpolatedTransformMatrix(
-	TransformComponent const *transform,
+	TransformComponent *transform,
 	real64 alpha);
 
 void tGetInverseTransform(

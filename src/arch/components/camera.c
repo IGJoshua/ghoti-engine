@@ -1,6 +1,7 @@
 #include "components/camera.h"
 
 #include "components/component_types.h"
+#include "components/transform.h"
 
 #include "core/log.h"
 
@@ -9,7 +10,6 @@
 
 #include "renderer/shader.h"
 
-#include <kazmath/mat3.h>
 #include <kazmath/mat4.h>
 
 extern real64 alpha;
@@ -34,29 +34,7 @@ int32 cameraSetUniforms(
 		scene->mainCamera,
 		idFromName("transform"));
 
-	kmQuaternion cameraRotationQuat;
-	kmQuaternionSlerp(
-		&cameraRotationQuat,
-		&cameraTransform->lastGlobalRotation,
-		&cameraTransform->globalRotation,
-		alpha);
-
-	kmMat3 cameraRotation;
-	kmMat3FromRotationQuaternion(&cameraRotation, &cameraRotationQuat);
-
-	kmVec3 cameraPosition;
-	kmVec3Lerp(
-		&cameraPosition,
-		&cameraTransform->lastGlobalPosition,
-		&cameraTransform->globalPosition,
-		alpha);
-
-	kmMat4 view = {};
-
-	kmMat4RotationTranslation(
-		&view,
-		&cameraRotation,
-		&cameraPosition);
+	kmMat4 view = tGetInterpolatedTransformMatrix(cameraTransform, alpha);
 	kmMat4Inverse(&view, &view);
 
 	kmMat4 projection = {};

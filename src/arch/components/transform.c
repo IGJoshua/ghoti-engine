@@ -126,12 +126,36 @@ kmMat4 tComposeMat4(
 }
 
 void tGetInterpolatedTransform(
-	TransformComponent const *transform,
+	TransformComponent *transform,
 	kmVec3 *position,
 	kmQuaternion *rotation,
 	kmVec3 *scale,
 	real64 alpha)
 {
+	if (kmVec3AreEqual(&transform->lastGlobalPosition, &KM_VEC3_ZERO))
+	{
+		kmVec3Assign(
+			&transform->lastGlobalPosition,
+			&transform->globalPosition);
+	}
+
+	if (kmQuaternionIsIdentity(&transform->lastGlobalRotation))
+	{
+		kmQuaternionAssign(
+			&transform->lastGlobalRotation,
+			&transform->globalRotation);
+	}
+
+	kmVec3 defaultScale;
+	kmVec3Fill(&defaultScale, 1.0f, 1.0f, 1.0f);
+
+	if (kmVec3AreEqual(&transform->lastGlobalScale, &defaultScale))
+	{
+		kmVec3Assign(
+			&transform->lastGlobalScale,
+			&transform->globalScale);
+	}
+
 	kmVec3Lerp(
 		position,
 		&transform->lastGlobalPosition,
@@ -152,7 +176,7 @@ void tGetInterpolatedTransform(
 }
 
 kmMat4 tGetInterpolatedTransformMatrix(
-	TransformComponent const *transform,
+	TransformComponent *transform,
 	real64 alpha)
 {
 	kmVec3 position;
