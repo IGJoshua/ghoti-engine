@@ -40,4 +40,8 @@ void tGetInverseGlobalTransform(
 	kmQuaternion *rotation,
 	kmVec3 *scale);
 
+void tConcatenateTransforms(
+	TransformComponent *transformA,
+	TransformComponent *transformB);
+
 void removeTransform(Scene *scene, UUID entity, TransformComponent *transform);

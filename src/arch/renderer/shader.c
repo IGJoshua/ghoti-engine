@@ -179,10 +179,12 @@ int32 getUniform(
 
 	uniform->location = glGetUniformLocation(program, name);
 
-	if (logGLError(true, "Get Uniform (%s)", name) == -1)
+	if (logGLError(false, "Get Uniform (%s)", name) == -1)
 	{
 		return -1;
 	}
+
+	LOG("Get Uniform (%s): %d\n", name, uniform->location);
 
 	return 0;
 }

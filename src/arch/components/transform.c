@@ -55,31 +55,48 @@ void tDecomposeMat4(
 	kmQuaternion *rotation,
 	kmVec3 *scale)
 {
-	kmMat4ExtractTranslationVec3(transform, position);
+	if (position)
+	{
+		kmMat4ExtractTranslationVec3(transform, position);
+	}
 
-	kmMat3 rotationMat = {};
-	kmMat4ExtractRotationMat3(transform, &rotationMat);
+	if (rotation)
+	{
+		kmMat3 rotationMat = {};
+		kmMat4ExtractRotationMat3(transform, &rotationMat);
+		kmQuaternionRotationMatrix(rotation, &rotationMat);
+		kmQuaternionNormalize(rotation, rotation);
+	}
 
-	kmQuaternionRotationMatrix(rotation, &rotationMat);
+	if (scale)
+	{
+		kmVec3 xAxis;
+		kmVec3Fill(
+			&xAxis,
+			transform->mat[0],
+			transform->mat[1],
+			transform->mat[2]);
 
-	kmVec3 xAxis;
-	kmVec3Fill(&xAxis, transform->mat[0], transform->mat[1], transform->mat[2]);
+		kmVec3 yAxis;
+		kmVec3Fill(
+			&yAxis,
+			transform->mat[4],
+			transform->mat[5],
+			transform->mat[6]);
 
-	kmVec3 yAxis;
-	kmVec3Fill(&yAxis, transform->mat[4], transform->mat[5], transform->mat[6]);
+		kmVec3 zAxis;
+		kmVec3Fill(
+			&zAxis,
+			transform->mat[8],
+			transform->mat[9],
+			transform->mat[10]);
 
-	kmVec3 zAxis;
-	kmVec3Fill(
-		&zAxis,
-		transform->mat[8],
-		transform->mat[9],
-		transform->mat[10]);
-
-	kmVec3Fill(
-		scale,
-		kmVec3Length(&xAxis),
-		kmVec3Length(&yAxis),
-		kmVec3Length(&zAxis));
+		kmVec3Fill(
+			scale,
+			kmVec3Length(&xAxis),
+			kmVec3Length(&yAxis),
+			kmVec3Length(&zAxis));
+	}
 }
 
 kmMat4 tComposeMat4(
@@ -212,6 +229,46 @@ void tGetInverseGlobalTransform(
 	scale->x = 1.0f / transform->globalScale.x;
 	scale->y = 1.0f / transform->globalScale.y;
 	scale->z = 1.0f / transform->globalScale.z;
+}
+
+void tConcatenateTransforms(
+	TransformComponent *transformA,
+	TransformComponent *transformB)
+{
+	kmVec3Mul(
+		&transformB->globalPosition,
+		&transformB->position,
+		&transformA->globalScale);
+	kmQuaternionMultiplyVec3(
+		&transformB->globalPosition,
+		&transformA->globalRotation,
+		&transformB->globalPosition);
+	kmVec3Add(
+		&transformB->globalPosition,
+		&transformA->globalPosition,
+		&transformB->globalPosition);
+
+	kmQuaternionMultiply(
+		&transformB->globalRotation,
+		&transformA->globalRotation,
+		&transformB->rotation);
+
+	kmMat4 transformMatrixA = tComposeMat4(
+		&transformA->globalPosition,
+		&transformA->globalRotation,
+		&transformA->globalScale);
+	kmMat4 transformMatrixB = tComposeMat4(
+		&transformB->position,
+		&transformB->rotation,
+		&transformB->scale);
+
+	kmMat4 transformMatrix;
+	kmMat4Multiply(
+		&transformMatrix,
+		&transformMatrixA,
+		&transformMatrixB);
+
+	tDecomposeMat4(&transformMatrix, NULL, NULL, &transformB->globalScale);
 }
 
 void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)

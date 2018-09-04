@@ -31,6 +31,7 @@
 		"transform": 4096,
 		"camera": 16,
 		"model": 2048,
+		"wireframe": 2048,
 		"rigid_body": 1024,
 		"collision": 1024,
 		"collision_tree_node": 4096,
