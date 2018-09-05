@@ -1,5 +1,5 @@
 {
-	"uuid": "1<XQNpcb6$u:2r%4N6R6>+il3O-tje+,;YWtH89OrI?tRb(+v;+e-;:/-*q5+3k",
+	"uuid": ".lTWTyx^+8FW@raHMmb#9cWJTSdVEKf/t;`s1DtF_QX0*+sa#2BWQt1;PiUxMak",
 
 	"components":
 	{
@@ -12,7 +12,7 @@
 
 			{
 				"name": "rotation",
-				"float32": [0.7071068286895752, 0, 0, 0.7071068286895752]
+				"float32": [-0.7071068286895752, 0, 0, 0.7071068286895752]
 			},
 
 			{
@@ -27,7 +27,7 @@
 
 			{
 				"name": "first child",
-				"uuid": "_-1t^a,3YROLy8Iy,b*ndB&qD&`V.p@crNUV6^^d.,..9U-B55.vL)mn,TB0B_p"
+				"uuid": "?kXV/>&hs+os$Vt3vIYpOr>6E5X%&;A_,w4937v$?ktA?fI3.)xZp=f;OD5JUT/"
 			},
 
 			{

@@ -1,5 +1,5 @@
 {
-	"uuid": "hESC2@TeyQ0O_Q)J'2dhEZpT'yK4PNO>q(^xE8c=fiaD@gkEnM+1%xb*p43F__Y",
+	"uuid": "%yvmHd?lU1n@TLRCmT@&g@Tb8)nu0Bo'6bDo'6J-g6JBXqZKDxO16xpL'?,s4(/",
 
 	"components":
 	{
@@ -7,38 +7,48 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32":
+				[
+					0.56681925058364868,
+					-0.0013489006087183952,
+					-0.10437490046024323
+				]
 			},
 
 			{
 				"name": "rotation",
 				"float32":
 				[
-					0.0030626144725829363,
-					0.580220103263855,
-					0.81443893909454346,
+					-0.0030626144725829363,
+					-0.580220103263855,
+					-0.81443893909454346,
 					0.0049510258249938488
 				]
 			},
 
 			{
 				"name": "scale",
-				"float32": [1, 0.99999862909317017, 0.99999749660491943]
+				"float32":
+				[
+					0.99999994039535522,
+					0.99999737739562988,
+					0.99999874830245972
+				]
 			},
 
 			{
 				"name": "parent",
-				"uuid": "_-1t^a,3YROLy8Iy,b*ndB&qD&`V.p@crNUV6^^d.,..9U-B55.vL)mn,TB0B_p"
+				"uuid": "?kXV/>&hs+os$Vt3vIYpOr>6E5X%&;A_,w4937v$?ktA?fI3.)xZp=f;OD5JUT/"
 			},
 
 			{
 				"name": "first child",
-				"uuid": "Ne5L(B.B&tyG:f0TSaMSJTIdl8JC-U&*l1Bo#A5;%:dUjG=>wdgF=J0RiH,sr0r"
+				"uuid": "sA%oTDyBPAY.81VQ'#W3qETm(pop*t&#<woe9f%^-Si:Z>a^6>f-Y@xV6mL=_O5"
 			},
 
 			{
 				"name": "next sibling",
-				"uuid": "GF(m%&v19)gy/ujwg.xR:rJBOS(L(Do.8S(3G6AE#@In)>4=+C-Rc^w<IA&7D3_"
+				"uuid": "(Cw0w$;PeVuw<:7W,xF8BCwd3`3ejbpuW&jY6@Da39#BMWLCrYb3ODD5T'%/fry"
 			},
 
 			{

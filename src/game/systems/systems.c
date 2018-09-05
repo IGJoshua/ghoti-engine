@@ -18,7 +18,6 @@
 SYSTEM(Renderer);
 SYSTEM(CleanGlobalTransforms);
 SYSTEM(ApplyParentTransforms);
-SYSTEM(RenderBox);
 SYSTEM(CleanHitInformation);
 SYSTEM(SimulateRigidbodies);
 SYSTEM(CleanHitList);
@@ -26,6 +25,7 @@ SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
 SYSTEM(GUI);
 SYSTEM(GUIRenderer);
+SYSTEM(LineRenderer);
 
 extern HashMap systemRegistry;
 
@@ -42,7 +42,6 @@ void initSystems(void)
 	REGISTER_SYSTEM(Renderer, "renderer");
 	REGISTER_SYSTEM(CleanGlobalTransforms, "clean_global_transforms");
 	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
-	REGISTER_SYSTEM(RenderBox, "render_box");
 	REGISTER_SYSTEM(CleanHitInformation, "clean_hit_information");
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
@@ -50,6 +49,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(JointInformation, "joint_information");
 	REGISTER_SYSTEM(GUI, "gui");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
+	REGISTER_SYSTEM(LineRenderer, "line_renderer");
 }
 
 void freeSystems(void)

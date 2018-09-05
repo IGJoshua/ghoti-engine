@@ -67,15 +67,12 @@ void setJointConstraints(
 			ParamFn(jointID, dParamStopCFM, constraint->stopCFM_val);
 		}
 
-		printf("%s\n\n", "constraints set");
+		LOG("constraints set\n\n");
 	}
 	else
 	{
-		printf("%s\n\n", "constraints not set");
+		LOG("constraints not set\n\n");
 	}
-
-
-
 }
 
 internal
@@ -110,9 +107,9 @@ void initJointInformationSystem(Scene *scene)
 		if(!(object1 || object2))
 			continue;
 
-		printf("\nJoint UUID: %s\n", entityID.string);
-		printf("Object1 UUID: %s\n", joint->object1.string);
-		printf("Object2 UUID: %s\n", joint->object2.string);
+		LOG("Joint UUID: %s\n", entityID.string);
+		LOG("Object1 UUID: %s\n", joint->object1.string);
+		LOG("Object2 UUID: %s\n", joint->object2.string);
 
 		dJointID jointID = 0;
 
@@ -171,7 +168,6 @@ void initJointInformationSystem(Scene *scene)
 			LOG("Invalid joint type added on entity %s\n", entityID.string);
 		} break;
 		}
-
 
 		// Attach all the joints to the relevant objects
 		if(object1 && object2)
@@ -266,12 +262,10 @@ void initJointInformationSystem(Scene *scene)
 
 			setJointConstraints(jointID, constraint, dJointSetDBallParam);
 
-
 		} break;
 		default:
 		{
-			printf("%s\n", "\n\nDEFAULT!?\n\n");
-
+			LOG("%s\n", "\n\nDEFAULT!?\n\n");
 		}break;
 		}
 
@@ -290,7 +284,7 @@ void runJointInformationSystem(Scene *scene, UUID entityID, real64 dt)
 	if(!trans)
 		return;
 
-	printf("Entity %s has position (%f, %f, %f)\n",
+	LOG("Entity %s has position (%f, %f, %f)\n",
 		entityID.string,
 		trans->position.x,
 		trans->position.y,

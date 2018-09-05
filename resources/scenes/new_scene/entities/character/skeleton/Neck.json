@@ -1,5 +1,5 @@
 {
-	"uuid": "EDwghnCVo3kEHwa/u`_t/&lKlBShPG+iDhX8),%9mGWj.cfdHXpCBJk,j<j8aj'",
+	"uuid": ";xVoO7<T:d=KQqep:qGfZNm20d3'a9Qq8-gd9)6QbHq:7(NTD;,g&3t_CqGQH6f",
 
 	"components":
 	{
@@ -7,7 +7,12 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32":
+				[
+					-1.83936208486557e-08,
+					1.295160174369812,
+					-2.3283064365386963e-08
+				]
 			},
 
 			{
@@ -17,7 +22,7 @@
 					-2.7152376347316931e-08,
 					0.98825579881668091,
 					0.15280880033969879,
-					-3.1344856665782572e-07
+					3.1344856665782572e-07
 				]
 			},
 
@@ -28,17 +33,17 @@
 
 			{
 				"name": "parent",
-				"uuid": "3,K^70Cx3D->ZWIqiStet#Qh%#)2BewRnH/+MOy^h$q@X8/?`)yxPArPG*h3v8v"
+				"uuid": "^I8lYLhRiQL(f1Nv<LmkB0WSTqe$L7(0U>r4_XF(&Kc4oWEAJ6YOc*)Zdy,qw1L"
 			},
 
 			{
 				"name": "first child",
-				"uuid": "#XT9_V;mIXJ1c+tMHJCijcRsSl`SLdS*7a^jrJ1Pq?1r:T@Yl/IUW;&Iscq=FBE"
+				"uuid": "J#H`xS7Yx/h.aeY3/i4sdDeJf3yyoAr5(pf4G85gnw?'$&8l`QX(32c<*b1HR;M"
 			},
 
 			{
 				"name": "next sibling",
-				"uuid": "ZyxJqHX?8lE0$nMaRy4/20M$pD>4XkZW3Qt`e2S)?Ttb5S2-e6<j`=`yYrR73cl"
+				"uuid": "IvWmYdx>YuRwNka,B?1SGqdNQjs*+?H(s3VU1q4%Boqm`Xn(m%P:k::*V9+j^0g"
 			},
 
 			{

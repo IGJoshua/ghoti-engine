@@ -22,7 +22,7 @@
 
 			],
 
-			"internal": ["renderer", "gui_renderer"]
+			"internal": ["renderer", "line_renderer", "gui_renderer"]
 		}
 	},
 

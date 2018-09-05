@@ -16,6 +16,7 @@
 #include "components/component_types.h"
 #include "components/transform.h"
 #include "components/camera.h"
+#include "components/animation.h"
 
 #include "data/data_types.h"
 #include "data/list.h"
@@ -33,6 +34,9 @@ internal GLuint shaderProgram;
 internal Uniform modelUniform;
 internal Uniform viewUniform;
 internal Uniform projectionUniform;
+
+internal Uniform hasAnimationsUniform;
+internal Uniform boneTransformsUniform;
 
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
@@ -53,7 +57,15 @@ internal uint32 rendererRefCount = 0;
 internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
 internal UUID wireframeComponentID = {};
+internal UUID animationComponentID = {};
 internal UUID cameraComponentID = {};
+
+extern real64 alpha;
+
+extern void drawLine(
+	const kmVec3 *positionA,
+	const kmVec3 *positionB,
+	const kmVec3 *color);
 
 internal
 void initRendererSystem(Scene *scene)
@@ -61,11 +73,11 @@ void initRendererSystem(Scene *scene)
 	if (rendererRefCount == 0)
 	{
 		createShaderProgram(
-			"resources/shaders/base.vert",
+			"resources/shaders/model.vert",
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/color.frag",
+			"resources/shaders/model.frag",
 			NULL,
 			&shaderProgram);
 
@@ -76,6 +88,17 @@ void initRendererSystem(Scene *scene)
 			"projection",
 			UNIFORM_MAT4,
 			&projectionUniform);
+
+		getUniform(
+			shaderProgram,
+			"hasAnimations",
+			UNIFORM_BOOL,
+			&hasAnimationsUniform);
+		getUniform(
+			shaderProgram,
+			"boneTransforms",
+			UNIFORM_MAT4,
+			&boneTransformsUniform);
 
 		getUniform(
 			shaderProgram,
@@ -143,8 +166,6 @@ void initRendererSystem(Scene *scene)
 	rendererRefCount++;
 }
 
-extern real64 alpha;
-
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
@@ -169,8 +190,6 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	setMaterialUniform(&wearMaterialUniform, &textureIndex);
 }
 
-extern real64 alpha;
-
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
@@ -187,16 +206,16 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		modelComponentID);
 
-	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		wireframeComponentID);
-
 	Model *model = getModel(modelComponent->name);
 	if (!model)
 	{
 		return;
 	}
+
+	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		wireframeComponentID);
 
 	bool wireframe = wireframeComponent && wireframeComponent->visible;
 	if (!modelComponent->visible && !wireframe)
@@ -214,6 +233,69 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		alpha);
 
 	setUniform(modelUniform, 1, &worldMatrix);
+
+	AnimationComponent *animationComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		animationComponentID);
+
+	Animation *animation = NULL;
+	if (animationComponent)
+	{
+		for (uint32 i = 0; i < model->numAnimations; i++)
+		{
+			if (!strcmp(
+				model->animations[i].name.string,
+				animationComponent->name))
+			{
+				animation = &model->animations[i];
+				break;
+			}
+		}
+	}
+
+	bool hasAnimations = animation ? true : false;
+	setUniform(hasAnimationsUniform, 1, &hasAnimations);
+
+	if (hasAnimations)
+	{
+		kmMat4 boneMatrices[MAX_BONE_COUNT];
+		for (uint32 i = 0; i < MAX_BONE_COUNT; i++)
+		{
+			kmMat4Identity(&boneMatrices[i]);
+		}
+
+		Skeleton *skeleton = &model->skeleton;
+		for (uint32 i = 0; i < skeleton->numBoneOffsets; i++)
+		{
+			BoneOffset *boneOffset = &skeleton->boneOffsets[i];
+			TransformComponent *jointTransform = getJointTransform(
+				scene,
+				animationComponent->skeleton,
+				boneOffset->name.string);
+
+			TransformComponent *parentJointTransform =
+				sceneGetComponentFromEntity(
+					scene,
+					jointTransform->parent,
+					transformComponentID);
+
+			if (parentJointTransform)
+			{
+				kmVec3 white;
+				kmVec3Fill(&white, 1.0f, 1.0f, 1.0f);
+				drawLine(
+					&jointTransform->globalPosition,
+					&parentJointTransform->globalPosition,
+					&white);
+			}
+		}
+
+		setUniform(
+			boneTransformsUniform,
+			MAX_BONE_COUNT,
+			boneMatrices);
+	}
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
@@ -339,25 +421,23 @@ void shutdownRendererSystem(Scene *scene)
 
 System createRendererSystem(void)
 {
-	System renderer = {};
-
-	List componentList = createList(sizeof(UUID));
+	System system = {};
 
 	transformComponentID = idFromName("transform");
 	modelComponentID = idFromName("model");
 	wireframeComponentID = idFromName("wireframe");
+	animationComponentID = idFromName("animation");
 	cameraComponentID = idFromName("camera");
 
-	listPushFront(&componentList, &transformComponentID);
-	listPushFront(&componentList, &modelComponentID);
+	system.componentTypes = createList(sizeof(UUID));
+	listPushFront(&system.componentTypes, &transformComponentID);
+	listPushFront(&system.componentTypes, &modelComponentID);
 
-	renderer.componentTypes = componentList;
+	system.init = &initRendererSystem;
+	system.begin = &beginRendererSystem;
+	system.run = &runRendererSystem;
+	system.end = &endRendererSystem;
+	system.shutdown = &shutdownRendererSystem;
 
-	renderer.init = &initRendererSystem;
-	renderer.begin = &beginRendererSystem;
-	renderer.run = &runRendererSystem;
-	renderer.end = &endRendererSystem;
-	renderer.shutdown = &shutdownRendererSystem;
-
-	return renderer;
+	return system;
 }

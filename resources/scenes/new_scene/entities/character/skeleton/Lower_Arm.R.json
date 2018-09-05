@@ -1,5 +1,5 @@
 {
-	"uuid": "-/<EsH@vMk1Tb?FuU5ek1==:n/3%@P7BUPNmyB9cHjCe.>88))G;;V0Gf*=6%oV",
+	"uuid": "/yicM$--MW#8Dm)l88OSF@BOXH^)S*-Rpm%ip'<EvJ_jHI(^nXyQvB&L_ZJ8aL_",
 
 	"components":
 	{
@@ -7,16 +7,21 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32":
+				[
+					-5.9604644775390625e-08,
+					1.4807441234588623,
+					-1.4901161193847656e-07
+				]
 			},
 
 			{
 				"name": "rotation",
 				"float32":
 				[
-					-0.64745414257049561,
-					0.32383492588996887,
-					0.586190402507782,
+					0.64745414257049561,
+					-0.32383492588996887,
+					-0.586190402507782,
 					0.363751083612442
 				]
 			},
@@ -26,19 +31,19 @@
 				"float32":
 				[
 					0.99999988079071045,
-					0.99999982118606567,
-					0.99999994039535522
+					0.99999988079071045,
+					0.99999988079071045
 				]
 			},
 
 			{
 				"name": "parent",
-				"uuid": "UZcF'B0(e9#S:-M&dG*wW+8a>/.KsNBF.#i*;n/&&(V=2x9k>8ir9'QT3t$14@<"
+				"uuid": "/yUY*,ii^'J<A4=(0fQI5tyUKhWU,G38?^fF_U5DZTUxegusSD:>98g'lB(2K6N"
 			},
 
 			{
 				"name": "first child",
-				"uuid": ";ONRe7wMWZYjonhm3*.f/RK6-eJ/R+bbO6:2B7no4V(EP1LlX,=c6w+:O,q/X&F"
+				"uuid": "X7ZG-^YH)-CFKH*?&ymq9i;uAb+(4_UI?rKsQpLOrlrD:rX5iL%(3=#Q&#V/_*M"
 			},
 
 			{

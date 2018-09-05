@@ -1,5 +1,8 @@
 #version 420 core
 
+#define NUM_BONES 4
+#define MAX_BONE_COUNT 128
+
 layout(location=0) in vec3 position;
 layout(location=1) in vec4 color;
 layout(location=2) in vec3 normal;
@@ -20,11 +23,23 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform bool hasAnimations;
+uniform mat4 boneTransforms[MAX_BONE_COUNT];
+
 void main()
 {
+	mat4 boneTransform = mat4(hasAnimations ? 0.0 : 1.0);
+	if (hasAnimations)
+	{
+		for (int i = 0; i < NUM_BONES; i++)
+		{
+			boneTransform += boneTransforms[bones[i]] * weights[i];
+		}
+	}
+
 	fragColor = color;
-	fragPosition = (model * vec4(position, 1)).xyz;
-	fragNormal = normalize((model * vec4(normal, 0)).xyz);
+	fragPosition = (model * (boneTransform * vec4(position, 1))).xyz;
+	fragNormal = normalize((model * (boneTransform * vec4(normal, 0))).xyz);
 	fragMaterialUV = materialUV;
 	fragMaskUV = maskUV;
 

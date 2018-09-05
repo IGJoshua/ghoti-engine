@@ -1,5 +1,5 @@
 {
-	"uuid": "joSHIHEtR2MuxRj0^T.;n=RxTVa:g0*UYO$'imVx@Ing:sJuNU6:p^8B:nY(%`R",
+	"uuid": "D5ADSH6-=*khaf=UGv0ZfE4U<M6S.h?OrUpCr,F6,/$jr6E?*Jwed)8&TLN_2j-",
 
 	"components":
 	{
@@ -7,16 +7,21 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32":
+				[
+					3.166496753692627e-08,
+					1.4933332204818726,
+					1.2587781839101808e-07
+				]
 			},
 
 			{
 				"name": "rotation",
 				"float32":
 				[
-					0.014569221995770931,
-					-0.98287546634674072,
-					0.18367379903793335,
+					-0.014569221995770931,
+					0.98287546634674072,
+					-0.18367379903793335,
 					0.0027265965472906828
 				]
 			},
@@ -26,14 +31,14 @@
 				"float32":
 				[
 					1.0000001192092896,
-					0.99999988079071045,
-					0.9999997615814209
+					0.99999994039535522,
+					0.99999970197677612
 				]
 			},
 
 			{
 				"name": "parent",
-				"uuid": "J;,YNVwlBu1r/C$OMK0)HIbg`^$*nXQ0a-f-XvwV-oZMh(o25vOT^<::59/jh4I"
+				"uuid": "Dmir*'4h8JaOl>x-/Pm?%7X7a1eA*dbtKRsGcZT+A*lwvhMa&OnU>j8qy<cBcUf"
 			},
 
 			{

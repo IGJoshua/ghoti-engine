@@ -1,5 +1,5 @@
 {
-	"uuid": "S5KWs>+qTRfAa_hT3<`J*DXID(XF0ngXK`lLWF$;dZxK4)dqIc;v2t@/RiXPV.q",
+	"uuid": "#>#C6%^A.j:mbN8(MWt9A#F<Lgg*wO4ob,0v.l=1M$Ex1BCe4Y$4&=VbyU_G^L/",
 
 	"components":
 	{
@@ -88,12 +88,12 @@
 		[
 			{
 				"name": "name",
-				"char(64)": ""
+				"char(64)": "ArmatureAction"
 			},
 
 			{
 				"name": "skeleton",
-				"uuid": "1<XQNpcb6$u:2r%4N6R6>+il3O-tje+,;YWtH89OrI?tRb(+v;+e-;:/-*q5+3k"
+				"uuid": ".lTWTyx^+8FW@raHMmb#9cWJTSdVEKf/t;`s1DtF_QX0*+sa#2BWQt1;PiUxMak"
 			}
 		]
 	}
