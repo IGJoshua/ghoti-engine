@@ -61,6 +61,8 @@ typedef struct animation_component_t
 {
 	char name[64];
 	UUID skeleton;
+	real64 time;
+	real64 duration;
 } AnimationComponent;
 
 typedef struct joint_component_t

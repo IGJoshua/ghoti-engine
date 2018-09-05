@@ -2,6 +2,8 @@
 
 #include "components/rigid_body.h"
 
+#include "math/math.h"
+
 #include <kazmath/mat3.h>
 
 internal
@@ -179,7 +181,7 @@ void tGetInterpolatedTransform(
 		&transform->globalPosition,
 		(real32)alpha);
 
-	kmQuaternionSlerp(
+	quaternionSlerp(
 		rotation,
 		&transform->lastGlobalRotation,
 		&transform->globalRotation,

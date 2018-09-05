@@ -51,10 +51,6 @@ kmQuaternion* kmQuaternionRotationPitchYawRoll(kmQuaternion* pOut,
                                                kmScalar pitch,
                                                kmScalar yaw, kmScalar roll);
 
-/** Interpolate between 2 quaternions */
-kmQuaternion* kmQuaternionSlerp(kmQuaternion* pOut, const kmQuaternion* q1,
-                                const kmQuaternion* q2, kmScalar t);
-
 /** Get the axis and angle of rotation from a quaternion */
 void kmQuaternionToAxisAngle(const kmQuaternion* pIn, kmVec3* pVector,
                              kmScalar* pAngle);

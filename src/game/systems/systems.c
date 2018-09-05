@@ -26,6 +26,7 @@ SYSTEM(JointInformation);
 SYSTEM(GUI);
 SYSTEM(GUIRenderer);
 SYSTEM(LineRenderer);
+SYSTEM(Animation);
 
 extern HashMap systemRegistry;
 
@@ -50,6 +51,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(GUI, "gui");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
 	REGISTER_SYSTEM(LineRenderer, "line_renderer");
+	REGISTER_SYSTEM(Animation, "animation");
 }
 
 void freeSystems(void)

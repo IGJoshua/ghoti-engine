@@ -3,7 +3,8 @@
 TransformComponent* getJointTransform(
 	Scene *scene,
 	UUID joint,
-	const char *name)
+	const char *name,
+	UUID *uuid)
 {
 	UUID transformComponentID = idFromName("transform");
 	UUID jointComponentID = idFromName("joint");
@@ -24,6 +25,11 @@ TransformComponent* getJointTransform(
 
 	if (jointComponent && !strcmp(name, jointComponent->name))
 	{
+		if (uuid)
+		{
+			*uuid = joint;
+		}
+
 		return transform;
 	}
 
@@ -41,7 +47,8 @@ TransformComponent* getJointTransform(
 			TransformComponent *jointTransform = getJointTransform(
 				scene,
 				child,
-				name);
+				name,
+				uuid);
 
 			if (jointTransform)
 			{

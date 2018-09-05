@@ -104,6 +104,7 @@ int32 strcmp(const char *str1, const char *str2);
 ]]
 
 require("resources/scripts/cdefs/kazmath")
+require("resources/scripts/cdefs/math")
 require("resources/scripts/cdefs/componentDefs")
 require("resources/scripts/cdefs/sceneDefs")
 require("resources/scripts/cdefs/GLFW")

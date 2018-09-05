@@ -272,7 +272,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			TransformComponent *jointTransform = getJointTransform(
 				scene,
 				animationComponent->skeleton,
-				boneOffset->name.string);
+				boneOffset->name.string,
+				NULL);
 
 			TransformComponent *parentJointTransform =
 				sceneGetComponentFromEntity(

@@ -8,6 +8,7 @@
 			[
 				"clean_hit_information",
 				"clean_hit_list",
+				"animation",
 				"clean_global_transforms",
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",

@@ -87,13 +87,6 @@ Create a quaternion from yaw, pitch and roll
 kmQuaternion* kmQuaternionRotationPitchYawRoll(kmQuaternion* pOut,
                                                kmScalar pitch,
                                                kmScalar yaw, kmScalar roll);
-```
-## kmQuaternion* kmQuaternionSlerp
-Interpolate between 2 quaternions
-```c
-kmQuaternion* kmQuaternionSlerp(kmQuaternion* pOut, const kmQuaternion* q1,
-                                const kmQuaternion* q2, kmScalar t);
-```
 ## void kmQuaternionToAxisAngle
 Get the axis and angle of rotation from a quaternion
 ```c

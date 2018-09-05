@@ -7,4 +7,5 @@
 TransformComponent* getJointTransform(
 	Scene *scene,
 	UUID joint,
-	const char *name);
+	const char *name,
+	UUID *uuid);

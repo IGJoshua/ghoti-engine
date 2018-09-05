@@ -94,6 +94,16 @@
 			{
 				"name": "skeleton",
 				"uuid": ".lTWTyx^+8FW@raHMmb#9cWJTSdVEKf/t;`s1DtF_QX0*+sa#2BWQt1;PiUxMak"
+			},
+
+			{
+				"name": "time",
+				"float64": 0.0
+			},
+
+			{
+				"name": "duration",
+				"float64": 0.0
 			}
 		]
 	}
