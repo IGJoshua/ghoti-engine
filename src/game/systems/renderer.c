@@ -275,21 +275,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				boneOffset->name.string,
 				NULL);
 
-			TransformComponent *parentJointTransform =
-				sceneGetComponentFromEntity(
-					scene,
-					jointTransform->parent,
-					transformComponentID);
-
-			if (parentJointTransform)
-			{
-				kmVec3 white;
-				kmVec3Fill(&white, 1.0f, 1.0f, 1.0f);
-				drawLine(
-					&jointTransform->globalPosition,
-					&parentJointTransform->globalPosition,
-					&white);
-			}
+			tConcatenateTransforms(jointTransform, &boneOffset->transform);
+			boneMatrices[i] = tComposeMat4(
+				&boneOffset->transform.globalPosition,
+				&boneOffset->transform.globalRotation,
+				&boneOffset->transform.globalScale);
 		}
 
 		setUniform(
