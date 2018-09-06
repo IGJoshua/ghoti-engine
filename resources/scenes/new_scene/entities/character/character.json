@@ -88,7 +88,7 @@
 		[
 			{
 				"name": "name",
-				"char(64)": "ArmatureAction"
+				"char(64)": ""
 			},
 
 			{
@@ -104,6 +104,26 @@
 			{
 				"name": "duration",
 				"float64": 0.0
+			},
+
+			{
+				"name": "loop",
+				"bool": false
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "backwards",
+				"bool": false
+			},
+
+			{
+				"name": "paused",
+				"bool": false
 			}
 		]
 	}

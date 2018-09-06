@@ -18,12 +18,23 @@
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};
 
-internal kmVec3 getCurrentPosition(Bone *bone, real64 time, real64 duration);
+internal kmVec3 getCurrentPosition(
+	Bone *bone,
+	real64 time,
+	real64 duration,
+	bool backwards);
 internal kmQuaternion getCurrentRotation(
 	Bone *bone,
 	real64 time,
-	real64 duration);
-internal kmVec3 getCurrentScale(Bone *bone, real64 time, real64 duration);
+	real64 duration,
+	bool backwards);
+internal kmVec3 getCurrentScale(
+	Bone *bone,
+	real64 time,
+	real64 duration,
+	bool backwards);
+
+internal void stopAnimation(AnimationComponent *animation);
 
 internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 {
@@ -57,12 +68,16 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 
 	if (!animation)
 	{
+		stopAnimation(animationComponent);
 		return;
 	}
 
-	animationComponent->time = fmod(
-		animationComponent->time + dt,
-		animation->duration);
+	animationComponent->duration = animation->duration;
+
+	if (animationComponent->paused)
+	{
+		return;
+	}
 
 	for (uint32 i = 0; i < animation->numBones; i++) {
 		Bone *bone = &animation->bones[i];
@@ -79,17 +94,38 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 			jointTransform->position = getCurrentPosition(
 				bone,
 				animationComponent->time,
-				animation->duration);
+				animationComponent->duration,
+				animationComponent->backwards);
 			jointTransform->rotation = getCurrentRotation(
 				bone,
 				animationComponent->time,
-				animation->duration);
+				animationComponent->duration,
+				animationComponent->backwards);
 			jointTransform->scale = getCurrentScale(
 				bone,
 				animationComponent->time,
-				animation->duration);
+				animationComponent->duration,
+				animationComponent->backwards);
 			tMarkDirty(scene, joint);
 		}
+	}
+
+	real32 direction = animationComponent->backwards ? -1.0f : 1.0f;
+	real64 deltaTime = direction * animationComponent->speed * dt;
+
+	animationComponent->time += deltaTime;
+
+	if (animationComponent->loop)
+	{
+		animationComponent->time = fmod(
+			animationComponent->time,
+			animationComponent->duration);
+	}
+	else if (
+		(animationComponent->backwards && animationComponent->time < 0.0) || (!animationComponent->backwards &&
+			animationComponent->time > animationComponent->duration))
+	{
+		stopAnimation(animationComponent);
 	}
 }
 
@@ -109,7 +145,11 @@ System createAnimationSystem(void)
 	return system;
 }
 
-kmVec3 getCurrentPosition(Bone *bone, real64 time, real64 duration)
+kmVec3 getCurrentPosition(
+	Bone *bone,
+	real64 time,
+	real64 duration,
+	bool backwards)
 {
 	if (bone->numPositionKeyFrames == 1)
 	{
@@ -150,7 +190,11 @@ kmVec3 getCurrentPosition(Bone *bone, real64 time, real64 duration)
 	return position;
 }
 
-kmQuaternion getCurrentRotation(Bone *bone, real64 time, real64 duration)
+kmQuaternion getCurrentRotation(
+	Bone *bone,
+	real64 time,
+	real64 duration,
+	bool backwards)
 {
 	if (bone->numRotationKeyFrames == 1)
 	{
@@ -191,7 +235,11 @@ kmQuaternion getCurrentRotation(Bone *bone, real64 time, real64 duration)
 	return rotation;
 }
 
-kmVec3 getCurrentScale(Bone *bone, real64 time, real64 duration)
+kmVec3 getCurrentScale(
+	Bone *bone,
+	real64 time,
+	real64 duration,
+	bool backwards)
 {
 	if (bone->numScaleKeyFrames == 1)
 	{
@@ -230,4 +278,12 @@ kmVec3 getCurrentScale(Bone *bone, real64 time, real64 duration)
 	kmVec3Lerp(&scale, &keyFrameA->value, &keyFrameB->value, t);
 
 	return scale;
+}
+
+void stopAnimation(AnimationComponent *animation)
+{
+	strcpy(animation->name, "");
+	animation->time = 0.0;
+	animation->duration = 0.0;
+	animation->paused = false;
 }

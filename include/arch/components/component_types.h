@@ -63,6 +63,10 @@ typedef struct animation_component_t
 	UUID skeleton;
 	real64 time;
 	real64 duration;
+	bool loop;
+	real32 speed;
+	bool backwards;
+	bool paused;
 } AnimationComponent;
 
 typedef struct joint_component_t
