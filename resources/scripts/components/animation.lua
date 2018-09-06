@@ -16,19 +16,16 @@ local component = engine.components:register("animation", "AnimationComponent")
 
 local C = engine.C
 
-function component:play(name, loop, speed, backwards)
-  self.name = name
-  self.loop = loop or false
-  self.speed = speed or 1.0
-  self.backwards = backwards or false
-  self.paused = false
+function component:play(scene, uuid, name, loop, speed, backwards)
+  loop = loop or false
+  speed = speed or 1.0
+  backwards = backwards or false
+
+  C.playAnimation(scene:getComponent("model", uuid), self, name, loop, speed, backwards)
 end
 
 function component:stop()
-  self.name = ""
-  self.time = 0.0
-  self.duration = 0.0
-  self.paused = false
+  C.stopAnimation(self)
 end
 
 function component:removeWithSkeleton(scene, uuid)

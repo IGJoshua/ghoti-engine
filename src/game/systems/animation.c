@@ -18,23 +18,12 @@
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};
 
-internal kmVec3 getCurrentPosition(
-	Bone *bone,
-	real64 time,
-	real64 duration,
-	bool backwards);
+internal kmVec3 getCurrentPosition(Bone *bone, real64 time, bool backwards);
 internal kmQuaternion getCurrentRotation(
 	Bone *bone,
 	real64 time,
-	real64 duration,
 	bool backwards);
-internal kmVec3 getCurrentScale(
-	Bone *bone,
-	real64 time,
-	real64 duration,
-	bool backwards);
-
-internal void stopAnimation(AnimationComponent *animation);
+internal kmVec3 getCurrentScale(Bone *bone, real64 time, bool backwards);
 
 internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 {
@@ -51,6 +40,7 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 
 	if (!model)
 	{
+		stopAnimation(animationComponent);
 		return;
 	}
 
@@ -72,8 +62,6 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	animationComponent->duration = animation->duration;
-
 	if (animationComponent->paused)
 	{
 		return;
@@ -94,17 +82,14 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 			jointTransform->position = getCurrentPosition(
 				bone,
 				animationComponent->time,
-				animationComponent->duration,
 				animationComponent->backwards);
 			jointTransform->rotation = getCurrentRotation(
 				bone,
 				animationComponent->time,
-				animationComponent->duration,
 				animationComponent->backwards);
 			jointTransform->scale = getCurrentScale(
 				bone,
 				animationComponent->time,
-				animationComponent->duration,
 				animationComponent->backwards);
 			tMarkDirty(scene, joint);
 		}
@@ -117,6 +102,11 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 
 	if (animationComponent->loop)
 	{
+		while (animationComponent->time < 0.0)
+		{
+			animationComponent->time += animationComponent->duration;
+		}
+
 		animationComponent->time = fmod(
 			animationComponent->time,
 			animationComponent->duration);
@@ -145,43 +135,29 @@ System createAnimationSystem(void)
 	return system;
 }
 
-kmVec3 getCurrentPosition(
-	Bone *bone,
-	real64 time,
-	real64 duration,
-	bool backwards)
+kmVec3 getCurrentPosition(Bone *bone, real64 time, bool backwards)
 {
 	if (bone->numPositionKeyFrames == 1)
 	{
 		return bone->positionKeyFrames[0].value;
 	}
 
-	int32 a = -1;
+	uint32 a = backwards ? bone->numPositionKeyFrames - 2 : 0;
+	uint32 b = a + 1;
+
 	for (uint32 i = 0; i < bone->numPositionKeyFrames - 1; i++)
 	{
 		if (time < bone->positionKeyFrames[i + 1].time)
 		{
-			a = i;
+			a = i, b = i + 1;
 			break;
 		}
 	}
 
-	int32 b = a + 1;
-	if (a == -1)
-	{
-		a = bone->numPositionKeyFrames - 1;
-		b = 0;
-	}
-
-	Vec3KeyFrame *keyFrameA = &bone->positionKeyFrames[a];
-	Vec3KeyFrame *keyFrameB = &bone->positionKeyFrames[b];
+	Vec3KeyFrame *keyFrameA = &bone->positionKeyFrames[backwards ? b : a];
+	Vec3KeyFrame *keyFrameB = &bone->positionKeyFrames[backwards ? a : b];
 
 	real64 dt = keyFrameB->time - keyFrameA->time;
-	if (b == 0)
-	{
-		dt = duration - keyFrameA->time;
-	}
-
 	real64 t = (time - keyFrameA->time) / dt;
 
 	kmVec3 position;
@@ -190,43 +166,29 @@ kmVec3 getCurrentPosition(
 	return position;
 }
 
-kmQuaternion getCurrentRotation(
-	Bone *bone,
-	real64 time,
-	real64 duration,
-	bool backwards)
+kmQuaternion getCurrentRotation(Bone *bone, real64 time, bool backwards)
 {
 	if (bone->numRotationKeyFrames == 1)
 	{
 		return bone->rotationKeyFrames[0].value;
 	}
 
-	int32 a = -1;
+	uint32 a = backwards ? bone->numPositionKeyFrames - 2 : 0;
+	uint32 b = a + 1;
+
 	for (uint32 i = 0; i < bone->numRotationKeyFrames - 1; i++)
 	{
 		if (time < bone->rotationKeyFrames[i + 1].time)
 		{
-			a = i;
+			a = i, b = i + 1;
 			break;
 		}
 	}
 
-	int32 b = a + 1;
-	if (a == -1)
-	{
-		a = bone->numRotationKeyFrames - 1;
-		b = 0;
-	}
-
-	QuaternionKeyFrame *keyFrameA = &bone->rotationKeyFrames[a];
-	QuaternionKeyFrame *keyFrameB = &bone->rotationKeyFrames[b];
+	QuaternionKeyFrame *keyFrameA = &bone->rotationKeyFrames[backwards ? b : a];
+	QuaternionKeyFrame *keyFrameB = &bone->rotationKeyFrames[backwards ? a : b];
 
 	real64 dt = keyFrameB->time - keyFrameA->time;
-	if (b == 0)
-	{
-		dt = duration - keyFrameA->time;
-	}
-
 	real64 t = (time - keyFrameA->time) / dt;
 
 	kmQuaternion rotation;
@@ -235,55 +197,33 @@ kmQuaternion getCurrentRotation(
 	return rotation;
 }
 
-kmVec3 getCurrentScale(
-	Bone *bone,
-	real64 time,
-	real64 duration,
-	bool backwards)
+kmVec3 getCurrentScale(Bone *bone, real64 time, bool backwards)
 {
 	if (bone->numScaleKeyFrames == 1)
 	{
 		return bone->scaleKeyFrames[0].value;
 	}
 
-	int32 a = -1;
+	uint32 a = backwards ? bone->numPositionKeyFrames - 2 : 0;
+	uint32 b = a + 1;
+
 	for (uint32 i = 0; i < bone->numScaleKeyFrames - 1; i++)
 	{
 		if (time < bone->scaleKeyFrames[i + 1].time)
 		{
-			a = i;
+			a = i, b = i + 1;
 			break;
 		}
 	}
 
-	int32 b = a + 1;
-	if (a == -1)
-	{
-		a = bone->numScaleKeyFrames - 1;
-		b = 0;
-	}
-
-	Vec3KeyFrame *keyFrameA = &bone->scaleKeyFrames[a];
-	Vec3KeyFrame *keyFrameB = &bone->scaleKeyFrames[b];
+	Vec3KeyFrame *keyFrameA = &bone->scaleKeyFrames[backwards ? b : a];
+	Vec3KeyFrame *keyFrameB = &bone->scaleKeyFrames[backwards ? a : b];
 
 	real64 dt = keyFrameB->time - keyFrameA->time;
-	if (b == 0)
-	{
-		dt = duration - keyFrameA->time;
-	}
-
 	real64 t = (time - keyFrameA->time) / dt;
 
 	kmVec3 scale;
 	kmVec3Lerp(&scale, &keyFrameA->value, &keyFrameB->value, t);
 
 	return scale;
-}
-
-void stopAnimation(AnimationComponent *animation)
-{
-	strcpy(animation->name, "");
-	animation->time = 0.0;
-	animation->duration = 0.0;
-	animation->paused = false;
 }

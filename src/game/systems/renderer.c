@@ -72,6 +72,8 @@ void initRendererSystem(Scene *scene)
 {
 	if (rendererRefCount == 0)
 	{
+		LOG("Initializing renderer...\n");
+
 		createShaderProgram(
 			"resources/shaders/model.vert",
 			NULL,
@@ -161,6 +163,8 @@ void initRendererSystem(Scene *scene)
 			"customColor",
 			UNIFORM_VEC3,
 			&customColorUniform);
+
+		LOG("Successfully initialized renderer\n");
 	}
 
 	rendererRefCount++;
@@ -275,7 +279,17 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				boneOffset->name.string,
 				NULL);
 
-			tConcatenateTransforms(jointTransform, &boneOffset->transform);
+			TransformComponent interpolatedJointTransform;
+			tGetInterpolatedTransform(
+				jointTransform,
+				&interpolatedJointTransform.globalPosition,
+				&interpolatedJointTransform.globalRotation,
+				&interpolatedJointTransform.globalScale,
+				alpha);
+
+			tConcatenateTransforms(
+				&interpolatedJointTransform,
+				&boneOffset->transform);
 			boneMatrices[i] = tComposeMat4(
 				&boneOffset->transform.globalPosition,
 				&boneOffset->transform.globalRotation,
@@ -406,7 +420,11 @@ void shutdownRendererSystem(Scene *scene)
 {
 	if (--rendererRefCount == 0)
 	{
+		LOG("Shutting down renderer...\n");
+
 		glDeleteProgram(shaderProgram);
+
+		LOG("Successfully shut down renderer\n");
 	}
 }
 

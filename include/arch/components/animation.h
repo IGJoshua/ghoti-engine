@@ -9,3 +9,12 @@ TransformComponent* getJointTransform(
 	UUID joint,
 	const char *name,
 	UUID *uuid);
+
+void playAnimation(
+	ModelComponent *modelComponent,
+	AnimationComponent *animationComponent,
+	const char *name,
+	bool loop,
+	real32 speed,
+	bool backwards);
+void stopAnimation(AnimationComponent *animationComponent);

@@ -48,6 +48,9 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 
+internal void update(real64 dt, bool skipLoadedThisFrame);
+internal void draw(GLFWwindow *window, real64 frameTime);
+
 int32 main(int32 argc, char *argv[])
 {
 	if (loadConfig() == -1)
@@ -106,7 +109,7 @@ int32 main(int32 argc, char *argv[])
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	int luaError = 0;
+	int32 luaError = 0;
 
 #ifndef _DEBUG
 	if (L)
@@ -138,8 +141,6 @@ int32 main(int32 argc, char *argv[])
 		return 1;
 	}
 
-	ListIterator itr = {};
-
 	// total accumulated fixed timestep
 	real64 t = 0.0;
 	// Fixed timestep
@@ -147,6 +148,9 @@ int32 main(int32 argc, char *argv[])
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
+
+	update(dt, true);
+	update(dt, false);
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -163,54 +167,7 @@ int32 main(int32 argc, char *argv[])
 
 		while (accumulator >= dt && !glfwWindowShouldClose(window))
 		{
-			inputHandleEvents();
-
-			for (itr = listGetIterator(&activeScenes);
-				 !listIteratorAtEnd(itr);
-				 listMoveIterator(&itr))
-			{
-				Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
-
-				if (scene->loadedThisFrame)
-				{
-					scene->loadedThisFrame = false;
-					continue;
-				}
-
-				sceneRunPhysicsFrameSystems(scene, dt);
-
-				// Load the lua engine table and run its physics systems
-				if (L)
-				{
-					lua_getglobal(L, "engine");
-					lua_getfield(L, -1, "runPhysicsSystems");
-					lua_remove(L, -2);
-					lua_pushlightuserdata(L, scene);
-					lua_pushnumber(L, dt);
-					luaError = lua_pcall(L, 2, 0, 0);
-					if (luaError)
-					{
-						LOG("Lua error: %s\n", lua_tostring(L, -1));
-						lua_close(L);
-						L = 0;
-					}
-				}
-			}
-
-			// Clean input
-			if (L)
-			{
-				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "cleanInput");
-				lua_remove(L, -2);
-				luaError = lua_pcall(L, 0, 0, 0);
-				if (luaError)
-				{
-					LOG("Lua error: %s\n", lua_tostring(L, -1));
-					lua_close(L);
-					L = 0;
-				}
-			}
+			update(dt, false);
 
 			if (loadingSave)
 			{
@@ -244,6 +201,9 @@ int32 main(int32 argc, char *argv[])
 
 				reloadingScene = isReloadingScene;
 				loadingSave = false;
+
+				update(dt, true);
+				update(dt, false);
 			}
 			else if (changeScene)
 			{
@@ -277,6 +237,9 @@ int32 main(int32 argc, char *argv[])
 
 				changeScene = false;
 				reloadingScene = false;
+
+				update(dt, true);
+				update(dt, false);
 			}
 
 			// Integrate current state over t to dt (so, update)
@@ -287,55 +250,12 @@ int32 main(int32 argc, char *argv[])
 		// Lerp state between previous and next
 		alpha = accumulator / dt;
 
-		glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
-
-		glViewport(0, 0, viewportWidth, viewportHeight);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
-		real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
-
-		for (itr = listGetIterator(&activeScenes);
-			 !listIteratorAtEnd(itr);
-			 listMoveIterator(&itr))
-		{
-			Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
-
-			CameraComponent *camera = sceneGetComponentFromEntity(
-				scene,
-				scene->mainCamera,
-				idFromName("camera"));
-			if (camera)
-			{
-				camera->aspectRatio = aspectRatio;
-			}
-
-			// Render
-			if (L)
-			{
-				lua_getglobal(L, "engine");
-				lua_getfield(L, -1, "runRenderSystems");
-				lua_remove(L, -2);
-				lua_pushlightuserdata(L, scene);
-				lua_pushnumber(L, frameTime);
-				luaError = lua_pcall(L, 2, 0, 0);
-				if (luaError)
-				{
-					LOG("Lua error: %s\n", lua_tostring(L, -1));
-					lua_close(L);
-					L = 0;
-				}
-			}
-
-			sceneRunRenderFrameSystems(scene, frameTime);
-		}
-
-		glfwSwapBuffers(window);
+		draw(window, frameTime);
 	}
 
 	reloadingScene = true;
 
-	for (itr = listGetIterator(&activeScenes);
+	for (ListIterator itr = listGetIterator(&activeScenes);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
@@ -353,16 +273,119 @@ int32 main(int32 argc, char *argv[])
 	}
 
 	freeSystems();
-
 	shutdownAssetManager();
-
 	dCloseODE();
-
 	shutdownInput();
-
 	freeWindow(window);
-
 	freeConfig();
 
 	return 0;
+}
+
+void update(real64 dt, bool skipLoadedThisFrame)
+{
+	int32 luaError = 0;
+
+	inputHandleEvents();
+
+	for (ListIterator itr = listGetIterator(&activeScenes);
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		if (scene->loadedThisFrame)
+		{
+			scene->loadedThisFrame = false;
+
+			if (!skipLoadedThisFrame)
+			{
+				continue;
+			}
+		}
+
+		sceneRunPhysicsFrameSystems(scene, dt);
+
+		// Load the lua engine table and run its physics systems
+		if (L)
+		{
+			lua_getglobal(L, "engine");
+			lua_getfield(L, -1, "runPhysicsSystems");
+			lua_remove(L, -2);
+			lua_pushlightuserdata(L, scene);
+			lua_pushnumber(L, dt);
+			luaError = lua_pcall(L, 2, 0, 0);
+			if (luaError)
+			{
+				LOG("Lua error: %s\n", lua_tostring(L, -1));
+				lua_close(L);
+				L = 0;
+			}
+		}
+	}
+
+	// Clean input
+	if (L)
+	{
+		lua_getglobal(L, "engine");
+		lua_getfield(L, -1, "cleanInput");
+		lua_remove(L, -2);
+		luaError = lua_pcall(L, 0, 0, 0);
+		if (luaError)
+		{
+			LOG("Lua error: %s\n", lua_tostring(L, -1));
+			lua_close(L);
+			L = 0;
+		}
+	}
+}
+
+void draw(GLFWwindow *window, real64 frameTime)
+{
+	int32 luaError = 0;
+
+	glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
+
+	glViewport(0, 0, viewportWidth, viewportHeight);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
+
+	for (ListIterator itr = listGetIterator(&activeScenes);
+			!listIteratorAtEnd(itr);
+			listMoveIterator(&itr))
+	{
+		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
+
+		CameraComponent *camera = sceneGetComponentFromEntity(
+			scene,
+			scene->mainCamera,
+			idFromName("camera"));
+		if (camera)
+		{
+			camera->aspectRatio = aspectRatio;
+		}
+
+		// Render
+		if (L)
+		{
+			lua_getglobal(L, "engine");
+			lua_getfield(L, -1, "runRenderSystems");
+			lua_remove(L, -2);
+			lua_pushlightuserdata(L, scene);
+			lua_pushnumber(L, frameTime);
+			luaError = lua_pcall(L, 2, 0, 0);
+			if (luaError)
+			{
+				LOG("Lua error: %s\n", lua_tostring(L, -1));
+				lua_close(L);
+				L = 0;
+			}
+		}
+
+		sceneRunRenderFrameSystems(scene, frameTime);
+	}
+
+	glfwSwapBuffers(window);
 }

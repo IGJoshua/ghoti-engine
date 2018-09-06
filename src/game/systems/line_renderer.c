@@ -1,5 +1,7 @@
 #include "defines.h"
 
+#include "core/log.h"
+
 #include "renderer/renderer_types.h"
 #include "renderer/renderer_utilities.h"
 #include "renderer/shader.h"
@@ -51,6 +53,8 @@ internal void initLineRendererSystem(Scene *scene)
 {
 	if (lineRendererRefCount == 0)
 	{
+		LOG("Initializing line renderer...\n");
+
 		clearVertices();
 
 		createShaderProgram(
@@ -100,6 +104,8 @@ internal void initLineRendererSystem(Scene *scene)
 			"projection",
 			UNIFORM_MAT4,
 			&projectionUniform);
+
+		LOG("Successfully initialized line renderer\n");
 	}
 
 	lineRendererRefCount++;
@@ -107,6 +113,11 @@ internal void initLineRendererSystem(Scene *scene)
 
 internal void beginLineRendererSystem(Scene *scene, real64 dt)
 {
+	if (numVertices == 0)
+	{
+		return;
+	}
+
 	glUseProgram(shaderProgram);
 
 	if (cameraSetUniforms(
@@ -138,6 +149,11 @@ internal void beginLineRendererSystem(Scene *scene, real64 dt)
 
 internal void endLineRendererSystem(Scene *scene, real64 dt)
 {
+	if (numVertices == 0)
+	{
+		return;
+	}
+
 	for (uint8 j = 0; j < NUM_LINE_VERTEX_ATTRIBUTES; j++)
 	{
 		glDisableVertexAttribArray(j);
@@ -155,6 +171,8 @@ internal void shutdownLineRendererSystem(Scene *scene)
 {
 	if (--lineRendererRefCount == 0)
 	{
+		LOG("Shutting down line renderer...\n");
+
 		glBindVertexArray(vertexArray);
 		glDeleteBuffers(1, &vertexBuffer);
 		glBindVertexArray(0);
@@ -162,6 +180,8 @@ internal void shutdownLineRendererSystem(Scene *scene)
 		glDeleteVertexArrays(1, &vertexArray);
 
 		glDeleteProgram(shaderProgram);
+
+		LOG("Successfully shut down line renderer\n");
 	}
 }
 

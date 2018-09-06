@@ -67,6 +67,8 @@ void initRenderHeightmapSystem(Scene *scene)
 {
 	if (rendererRefCount == 0)
 	{
+		LOG("Initializing heightmap renderer...\n");
+
 		createShaderProgram(
 			"resources/shaders/base.vert",
 			NULL,
@@ -97,6 +99,8 @@ void initRenderHeightmapSystem(Scene *scene)
 			"materialValues",
 			UNIFORM_TEXTURE_2D,
 			&materialValuesUniform);
+
+		LOG("Successfully initialized heightmap renderer\n");
 	}
 
 	rendererRefCount++;
@@ -567,8 +571,12 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 
 	if (--rendererRefCount == 0)
 	{
+		LOG("Shutting down heightmap renderer...\n");
+
 		glDeleteProgram(shaderProgram);
 		freeHashMap(&heightmapModels);
+
+		LOG("Successfully shut down heightmap renderer\n");
 	}
 }
 

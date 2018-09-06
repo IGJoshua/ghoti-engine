@@ -122,6 +122,8 @@ internal void initGUISystem(Scene *scene)
 {
 	if (guiRefCount == 0)
 	{
+		LOG("Initializing GUI...\n");
+
 		if (!nk_init_default(&ctx, NULL))
 		{
 			LOG("Failed to initialize the GUI\n");
@@ -195,6 +197,8 @@ internal void initGUISystem(Scene *scene)
 			glBindVertexArray(0);
 
 			glGenBuffers(1, &indexBuffer);
+
+			LOG("Successfully initialized GUI\n");
 		}
 	}
 
@@ -299,6 +303,8 @@ internal void shutdownGUISystem(Scene *scene)
 {
 	if (--guiRefCount == 0)
 	{
+		LOG("Shutting down GUI...\n");
+
 		nk_free(&ctx);
 		nk_buffer_free(&cmds);
 
@@ -308,6 +314,8 @@ internal void shutdownGUISystem(Scene *scene)
 		glBindVertexArray(0);
 
 		glDeleteVertexArrays(1, &vertexArray);
+
+		LOG("Successfully shut down GUI\n");
 	}
 }
 

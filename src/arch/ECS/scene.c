@@ -894,10 +894,9 @@ int32 reloadScene(const char *name)
 {
 	int32 error = unloadScene(name);
 
-	if (!error)
+	if (error != -1)
 	{
 		reloadingScene = true;
-		return 0;
 	}
 
 	return error;
@@ -913,10 +912,15 @@ int32 reloadAllScenes(void)
 	{
 		error = reloadScene((*LIST_ITERATOR_GET_ELEMENT(Scene*, itr))->name);
 
-		if (error)
+		if (error == -1)
 		{
 			break;
 		}
+	}
+
+	if (error != -1)
+	{
+		LOG("Reloading all scenes...\n");
 	}
 
 	return error;

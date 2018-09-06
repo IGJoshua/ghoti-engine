@@ -54,6 +54,8 @@ internal void initGUIRendererSystem(Scene *scene)
 {
 	if (guiRendererRefCount == 0)
 	{
+		LOG("Initializing GUI renderer...\n");
+
 		createShaderProgram(
 			"resources/shaders/gui.vert",
 			NULL,
@@ -74,6 +76,8 @@ internal void initGUIRendererSystem(Scene *scene)
 			"font",
 			UNIFORM_TEXTURE_2D,
 			&fontUniform);
+
+		LOG("Successfully initialized GUI renderer\n");
 	}
 
 	guiRendererRefCount++;
@@ -176,7 +180,11 @@ internal void shutdownGUIRendererSystem(Scene *scene)
 {
 	if (--guiRendererRefCount == 0)
 	{
+		LOG("Shutting down GUI renderer...\n");
+
 		glDeleteProgram(shaderProgram);
+
+		LOG("Successfully shut down GUI renderer\n");
 	}
 }
 
