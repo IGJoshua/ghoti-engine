@@ -1,0 +1,93 @@
+{
+	"uuid": "%7uYi,tNf*BG(c`^4+B7QaGG@9Y`IJbEADF3o22/W7g5jAFraZI@vf5E;m$60:X",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32":
+				[
+					1.849604380765868e-08,
+					0.4057219922542572,
+					-0.21157000958919525
+				]
+			},
+
+			{
+				"name": "rotation",
+				"float32":
+				[
+					0.770679771900177,
+					-2.7853941375610702e-08,
+					3.3687545197835789e-08,
+					0.63722264766693115
+				]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": "OvgMi`>&X?i5Ol:xsXbSR5pgR-c8B:>lIi'%WT9F_e0n)LCY$VG`&QI;pYt5K;s"
+			},
+
+			{
+				"name": "first child",
+				"uuid": "LKEZJ0o/B_NeP-=nJ9R%Cu=s`>0eN7v(hNOm;T.p(h>2,2Y:bSSUmL3*QmU4#I:"
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"joint":
+		[
+			{
+				"name": "name",
+				"char(64)": "Becken"
+			}
+		]
+	}
+}

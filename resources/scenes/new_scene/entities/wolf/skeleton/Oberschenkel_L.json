@@ -1,0 +1,98 @@
+{
+	"uuid": "Ic>@7TLneu(WVikTAa._?Y&<Wh&<Rfb<ywHKI<.<:ZpxKB82tCg9yjJOPEhx)H:",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32":
+				[
+					0.058370001614093781,
+					0.054299883544445038,
+					0.011531710624694824
+				]
+			},
+
+			{
+				"name": "rotation",
+				"float32":
+				[
+					0.60756254196166992,
+					0.064773872494697571,
+					-0.0061401189304888248,
+					0.7916024923324585
+				]
+			},
+
+			{
+				"name": "scale",
+				"float32":
+				[
+					0.99999994039535522,
+					1.0000001192092896,
+					1.0000001192092896
+				]
+			},
+
+			{
+				"name": "parent",
+				"uuid": "%7uYi,tNf*BG(c`^4+B7QaGG@9Y`IJbEADF3o22/W7g5jAFraZI@vf5E;m$60:X"
+			},
+
+			{
+				"name": "first child",
+				"uuid": "wFWHdqS')4t'4<d.TQ<T9)gufe$4txWQ>:@n>>w8CRA<L7be`xF^AB@:S20)YK@"
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": "E3dIm:,N90.vJst6h=%9D-GDqEkoY5%enCX.L$DR'Ayx3.fE(tg2A)yin:Dx4/e"
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"joint":
+		[
+			{
+				"name": "name",
+				"char(64)": "Oberschenkel_L"
+			}
+		]
+	}
+}

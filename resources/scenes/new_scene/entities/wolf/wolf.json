@@ -1,0 +1,130 @@
+{
+	"uuid": "FSsi1JYv42Y'oV*t_/_W;%vBCr<:A+>d0TbW+^`:6d0acyFo^s1YgHqXZ1vbDYD",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "name",
+				"char(64)": "wolf"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"animation":
+		[
+			{
+				"name": "name",
+				"char(64)": ""
+			},
+
+			{
+				"name": "skeleton",
+				"uuid": "+ig8w,3Cpc*2QE$cd;/?x2,VuZuNKO2Jd0KtPAOH,iIdL4%PH#_QWS1JvQ,KaK."
+			},
+
+			{
+				"name": "time",
+				"float64": 0
+			},
+
+			{
+				"name": "duration",
+				"float64": 0
+			},
+
+			{
+				"name": "loop",
+				"bool": false
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "backwards",
+				"bool": false
+			},
+
+			{
+				"name": "paused",
+				"bool": false
+			}
+		]
+	}
+}

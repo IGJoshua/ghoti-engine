@@ -1,0 +1,87 @@
+{
+	"uuid": "l#Y7;%,H;_@N.57-i`9xGt5?f,Fc`99ggQipnyJS?v^J+`9av8.hBJTCf6)tn@a",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32":
+				[
+					1.9428902930940239e-16,
+					0.12580224871635437,
+					0.060795977711677551
+				]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [-0.3977668285369873, 0, 0, 0.91748654842376709]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1.0000001192092896]
+			},
+
+			{
+				"name": "parent",
+				"uuid": "g$_*;$<dbcPtV5iL:rhSak0?Zv59f1&gm%wf?aFw0@S:(tQwc*WT/:h^6rty*w^"
+			},
+
+			{
+				"name": "first child",
+				"uuid": "fHJHr4nh,nN;UCH`1g1(ln'fb<M<(jdX0Tbj@Pk4s$g4IE;.Ss4=g0)GIKYF<;%"
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": "EmR2F/TI?ts<@xDBi$Exg^id,Gl;1Wt'd@3?^H1@9JV8dmve8uJsd4%)&5/Rg)N"
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"joint":
+		[
+			{
+				"name": "name",
+				"char(64)": "Hals"
+			}
+		]
+	}
+}
