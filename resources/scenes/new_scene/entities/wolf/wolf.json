@@ -87,13 +87,31 @@
 		"animation":
 		[
 			{
-				"name": "name",
-				"char(64)": ""
+				"name": "skeleton",
+				"uuid": "+ig8w,3Cpc*2QE$cd;/?x2,VuZuNKO2Jd0KtPAOH,iIdL4%PH#_QWS1JvQ,KaK."
 			},
 
 			{
-				"name": "skeleton",
-				"uuid": "+ig8w,3Cpc*2QE$cd;/?x2,VuZuNKO2Jd0KtPAOH,iIdL4%PH#_QWS1JvQ,KaK."
+				"name": "idle animation",
+				"char(64)": "Wolf_Walk_cycle_"
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "backwards",
+				"bool": false
+			}
+		],
+
+		"animator":
+		[
+			{
+				"name": "current animation",
+				"char(64)": ""
 			},
 
 			{
@@ -123,6 +141,29 @@
 
 			{
 				"name": "paused",
+				"bool": false
+			}
+		],
+
+		"next_animation":
+		[
+			{
+				"name": "name",
+				"char(64)": ""
+			},
+
+			{
+				"name": "loop",
+				"bool": false
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "backwards",
 				"bool": false
 			}
 		]

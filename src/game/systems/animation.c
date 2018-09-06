@@ -5,6 +5,7 @@
 
 #include "components/component_types.h"
 #include "components/animation.h"
+#include "components/animator.h"
 #include "components/transform.h"
 
 #include "data/data_types.h"
@@ -17,6 +18,8 @@
 
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};
+internal UUID animatorComponentID = {};
+internal UUID nextAnimationComponentID = {};
 
 internal kmVec3 getCurrentPosition(Bone *bone, real64 time, bool backwards);
 internal kmQuaternion getCurrentRotation(
@@ -27,42 +30,103 @@ internal kmVec3 getCurrentScale(Bone *bone, real64 time, bool backwards);
 
 internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	AnimationComponent *animationComponent = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		animationComponentID);
 	ModelComponent *modelComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
 		modelComponentID);
+	AnimatorComponent *animator = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		animatorComponentID);
+	AnimationComponent *animationComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		animationComponentID);
+	NextAnimationComponent *nextAnimation = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		nextAnimationComponentID);
 
 	Model *model = getModel(modelComponent->name);
-
-	if (!model)
+	if (!model || model->numAnimations == 0)
 	{
-		stopAnimation(animationComponent);
+		stopAnimation(animator);
 		return;
 	}
 
 	Animation *animation = NULL;
-	for (uint32 i = 0; i < model->numAnimations; i++)
+	if (strlen(animator->currentAnimation) > 0)
 	{
-		if (!strcmp(
-			model->animations[i].name.string,
-			animationComponent->name))
+		for (uint32 i = 0; i < model->numAnimations; i++)
 		{
-			animation = &model->animations[i];
-			break;
+			if (!strcmp(
+				model->animations[i].name.string,
+				animator->currentAnimation))
+			{
+				animation = &model->animations[i];
+				break;
+			}
 		}
 	}
 
 	if (!animation)
 	{
-		stopAnimation(animationComponent);
-		return;
+		if (strlen(nextAnimation->name) > 0)
+		{
+			for (uint32 i = 0; i < model->numAnimations; i++)
+			{
+				if (!strcmp(
+					model->animations[i].name.string,
+					nextAnimation->name))
+				{
+					animation = &model->animations[i];
+					break;
+				}
+			}
+		}
+
+		if (animation)
+		{
+			playAnimation(
+				modelComponent,
+				animator,
+				nextAnimation->name,
+				nextAnimation->loop,
+				nextAnimation->speed,
+				nextAnimation->backwards);
+
+			strcpy(nextAnimation->name, "");
+		}
+		else
+		{
+			playAnimation(
+				modelComponent,
+				animator,
+				animationComponent->idleAnimation,
+				true,
+				animationComponent->speed,
+				animationComponent->backwards);
+
+			for (uint32 i = 0; i < model->numAnimations; i++)
+			{
+				if (!strcmp(
+					model->animations[i].name.string,
+					animator->currentAnimation))
+				{
+					animation = &model->animations[i];
+					break;
+				}
+			}
+		}
+
+		if (!animation)
+		{
+			stopAnimation(animator);
+			return;
+		}
 	}
 
-	if (animationComponent->paused)
+	if (animator->paused)
 	{
 		return;
 	}
@@ -81,41 +145,38 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			jointTransform->position = getCurrentPosition(
 				bone,
-				animationComponent->time,
-				animationComponent->backwards);
+				animator->time,
+				animator->backwards);
 			jointTransform->rotation = getCurrentRotation(
 				bone,
-				animationComponent->time,
-				animationComponent->backwards);
+				animator->time,
+				animator->backwards);
 			jointTransform->scale = getCurrentScale(
 				bone,
-				animationComponent->time,
-				animationComponent->backwards);
+				animator->time,
+				animator->backwards);
 			tMarkDirty(scene, joint);
 		}
 	}
 
-	real32 direction = animationComponent->backwards ? -1.0f : 1.0f;
-	real64 deltaTime = direction * animationComponent->speed * dt;
+	real32 direction = animator->backwards ? -1.0f : 1.0f;
+	real64 deltaTime = direction * animator->speed * dt;
 
-	animationComponent->time += deltaTime;
+	animator->time += deltaTime;
 
-	if (animationComponent->loop)
+	if (animator->loop)
 	{
-		while (animationComponent->time < 0.0)
+		while (animator->time < 0.0)
 		{
-			animationComponent->time += animationComponent->duration;
+			animator->time += animator->duration;
 		}
 
-		animationComponent->time = fmod(
-			animationComponent->time,
-			animationComponent->duration);
+		animator->time = fmod(animator->time, animator->duration);
 	}
-	else if (
-		(animationComponent->backwards && animationComponent->time < 0.0) || (!animationComponent->backwards &&
-			animationComponent->time > animationComponent->duration))
+	else if ((animator->backwards && animator->time < 0.0) ||
+			(!animator->backwards && animator->time > animator->duration))
 	{
-		stopAnimation(animationComponent);
+		stopAnimation(animator);
 	}
 }
 
@@ -125,10 +186,14 @@ System createAnimationSystem(void)
 
 	modelComponentID = idFromName("model");
 	animationComponentID = idFromName("animation");
+	animatorComponentID = idFromName("animator");
+	nextAnimationComponentID = idFromName("next_animation");
 
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &modelComponentID);
 	listPushFront(&system.componentTypes, &animationComponentID);
+	listPushFront(&system.componentTypes, &animatorComponentID);
+	listPushFront(&system.componentTypes, &nextAnimationComponentID);
 
 	system.run = &runAnimationSystem;
 

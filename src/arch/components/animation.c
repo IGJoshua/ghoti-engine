@@ -1,7 +1,6 @@
 #include "components/animation.h"
 
-#include "asset_management/asset_manager_types.h"
-#include "asset_management/model.h"
+#include "ECS/scene.h"
 
 TransformComponent* getJointTransform(
 	Scene *scene,
@@ -67,62 +66,4 @@ TransformComponent* getJointTransform(
 	} while (true);
 
 	return NULL;
-}
-
-void playAnimation(
-	ModelComponent *modelComponent,
-	AnimationComponent *animationComponent,
-	const char *name,
-	bool loop,
-	real32 speed,
-	bool backwards)
-{
-	if (!modelComponent)
-	{
-		stopAnimation(animationComponent);
-		return;
-	}
-
-	Model *model = getModel(modelComponent->name);
-
-	if (!model)
-	{
-		stopAnimation(animationComponent);
-		return;
-	}
-
-	Animation *animation = NULL;
-	for (uint32 i = 0; i < model->numAnimations; i++)
-	{
-		if (!strcmp(model->animations[i].name.string, name))
-		{
-			animation = &model->animations[i];
-			break;
-		}
-	}
-
-	if (!animation)
-	{
-		stopAnimation(animationComponent);
-		return;
-	}
-
-	strcpy(animationComponent->name, name);
-	animationComponent->time = backwards ? animation->duration : 0.0;
-	animationComponent->duration = animation->duration;
-	animationComponent->loop = loop;
-	animationComponent->speed = speed;
-	animationComponent->backwards = backwards;
-	animationComponent->paused = false;
-}
-
-void stopAnimation(AnimationComponent *animationComponent)
-{
-	if (animationComponent)
-	{
-		strcpy(animationComponent->name, "");
-		animationComponent->time = 0.0;
-		animationComponent->duration = 0.0;
-		animationComponent->paused = false;
-	}
 }

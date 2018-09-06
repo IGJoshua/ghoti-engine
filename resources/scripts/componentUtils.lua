@@ -15,10 +15,10 @@ void updateRigidBody(
 
 void playAnimation(
 	ModelComponent *modelComponent,
-	AnimationComponent *animationComponent,
+	AnimatorComponent *animator,
 	const char *name,
 	bool loop,
 	real32 speed,
 	bool backwards);
-void stopAnimation(AnimationComponent *animationComponent);
+void stopAnimation(AnimatorComponent *animator);
 ]]

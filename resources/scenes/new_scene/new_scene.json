@@ -32,6 +32,10 @@
 		"transform": 4096,
 		"camera": 16,
 		"model": 2048,
+		"animation": 2048,
+		"animator": 2048,
+		"next_animation": 2048,
+		"joint": 4096,
 		"wireframe": 2048,
 		"rigid_body": 1024,
 		"collision": 1024,
@@ -47,9 +51,7 @@
 		"widget": 1024,
 		"text": 1024,
 		"image": 1024,
-		"button": 1024,
-		"animation": 2048,
-		"joint": 4096
+		"button": 1024
 	},
 
 	"active_camera": "Mv75O;Z&+EApW+*ygT_ZB`q))b;a#8M,h_P*7T*Yrw.rv-XPj0hH(nNg(6g5g2>",

@@ -1,14 +1,10 @@
 ffi.cdef[[
 typedef struct animation_component_t
 {
-	char name[64];
-	UUID skeleton;
-	real64 time;
-	real64 duration;
-	bool loop;
-	real32 speed;
-	bool backwards;
-	bool paused;
+    UUID skeleton;
+    char idleAnimation[64];
+    real32 speed;
+    bool backwards;
 } AnimationComponent;
 ]]
 
@@ -16,19 +12,13 @@ local component = engine.components:register("animation", "AnimationComponent")
 
 local C = engine.C
 
-function component:play(scene, uuid, name, loop, speed, backwards)
-  loop = loop or false
-  speed = speed or 1.0
-  backwards = backwards or false
+function component:swapSkeleton(removeSkeleton, scene, skeleton, idleAnimation, speed, backwards)
+  if removeSkeleton then
+    C.sceneRemoveEntity(scene.ptr, self.skeleton)
+  end
 
-  C.playAnimation(scene:getComponent("model", uuid), self, name, loop, speed, backwards)
-end
-
-function component:stop()
-  C.stopAnimation(self)
-end
-
-function component:removeWithSkeleton(scene, uuid)
-  C.sceneRemoveEntity(scene, self.skeleton)
-  C.sceneRemoveComponentFromEntity(scene, uuid, C.idFromName("animation"))
+  self.skeleton = skeleton
+  self.idleAnimation = idleAnimation
+  self.speed = speed or 1.0
+  self.backwards = backwards or false
 end

@@ -59,15 +59,30 @@ typedef struct camera_component_t
 
 typedef struct animation_component_t
 {
-	char name[64];
 	UUID skeleton;
+	char idleAnimation[64];
+	real32 speed;
+	bool backwards;
+} AnimationComponent;
+
+typedef struct animator_component_t
+{
+	char currentAnimation[64];
 	real64 time;
 	real64 duration;
 	bool loop;
 	real32 speed;
 	bool backwards;
 	bool paused;
-} AnimationComponent;
+} AnimatorComponent;
+
+typedef struct next_animation_component_t
+{
+	char name[64];
+	bool loop;
+	real32 speed;
+	bool backwards;
+} NextAnimationComponent;
 
 typedef struct joint_component_t
 {

@@ -58,6 +58,7 @@ internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
 internal UUID wireframeComponentID = {};
 internal UUID animationComponentID = {};
+internal UUID animatorComponentID = {};
 internal UUID cameraComponentID = {};
 
 extern real64 alpha;
@@ -244,16 +245,25 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		animationComponentID);
 
 	Animation *animation = NULL;
+
 	if (animationComponent)
 	{
-		for (uint32 i = 0; i < model->numAnimations; i++)
+		AnimatorComponent *animator = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			animatorComponentID);
+
+		if (animator)
 		{
-			if (!strcmp(
-				model->animations[i].name.string,
-				animationComponent->name))
+			for (uint32 i = 0; i < model->numAnimations; i++)
 			{
-				animation = &model->animations[i];
-				break;
+				if (!strcmp(
+					model->animations[i].name.string,
+					animator->currentAnimation))
+				{
+					animation = &model->animations[i];
+					break;
+				}
 			}
 		}
 	}
@@ -279,21 +289,24 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				boneOffset->name.string,
 				NULL);
 
-			TransformComponent interpolatedJointTransform;
-			tGetInterpolatedTransform(
-				jointTransform,
-				&interpolatedJointTransform.globalPosition,
-				&interpolatedJointTransform.globalRotation,
-				&interpolatedJointTransform.globalScale,
-				alpha);
+			if (jointTransform)
+			{
+				TransformComponent interpolatedJointTransform;
+				tGetInterpolatedTransform(
+					jointTransform,
+					&interpolatedJointTransform.globalPosition,
+					&interpolatedJointTransform.globalRotation,
+					&interpolatedJointTransform.globalScale,
+					alpha);
 
-			tConcatenateTransforms(
-				&interpolatedJointTransform,
-				&boneOffset->transform);
-			boneMatrices[i] = tComposeMat4(
-				&boneOffset->transform.globalPosition,
-				&boneOffset->transform.globalRotation,
-				&boneOffset->transform.globalScale);
+				tConcatenateTransforms(
+					&interpolatedJointTransform,
+					&boneOffset->transform);
+				boneMatrices[i] = tComposeMat4(
+					&boneOffset->transform.globalPosition,
+					&boneOffset->transform.globalRotation,
+					&boneOffset->transform.globalScale);
+			}
 		}
 
 		setUniform(
@@ -436,6 +449,7 @@ System createRendererSystem(void)
 	modelComponentID = idFromName("model");
 	wireframeComponentID = idFromName("wireframe");
 	animationComponentID = idFromName("animation");
+	animatorComponentID = idFromName("animator");
 	cameraComponentID = idFromName("camera");
 
 	system.componentTypes = createList(sizeof(UUID));
