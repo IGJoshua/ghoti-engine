@@ -6,7 +6,7 @@ void playAnimation(
 	ModelComponent *modelComponent,
 	AnimatorComponent *animator,
 	const char *name,
-	bool loop,
+	int32 loopCount,
 	real32 speed,
 	bool backwards);
 void stopAnimation(AnimatorComponent *animator);

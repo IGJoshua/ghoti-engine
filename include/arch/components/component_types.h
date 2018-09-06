@@ -70,7 +70,7 @@ typedef struct animator_component_t
 	char currentAnimation[64];
 	real64 time;
 	real64 duration;
-	bool loop;
+	int32 loopCount;
 	real32 speed;
 	bool backwards;
 	bool paused;
@@ -79,7 +79,7 @@ typedef struct animator_component_t
 typedef struct next_animation_component_t
 {
 	char name[64];
-	bool loop;
+	int32 loopCount;
 	real32 speed;
 	bool backwards;
 } NextAnimationComponent;

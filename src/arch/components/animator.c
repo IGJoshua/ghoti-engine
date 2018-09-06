@@ -7,7 +7,7 @@ void playAnimation(
 	ModelComponent *modelComponent,
 	AnimatorComponent *animator,
 	const char *name,
-	bool loop,
+	int32 loopCount,
 	real32 speed,
 	bool backwards)
 {
@@ -49,7 +49,7 @@ void playAnimation(
 	strcpy(animator->currentAnimation, name);
 	animator->time = backwards ? animation->duration : 0.0;
 	animator->duration = animation->duration;
-	animator->loop = loop;
+	animator->loopCount = loopCount;
 	animator->speed = speed;
 	animator->backwards = backwards;
 	animator->paused = false;
@@ -62,6 +62,7 @@ void stopAnimation(AnimatorComponent *animator)
 		strcpy(animator->currentAnimation, "");
 		animator->time = 0.0;
 		animator->duration = 0.0;
+		animator->loopCount = 0;
 		animator->paused = false;
 	}
 }

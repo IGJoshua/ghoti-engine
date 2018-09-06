@@ -91,7 +91,7 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 				modelComponent,
 				animator,
 				nextAnimation->name,
-				nextAnimation->loop,
+				nextAnimation->loopCount,
 				nextAnimation->speed,
 				nextAnimation->backwards);
 
@@ -103,7 +103,7 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 				modelComponent,
 				animator,
 				animationComponent->idleAnimation,
-				true,
+				-1,
 				animationComponent->speed,
 				animationComponent->backwards);
 
@@ -164,7 +164,21 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 
 	animator->time += deltaTime;
 
-	if (animator->loop)
+	bool stopped = false;
+	if ((!animator->backwards && animator->time > animator->duration) ||
+		 (animator->backwards && animator->time < 0.0))
+	{
+		if (animator->loopCount > -1)
+		{
+			if (--animator->loopCount == -1)
+			{
+				stopAnimation(animator);
+				stopped = true;
+			}
+		}
+	}
+
+	if (!stopped)
 	{
 		while (animator->time < 0.0)
 		{
@@ -172,11 +186,6 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		animator->time = fmod(animator->time, animator->duration);
-	}
-	else if ((animator->backwards && animator->time < 0.0) ||
-			(!animator->backwards && animator->time > animator->duration))
-	{
-		stopAnimation(animator);
 	}
 }
 
