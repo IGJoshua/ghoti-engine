@@ -1,6 +1,7 @@
 #include "components/transform.h"
-
 #include "components/rigid_body.h"
+
+#include "core/log.h"
 
 #include "math/math.h"
 
@@ -306,6 +307,14 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 			transform->firstChild,
 			transformComponentID);
 
+		if (!transform)
+		{
+			LOG("ERROR: Failed to remove invalid transform component "
+				"from entity: %s\n",
+				entity.string);
+			return;
+		}
+
 		if (!strcmp(entity.string, previousTransform->firstChild.string))
 		{
 			previousTransform->firstChild = transform->nextSibling;
@@ -320,6 +329,14 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 					scene,
 					sibling,
 					transformComponentID);
+
+				if (!transform)
+				{
+					LOG("ERROR: Failed to remove invalid transform component "
+						"from entity: %s\n",
+						entity.string);
+					return;
+				}
 
 				if (!strcmp(entity.string, sibling.string))
 				{
