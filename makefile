@@ -81,7 +81,7 @@ clean:
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 	touch local-$(SUPPRESSIONS)
-	./clean_scenes.sh
+	./clean_resources.sh
 
 .PHONY: run
 

@@ -326,9 +326,9 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 	body->velocity.z = vel[2];
 
 	const dReal *angularVel = dBodyGetAngularVel(body->bodyID);
-	body->angularVel.x = -angularVel[0];
-	body->angularVel.y = -angularVel[1];
-	body->angularVel.z = -angularVel[2];
+	body->angularVel.x = angularVel[0];
+	body->angularVel.y = angularVel[1];
+	body->angularVel.z = angularVel[2];
 
 	tMarkDirty(scene, entityID);
 }

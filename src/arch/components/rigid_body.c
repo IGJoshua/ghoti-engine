@@ -209,9 +209,9 @@ void updateRigidBodyPosition(
 {
 	dBodySetAngularVel(
 		body->bodyID,
-		-body->angularVel.x,
-		-body->angularVel.y,
-		-body->angularVel.z);
+		body->angularVel.x,
+		body->angularVel.y,
+		body->angularVel.z);
 
 	dBodySetLinearVel(
 		body->bodyID,

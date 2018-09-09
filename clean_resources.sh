@@ -1,5 +1,7 @@
 #!/bin/bash
 
+find resources/materials/ -type d -empty -delete
+find resources/models/ -type d -empty -delete
 find resources -name '*.entity' -type f -not -path '*/saves/*' -exec rm {} \;
 find resources -name '*.scene' -type f -not -path '*/saves/*' -exec rm {} \;
 find resources/scenes/ -type d -empty -delete
