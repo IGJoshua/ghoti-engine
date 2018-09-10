@@ -108,11 +108,15 @@ kmMat4 tComposeMat4(
 	kmQuaternion const *rotation,
 	kmVec3 const *scale)
 {
-	kmMat3 rotationMatrix;
-	kmMat3FromRotationQuaternion(&rotationMatrix, rotation);
+	kmMat4 translationMatrix;
+	kmMat4Translation(
+		&translationMatrix,
+		position->x,
+		position->y,
+		position->z);
 
-	kmMat4 transform;
-	kmMat4RotationTranslation(&transform, &rotationMatrix, position);
+	kmMat4 rotationMatrix;
+	kmMat4RotationQuaternion(&rotationMatrix, rotation);
 
 	kmMat4 scaleMatrix;
 	kmMat4Scaling(
@@ -121,6 +125,8 @@ kmMat4 tComposeMat4(
 		scale->y,
 		scale->z);
 
+	kmMat4 transform;
+	kmMat4Multiply(&transform, &translationMatrix, &rotationMatrix);
 	kmMat4Multiply(&transform, &transform, &scaleMatrix);
 
 	return transform;
