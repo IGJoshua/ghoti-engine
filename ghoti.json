@@ -21,5 +21,17 @@
 	{
 		"engine_file": "engine.log",
 		"lua_file": "lua.log"
+	},
+
+	"scene":
+	{
+		"remove_json_scenes": true,
+		"remove_json_entities": true
+	},
+
+	"save":
+	{
+		"remove_json_scenes": true,
+		"remove_json_entities": true
 	}
 }

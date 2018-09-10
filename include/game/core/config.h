@@ -30,12 +30,26 @@ typedef struct log_config_t
 	char *luaFile;
 } LogConfig;
 
+typedef struct scene_config_t
+{
+	bool removeJSONScenes;
+	bool removeJSONEntities;
+} SceneConfig;
+
+typedef struct save_config_t
+{
+	bool removeJSONScenes;
+	bool removeJSONEntities;
+} SaveConfig;
+
 typedef struct config_t
 {
 	WindowConfig windowConfig;
 	PhysicsConfig physicsConfig;
 	GraphicsConfig graphicsConfig;
 	LogConfig logConfig;
+	SceneConfig sceneConfig;
+	SaveConfig saveConfig;
 } Config;
 
 int32 loadConfig(void);

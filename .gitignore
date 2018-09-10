@@ -24,4 +24,4 @@ GPATH
 vgcore.*
 *.scene
 *.entity
-*.save
+resources/saves/*

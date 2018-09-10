@@ -67,6 +67,28 @@ int32 loadConfig(void)
 		strlen(loggingLuaFile->valuestring) + 1);
 	strcpy(config.logConfig.luaFile, loggingLuaFile->valuestring);
 
+	cJSON *scene = cJSON_GetObjectItem(json, "scene");
+
+	cJSON *removeJSONScenes = cJSON_GetObjectItem(scene, "remove_json_scenes");
+	config.sceneConfig.removeJSONScenes = cJSON_IsTrue(removeJSONScenes) ?
+		true : false;
+
+	cJSON *removeJSONEntities = cJSON_GetObjectItem(
+		scene,
+		"remove_json_entities");
+	config.sceneConfig.removeJSONEntities = cJSON_IsTrue(removeJSONEntities) ?
+		true : false;
+
+	cJSON *save = cJSON_GetObjectItem(json, "save");
+
+	removeJSONScenes = cJSON_GetObjectItem(save, "remove_json_scenes");
+	config.saveConfig.removeJSONScenes = cJSON_IsTrue(removeJSONScenes) ?
+		true : false;
+
+	removeJSONEntities = cJSON_GetObjectItem(save, "remove_json_entities");
+	config.saveConfig.removeJSONEntities = cJSON_IsTrue(removeJSONEntities) ?
+		true : false;
+
 	cJSON_Delete(json);
 
 	return 0;

@@ -16,6 +16,7 @@
 #include <string.h>
 #include <dirent.h>
 
+extern Config config;
 extern List activeScenes;
 extern bool loadingSave;
 extern List savedScenes;
@@ -138,7 +139,12 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 			sceneFilename,
 			"json",
 			NULL);
-		remove(jsonSceneFilename);
+
+		if (config.saveConfig.removeJSONScenes)
+		{
+			remove(jsonSceneFilename);
+		}
+
 		free(jsonSceneFilename);
 
 		uint32 entityNumber = 0;
@@ -171,7 +177,11 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 				entityFilename,
 				"json",
 				NULL);
-			remove(jsonEntityFilename);
+
+			if (config.saveConfig.removeJSONEntities)
+			{
+				remove(jsonEntityFilename);
+			}
 
 			free(jsonEntityFilename);
 			free(entityFilename);
