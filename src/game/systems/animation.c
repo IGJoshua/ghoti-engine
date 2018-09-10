@@ -19,7 +19,7 @@
 
 #include "math/math.h"
 
-internal uint32 animationSystemRefCount = 0;
+uint32 animationSystemRefCount = 0;
 
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};

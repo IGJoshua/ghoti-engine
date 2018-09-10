@@ -68,6 +68,8 @@ internal UUID cameraComponentID = {};
 
 extern real64 alpha;
 
+extern uint32 animationSystemRefCount;
+
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
 
@@ -202,7 +204,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
 	setMaterialUniform(&wearMaterialUniform, &textureIndex);
 
-	skeletons = *(HashMap*)hashMapGetData(skeletonsMap, &scene);
+	if (animationSystemRefCount > 0)
+	{
+		skeletons = *(HashMap*)hashMapGetData(skeletonsMap, &scene);
+	}
 }
 
 internal
@@ -256,7 +261,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 	AnimationReference *animationReference = NULL;
 
-	if (animationComponent)
+	if (animationSystemRefCount > 0 && animationComponent)
 	{
 		AnimatorComponent *animator = sceneGetComponentFromEntity(
 			scene,
