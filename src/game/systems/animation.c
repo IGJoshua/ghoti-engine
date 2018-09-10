@@ -129,35 +129,43 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 			entityID,
 			modelComponentID);
 
-		if (nextAnimation)
-		{
-			playAnimation(
-				modelComponent,
-				animator,
-				nextAnimation->name,
-				nextAnimation->loopCount,
-				nextAnimation->speed,
-				nextAnimation->transitionDuration,
-				false);
-
-			strcpy(nextAnimation->name, "");
-		}
+		setCurrentAnimationReference(
+			modelComponent,
+			animator,
+			animator->currentAnimation);
 
 		if (!animationReference->currentAnimation)
 		{
-			playAnimation(
-				modelComponent,
-				animator,
-				animationComponent->idleAnimation,
-				-1,
-				animationComponent->speed,
-				animationComponent->transitionDuration,
-				false);
-		}
+			if (nextAnimation)
+			{
+				playAnimation(
+					modelComponent,
+					animator,
+					nextAnimation->name,
+					nextAnimation->loopCount,
+					nextAnimation->speed,
+					nextAnimation->transitionDuration,
+					false);
 
-		if (!animationReference->currentAnimation)
-		{
-			return;
+				strcpy(nextAnimation->name, "");
+			}
+
+			if (!animationReference->currentAnimation)
+			{
+				playAnimation(
+					modelComponent,
+					animator,
+					animationComponent->idleAnimation,
+					-1,
+					animationComponent->speed,
+					animationComponent->transitionDuration,
+					false);
+			}
+
+			if (!animationReference->currentAnimation)
+			{
+				return;
+			}
 		}
 	}
 

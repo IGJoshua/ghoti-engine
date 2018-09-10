@@ -18,6 +18,10 @@ void playAnimation(
 	real32 speed,
 	real32 transitionDuration,
 	bool stopPreviousAnimation);
+AnimationReference* setCurrentAnimationReference(
+	ModelComponent *modelComponent,
+	AnimatorComponent *animator,
+	const char *name);
 void stopAnimation(AnimatorComponent *animator);
 void resetAnimator(
 	AnimatorComponent *animator,

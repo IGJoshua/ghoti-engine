@@ -17,26 +17,11 @@ void playAnimation(
 	real32 transitionDuration,
 	bool stopPreviousAnimation)
 {
-	if (!strcmp(animator->currentAnimation, name))
+	if (strlen(name) == 0 ||
+		!strcmp(animator->currentAnimation, name) ||
+		(animator->transitionTime < animator->transitionDuration
+			&& strlen(animator->currentAnimation) > 0))
 	{
-		return;
-	}
-
-	AnimationReference *animationReference = hashMapGetData(
-		animationReferences,
-		&animator);
-
-	if (!modelComponent)
-	{
-		resetAnimator(animator, animationReference);
-		return;
-	}
-
-	Model *model = getModel(modelComponent->name);
-
-	if (!model)
-	{
-		resetAnimator(animator, animationReference);
 		return;
 	}
 
@@ -45,10 +30,13 @@ void playAnimation(
 		stopAnimation(animator);
 	}
 
-	animationReference->currentAnimation = getAnimation(model, name);
-	if (!animationReference->currentAnimation)
+	AnimationReference *animationReference = setCurrentAnimationReference(
+		modelComponent,
+		animator,
+		name);
+
+	if (!animationReference)
 	{
-		resetAnimator(animator, animationReference);
 		return;
 	}
 
@@ -62,6 +50,38 @@ void playAnimation(
 	animator->transitionDuration =
 		(transitionDuration < 0.0 ? 0.0 : transitionDuration) *
 		animationReference->currentAnimation->duration;
+}
+
+AnimationReference* setCurrentAnimationReference(
+	ModelComponent *modelComponent,
+	AnimatorComponent *animator,
+	const char *name)
+{
+	AnimationReference *animationReference = hashMapGetData(
+		animationReferences,
+		&animator);
+
+	if (!modelComponent)
+	{
+		resetAnimator(animator, animationReference);
+		return NULL;
+	}
+
+	Model *model = getModel(modelComponent->name);
+	if (!model)
+	{
+		resetAnimator(animator, animationReference);
+		return NULL;
+	}
+
+	animationReference->currentAnimation = getAnimation(model, name);
+	if (!animationReference->currentAnimation)
+	{
+		resetAnimator(animator, animationReference);
+		return NULL;
+	}
+
+	return animationReference;
 }
 
 void stopAnimation(AnimatorComponent *animator)

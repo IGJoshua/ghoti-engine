@@ -25,3 +25,4 @@ vgcore.*
 *.scene
 *.entity
 resources/saves/*
+resources/.runtime-state/
