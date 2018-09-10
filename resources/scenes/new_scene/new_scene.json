@@ -12,6 +12,7 @@
 				"clean_global_transforms",
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",
+				"joint_information",
 				"gui"
 			]
 		},
@@ -23,35 +24,43 @@
 
 			],
 
-			"internal": ["renderer", "line_renderer", "gui_renderer"]
+			"internal": ["render_heightmap", "renderer", "gui_renderer"]
 		}
 	},
 
 	"component_limits":
 	{
-		"transform": 4096,
-		"camera": 16,
-		"model": 2048,
 		"animation": 2048,
 		"animator": 2048,
-		"next_animation": 2048,
-		"joint": 4096,
-		"wireframe": 2048,
-		"rigid_body": 1024,
-		"collision": 1024,
-		"collision_tree_node": 4096,
+		"ball_socket_joint": 256,
+		"ball_socket2_joint": 256,
 		"box": 1024,
-		"sphere": 1024,
+		"button": 1024,
+		"camera": 8,
 		"capsule": 1024,
+		"collision_tree_node": 4096,
+		"collision": 1024,
+		"font": 1024,
+		"gui_transform": 2048,
+		"heightmap": 256,
+		"hinge_joint": 256,
 		"hit_information": 4096,
 		"hit_list": 8192,
-		"gui_transform": 2048,
-		"panel": 512,
-		"font": 1024,
-		"widget": 1024,
-		"text": 1024,
 		"image": 1024,
-		"button": 1024
+		"joint_information": 256,
+		"joint_list": 512,
+		"joint": 8192,
+		"model": 2048,
+		"next_animation": 2048,
+		"panel": 512,
+		"rigid_body": 1024,
+		"slider_joint": 256,
+		"sphere": 1024,
+		"surface_information": 512,
+		"text": 1024,
+		"transform": 16384,
+		"widget": 1024,
+		"wireframe": 2048
 	},
 
 	"active_camera": "Mv75O;Z&+EApW+*ygT_ZB`q))b;a#8M,h_P*7T*Yrw.rv-XPj0hH(nNg(6g5g2>",

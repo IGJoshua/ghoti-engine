@@ -63,11 +63,23 @@ typedef struct heightmap_model_t
 internal int32 createHeightmapMaterial(UUID name, Material *material);
 
 internal
+int32 ptrEq(void *thing1, void *thing2)
+{
+	return *(uint64*)thing1 != *(uint64*)thing2;
+}
+
+internal
 void initRenderHeightmapSystem(Scene *scene)
 {
 	if (rendererRefCount == 0)
 	{
 		LOG("Initializing heightmap renderer...\n");
+
+		heightmapModels = createHashMap(
+			sizeof(Scene *),
+			sizeof(HashMap),
+			SCENE_BUCKET_COUNT,
+			&ptrEq);
 
 		createShaderProgram(
 			"resources/shaders/model.vert",
@@ -580,23 +592,11 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 	}
 }
 
-internal
-int32 ptrEq(void *thing1, void *thing2)
-{
-	return *(uint64*)thing1 != *(uint64*)thing2;
-}
-
 System createRenderHeightmapSystem(void)
 {
 	heightmapComponentID = idFromName("heightmap");
 	cameraComponentID = idFromName("camera");
 	transformComponentID = idFromName("transform");
-
-	heightmapModels = createHashMap(
-		sizeof(Scene *),
-		sizeof(HashMap),
-		SCENE_BUCKET_COUNT,
-		&ptrEq);
 
 	System ret = {};
 

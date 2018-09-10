@@ -1,4 +1,14 @@
 {
+	"animations":
+	[
+		"000",
+		"Wolf_creep_cycle",
+		"Wolf_Idle_",
+		"Wolf_Run_Cycle_",
+		"Wolf_seat_",
+		"Wolf_Walk_cycle_"
+	],
+
 	"meshes":
 	{
 		"Wolf_obj_body.004_0":
@@ -453,15 +463,5 @@
 				
 			}
 		}
-	},
-
-	"animations":
-	[
-		"000",
-		"Wolf_creep_cycle",
-		"Wolf_Idle_",
-		"Wolf_Run_Cycle_",
-		"Wolf_seat_",
-		"Wolf_Walk_cycle_"
-	]
+	}
 }
