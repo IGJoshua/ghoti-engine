@@ -70,11 +70,11 @@ void initRenderHeightmapSystem(Scene *scene)
 		LOG("Initializing heightmap renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/base.vert",
+			"resources/shaders/model.vert",
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/color.frag",
+			"resources/shaders/model.frag",
 			NULL,
 			&shaderProgram);
 

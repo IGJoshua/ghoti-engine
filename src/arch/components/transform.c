@@ -67,6 +67,7 @@ void tDecomposeMat4(
 	{
 		kmMat3 rotationMat = {};
 		kmMat4ExtractRotationMat3(transform, &rotationMat);
+
 		kmQuaternionRotationMatrix(rotation, &rotationMat);
 		kmQuaternionNormalize(rotation, rotation);
 	}
@@ -107,42 +108,22 @@ kmMat4 tComposeMat4(
 	kmQuaternion const *rotation,
 	kmVec3 const *scale)
 {
-	kmQuaternion rotationQuat;
-	kmQuaternionAssign(&rotationQuat, rotation);
-	kmQuaternionNormalize(
-		&rotationQuat,
-		&rotationQuat);
+	kmMat3 rotationMatrix;
+	kmMat3FromRotationQuaternion(&rotationMatrix, rotation);
 
-	kmVec3 pos;
-	kmVec3Assign(&pos, position);
-
-	kmVec3 s;
-	kmVec3Assign(&s, scale);
-
-	kmMat4 rotationMatrix;
-	kmMat4RotationQuaternion(&rotationMatrix, &rotationQuat);
-
-	kmMat4 positionMatrix;
-	kmMat4Translation(
-		&positionMatrix,
-		pos.x,
-		pos.y,
-		pos.z);
+	kmMat4 transform;
+	kmMat4RotationTranslation(&transform, &rotationMatrix, position);
 
 	kmMat4 scaleMatrix;
 	kmMat4Scaling(
 		&scaleMatrix,
-		s.x,
-		s.y,
-		s.z);
+		scale->x,
+		scale->y,
+		scale->z);
 
-	kmMat4 worldMatrix;
-	kmMat4Multiply(
-		&worldMatrix,
-		&positionMatrix,
-		kmMat4Multiply(&worldMatrix, &rotationMatrix, &scaleMatrix));
+	kmMat4Multiply(&transform, &transform, &scaleMatrix);
 
-	return worldMatrix;
+	return transform;
 }
 
 void tGetInterpolatedTransform(
