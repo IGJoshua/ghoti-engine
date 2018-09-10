@@ -288,6 +288,15 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 			scene,
 			transform->parent,
 			transformComponentID);
+
+		if (!transform)
+		{
+			LOG("ERROR: Failed to remove invalid transform component "
+				"from entity: %s\n",
+				entity.string);
+			return;
+		}
+
 		TransformComponent *previousTransform = transform;
 		transform = sceneGetComponentFromEntity(
 			scene,
