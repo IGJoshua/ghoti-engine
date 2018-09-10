@@ -19,6 +19,7 @@ void playAnimation(
 	const char *name,
 	int32 loopCount,
 	real32 speed,
-	bool backwards);
+	bool backwards,
+	real32 transitionDuration);
 void stopAnimation(AnimatorComponent *animator);
 ]]

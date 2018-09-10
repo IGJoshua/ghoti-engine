@@ -25,7 +25,8 @@ internal uint32 lineRendererRefCount = 0;
 
 #define NUM_LINE_VERTEX_ATTRIBUTES 2
 
-typedef struct line_vertex_t {
+typedef struct line_vertex_t
+{
 	kmVec3 position;
 	kmVec3 color;
 } LineVertex;

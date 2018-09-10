@@ -63,6 +63,7 @@ typedef struct animation_component_t
 	char idleAnimation[64];
 	real32 speed;
 	bool backwards;
+	real64 transitionDuration;
 } AnimationComponent;
 
 typedef struct animator_component_t
@@ -74,6 +75,10 @@ typedef struct animator_component_t
 	real32 speed;
 	bool backwards;
 	bool paused;
+	char previousAnimation[64];
+	real64 previousAnimationTime;
+	real64 transitionTime;
+	real64 transitionDuration;
 } AnimatorComponent;
 
 typedef struct next_animation_component_t
@@ -82,6 +87,7 @@ typedef struct next_animation_component_t
 	int32 loopCount;
 	real32 speed;
 	bool backwards;
+	real64 transitionDuration;
 } NextAnimationComponent;
 
 typedef struct joint_component_t

@@ -5,14 +5,16 @@ typedef struct next_animation_component_t
 	int32 loopCount;
 	real32 speed;
 	bool backwards;
+	real64 transitionDuration;
 } NextAnimationComponent;
 ]]
 
 local component = engine.components:register("next_animation", "NextAnimationComponent")
 
-function component:set(name, loopCount, speed, backwards)
+function component:set(name, loopCount, speed, backwards, transitionDuration)
   self.name = name
   self.loopCount = loopCount or 0
   self.speed = speed or 1.0
   self.backwards = backwards or false
+  self.transitionDuration = transitionDuration or 0.0
 end

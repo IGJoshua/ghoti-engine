@@ -45,7 +45,8 @@ typedef struct texture_t
 	uint32 refCount;
 } Texture;
 
-typedef struct material_folder_t {
+typedef struct material_folder_t
+{
 	UUID name;
 	char *folder;
 } MaterialFolder;

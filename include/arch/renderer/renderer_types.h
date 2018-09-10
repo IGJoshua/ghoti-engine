@@ -55,17 +55,20 @@ typedef struct subset_t
 	Mask mask;
 } Subset;
 
-typedef struct vec3_key_frame_t {
+typedef struct vec3_key_frame_t
+{
 	real64 time;
 	kmVec3 value;
 } Vec3KeyFrame;
 
-typedef struct quaternion_key_frame_t {
+typedef struct quaternion_key_frame_t
+{
 	real64 time;
 	kmQuaternion value;
 } QuaternionKeyFrame;
 
-typedef struct bone_t {
+typedef struct bone_t
+{
 	UUID name;
 	uint32 numPositionKeyFrames;
 	Vec3KeyFrame *positionKeyFrames;
@@ -75,7 +78,8 @@ typedef struct bone_t {
 	Vec3KeyFrame *scaleKeyFrames;
 } Bone;
 
-typedef struct animation_t {
+typedef struct animation_t
+{
 	UUID name;
 	real64 duration;
 	real64 fps;
@@ -83,12 +87,14 @@ typedef struct animation_t {
 	Bone *bones;
 } Animation;
 
-typedef struct bone_offset_t {
+typedef struct bone_offset_t
+{
 	UUID name;
 	TransformComponent transform;
 } BoneOffset;
 
-typedef struct skeleton_t {
+typedef struct skeleton_t
+{
 	uint32 numBoneOffsets;
 	BoneOffset *boneOffsets;
 } Skeleton;

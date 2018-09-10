@@ -8,6 +8,10 @@ typedef struct animator_component_t
 	real32 speed;
 	bool backwards;
 	bool paused;
+	char previousAnimation[64];
+	real64 previousAnimationTime;
+	real64 transitionTime;
+	real64 transitionDuration;
 } AnimatorComponent;
 ]]
 
@@ -15,12 +19,14 @@ local component = engine.components:register("animator", "AnimatorComponent")
 
 local C = engine.C
 
-function component:play(scene, uuid, name, loopCount, speed, backwards)
+function component:play(scene, uuid, name, loopCount, speed, backwards, transitionDuration)
   loopCount = loopCount or 0
   speed = speed or 1.0
   backwards = backwards or false
+  transitionDuration = transitionDuration or 0.0
 
-  C.playAnimation(scene:getComponent("model", uuid), self, name, loopCount, speed, backwards)
+  self:stop()
+  C.playAnimation(scene:getComponent("model", uuid), self, name, loopCount, speed, backwards, transitionDuration)
 end
 
 function component:pause()
@@ -29,6 +35,10 @@ end
 
 function component:unpause()
   self.paused = false
+end
+
+function component:reverse()
+  self.backwards = not self.backwards
 end
 
 function component:restart(loopCount)

@@ -1,12 +1,30 @@
 #include "components/animation.h"
 
+#include "data/data_types.h"
+#include "data/hash_map.h"
+
 #include "ECS/scene.h"
 
-TransformComponent* getJointTransform(
-	Scene *scene,
-	UUID joint,
-	const char *name,
-	UUID *uuid)
+extern HashMap skeletonsMap;
+
+internal void loadSkeleton(HashMap skeleton, Scene *scene, UUID joint);
+
+void addSkeleton(Scene *scene, UUID skeletonID)
+{
+	HashMap *skeletons = hashMapGetData(skeletonsMap, &scene);
+	if (!hashMapGetData(*skeletons, &skeletonID))
+	{
+		HashMap skeleton = createHashMap(
+			sizeof(UUID),
+			sizeof(JointTransform),
+			SKELETON_BUCKET_COUNT,
+			(ComparisonOp)&strcmp);
+		loadSkeleton(skeleton, scene, skeletonID);
+		hashMapInsert(*skeletons, &skeletonID, &skeleton);
+	}
+}
+
+void loadSkeleton(HashMap skeleton, Scene *scene, UUID joint)
 {
 	UUID transformComponentID = idFromName("transform");
 	UUID jointComponentID = idFromName("joint");
@@ -22,17 +40,17 @@ TransformComponent* getJointTransform(
 
 	if (!transform)
 	{
-		return NULL;
+		return;
 	}
 
-	if (jointComponent && !strcmp(name, jointComponent->name))
+	if (jointComponent)
 	{
-		if (uuid)
-		{
-			*uuid = joint;
-		}
+		JointTransform jointTransform;
+		jointTransform.uuid = joint;
+		jointTransform.transform = transform;
 
-		return transform;
+		UUID name = idFromName(jointComponent->name);
+		hashMapInsert(skeleton, &name, &jointTransform);
 	}
 
 	UUID child = transform->firstChild;
@@ -46,16 +64,7 @@ TransformComponent* getJointTransform(
 
 		if (transform)
 		{
-			TransformComponent *jointTransform = getJointTransform(
-				scene,
-				child,
-				name,
-				uuid);
-
-			if (jointTransform)
-			{
-				return jointTransform;
-			}
+			loadSkeleton(skeleton, scene, child);
 		}
 		else
 		{
@@ -64,6 +73,4 @@ TransformComponent* getJointTransform(
 
 		child = transform->nextSibling;
 	} while (true);
-
-	return NULL;
 }

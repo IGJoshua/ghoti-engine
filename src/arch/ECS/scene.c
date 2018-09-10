@@ -10,6 +10,7 @@
 
 #include "components/component_types.h"
 #include "components/transform.h"
+#include "components/animator.h"
 #include "components/rigid_body.h"
 #include "components/panel.h"
 #include "components/widget.h"
@@ -1891,6 +1892,10 @@ void sceneRemoveComponentFromEntity(
 	else if (!strcmp(componentType.string, "model"))
 	{
 		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
+	}
+	else if (!strcmp(componentType.string, "animator"))
+	{
+		removeAnimator((AnimatorComponent *)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "image"))
 	{

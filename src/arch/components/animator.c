@@ -1,7 +1,12 @@
 #include "components/animator.h"
 
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
+#include "asset_management/animation.h"
+
+#include "data/data_types.h"
+#include "data/hash_map.h"
+
+extern HashMap animationReferences;
 
 void playAnimation(
 	ModelComponent *modelComponent,
@@ -9,16 +14,21 @@ void playAnimation(
 	const char *name,
 	int32 loopCount,
 	real32 speed,
-	bool backwards)
+	bool backwards,
+	real32 transitionDuration)
 {
 	if (!strcmp(animator->currentAnimation, name))
 	{
 		return;
 	}
 
+	AnimationReference *animationReference = hashMapGetData(
+		animationReferences,
+		&animator);
+
 	if (!modelComponent)
 	{
-		stopAnimation(animator);
+		resetAnimator(animator, animationReference);
 		return;
 	}
 
@@ -26,43 +36,62 @@ void playAnimation(
 
 	if (!model)
 	{
-		stopAnimation(animator);
+		resetAnimator(animator, animationReference);
 		return;
 	}
 
-	Animation *animation = NULL;
-	for (uint32 i = 0; i < model->numAnimations; i++)
+	animationReference->currentAnimation = getAnimation(model, name);
+	if (!animationReference->currentAnimation)
 	{
-		if (!strcmp(model->animations[i].name.string, name))
-		{
-			animation = &model->animations[i];
-			break;
-		}
-	}
-
-	if (!animation)
-	{
-		stopAnimation(animator);
+		resetAnimator(animator, animationReference);
 		return;
 	}
 
 	strcpy(animator->currentAnimation, name);
-	animator->time = backwards ? animation->duration : 0.0;
-	animator->duration = animation->duration;
+	animator->time = backwards ?
+		animationReference->currentAnimation->duration : 0.0;
+	animator->duration = animationReference->currentAnimation->duration;
 	animator->loopCount = loopCount;
 	animator->speed = speed;
 	animator->backwards = backwards;
 	animator->paused = false;
+	animator->transitionDuration =
+		transitionDuration * animationReference->currentAnimation->duration;
 }
 
 void stopAnimation(AnimatorComponent *animator)
 {
-	if (animator)
+	AnimationReference *animationReference = hashMapGetData(
+		animationReferences,
+		&animator);
+
+	animationReference->previousAnimation =
+		animationReference->currentAnimation;
+
+	strcpy(animator->previousAnimation, animator->currentAnimation);
+	animator->previousAnimationTime = animator->time;
+
+	resetAnimator(animator, animationReference);
+}
+
+void resetAnimator(
+	AnimatorComponent *animator,
+	AnimationReference *animationReference)
+{
+	animationReference->currentAnimation = NULL;
+
+	strcpy(animator->currentAnimation, "");
+	animator->time = 0.0;
+	animator->duration = 0.0;
+	animator->loopCount = 0;
+	animator->paused = false;
+	animator->transitionTime = 0.0;
+}
+
+void removeAnimator(AnimatorComponent *animator)
+{
+	if (animationReferences)
 	{
-		strcpy(animator->currentAnimation, "");
-		animator->time = 0.0;
-		animator->duration = 0.0;
-		animator->loopCount = 0;
-		animator->paused = false;
+		hashMapDelete(animationReferences, &animator);
 	}
 }

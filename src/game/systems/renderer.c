@@ -4,6 +4,7 @@
 
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
+#include "asset_management/animation.h"
 #include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
@@ -17,8 +18,10 @@
 #include "components/transform.h"
 #include "components/camera.h"
 #include "components/animation.h"
+#include "components/animator.h"
 
 #include "data/data_types.h"
+#include "data/hash_map.h"
 #include "data/list.h"
 
 #include <kazmath/mat4.h>
@@ -52,6 +55,8 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 internal Uniform customColorUniform;
 
+internal HashMap skeletons;
+
 internal uint32 rendererRefCount = 0;
 
 internal UUID transformComponentID = {};
@@ -62,6 +67,9 @@ internal UUID animatorComponentID = {};
 internal UUID cameraComponentID = {};
 
 extern real64 alpha;
+
+extern HashMap skeletonsMap;
+extern HashMap animationReferences;
 
 extern void drawLine(
 	const kmVec3 *positionA,
@@ -193,6 +201,8 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
 	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
 	setMaterialUniform(&wearMaterialUniform, &textureIndex);
+
+	skeletons = *(HashMap*)hashMapGetData(skeletonsMap, &scene);
 }
 
 internal
@@ -244,7 +254,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		animationComponentID);
 
-	Animation *animation = NULL;
+	AnimationReference *animationReference = NULL;
 
 	if (animationComponent)
 	{
@@ -255,20 +265,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		if (animator)
 		{
-			for (uint32 i = 0; i < model->numAnimations; i++)
-			{
-				if (!strcmp(
-					model->animations[i].name.string,
-					animator->currentAnimation))
-				{
-					animation = &model->animations[i];
-					break;
-				}
-			}
+			animationReference = hashMapGetData(animationReferences, &animator);
 		}
 	}
 
-	bool hasAnimations = animation ? true : false;
+	bool hasAnimations = animationReference ? true : false;
 	setUniform(hasAnimationsUniform, 1, &hasAnimations);
 
 	if (hasAnimations)
@@ -279,21 +280,23 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			kmMat4Identity(&boneMatrices[i]);
 		}
 
+		HashMap *skeletonTransforms = hashMapGetData(
+			skeletons,
+			&animationComponent->skeleton);
+
 		Skeleton *skeleton = &model->skeleton;
 		for (uint32 i = 0; i < skeleton->numBoneOffsets; i++)
 		{
 			BoneOffset *boneOffset = &skeleton->boneOffsets[i];
-			TransformComponent *jointTransform = getJointTransform(
-				scene,
-				animationComponent->skeleton,
-				boneOffset->name.string,
-				NULL);
+			JointTransform *jointTransform = hashMapGetData(
+				*skeletonTransforms,
+				&boneOffset->name);
 
 			if (jointTransform)
 			{
 				TransformComponent interpolatedJointTransform;
 				tGetInterpolatedTransform(
-					jointTransform,
+					jointTransform->transform,
 					&interpolatedJointTransform.globalPosition,
 					&interpolatedJointTransform.globalRotation,
 					&interpolatedJointTransform.globalScale,

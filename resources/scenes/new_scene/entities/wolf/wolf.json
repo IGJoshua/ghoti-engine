@@ -104,6 +104,11 @@
 			{
 				"name": "backwards",
 				"bool": false
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0.2
 			}
 		],
 
@@ -142,6 +147,26 @@
 			{
 				"name": "paused",
 				"bool": false
+			},
+
+			{
+				"name": "previous animation",
+				"char(64)": ""
+			},
+
+			{
+				"name": "previous animation time",
+				"float64": 0
+			},
+
+			{
+				"name": "transition time",
+				"float64": 0
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0
 			}
 		],
 
@@ -165,6 +190,11 @@
 			{
 				"name": "backwards",
 				"bool": false
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0
 			}
 		]
 	}

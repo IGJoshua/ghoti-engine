@@ -96,6 +96,23 @@ int32 loadAnimations(
 	return 0;
 }
 
+Animation *getAnimation(Model *model, const char *name)
+{
+	if (strlen(name) > 0)
+	{
+		for (uint32 i = 0; i < model->numAnimations; i++)
+		{
+			Animation *animation = &model->animations[i];
+			if (!strcmp(animation->name.string, name))
+			{
+				return animation;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 void freeAnimations(
 	uint32 numAnimations,
 	Animation *animations,

@@ -58,7 +58,8 @@ internal struct nk_convert_config nkConfig;
 
 #define NUM_GUI_VERTEX_ATTRIBUTES 3
 
-typedef struct gui_vertex_t {
+typedef struct gui_vertex_t
+{
 	kmVec2 position;
 	kmVec2 uv;
 	kmVec4 color;

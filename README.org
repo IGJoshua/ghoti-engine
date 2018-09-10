@@ -3,7 +3,7 @@
 [[./ghoti.png]]
 
 * Ghoti Engine
-A C game engine with a Lua JIT based ECS and a PBR OpenGL renderer.
+A cross-platform C game engine with a Lua JIT based ECS and a PBR OpenGL renderer.
 
 ** Required Build Tools
 
