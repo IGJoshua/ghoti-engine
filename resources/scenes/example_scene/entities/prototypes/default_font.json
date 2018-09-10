@@ -1,10 +1,10 @@
 {
-    "uuid": "default_font",
+	"uuid": "default_font",
 
-    "components":
-    {
-        "font":
-        [
+	"components":
+	{
+		"font":
+		[
 			{
 				"name": "name",
 				"char(64)": "default_font"
@@ -19,6 +19,6 @@
 				"name": "color",
 				"float32": [1.0, 1.0, 1.0, 1.0]
 			}
-        ]
-    }
+		]
+	}
 }

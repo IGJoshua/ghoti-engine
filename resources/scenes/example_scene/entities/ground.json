@@ -1,5 +1,5 @@
 {
-	"uuid": "ray_caster",
+	"uuid": "ground",
 
 	"components":
 	{
@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [1, 2, 3]
+				"float32": [0, -20, 0]
 			},
 
 			{
@@ -17,7 +17,7 @@
 
 			{
 				"name": "scale",
-				"float32": [1, 1, 1]
+				"float32": [100, 1, 100]
 			},
 
 			{
@@ -26,12 +26,12 @@
 			},
 
 			{
-				"name": "firstChild",
-				"uuid": "ray_caster_aabb"
+				"name": "first child",
+				"uuid": ""
 			},
 
 			{
-				"name": "nextSibling",
+				"name": "next sibling",
 				"uuid": ""
 			},
 
@@ -41,32 +41,32 @@
 			},
 
 			{
-				"name": "globalPosition",
+				"name": "global position",
 				"float32": [0.0, 0.0, 0.0]
 			},
 
 			{
-				"name": "globalRotation",
+				"name": "global rotation",
 				"float32": [0.0, 0.0, 0.0, 1.0]
 			},
 
 			{
-				"name": "globalScale",
+				"name": "global scale",
 				"float32": [1.0, 1.0, 1.0]
 			},
 
 			{
-				"name": "lastGlobalPosition",
+				"name": "last global position",
 				"float32": [0.0, 0.0, 0.0]
 			},
 
 			{
-				"name": "lastGlobalRotation",
+				"name": "last global rotation",
 				"float32": [0.0, 0.0, 0.0, 1.0]
 			},
 
 			{
-				"name": "lastGlobalScale",
+				"name": "last global scale",
 				"float32": [1.0, 1.0, 1.0]
 			}
 		],
@@ -74,13 +74,13 @@
 		"model":
 		[
 			{
-				"name": "filename",
+				"name": "name",
 				"char(64)": "cube"
 			},
 
 			{
 				"name": "visible",
-				"bool": true
+				"bool": false
 			}
 		],
 
@@ -88,7 +88,7 @@
 		[
 			{
 				"name": "visible",
-				"bool": false
+				"bool": true
 			},
 
 			{
@@ -103,97 +103,95 @@
 
 			{
 				"name": "color",
-				"float32": [0.0, 1.0, 1.0]
+				"float32": [1.0, 0.0, 0.0]
 			}
 		],
 
 		"rigid_body":
 		[
 			{
-				"name": "bodyID",
+				"name": "body ID",
 				"int64": 0
 			},
+
 			{
-				"name": "spaceID",
+				"name": "space ID",
 				"int64": 0
 			},
+
 			{
 				"name": "enabled",
 				"bool": true
 			},
+
 			{
 				"name": "dynamic",
-				"bool": true
+				"bool": false
 			},
+
 			{
 				"name": "gravity",
 				"bool": false
 			},
+
 			{
 				"name": "mass",
 				"float32": 1
 			},
+
 			{
-				"name": "centerOfMass",
+				"name": "center of mass",
 				"float32": [0, 0, 0]
 			},
+
 			{
 				"name": "velocity",
 				"float32": [0, 0, 0]
 			},
+
 			{
-				"name": "angularVel",
-				"float32": [0, 1, 0]
+				"name": "angular velocity",
+				"float32": [0, 0, 0]
 			},
+
 			{
-				"name": "defaultDamping",
+				"name": "default damping",
 				"bool": true
 			},
+
 			{
-				"name": "linearDamping",
+				"name": "linear damping",
 				"float32": 0.01
 			},
+
 			{
-				"name": "angularDamping",
+				"name": "angular damping",
 				"float32": 0.01
 			},
+
 			{
-				"name": "linearDampingThreshold",
+				"name": "linear damping threshold",
 				"float32": 0.1
 			},
+
 			{
-				"name": "angularDampingThreshold",
+				"name": "angular damping threshold",
 				"float32": 0.1
 			},
+
 			{
-				"name": "maxAngularSpeed",
-				"float32": 1000000.0
+				"name": "max angular speed",
+				"float32": 0
 			},
+
 			{
-				"name": "inertiaType",
+				"name": "moment of inertia type",
 				"int32": 2
 			},
+
 			{
-				"name": "moiParams",
+				"name": "moment of inertia",
 				"float32": [1, 1, 1, 0, 0, 0]
-			}
-		],
-
-		"collision":
-		[
-			{
-				"name": "collisionTree",
-				"uuid": "ray_caster_aabb"
-			},
-
-			{
-				"name": "hitList",
-				"uuid": ""
-			},
-
-			{
-				"name": "lastHitList",
-				"uuid": ""
 			}
 		]
 	}

@@ -3,11 +3,7 @@
 	{
 		"update":
 		{
-			"external":
-			[
-				"basic_input"
-			],
-
+			"external": ["basic_input", "debug/orbital_camera", "debug/cube_movement"],
 			"internal":
 			[
 				"clean_hit_information",
@@ -26,11 +22,7 @@
 
 			],
 
-			"internal":
-			[
-				"renderer",
-				"gui_renderer"
-			]
+			"internal": ["renderer", "gui_renderer"]
 		}
 	},
 
@@ -57,6 +49,6 @@
 		"button": 1024
 	},
 
-	"active_camera": "09Uw29Vy`b_dc,hmF#%3/VUM39nUylXa^fZm|3h_M${i-eX+@[;LinQy_B,50as",
-	"gravity": -9.8
+	"active_camera": "vrvVp;T2joog>bV9F.sA_GBgH6(q$f)w^tLT5&trPa/05ES96juZ*Zx>`o7Lm50",
+	"gravity": -9.81
 }
