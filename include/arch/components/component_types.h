@@ -59,10 +59,9 @@ typedef struct camera_component_t
 
 typedef struct animation_component_t
 {
-	UUID skeleton;
+	char skeleton[64];
 	char idleAnimation[64];
 	real32 speed;
-	bool backwards;
 	real64 transitionDuration;
 } AnimationComponent;
 
@@ -73,7 +72,6 @@ typedef struct animator_component_t
 	real64 duration;
 	int32 loopCount;
 	real32 speed;
-	bool backwards;
 	bool paused;
 	char previousAnimation[64];
 	real64 previousAnimationTime;
@@ -86,7 +84,6 @@ typedef struct next_animation_component_t
 	char name[64];
 	int32 loopCount;
 	real32 speed;
-	bool backwards;
 	real64 transitionDuration;
 } NextAnimationComponent;
 

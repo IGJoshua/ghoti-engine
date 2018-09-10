@@ -280,9 +280,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			kmMat4Identity(&boneMatrices[i]);
 		}
 
-		HashMap *skeletonTransforms = hashMapGetData(
-			skeletons,
-			&animationComponent->skeleton);
+		UUID skeletonID = idFromName(animationComponent->skeleton);
+		HashMap *skeletonTransforms = hashMapGetData(skeletons, &skeletonID);
 
 		Skeleton *skeleton = &model->skeleton;
 		for (uint32 i = 0; i < skeleton->numBoneOffsets; i++)

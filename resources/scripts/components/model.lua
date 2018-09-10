@@ -10,7 +10,7 @@ local component = engine.components:register("model", "ModelComponent")
 
 local C = engine.C
 
-function component:swap(name, removeAnimation, removeSkeleton, scene, uuid, skeleton, idleAnimation, speed, backwards)
+function component:swap(name, removeAnimation, scene, uuid, skeleton, idleAnimation, removeSkeleton, speed, transitionDuration)
   C.freeModel(self.name)
   self.name = name
   C.loadModel(name)
@@ -20,7 +20,7 @@ function component:swap(name, removeAnimation, removeSkeleton, scene, uuid, skel
   elseif scene then
     local animation = scene:getComponent("animation", uuid)
     if animation then
-      animation:swapSkeleton(removeSkeleton, scene, skeleton, idleAnimation, speed, backwards)
+      animation:swapSkeleton(skeleton, idleAnimation, removeSkeleton, scene, speed, transitionDuration)
     end
   end
 end

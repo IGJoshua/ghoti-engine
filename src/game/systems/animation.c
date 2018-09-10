@@ -81,7 +81,8 @@ internal void initAnimationSystem(Scene *scene)
 	{
 		addSkeleton(
 			scene,
-			((AnimationComponent*)cdtIteratorGetData(itr))->skeleton);
+			idFromName(
+				((AnimationComponent*)cdtIteratorGetData(itr))->skeleton));
 	}
 
 	animationSystemRefCount++;
@@ -136,8 +137,8 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 				nextAnimation->name,
 				nextAnimation->loopCount,
 				nextAnimation->speed,
-				nextAnimation->backwards,
-				nextAnimation->transitionDuration);
+				nextAnimation->transitionDuration,
+				false);
 
 			strcpy(nextAnimation->name, "");
 		}
@@ -150,8 +151,8 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 				animationComponent->idleAnimation,
 				-1,
 				animationComponent->speed,
-				animationComponent->backwards,
-				animationComponent->transitionDuration);
+				animationComponent->transitionDuration,
+				false);
 		}
 
 		if (!animationReference->currentAnimation)
@@ -165,16 +166,13 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	HashMap *skeleton = hashMapGetData(
-		skeletons,
-		&animationComponent->skeleton);
+	UUID skeletonID = idFromName(animationComponent->skeleton);
+	HashMap *skeleton = hashMapGetData(skeletons, &skeletonID);
 
 	if (!skeleton)
 	{
-		addSkeleton(scene, animationComponent->skeleton);
-		skeleton = hashMapGetData(
-			skeletons,
-			&animationComponent->skeleton);
+		addSkeleton(scene, skeletonID);
+		skeleton = hashMapGetData(skeletons, &skeletonID);
 	}
 
 	for (uint32 i = 0; i < animationReference->currentAnimation->numBones; i++)
@@ -250,14 +248,14 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		animator->transitionTime += dt;
 	}
 
-	real32 direction = animator->backwards ? -1.0f : 1.0f;
-	real64 deltaTime = direction * animator->speed * dt;
+	bool backwards = animator->speed < 0.0f;
+	real64 deltaTime = animator->speed * dt;
 
 	animator->time += deltaTime;
 
 	bool stopped = false;
-	if ((!animator->backwards && animator->time > animator->duration) ||
-		 (animator->backwards && animator->time < 0.0))
+	if ((!backwards && animator->time > animator->duration) ||
+		 (backwards && animator->time < 0.0))
 	{
 		if (animator->loopCount > -1)
 		{

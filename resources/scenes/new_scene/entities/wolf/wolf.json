@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32": [-30, 0, 0]
 			},
 
 			{
@@ -93,7 +93,7 @@
 
 			{
 				"name": "idle animation",
-				"char(64)": "Wolf_Idle_"
+				"char(64)": "Wolf_Walk_cycle_"
 			},
 
 			{
@@ -102,13 +102,8 @@
 			},
 
 			{
-				"name": "backwards",
-				"bool": false
-			},
-
-			{
 				"name": "transition duration",
-				"float64": 0
+				"float64": 0.2
 			}
 		],
 
@@ -140,11 +135,6 @@
 			},
 
 			{
-				"name": "backwards",
-				"bool": false
-			},
-
-			{
 				"name": "paused",
 				"bool": false
 			},
@@ -162,6 +152,29 @@
 			{
 				"name": "transition time",
 				"float64": 0
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0
+			}
+		],
+
+		"next_animation":
+		[
+			{
+				"name": "name",
+				"char(64)": ""
+			},
+
+			{
+				"name": "loop count",
+				"int32": 0
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
 			},
 
 			{

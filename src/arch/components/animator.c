@@ -14,8 +14,8 @@ void playAnimation(
 	const char *name,
 	int32 loopCount,
 	real32 speed,
-	bool backwards,
-	real32 transitionDuration)
+	real32 transitionDuration,
+	bool stopPreviousAnimation)
 {
 	if (!strcmp(animator->currentAnimation, name))
 	{
@@ -40,6 +40,11 @@ void playAnimation(
 		return;
 	}
 
+	if (stopPreviousAnimation)
+	{
+		stopAnimation(animator);
+	}
+
 	animationReference->currentAnimation = getAnimation(model, name);
 	if (!animationReference->currentAnimation)
 	{
@@ -48,15 +53,15 @@ void playAnimation(
 	}
 
 	strcpy(animator->currentAnimation, name);
-	animator->time = backwards ?
+	animator->time = speed < 0.0f ?
 		animationReference->currentAnimation->duration : 0.0;
 	animator->duration = animationReference->currentAnimation->duration;
 	animator->loopCount = loopCount;
 	animator->speed = speed;
-	animator->backwards = backwards;
 	animator->paused = false;
 	animator->transitionDuration =
-		transitionDuration * animationReference->currentAnimation->duration;
+		(transitionDuration < 0.0 ? 0.0 : transitionDuration) *
+		animationReference->currentAnimation->duration;
 }
 
 void stopAnimation(AnimatorComponent *animator)
