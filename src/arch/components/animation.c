@@ -5,7 +5,7 @@
 
 #include "ECS/scene.h"
 
-extern HashMap skeletonsMap;
+HashMap skeletonsMap;
 
 internal void loadSkeleton(HashMap skeleton, Scene *scene, UUID joint);
 

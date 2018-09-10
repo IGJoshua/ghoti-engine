@@ -30,8 +30,8 @@ internal UUID nextAnimationComponentID = {};
 #define SKELETONS_BUCKET_COUNT 2003
 #define ANIMATIONS_BUCKET_COUNT 2003
 
-HashMap skeletonsMap;
-HashMap animationReferences;
+extern HashMap skeletonsMap;
+extern HashMap animationReferences;
 
 internal HashMap skeletons;
 

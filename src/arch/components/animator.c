@@ -6,7 +6,7 @@
 #include "data/data_types.h"
 #include "data/hash_map.h"
 
-extern HashMap animationReferences;
+HashMap animationReferences;
 
 void playAnimation(
 	ModelComponent *modelComponent,
