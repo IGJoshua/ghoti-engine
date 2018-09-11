@@ -84,6 +84,28 @@ internal void addLine(
 	const kmVec3 *colorA,
 	const kmVec3 *colorB,
 	real32 size);
+internal void addTransforms(
+	Scene *scene,
+	TransformComponent *transform,
+	DebugTransformComponent *debugTransform);
+internal void addTransform(
+	const kmVec3 *position,
+	const kmQuaternion *rotation,
+	const kmVec3 *scale,
+	const kmVec3 *xAxisColor,
+	const kmVec3 *xAxisEndpointColor,
+	const kmVec3 *yAxisColor,
+	const kmVec3 *yAxisEndpointColor,
+	const kmVec3 *zAxisColor,
+	const kmVec3 *zAxisEndpointColor,
+	real32 lineWidth,
+	real32 sizeScale);
+
+internal kmVec3 transformVertex(
+	const kmVec3 *position,
+	const kmQuaternion *rotation,
+	const kmVec3 *scale,
+	const kmVec3 *vertex);
 
 internal void drawPrimitives(
 	DebugVertexBuffer *vertexBuffer,
@@ -183,7 +205,7 @@ internal void runDebugRendererSystem(Scene *scene, UUID entity, real64 dt)
 	}
 	else if (debugTransform)
 	{
-
+		addTransforms(scene, transform, debugTransform);
 	}
 }
 
@@ -373,6 +395,103 @@ void addLine(
 	kmVec3Assign(&vertex.position, positionB);
 	kmVec3Assign(&vertex.color, colorB);
 	addVertex(&lineVertexBuffer, vertex, size);
+}
+
+void addTransforms(
+	Scene *scene,
+	TransformComponent *transform,
+	DebugTransformComponent *debugTransform)
+{
+	kmVec3 position;
+	kmQuaternion rotation;
+	kmVec3 scale;
+
+	tGetInterpolatedTransform(transform, &position, &rotation, &scale, alpha);
+
+	addTransform(
+		&position,
+		&rotation,
+		&scale,
+		&debugTransform->xAxisColor,
+		&debugTransform->xAxisEndpointColor,
+		&debugTransform->yAxisColor,
+		&debugTransform->yAxisEndpointColor,
+		&debugTransform->zAxisColor,
+		&debugTransform->zAxisEndpointColor,
+		debugTransform->lineWidth,
+		debugTransform->scale);
+
+	if (debugTransform->recursive)
+	{
+		UUID child = transform->firstChild;
+
+		do {
+			TransformComponent *childTransform = sceneGetComponentFromEntity(
+				scene,
+				child,
+				transformComponentID);
+
+			if (childTransform)
+			{
+				addTransforms(scene, childTransform, debugTransform);
+				child = childTransform->nextSibling;
+			}
+			else
+			{
+				break;
+			}
+		} while (true);
+	}
+}
+
+void addTransform(
+	const kmVec3 *position,
+	const kmQuaternion *rotation,
+	const kmVec3 *scale,
+	const kmVec3 *xAxisColor,
+	const kmVec3 *xAxisEndpointColor,
+	const kmVec3 *yAxisColor,
+	const kmVec3 *yAxisEndpointColor,
+	const kmVec3 *zAxisColor,
+	const kmVec3 *zAxisEndpointColor,
+	real32 lineWidth,
+	real32 sizeScale)
+{
+	kmVec3 origin = KM_VEC3_ZERO;
+	kmVec3 xAxis = KM_VEC3_POS_X;
+	kmVec3 yAxis = KM_VEC3_POS_Y;
+	kmVec3 zAxis = KM_VEC3_POS_Z;
+
+	kmVec3Scale(&xAxis, &xAxis, sizeScale);
+	kmVec3Scale(&yAxis, &yAxis, sizeScale);
+	kmVec3Scale(&zAxis, &zAxis, sizeScale);
+
+	origin = transformVertex(position, rotation, scale, &origin);
+	xAxis = transformVertex(position, rotation, scale, &xAxis);
+	yAxis = transformVertex(position, rotation, scale, &yAxis);
+	zAxis = transformVertex(position, rotation, scale, &zAxis);
+
+	addLine(&origin, &xAxis, xAxisColor, xAxisEndpointColor, lineWidth);
+	addLine(&origin, &yAxis, yAxisColor, yAxisEndpointColor, lineWidth);
+	addLine(&origin, &zAxis, zAxisColor, zAxisEndpointColor, lineWidth);
+}
+
+internal kmVec3 transformVertex(
+	const kmVec3 *position,
+	const kmQuaternion *rotation,
+	const kmVec3 *scale,
+	const kmVec3 *vertex)
+{
+	kmVec3 transformedVertex;
+
+	kmVec3Add(&transformedVertex, vertex, position);
+	kmQuaternionMultiplyVec3(
+		&transformedVertex,
+		rotation,
+		&transformedVertex);
+	kmVec3Mul(&transformedVertex, &transformedVertex, scale);
+
+	return transformedVertex;
 }
 
 void drawPrimitives(
