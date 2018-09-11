@@ -10,7 +10,7 @@ local pitch = 0.0
 local yaw = 0.0
 
 local mouseSensitivity = -10.0
-local distanceFromOrigin = 5
+local distanceFromOrigin = 6
 
 local cameraPosition = ffi.new("kmVec3[1]")
 local up = ffi.new("kmVec3[1]")

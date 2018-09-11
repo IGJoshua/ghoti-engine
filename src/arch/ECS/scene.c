@@ -42,7 +42,6 @@
 
 #define MAX_CONTACTS 4096
 
-extern Config config;
 extern HashMap systemRegistry;
 extern List activeScenes;
 extern bool changeScene;
@@ -728,12 +727,7 @@ void exportRuntimeScene(Scene *scene)
 		sceneFilename,
 		"json",
 		NULL);
-
-	if (config.sceneConfig.removeJSONScenes)
-	{
-		remove(jsonSceneFilename);
-	}
-
+	remove(jsonSceneFilename);
 	free(jsonSceneFilename);
 
 	uint32 entityNumber = 0;
@@ -765,13 +759,9 @@ void exportRuntimeScene(Scene *scene)
 			entityFilename,
 			"json",
 			NULL);
-
-		if (config.sceneConfig.removeJSONEntities)
-		{
-			remove(jsonEntityFilename);
-		}
-
+		remove(jsonEntityFilename);
 		free(jsonEntityFilename);
+
 		free(entityFilename);
 	}
 

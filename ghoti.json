@@ -23,13 +23,7 @@
 		"lua_file": "lua.log"
 	},
 
-	"scene":
-	{
-		"remove_json_scenes": true,
-		"remove_json_entities": true
-	},
-
-	"save":
+	"saves":
 	{
 		"remove_json_scenes": true,
 		"remove_json_entities": true

@@ -3,7 +3,7 @@
 	{
 		"update":
 		{
-			"external": ["basic_input", "debug/orbital_camera", "debug/cube_movement"],
+			"external": ["basic_input", "debug/orbital_camera"],
 			"internal":
 			[
 				"clean_hit_information",

@@ -140,7 +140,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 			"json",
 			NULL);
 
-		if (config.saveConfig.removeJSONScenes)
+		if (config.savesConfig.removeJSONScenes)
 		{
 			remove(jsonSceneFilename);
 		}
@@ -178,7 +178,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 				"json",
 				NULL);
 
-			if (config.saveConfig.removeJSONEntities)
+			if (config.savesConfig.removeJSONEntities)
 			{
 				remove(jsonEntityFilename);
 			}
