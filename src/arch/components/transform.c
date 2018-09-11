@@ -163,23 +163,32 @@ void tGetInterpolatedTransform(
 			&transform->globalScale);
 	}
 
-	kmVec3Lerp(
-		position,
-		&transform->lastGlobalPosition,
-		&transform->globalPosition,
-		(real32)alpha);
+	if (position)
+	{
+		kmVec3Lerp(
+			position,
+			&transform->lastGlobalPosition,
+			&transform->globalPosition,
+			(real32)alpha);
+	}
 
-	quaternionSlerp(
-		rotation,
-		&transform->lastGlobalRotation,
-		&transform->globalRotation,
-		(real32)alpha);
+	if (rotation)
+	{
+		quaternionSlerp(
+			rotation,
+			&transform->lastGlobalRotation,
+			&transform->globalRotation,
+			(real32)alpha);
+	}
 
-	kmVec3Lerp(
-		scale,
-		&transform->lastGlobalScale,
-		&transform->globalScale,
-		(real32)alpha);
+	if (scale)
+	{
+		kmVec3Lerp(
+			scale,
+			&transform->lastGlobalScale,
+			&transform->globalScale,
+			(real32)alpha);
+	}
 }
 
 kmMat4 tGetInterpolatedTransformMatrix(

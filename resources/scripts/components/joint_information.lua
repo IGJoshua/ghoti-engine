@@ -14,14 +14,12 @@ typedef struct joint_constraint_component_t
 	bool CFM_bool;
 	bool stopERP_bool;
 	bool stopCFM_bool;
-
 	real32 loStop_val;
 	real32 hiStop_val;
 	real32 stopBouncyness_val;
 	real32 CFM_val;
 	real32 stopERP_val;
 	real32 stopCFM_val;
-
 } JointConstraintComponent;
 ]]
 

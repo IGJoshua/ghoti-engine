@@ -3,7 +3,12 @@
 	{
 		"update":
 		{
-			"external": ["basic_input", "debug/orbital_camera"],
+			"external":
+			[
+				"basic_input",
+				"debug/orbital_camera"
+			],
+
 			"internal":
 			[
 				"clean_hit_information",
@@ -24,7 +29,14 @@
 
 			],
 
-			"internal": ["render_heightmap", "renderer", "wireframe_renderer", "gui_renderer"]
+			"internal":
+			[
+				"render_heightmap",
+				"renderer",
+				"wireframe_renderer",
+				"debug_renderer",
+				"gui_renderer"
+			]
 		}
 	},
 
@@ -40,6 +52,7 @@
 		"capsule": 1024,
 		"collision_tree_node": 4096,
 		"collision": 1024,
+		"debug_primitive": 8192,
 		"font": 1024,
 		"gui_transform": 2048,
 		"heightmap": 256,

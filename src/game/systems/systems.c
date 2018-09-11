@@ -26,9 +26,7 @@ SYSTEM(GUI);
 SYSTEM(RenderHeightmap);
 SYSTEM(Renderer);
 SYSTEM(WireframeRenderer);
-// SYSTEM(PointRenderer);
-// SYSTEM(LineRenderer);
-// SYSTEM(TransformRenderer);
+SYSTEM(DebugRenderer);
 // SYSTEM(CollisionPrimitiveRenderer);
 SYSTEM(GUIRenderer);
 
@@ -55,9 +53,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(Renderer, "renderer");
 	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");
-	// REGISTER_SYSTEM(PointRenderer, "point_renderer");
-	// REGISTER_SYSTEM(LineRenderer, "line_renderer");
-	// REGISTER_SYSTEM(TransformRenderer, "transform_renderer");
+	REGISTER_SYSTEM(DebugRenderer, "debug_renderer");
 	// REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
 }
