@@ -24,7 +24,7 @@
 
 			],
 
-			"internal": ["render_heightmap", "renderer", "gui_renderer"]
+			"internal": ["render_heightmap", "renderer", "wireframe_renderer", "gui_renderer"]
 		}
 	},
 

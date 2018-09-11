@@ -5,7 +5,6 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
-#include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/renderer_utilities.h"
@@ -41,25 +40,16 @@ internal Uniform projectionUniform;
 internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
 
-internal Uniform materialUniform;
-internal Uniform materialValuesUniform;
-internal Uniform materialMaskUniform;
-internal Uniform opacityMaskUniform;
-internal Uniform collectionMaterialUniform;
-internal Uniform collectionMaterialValuesUniform;
-internal Uniform grungeMaterialUniform;
-internal Uniform grungeMaterialValuesUniform;
-internal Uniform wearMaterialUniform;
-internal Uniform wearMaterialValuesUniform;
-
 internal Uniform useCustomColorUniform;
+internal Uniform customColorUniform;
 
 internal HashMap skeletons;
 
-internal uint32 rendererRefCount = 0;
+internal uint32 wireframeRendererRefCount = 0;
 
 internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
+internal UUID wireframeComponentID = {};
 internal UUID animationComponentID = {};
 internal UUID animatorComponentID = {};
 internal UUID cameraComponentID = {};
@@ -72,11 +62,11 @@ extern HashMap skeletonsMap;
 extern HashMap animationReferences;
 
 internal
-void initRendererSystem(Scene *scene)
+void initWireframeRendererSystem(Scene *scene)
 {
-	if (rendererRefCount == 0)
+	if (wireframeRendererRefCount == 0)
 	{
-		LOG("Initializing renderer...\n");
+		LOG("Initializing wireframe renderer...\n");
 
 		createShaderProgram(
 			"resources/shaders/model.vert",
@@ -108,69 +98,23 @@ void initRendererSystem(Scene *scene)
 
 		getUniform(
 			shaderProgram,
-			"material",
-			UNIFORM_TEXTURE_2D,
-			&materialUniform);
-		getUniform(
-			shaderProgram,
-			"materialValues",
-			UNIFORM_VEC3,
-			&materialValuesUniform);
-		getUniform(
-			shaderProgram,
-			"materialMask",
-			UNIFORM_TEXTURE_2D,
-			&materialMaskUniform);
-		getUniform(
-			shaderProgram,
-			"opacityMask",
-			UNIFORM_TEXTURE_2D,
-			&opacityMaskUniform);
-		getUniform(
-			shaderProgram,
-			"collectionMaterial",
-			UNIFORM_TEXTURE_2D,
-			&collectionMaterialUniform);
-		getUniform(
-			shaderProgram,
-			"collectionMaterialValues",
-			UNIFORM_VEC3,
-			&collectionMaterialValuesUniform);
-		getUniform(
-			shaderProgram,
-			"grungeMaterial",
-			UNIFORM_TEXTURE_2D,
-			&grungeMaterialUniform);
-		getUniform(
-			shaderProgram,
-			"grungeMaterialValues",
-			UNIFORM_VEC3,
-			&grungeMaterialValuesUniform);
-		getUniform(
-			shaderProgram,
-			"wearMaterial",
-			UNIFORM_TEXTURE_2D,
-			&wearMaterialUniform);
-		getUniform(
-			shaderProgram,
-			"wearMaterialValues",
-			UNIFORM_VEC3,
-			&wearMaterialValuesUniform);
-
-		getUniform(
-			shaderProgram,
 			"useCustomColor",
 			UNIFORM_BOOL,
 			&useCustomColorUniform);
+		getUniform(
+			shaderProgram,
+			"customColor",
+			UNIFORM_VEC3,
+			&customColorUniform);
 
-		LOG("Successfully initialized renderer\n");
+		LOG("Successfully initialized wireframe renderer\n");
 	}
 
-	rendererRefCount++;
+	wireframeRendererRefCount++;
 }
 
 internal
-void beginRendererSystem(Scene *scene, real64 dt)
+void beginWireframeRendererSystem(Scene *scene, real64 dt)
 {
 	glUseProgram(shaderProgram);
 
@@ -182,16 +126,6 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		return;
 	}
 
-	GLint textureIndex = 0;
-	setMaterialUniform(&materialUniform, &textureIndex);
-	setUniform(materialMaskUniform, 1, &textureIndex);
-	textureIndex++;
-	setUniform(opacityMaskUniform, 1, &textureIndex);
-	textureIndex++;
-	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
-	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
-	setMaterialUniform(&wearMaterialUniform, &textureIndex);
-
 	if (animationSystemRefCount > 0)
 	{
 		skeletons = *(HashMap*)hashMapGetData(skeletonsMap, &scene);
@@ -199,7 +133,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 }
 
 internal
-void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
+void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	if (!sceneGetComponentFromEntity(
 		scene,
@@ -220,18 +154,33 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	if (!modelComponent->visible)
+	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		wireframeComponentID);
+
+	if (!wireframeComponent->visible)
 	{
 		return;
 	}
 
-	TransformComponent *transform = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		transformComponentID);
+	TransformComponent transform =
+		*(TransformComponent*)sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
+
+	kmVec3Mul(
+		&transform.lastGlobalScale,
+		&transform.lastGlobalScale,
+		&wireframeComponent->scale);
+	kmVec3Mul(
+		&transform.globalScale,
+		&transform.globalScale,
+		&wireframeComponent->scale);
 
 	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
-		transform,
+		&transform,
 		alpha);
 
 	setUniform(modelUniform, 1, &worldMatrix);
@@ -311,8 +260,6 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		Subset *subset = &model->subsets[i];
 		Mesh *mesh = &subset->mesh;
-		Material *material = &subset->material;
-		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
@@ -322,32 +269,19 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glEnableVertexAttribArray(j);
 		}
 
-		GLint textureIndex = 0;
-		activateMaterialTextures(material, &textureIndex);
-		activateTexture(model->materialTexture, &textureIndex);
-		activateTexture(model->opacityTexture, &textureIndex);
-		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
-		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
-		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+		setUniform(
+			useCustomColorUniform,
+			1,
+			&wireframeComponent->customColor);
+		setUniform(customColorUniform, 1, &wireframeComponent->color);
 
-		setMaterialValuesUniform(&materialValuesUniform, material);
-		setMaterialValuesUniform(
-			&collectionMaterialValuesUniform,
-			&mask->collectionMaterial);
-		setMaterialValuesUniform(
-			&grungeMaterialValuesUniform,
-			&mask->grungeMaterial);
-		setMaterialValuesUniform(
-			&wearMaterialValuesUniform,
-			&mask->wearMaterial);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		if (material->doubleSided)
-		{
-			glDisable(GL_CULL_FACE);
-		}
+		real32 lineWidth;
+		glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+		glLineWidth(wireframeComponent->lineWidth);
 
-		bool useCustomColor = false;
-		setUniform(useCustomColorUniform, 1, &useCustomColor);
+		glDisable(GL_CULL_FACE);
 
 		glDrawElements(
 			GL_TRIANGLES,
@@ -357,17 +291,14 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		logGLError(
 			false,
-			"Error when drawing model (%s), subset (%s)",
+			"Error when drawing wireframe for model (%s), subset (%s)",
 			model->name.string,
 			subset->name.string);
 
-		glEnable(GL_CULL_FACE);
+		glLineWidth(lineWidth);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
-		{
-			glActiveTexture(GL_TEXTURE0 + j);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
+		glEnable(GL_CULL_FACE);
 
 		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
 		{
@@ -380,30 +311,31 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 }
 
 internal
-void endRendererSystem(Scene *scene, real64 dt)
+void endWireframeRendererSystem(Scene *scene, real64 dt)
 {
 	glUseProgram(0);
 }
 
 internal
-void shutdownRendererSystem(Scene *scene)
+void shutdownWireframeRendererSystem(Scene *scene)
 {
-	if (--rendererRefCount == 0)
+	if (--wireframeRendererRefCount == 0)
 	{
-		LOG("Shutting down renderer...\n");
+		LOG("Shutting down wireframe renderer...\n");
 
 		glDeleteProgram(shaderProgram);
 
-		LOG("Successfully shut down renderer\n");
+		LOG("Successfully shut down wireframe renderer\n");
 	}
 }
 
-System createRendererSystem(void)
+System createWireframeRendererSystem(void)
 {
 	System system = {};
 
 	transformComponentID = idFromName("transform");
 	modelComponentID = idFromName("model");
+	wireframeComponentID = idFromName("wireframe");
 	animationComponentID = idFromName("animation");
 	animatorComponentID = idFromName("animator");
 	cameraComponentID = idFromName("camera");
@@ -411,12 +343,13 @@ System createRendererSystem(void)
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &transformComponentID);
 	listPushFront(&system.componentTypes, &modelComponentID);
+	listPushFront(&system.componentTypes, &wireframeComponentID);
 
-	system.init = &initRendererSystem;
-	system.begin = &beginRendererSystem;
-	system.run = &runRendererSystem;
-	system.end = &endRendererSystem;
-	system.shutdown = &shutdownRendererSystem;
+	system.init = &initWireframeRendererSystem;
+	system.begin = &beginWireframeRendererSystem;
+	system.run = &runWireframeRendererSystem;
+	system.end = &endWireframeRendererSystem;
+	system.shutdown = &shutdownWireframeRendererSystem;
 
 	return system;
 }

@@ -15,18 +15,22 @@
 	key = idFromName(name);\
 	hashMapInsert(systemRegistry, &key, &sys);
 
-SYSTEM(Renderer);
+SYSTEM(CleanHitInformation);
+SYSTEM(CleanHitList);
+SYSTEM(Animation);
 SYSTEM(CleanGlobalTransforms);
 SYSTEM(ApplyParentTransforms);
-SYSTEM(CleanHitInformation);
 SYSTEM(SimulateRigidbodies);
-SYSTEM(CleanHitList);
-SYSTEM(RenderHeightmap);
 SYSTEM(JointInformation);
 SYSTEM(GUI);
+SYSTEM(RenderHeightmap);
+SYSTEM(Renderer);
+SYSTEM(WireframeRenderer);
+// SYSTEM(PointRenderer);
+// SYSTEM(LineRenderer);
+// SYSTEM(TransformRenderer);
+// SYSTEM(CollisionPrimitiveRenderer);
 SYSTEM(GUIRenderer);
-SYSTEM(LineRenderer);
-SYSTEM(Animation);
 
 extern HashMap systemRegistry;
 
@@ -40,18 +44,22 @@ void initSystems(void)
 
 	UUID key;
 
-	REGISTER_SYSTEM(Renderer, "renderer");
+	REGISTER_SYSTEM(CleanHitInformation, "clean_hit_information");
+	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
+	REGISTER_SYSTEM(Animation, "animation");
 	REGISTER_SYSTEM(CleanGlobalTransforms, "clean_global_transforms");
 	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
-	REGISTER_SYSTEM(CleanHitInformation, "clean_hit_information");
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
-	REGISTER_SYSTEM(CleanHitList, "clean_hit_list");
-	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
 	REGISTER_SYSTEM(GUI, "gui");
+	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
+	REGISTER_SYSTEM(Renderer, "renderer");
+	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");
+	// REGISTER_SYSTEM(PointRenderer, "point_renderer");
+	// REGISTER_SYSTEM(LineRenderer, "line_renderer");
+	// REGISTER_SYSTEM(TransformRenderer, "transform_renderer");
+	// REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
-	REGISTER_SYSTEM(LineRenderer, "line_renderer");
-	REGISTER_SYSTEM(Animation, "animation");
 }
 
 void freeSystems(void)

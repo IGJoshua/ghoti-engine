@@ -97,6 +97,11 @@
 			},
 
 			{
+				"name": "scale",
+				"float32": [1.01, 1.01, 1.01]
+			},
+
+			{
 				"name": "custom color",
 				"bool": true
 			},
