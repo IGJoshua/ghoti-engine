@@ -103,7 +103,10 @@ void resetAnimator(
 	AnimatorComponent *animator,
 	AnimationReference *animationReference)
 {
-	animationReference->currentAnimation = NULL;
+	if (animationReference)
+	{
+		animationReference->currentAnimation = NULL;
+	}
 
 	strcpy(animator->currentAnimation, "");
 	animator->time = 0.0;

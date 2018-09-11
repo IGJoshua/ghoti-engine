@@ -16,6 +16,8 @@ extern HashMap materialFolders;
 extern HashMap fonts;
 extern HashMap images;
 
+extern bool assetsChanged;
+
 void initializeAssetManager(void) {
 	models = createHashMap(
 		sizeof(UUID),
@@ -46,6 +48,11 @@ void initializeAssetManager(void) {
 		sizeof(Image),
 		IMAGES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+}
+
+void activateAssetsChangedFlag(void)
+{
+	assetsChanged = true;
 }
 
 void shutdownAssetManager(void) {

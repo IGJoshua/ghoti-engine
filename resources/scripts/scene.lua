@@ -29,6 +29,15 @@ function Scene:addComponentToEntity(component, entity, componentData)
   C.sceneAddComponentToEntity(self.ptr, entity, componentID, componentData)
 end
 
+function Scene:removeComponentFromEntity(component, entity)
+  local componentID = C.idFromName(component)
+  C.sceneRemoveComponentFromEntity(self.ptr, entity, componentID)
+end
+
+function Scene:removeEntity(entity)
+  C.sceneRemoveEntity(self.ptr, entity)
+end
+
 function Scene:getComponentIterator(component)
   local itrOut = ffi.new("ComponentDataTableIterator[1]")
   local itr = ffi.new(

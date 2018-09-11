@@ -22,4 +22,11 @@ void playAnimation(
 	real32 transitionDuration,
 	bool stopPreviousAnimation);
 void stopAnimation(AnimatorComponent *animator);
+
+void removeSkeleton(Scene *scene, UUID skeletonID);
+
+void resetAnimator(
+	AnimatorComponent *animator,
+	void *animationReference);
+void removeAnimator(AnimatorComponent *animator);
 ]]

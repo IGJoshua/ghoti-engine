@@ -5,4 +5,6 @@ void freeModel(const char *name);
 int32 loadFont(const char *name, uint32 size);
 void* getFont(const char *name, uint32 size);
 void freeFont(void *font);
+
+void activateAssetsChangedFlag(void);
 ]]

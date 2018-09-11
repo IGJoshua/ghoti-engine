@@ -123,8 +123,11 @@ release : clean
 	find $(RELEASE_RESOURCES_FOLDER)/fonts/* -type f -not -path '*$(DEFAULT_FONT)' -exec rm {} \;
 	cp -r doc/ release/
 	cp $(CONFIG_FILE) release/
+	mkdir -p $(RELEASE_RESOURCES_FOLDER)/audio/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
+	mkdir -p $(RELEASE_RESOURCES_FOLDER)/heightmaps/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
+	mkdir -p $(RELEASE_RESOURCES_FOLDER)/images/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/images/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*

@@ -74,3 +74,19 @@ void loadSkeleton(HashMap skeleton, Scene *scene, UUID joint)
 		child = transform->nextSibling;
 	} while (true);
 }
+
+void removeSkeleton(Scene *scene, UUID skeletonID)
+{
+	HashMap *skeletons = hashMapGetData(skeletonsMap, &scene);
+	if (skeletons)
+	{
+		HashMap *skeleton = hashMapGetData(*skeletons, &skeletonID);
+		if (skeleton)
+		{
+			freeHashMap(skeleton);
+			hashMapDelete(*skeletons, &skeletonID);
+		}
+	}
+
+	sceneRemoveEntity(scene, skeletonID);
+}

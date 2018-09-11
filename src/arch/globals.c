@@ -20,6 +20,8 @@ HashMap materialFolders;
 HashMap fonts;
 HashMap images;
 
+bool assetsChanged;
+
 int32 viewportWidth;
 int32 viewportHeight;
 

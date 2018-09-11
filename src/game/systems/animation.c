@@ -116,8 +116,8 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		AnimationReference newAnimationReference;
 		newAnimationReference.previousAnimation = NULL;
 		newAnimationReference.currentAnimation = NULL;
-		hashMapInsert(animationReferences, &animator, &newAnimationReference);
 
+		hashMapInsert(animationReferences, &animator, &newAnimationReference);
 		animationReference = hashMapGetData(animationReferences, &animator);
 	}
 

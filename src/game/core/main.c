@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 extern Config config;
+extern bool assetsChanged;
 extern int32 viewportWidth;
 extern int32 viewportHeight;
 extern bool viewportUpdated;
@@ -239,6 +240,14 @@ int32 main(int32 argc, char *argv[])
 				reloadingScene = false;
 
 				update(dt, true);
+				update(dt, false);
+			}
+
+			if (assetsChanged)
+			{
+				assetsChanged = false;
+
+				update(dt, false);
 				update(dt, false);
 			}
 

@@ -13,3 +13,4 @@ typedef struct joint_transform_t
 } JointTransform;
 
 void addSkeleton(Scene *scene, UUID skeletonID);
+void removeSkeleton(Scene *scene, UUID skeletonID);

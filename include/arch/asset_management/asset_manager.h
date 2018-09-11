@@ -10,4 +10,5 @@
 #define IMAGES_BUCKET_COUNT 1031
 
 void initializeAssetManager(void);
+void activateAssetsChangedFlag(void);
 void shutdownAssetManager(void);

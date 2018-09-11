@@ -10,17 +10,65 @@ local component = engine.components:register("model", "ModelComponent")
 
 local C = engine.C
 
-function component:swap(name, removeAnimation, scene, uuid, skeleton, idleAnimation, removeSkeleton, speed, transitionDuration)
+function component:swap(name, staticModel, scene, uuid, removeSkeleton, skeleton, idleAnimation, speed, transitionDuration)
   C.freeModel(self.name)
   self.name = name
   C.loadModel(name)
 
-  if removeAnimation or false then
-    C.sceneRemoveComponentFromEntity(scene.ptr, uuid, C.idFromName("animation"))
-  elseif scene then
-    local animation = scene:getComponent("animation", uuid)
-    if animation then
-      animation:swapSkeleton(skeleton, idleAnimation, removeSkeleton, scene, speed, transitionDuration)
+  C.activateAssetsChangedFlag()
+
+  staticModel = staticModel or false
+
+  if scene then
+	if staticModel then
+	  if removeSkeleton then
+		local animation = scene:getComponent("animation", uuid)
+		if animation ~= nil then
+		  animation:removeSkeleton(scene)
+		end
+	  end
+
+	  scene:removeComponentFromEntity("animation", uuid)
+      scene:removeComponentFromEntity("animator", uuid)
+      scene:removeComponentFromEntity("next_animation", uuid)
+	else
+	  local animator = scene:getComponent("animator", uuid)
+	  if animator ~= nil then
+		C.removeAnimator(animator)
+		C.resetAnimator(animator, nil)
+		animator.speed = 1.0
+		animator.previousAnimation = ""
+		animator.previousAnimationTime = 0.0
+		animator.transitionDuration = 0.0
+	  end
+
+	  local next_animation = scene:getComponent("next_animation", uuid)
+	  if next_animation ~= nil then
+		next_animation:set("")
+	  end
+
+      local animationComponent = true
+
+      local animation = scene:getComponent("animation", uuid)
+      if animation == nil then
+        animationComponent = false
+        animation = ffi.new("AnimationComponent")
+      end
+
+      removeSkeleton = removeSkeleton or false
+
+	  if removeSkeleton and animationComponent then
+		animation:removeSkeleton(scene)
+      end
+
+      animation.skeleton = skeleton
+      animation.idleAnimation = idleAnimation
+      animation.speed = speed or 1.0
+      animation.transitionDuration = transitionDuration or 0.0
+
+      if not animationComponent then
+        scene:addComponentToEntity("animation", uuid, animation)
+      end
     end
   end
 end

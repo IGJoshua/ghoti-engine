@@ -12,7 +12,6 @@ function system.init(scene)
   input:register("fullscreen", input.BUTTON(keyboard.F))
   input:register("save", input.BUTTON(keyboard.S))
   input:register("load_save", input.BUTTON(keyboard.Z))
-  input:register("play_run", input.BUTTON(keyboard.P))
 end
 
 function system.begin(scene, dt)

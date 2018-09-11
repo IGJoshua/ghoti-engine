@@ -66,9 +66,9 @@ void systemRun(
 				}
 
 				// Check if the entity exists in the table
-				uint32 *entityIndex = cdtIteratorGetData(itr);
+				void *entityData = cdtGet(*table, cdtIteratorGetUUID(itr));
 
-				if (!entityIndex)
+				if (!entityData)
 				{
 					entityValid = false;
 					break;
