@@ -1863,7 +1863,7 @@ int32 sceneAddComponentToEntity(
 
 	if (listContains(l, &componentType))
 	{
-		LOG("\n\nOverwriting component data of %s on entity %s\n\n\n",
+		LOG("WARNING: Overwriting component data of %s on entity %s\n",
 			componentType.string,
 			entity.string);
 	}

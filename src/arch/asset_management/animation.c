@@ -38,7 +38,6 @@ int32 loadAnimations(
 			Animation *animation = &(*animations)[i];
 
 			animation->name = readUUID(file);
-			fread(&animation->duration, sizeof(real64), 1, file);
 			fread(&animation->fps, sizeof(real64), 1, file);
 
 			fread(&animation->numBones, sizeof(uint32), 1, file);
@@ -86,6 +85,8 @@ int32 loadAnimations(
 					fread(&keyFrame->value, sizeof(kmVec3), 1, file);
 				}
 			}
+
+			fread(&animation->duration, sizeof(real64), 1, file);
 		}
 	}
 	else

@@ -81,8 +81,7 @@ internal void initAnimationSystem(Scene *scene)
 	{
 		addSkeleton(
 			scene,
-			idFromName(
-				((AnimationComponent*)cdtIteratorGetData(itr))->skeleton));
+			((AnimationComponent*)cdtIteratorGetData(itr))->skeleton);
 	}
 
 	animationSystemRefCount++;
@@ -174,13 +173,14 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	UUID skeletonID = idFromName(animationComponent->skeleton);
-	HashMap *skeleton = hashMapGetData(skeletons, &skeletonID);
+	HashMap *skeleton = hashMapGetData(
+		skeletons,
+		&animationComponent->skeleton);
 
 	if (!skeleton)
 	{
-		addSkeleton(scene, skeletonID);
-		skeleton = hashMapGetData(skeletons, &skeletonID);
+		addSkeleton(scene, animationComponent->skeleton);
+		skeleton = hashMapGetData(skeletons, &animationComponent->skeleton);
 	}
 
 	for (uint32 i = 0; i < animationReference->currentAnimation->numBones; i++)
@@ -203,6 +203,8 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 			tMarkDirty(scene, jointTransform->uuid);
 		}
 	}
+
+	real64 deltaTime = animator->speed * dt;
 
 	if (animator->transitionTime < animator->transitionDuration)
 	{
@@ -253,11 +255,11 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 			}
 		}
 
-		animator->transitionTime += dt;
+		animator->transitionTime += deltaTime < 0.0 ?
+			deltaTime * -1.0 : deltaTime;
 	}
 
 	bool backwards = animator->speed < 0.0f;
-	real64 deltaTime = animator->speed * dt;
 
 	animator->time += deltaTime;
 

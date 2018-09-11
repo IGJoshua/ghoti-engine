@@ -260,6 +260,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		animationComponentID);
 
 	AnimationReference *animationReference = NULL;
+	HashMap *skeletonTransforms = NULL;
 
 	if (animationSystemRefCount > 0 && animationComponent)
 	{
@@ -272,9 +273,14 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			animationReference = hashMapGetData(animationReferences, &animator);
 		}
+
+		skeletonTransforms = hashMapGetData(
+			skeletons,
+			&animationComponent->skeleton);
 	}
 
-	bool hasAnimations = animationReference ? true : false;
+	bool hasAnimations = animationReference && skeletonTransforms ?
+		true : false;
 	setUniform(hasAnimationsUniform, 1, &hasAnimations);
 
 	if (hasAnimations)
@@ -284,9 +290,6 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			kmMat4Identity(&boneMatrices[i]);
 		}
-
-		UUID skeletonID = idFromName(animationComponent->skeleton);
-		HashMap *skeletonTransforms = hashMapGetData(skeletons, &skeletonID);
 
 		Skeleton *skeleton = &model->skeleton;
 		for (uint32 i = 0; i < skeleton->numBoneOffsets; i++)

@@ -59,7 +59,7 @@ typedef struct camera_component_t
 
 typedef struct animation_component_t
 {
-	char skeleton[64];
+	UUID skeleton;
 	char idleAnimation[64];
 	real32 speed;
 	real64 transitionDuration;
