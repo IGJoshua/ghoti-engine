@@ -27,13 +27,6 @@ typedef enum collision_geom_type_e
 	COLLISION_GEOM_TYPE_HEIGHTFIELD
 } CollisionGeomType;
 
-typedef enum debug_primitive_type_e
-{
-	DEBUG_PRIMITIVE_TYPE_POINT,
-	DEBUG_PRIMITIVE_TYPE_LINE,
-	DEBUG_PRIMITIVE_TYPE_TRANSFORM
-} DebugPrimitiveType;
-
 typedef enum joint_type_e
 {
 	JOINT_TYPE_BALL_SOCKET = 0,
@@ -160,15 +153,34 @@ typedef struct collision_component_t
 	UUID lastHitList;
 } CollisionComponent;
 
+typedef struct debug_line_component_t
+{
+	UUID endpoint;
+	real32 lineWidth;
+	kmVec3 color;
+	kmVec3 endpointColor;
+} DebugLineComponent;
+
+typedef struct debug_point_component_t
+{
+	real32 size;
+	kmVec3 color;
+} DebugPointComponent;
+
 typedef struct debug_primitive_component_t
 {
 	bool visible;
-	DebugPrimitiveType type;
-	real32 size;
-	kmVec3 color;
-	UUID endpoint;
-	kmVec3 endpointColor;
 } DebugPrimitiveComponent;
+
+typedef struct debug_transform_component_t
+{
+	bool recursive;
+	real32 lineWidth;
+	real32 scale;
+	kmVec3 xAxisColor;
+	kmVec3 yAxisColor;
+	kmVec3 zAxisColor;
+} DebugTransformComponent;
 
 typedef struct font_component_t
 {

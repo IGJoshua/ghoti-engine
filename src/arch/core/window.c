@@ -47,6 +47,8 @@ GLFWwindow *initWindow(
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GLFW_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
 	GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
 	if (!window)
 	{

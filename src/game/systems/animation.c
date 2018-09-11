@@ -41,7 +41,7 @@ internal kmVec3 getCurrentPosition(Bone *bone, real64 time);
 internal kmQuaternion getCurrentRotation(Bone *bone, real64 time);
 internal kmVec3 getCurrentScale(Bone *bone, real64 time);
 
-internal int32 ptrCmp(void *a, void *b)
+internal int32 ptrcmp(void *a, void *b)
 {
 	return *(uint64*)a != *(uint64*)b;
 }
@@ -54,13 +54,13 @@ internal void initAnimationSystem(Scene *scene)
 			sizeof(Scene*),
 			sizeof(HashMap),
 			SKELETONS_MAP_BUCKET_COUNT,
-			(ComparisonOp)&ptrCmp);
+			(ComparisonOp)&ptrcmp);
 
 		animationReferences = createHashMap(
 			sizeof(AnimatorComponent*),
 			sizeof(AnimationReference),
 			ANIMATIONS_BUCKET_COUNT,
-			(ComparisonOp)&ptrCmp);
+			(ComparisonOp)&ptrcmp);
 	}
 
 	skeletons = createHashMap(

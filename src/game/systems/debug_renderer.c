@@ -14,6 +14,7 @@
 #include "components/camera.h"
 
 #include "data/data_types.h"
+#include "data/hash_map.h"
 #include "data/list.h"
 
 #include <stddef.h>
@@ -31,10 +32,17 @@ typedef struct debug_vertex_t
 #define MAX_LINE_COUNT 4096
 #define MAX_DEBUG_VERTEX_COUNT MAX_LINE_COUNT * 2
 
-typedef struct debug_vertex_buffer_t
+#define VERTEX_DATA_BUCKET_COUNT 127
+
+typedef struct debug_vertex_data_t
 {
 	DebugVertex vertices[MAX_DEBUG_VERTEX_COUNT];
-	real32 sizes[MAX_DEBUG_VERTEX_COUNT];
+	uint32 numVertices;
+} DebugVertexData;
+
+typedef struct debug_vertex_buffer_t
+{
+	HashMap vertexData;
 	uint32 numVertices;
 	GLuint vertexBuffer;
 	GLuint vertexArray;
@@ -51,12 +59,16 @@ internal Uniform projectionUniform;
 internal UUID transformComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID debugPrimitiveComponentID = {};
+internal UUID debugPointComponentID = {};
+internal UUID debugLineComponentID = {};
+internal UUID debugTransformComponentID = {};
 
 extern real64 alpha;
 
 internal void initializeVertexBuffer(DebugVertexBuffer *vertexBuffer);
+internal void clearVertexBuffer(DebugVertexBuffer *vertexBuffer);
+internal void clearVertices(DebugVertexData *vertexData);
 
-internal void clearVertices(DebugVertexBuffer *vertexBuffer);
 internal void addVertex(
 	DebugVertexBuffer *vertexBuffer,
 	DebugVertex vertex,
@@ -119,51 +131,59 @@ internal void runDebugRendererSystem(Scene *scene, UUID entity, real64 dt)
 		scene,
 		entity,
 		debugPrimitiveComponentID);
-
-	kmVec3 position;
-	tGetInterpolatedTransform(transform, &position, NULL, NULL, alpha);
-
-	TransformComponent *endpointTransform = NULL;
+	DebugPointComponent *debugPoint = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		debugPointComponentID);
+	DebugLineComponent *debugLine = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		debugLineComponentID);
+	DebugTransformComponent *debugTransform = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		debugTransformComponentID);
 
 	if (!debugPrimitive->visible)
 	{
 		return;
 	}
 
-	switch (debugPrimitive->type)
+	kmVec3 position;
+	tGetInterpolatedTransform(transform, &position, NULL, NULL, alpha);
+
+	if (debugPoint)
 	{
-		case DEBUG_PRIMITIVE_TYPE_POINT:
-			addPoint(&position, &debugPrimitive->color, debugPrimitive->size);
-			break;
-		case DEBUG_PRIMITIVE_TYPE_LINE:
-			endpointTransform =  sceneGetComponentFromEntity(
-				scene,
-				debugPrimitive->endpoint,
-				transformComponentID);
+		addPoint(&position, &debugPoint->color, debugPoint->size);
+	}
+	else if (debugLine)
+	{
+		TransformComponent *endpointTransform =  sceneGetComponentFromEntity(
+			scene,
+			debugLine->endpoint,
+			transformComponentID);
 
-			if (endpointTransform)
-			{
-				kmVec3 endpoint;
-				tGetInterpolatedTransform(
-					endpointTransform,
-					&endpoint,
-					NULL,
-					NULL,
-					alpha);
+		if (endpointTransform)
+		{
+			kmVec3 endpoint;
+			tGetInterpolatedTransform(
+				endpointTransform,
+				&endpoint,
+				NULL,
+				NULL,
+				alpha);
 
-				addLine(
-					&position,
-					&endpoint,
-					&debugPrimitive->color,
-					&debugPrimitive->endpointColor,
-					debugPrimitive->size);
-			}
+			addLine(
+				&position,
+				&endpoint,
+				&debugLine->color,
+				&debugLine->endpointColor,
+				debugLine->lineWidth);
+		}
+	}
+	else if (debugTransform)
+	{
 
-			break;
-		case DEBUG_PRIMITIVE_TYPE_TRANSFORM:
-			break;
-		default:
-			break;
 	}
 }
 
@@ -179,8 +199,8 @@ internal void endDebugRendererSystem(Scene *scene, real64 dt)
 		return;
 	}
 
-	drawPrimitives(&pointVertexBuffer, GL_POINTS, "point");
-	drawPrimitives(&lineVertexBuffer, GL_LINES, "line");
+	drawPrimitives(&pointVertexBuffer, GL_POINTS, "points");
+	drawPrimitives(&lineVertexBuffer, GL_LINES, "lines");
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -205,6 +225,9 @@ internal void shutdownDebugRendererSystem(Scene *scene)
 
 		glDeleteProgram(shaderProgram);
 
+		freeHashMap(&pointVertexBuffer.vertexData);
+		freeHashMap(&lineVertexBuffer.vertexData);
+
 		LOG("Successfully shut down debug renderer\n");
 	}
 }
@@ -216,6 +239,9 @@ System createDebugRendererSystem(void)
 	transformComponentID = idFromName("transform");
 	cameraComponentID = idFromName("camera");
 	debugPrimitiveComponentID = idFromName("debug_primitive");
+	debugPointComponentID = idFromName("debug_point");
+	debugLineComponentID = idFromName("debug_line");
+	debugTransformComponentID = idFromName("debug_transform");
 
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &transformComponentID);
@@ -227,6 +253,11 @@ System createDebugRendererSystem(void)
 	system.shutdown = &shutdownDebugRendererSystem;
 
 	return system;
+}
+
+internal int32 floatcmp(void *a, void *b)
+{
+	return *(real32*)a != *(real32*)b;
 }
 
 void initializeVertexBuffer(DebugVertexBuffer *vertexBuffer)
@@ -263,28 +294,55 @@ void initializeVertexBuffer(DebugVertexBuffer *vertexBuffer)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	clearVertices(vertexBuffer);
+	vertexBuffer->vertexData = createHashMap(
+		sizeof(real32),
+		sizeof(DebugVertexData),
+		VERTEX_DATA_BUCKET_COUNT,
+		(ComparisonOp)&floatcmp);
+
+	clearVertexBuffer(vertexBuffer);
 }
 
-void clearVertices(DebugVertexBuffer *vertexBuffer)
+void clearVertexBuffer(DebugVertexBuffer *vertexBuffer)
+{
+	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
+	{
+		clearVertices((DebugVertexData*)hashMapIteratorGetValue(itr));
+	}
+
+	vertexBuffer->numVertices = 0;
+}
+
+void clearVertices(DebugVertexData *vertexData)
 {
 	memset(
-		vertexBuffer->vertices,
+		vertexData->vertices,
 		0,
 		sizeof(DebugVertex) * MAX_DEBUG_VERTEX_COUNT);
-	memset(
-		vertexBuffer->sizes,
-		0,
-		sizeof(real32) * MAX_DEBUG_VERTEX_COUNT);
-	vertexBuffer->numVertices = 0;
+	vertexData->numVertices = 0;
 }
 
 void addVertex(DebugVertexBuffer *vertexBuffer, DebugVertex vertex, real32 size)
 {
-	if (vertexBuffer->numVertices + 1 < MAX_DEBUG_VERTEX_COUNT)
+	if (vertexBuffer->numVertices + 1
+		< MAX_DEBUG_VERTEX_COUNT)
 	{
-		vertexBuffer->vertices[vertexBuffer->numVertices++] = vertex;
-		vertexBuffer->sizes[vertexBuffer->numVertices] = size;
+		DebugVertexData *vertexData = hashMapGetData(
+			vertexBuffer->vertexData,
+			&size);
+
+		if (!vertexData)
+		{
+			DebugVertexData newVertexData;
+			clearVertices(&newVertexData);
+			hashMapInsert(vertexBuffer->vertexData, &size, &newVertexData);
+			vertexData = hashMapGetData(vertexBuffer->vertexData, &size);
+		}
+
+		vertexData->vertices[vertexData->numVertices++] = vertex;
+		vertexBuffer->numVertices++;
 	}
 }
 
@@ -331,10 +389,18 @@ void drawPrimitives(
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->vertexBuffer);
 
 	void *buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	memcpy(
-		buffer,
-		vertexBuffer->vertices,
-		sizeof(DebugVertex) * MAX_DEBUG_VERTEX_COUNT);
+
+	uint32 index = 0;
+	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
+	{
+		DebugVertexData *vertexData = hashMapIteratorGetValue(itr);
+		uint32 size = sizeof(DebugVertex) * vertexData->numVertices;
+		memcpy(buffer + index, vertexData->vertices, size);
+		index += size;
+	}
+
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	for (uint8 i = 0; i < NUM_DEBUG_VERTEX_ATTRIBUTES; i++)
@@ -342,13 +408,35 @@ void drawPrimitives(
 		glEnableVertexAttribArray(i);
 	}
 
-	glDrawArrays(primitiveType, 0, vertexBuffer->numVertices);
-	logGLError(false, "Error when drawing debug %s", name);
+	index = 0;
+	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
+		!hashMapIteratorAtEnd(itr);
+		hashMapMoveIterator(&itr))
+	{
+		real32 primitiveSize = *(real32*)hashMapIteratorGetKey(itr);
+
+		real32 pointSize;
+		glGetFloatv(GL_POINT_SIZE, &pointSize);
+		glPointSize(primitiveSize);
+
+		real32 lineWidth;
+		glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+		glLineWidth(primitiveSize);
+
+		DebugVertexData *vertexData = hashMapIteratorGetValue(itr);
+		glDrawArrays(primitiveType, index, vertexData->numVertices);
+		logGLError(false, "Error when drawing debug %s", name);
+
+		glPointSize(pointSize);
+		glLineWidth(primitiveSize);
+
+		index += vertexData->numVertices;
+	}
 
 	for (uint8 j = 0; j < NUM_DEBUG_VERTEX_ATTRIBUTES; j++)
 	{
 		glDisableVertexAttribArray(j);
 	}
 
-	clearVertices(vertexBuffer);
+	clearVertexBuffer(vertexBuffer);
 }

@@ -95,6 +95,7 @@ int32 main(int32 argc, char *argv[])
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_MULTISAMPLE);
 
 	glClearColor(
 		config.graphicsConfig.backgroundColor.x,
