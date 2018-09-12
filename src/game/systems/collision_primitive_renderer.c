@@ -53,6 +53,12 @@ internal UUID capsuleComponentID = {};
 
 extern real64 alpha;
 
+internal void drawCollisionPrimitives(
+	Scene *scene,
+	UUID entity,
+	TransformComponent *transformComponent,
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive);
+
 internal
 void initCollisionPrimitiveRendererSystem(Scene *scene)
 {
@@ -140,133 +146,16 @@ void runCollisionPrimitiveRendererSystem(Scene *scene, UUID entity, real64 dt)
 		return;
 	}
 
-	BoxComponent *box = sceneGetComponentFromEntity(
+	TransformComponent *transform = sceneGetComponentFromEntity(
 		scene,
 		entity,
-		boxComponentID);
-	SphereComponent *sphere = sceneGetComponentFromEntity(
+		transformComponentID);
+
+	drawCollisionPrimitives(
 		scene,
 		entity,
-		sphereComponentID);
-	CapsuleComponent *capsule = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		capsuleComponentID);
-
-	const char *modelName = "";
-	kmVec3 color;
-
-	if (box)
-	{
-		modelName = BOX_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->boxColor);
-	}
-	else if (sphere)
-	{
-		modelName = SPHERE_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->sphereColor);
-	}
-	else if (capsule)
-	{
-		modelName = CAPSULE_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->capsuleColor);
-	}
-	else
-	{
-		return;
-	}
-
-	Model *model = getModel(modelName);
-	if (!model)
-	{
-		return;
-	}
-
-	TransformComponent transform =
-		*(TransformComponent*)sceneGetComponentFromEntity(
-			scene,
-			entity,
-			transformComponentID);
-
-	if (box)
-	{
-		kmVec3Assign(&transform.lastGlobalScale, &box->bounds);
-		kmVec3Scale(
-			&transform.lastGlobalScale,
-			&transform.lastGlobalScale,
-			2.0f);
-
-		kmVec3Assign(&transform.globalScale, &box->bounds);
-		kmVec3Scale(&transform.globalScale, &transform.globalScale, 2.0f);
-	}
-	else if (sphere)
-	{
-
-	}
-	else if (capsule)
-	{
-
-	}
-
-	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
-		&transform,
-		alpha);
-
-	setUniform(modelUniform, 1, &worldMatrix);
-
-	bool hasAnimations = false;
-	setUniform(hasAnimationsUniform, 1, &hasAnimations);
-
-	for (uint32 i = 0; i < model->numSubsets; i++)
-	{
-		Subset *subset = &model->subsets[i];
-		Mesh *mesh = &subset->mesh;
-
-		glBindVertexArray(mesh->vertexArray);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
-
-		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-		{
-			glEnableVertexAttribArray(j);
-		}
-
-		bool useCustomColor = true;
-		setUniform(useCustomColorUniform, 1, &useCustomColor);
-		setUniform(customColorUniform, 1, &color);
-
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-		real32 lineWidth;
-		glGetFloatv(GL_LINE_WIDTH, &lineWidth);
-		glLineWidth(debugCollisionPrimitive->lineWidth);
-
-		glDisable(GL_CULL_FACE);
-
-		glDrawElements(
-			GL_TRIANGLES,
-			mesh->numIndices,
-			GL_UNSIGNED_INT,
-			NULL);
-
-		logGLError(
-			false,
-			"Error when drawing collision primitive (%s), entity (%s)",
-			model->name.string,
-			entity.string);
-
-		glLineWidth(lineWidth);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-		glEnable(GL_CULL_FACE);
-
-		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-		{
-			glDisableVertexAttribArray(j);
-		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
+		transform,
+		debugCollisionPrimitive);
 }
 
 internal
@@ -315,4 +204,181 @@ System createCollisionPrimitiveRendererSystem(void)
 	system.shutdown = &shutdownCollisionPrimitiveRendererSystem;
 
 	return system;
+}
+
+void drawCollisionPrimitives(
+	Scene *scene,
+	UUID entity,
+	TransformComponent *transformComponent,
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive)
+{
+	BoxComponent *box = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		boxComponentID);
+	SphereComponent *sphere = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		sphereComponentID);
+	CapsuleComponent *capsule = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		capsuleComponentID);
+
+	bool skip = false;
+
+	const char *modelName = "";
+	kmVec3 color;
+
+	if (box)
+	{
+		modelName = BOX_MODEL_NAME;
+		kmVec3Assign(&color, &debugCollisionPrimitive->boxColor);
+	}
+	else if (sphere)
+	{
+		modelName = SPHERE_MODEL_NAME;
+		kmVec3Assign(&color, &debugCollisionPrimitive->sphereColor);
+	}
+	else if (capsule)
+	{
+		modelName = CAPSULE_MODEL_NAME;
+		kmVec3Assign(&color, &debugCollisionPrimitive->capsuleColor);
+	}
+	else
+	{
+		skip = true;
+	}
+
+	if (!skip)
+	{
+		Model *model = getModel(modelName);
+		if (!model)
+		{
+			skip = true;
+		}
+
+		if (!skip)
+		{
+			TransformComponent transform = *transformComponent;
+
+			if (box)
+			{
+				kmVec3Assign(&transform.lastGlobalScale, &box->bounds);
+				kmVec3Scale(
+					&transform.lastGlobalScale,
+					&transform.lastGlobalScale,
+					2.0f);
+
+				kmVec3Assign(&transform.globalScale, &box->bounds);
+				kmVec3Scale(
+					&transform.globalScale,
+					&transform.globalScale,
+					2.0f);
+			}
+			else if (sphere)
+			{
+				kmVec3Fill(
+					&transform.lastGlobalScale,
+					sphere->radius,
+					sphere->radius,
+					sphere->radius);
+				kmVec3Fill(
+					&transform.globalScale,
+					sphere->radius,
+					sphere->radius,
+					sphere->radius);
+			}
+			else if (capsule)
+			{
+
+			}
+
+			kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
+				&transform,
+				alpha);
+
+			setUniform(modelUniform, 1, &worldMatrix);
+
+			bool hasAnimations = false;
+			setUniform(hasAnimationsUniform, 1, &hasAnimations);
+
+			for (uint32 i = 0; i < model->numSubsets; i++)
+			{
+				Subset *subset = &model->subsets[i];
+				Mesh *mesh = &subset->mesh;
+
+				glBindVertexArray(mesh->vertexArray);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+				for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+				{
+					glEnableVertexAttribArray(j);
+				}
+
+				bool useCustomColor = true;
+				setUniform(useCustomColorUniform, 1, &useCustomColor);
+				setUniform(customColorUniform, 1, &color);
+
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+				real32 lineWidth;
+				glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+				glLineWidth(debugCollisionPrimitive->lineWidth);
+
+				glDisable(GL_CULL_FACE);
+
+				glDrawElements(
+					GL_TRIANGLES,
+					mesh->numIndices,
+					GL_UNSIGNED_INT,
+					NULL);
+
+				logGLError(
+					false,
+					"Error when drawing collision primitive (%s), entity (%s)",
+					model->name.string,
+					entity.string);
+
+				glLineWidth(lineWidth);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+				glEnable(GL_CULL_FACE);
+
+				for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+				{
+					glDisableVertexAttribArray(j);
+				}
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+				glBindVertexArray(0);
+			}
+		}
+	}
+
+	if (debugCollisionPrimitive->recursive)
+	{
+		UUID child = transformComponent->firstChild;
+
+		do {
+			TransformComponent *childTransform = sceneGetComponentFromEntity(
+				scene,
+				child,
+				transformComponentID);
+
+			if (childTransform)
+			{
+				drawCollisionPrimitives(
+					scene,
+					child,
+					childTransform,
+					debugCollisionPrimitive);
+				child = childTransform->nextSibling;
+			}
+			else
+			{
+				break;
+			}
+		} while (true);
+	}
 }

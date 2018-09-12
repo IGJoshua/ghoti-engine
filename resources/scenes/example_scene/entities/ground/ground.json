@@ -80,7 +80,35 @@
 
 			{
 				"name": "visible",
+				"bool": false
+			}
+		],
+
+		"wireframe":
+		[
+			{
+				"name": "visible",
 				"bool": true
+			},
+
+			{
+				"name": "line width",
+				"float32": 2
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "custom color",
+				"bool": true
+			},
+
+			{
+				"name": "color",
+				"float32": [1, 1, 1]
 			}
 		],
 

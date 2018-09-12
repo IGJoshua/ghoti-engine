@@ -5,6 +5,7 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
+#include "asset_management/texture.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/renderer_utilities.h"
@@ -39,6 +40,17 @@ internal Uniform projectionUniform;
 
 internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
+
+internal Uniform materialUniform;
+internal Uniform materialValuesUniform;
+internal Uniform materialMaskUniform;
+internal Uniform opacityMaskUniform;
+internal Uniform collectionMaterialUniform;
+internal Uniform collectionMaterialValuesUniform;
+internal Uniform grungeMaterialUniform;
+internal Uniform grungeMaterialValuesUniform;
+internal Uniform wearMaterialUniform;
+internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
 internal Uniform customColorUniform;
@@ -98,6 +110,57 @@ void initWireframeRendererSystem(Scene *scene)
 
 		getUniform(
 			shaderProgram,
+			"material",
+			UNIFORM_TEXTURE_2D,
+			&materialUniform);
+		getUniform(
+			shaderProgram,
+			"materialValues",
+			UNIFORM_VEC3,
+			&materialValuesUniform);
+		getUniform(
+			shaderProgram,
+			"materialMask",
+			UNIFORM_TEXTURE_2D,
+			&materialMaskUniform);
+		getUniform(
+			shaderProgram,
+			"opacityMask",
+			UNIFORM_TEXTURE_2D,
+			&opacityMaskUniform);
+		getUniform(
+			shaderProgram,
+			"collectionMaterial",
+			UNIFORM_TEXTURE_2D,
+			&collectionMaterialUniform);
+		getUniform(
+			shaderProgram,
+			"collectionMaterialValues",
+			UNIFORM_VEC3,
+			&collectionMaterialValuesUniform);
+		getUniform(
+			shaderProgram,
+			"grungeMaterial",
+			UNIFORM_TEXTURE_2D,
+			&grungeMaterialUniform);
+		getUniform(
+			shaderProgram,
+			"grungeMaterialValues",
+			UNIFORM_VEC3,
+			&grungeMaterialValuesUniform);
+		getUniform(
+			shaderProgram,
+			"wearMaterial",
+			UNIFORM_TEXTURE_2D,
+			&wearMaterialUniform);
+		getUniform(
+			shaderProgram,
+			"wearMaterialValues",
+			UNIFORM_VEC3,
+			&wearMaterialValuesUniform);
+
+		getUniform(
+			shaderProgram,
 			"useCustomColor",
 			UNIFORM_BOOL,
 			&useCustomColorUniform);
@@ -125,6 +188,16 @@ void beginWireframeRendererSystem(Scene *scene, real64 dt)
 	{
 		return;
 	}
+
+	GLint textureIndex = 0;
+	setMaterialUniform(&materialUniform, &textureIndex);
+	setUniform(materialMaskUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(opacityMaskUniform, 1, &textureIndex);
+	textureIndex++;
+	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
+	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
+	setMaterialUniform(&wearMaterialUniform, &textureIndex);
 
 	if (animationSystemRefCount > 0)
 	{
@@ -260,6 +333,8 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		Subset *subset = &model->subsets[i];
 		Mesh *mesh = &subset->mesh;
+		Material *material = &subset->material;
+		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
@@ -268,6 +343,25 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			glEnableVertexAttribArray(j);
 		}
+
+		GLint textureIndex = 0;
+		activateMaterialTextures(material, &textureIndex);
+		activateTexture(model->materialTexture, &textureIndex);
+		activateTexture(model->opacityTexture, &textureIndex);
+		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
+		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
+		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+
+		setMaterialValuesUniform(&materialValuesUniform, material);
+		setMaterialValuesUniform(
+			&collectionMaterialValuesUniform,
+			&mask->collectionMaterial);
+		setMaterialValuesUniform(
+			&grungeMaterialValuesUniform,
+			&mask->grungeMaterial);
+		setMaterialValuesUniform(
+			&wearMaterialValuesUniform,
+			&mask->wearMaterial);
 
 		setUniform(
 			useCustomColorUniform,
@@ -299,6 +393,12 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		glEnable(GL_CULL_FACE);
+
+		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
+		{
+			glActiveTexture(GL_TEXTURE0 + j);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 
 		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
 		{
