@@ -1756,14 +1756,12 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 	if ((entityList = hashMapGetData(s->entities, &newEntity)))
 	{
 		LOG(
-			"Entity %s already exists in scene %s\n",
+			"ERROR: Entity %s already exists in scene %s\n",
 			newEntity.string,
 			s->name);
 
 		listClear(entityList);
 		hashMapDelete(s->entities, &newEntity);
-
-		//ASSERT(false && "Entity already exists in scene");
 	}
 #endif
 
