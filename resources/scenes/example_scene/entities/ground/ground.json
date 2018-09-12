@@ -88,7 +88,7 @@
 		[
 			{
 				"name": "visible",
-				"bool": true
+				"bool": false
 			},
 
 			{
@@ -215,6 +215,39 @@
 			{
 				"name": "last hit list",
 				"uuid": ""
+			}
+		],
+
+		"debug_collision_primitive":
+		[
+			{
+				"name": "visible",
+				"bool": true
+			},
+
+			{
+				"name": "recursive",
+				"bool": true
+			},
+
+			{
+				"name": "line width",
+				"float32": 2.0
+			},
+
+			{
+				"name": "box color",
+				"float32": [1.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "sphere color",
+				"float32": [0.0, 1.0, 0.0]
+			},
+
+			{
+				"name": "capsule color",
+				"float32": [0.0, 0.0, 1.0]
 			}
 		]
 	}

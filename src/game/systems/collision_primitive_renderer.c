@@ -271,6 +271,12 @@ void drawCollisionPrimitives(
 
 		if (!skip)
 		{
+			bool hasAnimations = false;
+			setUniform(hasAnimationsUniform, 1, &hasAnimations);
+
+			bool useCustomColor = true;
+			setUniform(useCustomColorUniform, 1, &useCustomColor);
+
 			TransformComponent transform = *transformComponent;
 
 			if (box)
@@ -401,9 +407,6 @@ void drawCollisionPrimitive(
 	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(transform, alpha);
 	setUniform(modelUniform, 1, &worldMatrix);
 
-	bool hasAnimations = false;
-	setUniform(hasAnimationsUniform, 1, &hasAnimations);
-
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
 		Subset *subset = &model->subsets[i];
@@ -417,8 +420,6 @@ void drawCollisionPrimitive(
 			glEnableVertexAttribArray(j);
 		}
 
-		bool useCustomColor = true;
-		setUniform(useCustomColorUniform, 1, &useCustomColor);
 		setUniform(customColorUniform, 1, color);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
