@@ -29,7 +29,8 @@
 
 #define BOX_MODEL_NAME "box"
 #define SPHERE_MODEL_NAME "sphere"
-#define CAPSULE_MODEL_NAME "cylinder"
+#define CYLINDER_MODEL_NAME "cylinder"
+#define HEMISPHERE_MODEL_NAME "hemisphere"
 
 internal GLuint shaderProgram;
 
@@ -58,6 +59,14 @@ internal void drawCollisionPrimitives(
 	UUID entity,
 	TransformComponent *transformComponent,
 	DebugCollisionPrimitiveComponent *debugCollisionPrimitive);
+internal void drawCollisionPrimitive(
+	TransformComponent *transform,
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive,
+	Model *model,
+	kmVec3 *color,
+	UUID entity);
+
+internal void addOffset(TransformComponent *transform, real32 offset);
 
 internal
 void initCollisionPrimitiveRendererSystem(Scene *scene)
@@ -68,7 +77,8 @@ void initCollisionPrimitiveRendererSystem(Scene *scene)
 
 		loadModel(BOX_MODEL_NAME);
 		loadModel(SPHERE_MODEL_NAME);
-		loadModel(CAPSULE_MODEL_NAME);
+		loadModel(CYLINDER_MODEL_NAME);
+		loadModel(HEMISPHERE_MODEL_NAME);
 
 		createShaderProgram(
 			"resources/shaders/model.vert",
@@ -173,7 +183,8 @@ void shutdownCollisionPrimitiveRendererSystem(Scene *scene)
 
 		freeModel(BOX_MODEL_NAME);
 		freeModel(SPHERE_MODEL_NAME);
-		freeModel(CAPSULE_MODEL_NAME);
+		freeModel(CYLINDER_MODEL_NAME);
+		freeModel(HEMISPHERE_MODEL_NAME);
 
 		glDeleteProgram(shaderProgram);
 
@@ -242,7 +253,7 @@ void drawCollisionPrimitives(
 	}
 	else if (capsule)
 	{
-		modelName = CAPSULE_MODEL_NAME;
+		modelName = CYLINDER_MODEL_NAME;
 		kmVec3Assign(&color, &debugCollisionPrimitive->capsuleColor);
 	}
 	else
@@ -300,74 +311,56 @@ void drawCollisionPrimitives(
 			}
 			else if (capsule)
 			{
-				kmVec3 bounds;
-				bounds.x = capsule->radius * 2;
-				bounds.y = capsule->radius * 2;
-				bounds.z = capsule->length + 2 * capsule->radius;
+				kmVec3 scale;
+				kmVec3Fill(
+					&scale,
+					capsule->radius * 2,
+					capsule->radius * 2,
+					capsule->length);
 
-				kmVec3Assign(&transform.lastGlobalScale, &bounds);
-				kmVec3Assign(&transform.globalScale, &bounds);
+				kmVec3Assign(&transform.lastGlobalScale, &scale);
+				kmVec3Assign(&transform.globalScale, &scale);
+
+				drawCollisionPrimitive(
+					&transform,
+					debugCollisionPrimitive,
+					model,
+					&color,
+					entity);
+
+				model = getModel(HEMISPHERE_MODEL_NAME);
+
+				kmVec3Fill(
+					&scale,
+					capsule->radius * 2,
+					capsule->radius * 2,
+					capsule->radius * 2);
+
+				kmVec3Assign(&transform.lastGlobalScale, &scale);
+				kmVec3Assign(&transform.globalScale, &scale);
+
+				TransformComponent offsetTransform = transform;
+				addOffset(&offsetTransform, capsule->length / 2);
+
+				drawCollisionPrimitive(
+					&offsetTransform,
+					debugCollisionPrimitive,
+					model,
+					&color,
+					entity);
+
+				addOffset(&transform, -capsule->length / 2);
+
+				transform.lastGlobalScale.z *= -1.0f;
+				transform.globalScale.z *= -1.0f;
 			}
 
-			kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
+			drawCollisionPrimitive(
 				&transform,
-				alpha);
-
-			setUniform(modelUniform, 1, &worldMatrix);
-
-			bool hasAnimations = false;
-			setUniform(hasAnimationsUniform, 1, &hasAnimations);
-
-			for (uint32 i = 0; i < model->numSubsets; i++)
-			{
-				Subset *subset = &model->subsets[i];
-				Mesh *mesh = &subset->mesh;
-
-				glBindVertexArray(mesh->vertexArray);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
-
-				for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-				{
-					glEnableVertexAttribArray(j);
-				}
-
-				bool useCustomColor = true;
-				setUniform(useCustomColorUniform, 1, &useCustomColor);
-				setUniform(customColorUniform, 1, &color);
-
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-				real32 lineWidth;
-				glGetFloatv(GL_LINE_WIDTH, &lineWidth);
-				glLineWidth(debugCollisionPrimitive->lineWidth);
-
-				glDisable(GL_CULL_FACE);
-
-				glDrawElements(
-					GL_TRIANGLES,
-					mesh->numIndices,
-					GL_UNSIGNED_INT,
-					NULL);
-
-				logGLError(
-					false,
-					"Error when drawing collision primitive (%s), entity (%s)",
-					model->name.string,
-					entity.string);
-
-				glLineWidth(lineWidth);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-				glEnable(GL_CULL_FACE);
-
-				for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-				{
-					glDisableVertexAttribArray(j);
-				}
-
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-				glBindVertexArray(0);
-			}
+				debugCollisionPrimitive,
+				model,
+				&color,
+				entity);
 		}
 	}
 
@@ -396,4 +389,94 @@ void drawCollisionPrimitives(
 			}
 		} while (true);
 	}
+}
+
+void drawCollisionPrimitive(
+	TransformComponent *transform,
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive,
+	Model *model,
+	kmVec3 *color,
+	UUID entity)
+{
+	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(transform, alpha);
+	setUniform(modelUniform, 1, &worldMatrix);
+
+	bool hasAnimations = false;
+	setUniform(hasAnimationsUniform, 1, &hasAnimations);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Subset *subset = &model->subsets[i];
+		Mesh *mesh = &subset->mesh;
+
+		glBindVertexArray(mesh->vertexArray);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glEnableVertexAttribArray(j);
+		}
+
+		bool useCustomColor = true;
+		setUniform(useCustomColorUniform, 1, &useCustomColor);
+		setUniform(customColorUniform, 1, color);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+		real32 lineWidth;
+		glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+		glLineWidth(debugCollisionPrimitive->lineWidth);
+
+		glDisable(GL_CULL_FACE);
+
+		glDrawElements(
+			GL_TRIANGLES,
+			mesh->numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+
+		logGLError(
+			false,
+			"Error when drawing collision primitive (%s), entity (%s)",
+			model->name.string,
+			entity.string);
+
+		glLineWidth(lineWidth);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glEnable(GL_CULL_FACE);
+
+		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+		{
+			glDisableVertexAttribArray(j);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+}
+
+void addOffset(TransformComponent *transform, real32 offset)
+{
+	kmVec3 positionOffset;
+	kmVec3Fill(&positionOffset, 0.0f, 0.0f, offset);
+
+	kmVec3 finalPositionOffset;
+	kmQuaternionMultiplyVec3(
+		&finalPositionOffset,
+		&transform->lastGlobalRotation,
+		&positionOffset);
+	kmVec3Add(
+		&transform->lastGlobalPosition,
+		&transform->lastGlobalPosition,
+		&finalPositionOffset);
+
+	kmQuaternionMultiplyVec3(
+		&finalPositionOffset,
+		&transform->globalRotation,
+		&positionOffset);
+	kmVec3Add(
+		&transform->globalPosition,
+		&transform->globalPosition,
+		&finalPositionOffset);
 }

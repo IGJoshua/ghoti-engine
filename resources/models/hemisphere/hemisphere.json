@@ -1,0 +1,113 @@
+{
+	"meshes":
+	{
+		"hemisphere":
+		{
+			"material":
+			{
+				"name": "hemisphere",
+				"double-sided": false,
+
+				"uv":
+				{
+					"map": 0,
+					"swizzle": true
+				},
+
+				"values":
+				{
+					"base_color": [1, 1, 1],
+					"emissive": [1, 1, 1],
+					"metallic": 1,
+					"normal": 1,
+					"roughness": 1
+				}
+			},
+
+			"masks":
+			{
+				"uv":
+				{
+					"map": 0,
+					"swizzle": true
+				},
+
+				"material":
+				{
+					"collection":
+					{
+						"name": "",
+						"double-sided": false,
+
+						"values":
+						{
+							"base_color": [1, 1, 1],
+							"emissive": [1, 1, 1],
+							"metallic": 1,
+							"normal": 1,
+							"roughness": 1
+						}
+					},
+
+					"grunge":
+					{
+						"name": "",
+						"double-sided": false,
+
+						"values":
+						{
+							"base_color": [1, 1, 1],
+							"emissive": [1, 1, 1],
+							"metallic": 1,
+							"normal": 1,
+							"roughness": 1
+						}
+					},
+
+					"wear":
+					{
+						"name": "",
+						"double-sided": false,
+
+						"values":
+						{
+							"base_color": [1, 1, 1],
+							"emissive": [1, 1, 1],
+							"metallic": 1,
+							"normal": 1,
+							"roughness": 1
+						}
+					}
+				},
+
+				"opacity":
+				{
+					"value": 1
+				}
+			}
+		}
+	},
+
+	"physics":
+	{
+		"center_of_mass": [0, 0, 0],
+
+		"collision_primitives":
+		{
+			"boxes":
+			{
+				
+			},
+
+			"spheres":
+			{
+				
+			},
+
+			"capsules":
+			{
+				
+			}
+		}
+	}
+}

@@ -115,8 +115,12 @@ kmMat4 tComposeMat4(
 		position->y,
 		position->z);
 
+	kmQuaternion normalizedRotation;
+	kmQuaternionAssign(&normalizedRotation, rotation);
+	kmQuaternionNormalize(&normalizedRotation, &normalizedRotation);
+
 	kmMat4 rotationMatrix;
-	kmMat4RotationQuaternion(&rotationMatrix, rotation);
+	kmMat4RotationQuaternion(&rotationMatrix, &normalizedRotation);
 
 	kmMat4 scaleMatrix;
 	kmMat4Scaling(
