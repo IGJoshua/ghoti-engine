@@ -35,6 +35,7 @@
 				"renderer",
 				"wireframe_renderer",
 				"debug_renderer",
+				"collision_primitive_renderer",
 				"gui_renderer"
 			]
 		}
@@ -52,6 +53,7 @@
 		"capsule": 1024,
 		"collision_tree_node": 4096,
 		"collision": 1024,
+		"debug_collision_primitive": 2048,
 		"debug_line": 2048,
 		"debug_point": 4096,
 		"debug_primitive": 4096,

@@ -6,8 +6,13 @@
 			"material":
 			{
 				"name": "cube",
-				"uv_map": 0,
 				"double-sided": false,
+
+				"uv":
+				{
+					"map": 0,
+					"swizzle": true
+				},
 
 				"values":
 				{
@@ -21,7 +26,11 @@
 
 			"masks":
 			{
-				"uv_map": 0,
+				"uv":
+				{
+					"map": 0,
+					"swizzle": true
+				},
 
 				"material":
 				{
@@ -87,7 +96,12 @@
 		{
 			"boxes":
 			{
-				
+				"box":
+				{
+					"position": [0, 0, 0],
+					"rotation": [0, 0, 0, 1],
+					"scale": [1, 1, 1]
+				}
 			},
 
 			"spheres":

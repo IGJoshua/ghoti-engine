@@ -109,7 +109,7 @@ typedef struct ball_socket2_joint_component_t
 	real32 distance;
 } BallSocket2JointComponent;
 
-typedef struct obb_component_t
+typedef struct box_component_t
 {
 	kmVec3 bounds;
 } BoxComponent;
@@ -152,6 +152,16 @@ typedef struct collision_component_t
 	UUID hitList;
 	UUID lastHitList;
 } CollisionComponent;
+
+typedef struct debug_collision_primitive_component_t
+{
+	bool visible;
+	bool recursive;
+	real32 lineWidth;
+	kmVec3 boxColor;
+	kmVec3 sphereColor;
+	kmVec3 capsuleColor;
+} DebugCollisionPrimitiveComponent;
 
 typedef struct debug_line_component_t
 {

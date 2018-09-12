@@ -27,7 +27,7 @@ SYSTEM(RenderHeightmap);
 SYSTEM(Renderer);
 SYSTEM(WireframeRenderer);
 SYSTEM(DebugRenderer);
-// SYSTEM(CollisionPrimitiveRenderer);
+SYSTEM(CollisionPrimitiveRenderer);
 SYSTEM(GUIRenderer);
 
 extern HashMap systemRegistry;
@@ -54,7 +54,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(Renderer, "renderer");
 	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");
 	REGISTER_SYSTEM(DebugRenderer, "debug_renderer");
-	// REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
+	REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
 }
 
