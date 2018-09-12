@@ -29,7 +29,7 @@
 
 #define BOX_MODEL_NAME "box"
 #define SPHERE_MODEL_NAME "sphere"
-#define CAPSULE_MODEL_NAME "capsule"
+#define CAPSULE_MODEL_NAME "cylinder"
 
 internal GLuint shaderProgram;
 
@@ -283,15 +283,30 @@ void drawCollisionPrimitives(
 					sphere->radius,
 					sphere->radius,
 					sphere->radius);
+				kmVec3Scale(
+					&transform.lastGlobalScale,
+					&transform.lastGlobalScale,
+					2.0f);
+
 				kmVec3Fill(
 					&transform.globalScale,
 					sphere->radius,
 					sphere->radius,
 					sphere->radius);
+				kmVec3Scale(
+					&transform.globalScale,
+					&transform.globalScale,
+					2.0f);
 			}
 			else if (capsule)
 			{
+				kmVec3 bounds;
+				bounds.x = capsule->radius * 2;
+				bounds.y = capsule->radius * 2;
+				bounds.z = capsule->length + 2 * capsule->radius;
 
+				kmVec3Assign(&transform.lastGlobalScale, &bounds);
+				kmVec3Assign(&transform.globalScale, &bounds);
 			}
 
 			kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
