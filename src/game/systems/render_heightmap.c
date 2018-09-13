@@ -34,9 +34,6 @@
 
 #define INDEX(x, y, max) ((y) * (max) + (x))
 
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
 internal UUID heightmapComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID transformComponentID = {};

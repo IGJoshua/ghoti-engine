@@ -49,3 +49,6 @@ typedef union uuid_t
 		*crash = 0;											\
 	}
 #endif
+
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))

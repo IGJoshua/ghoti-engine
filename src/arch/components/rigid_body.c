@@ -83,6 +83,11 @@ void createCollisionGeom(
 
 	ASSERT(node && "Collision tree pointed to a node with no node structure");
 
+	real32 maxScale = MAX(
+		MAX(trans->globalScale.x,
+			trans->globalScale.y),
+		trans->globalScale.z);
+
 	switch (node->type)
 	{
 	case COLLISION_GEOM_TYPE_BOX:
@@ -106,7 +111,7 @@ void createCollisionGeom(
 			entity,
 			idFromName("sphere"));
 
-		node->geomID = dCreateSphere(spaceID, sphere->radius);
+		node->geomID = dCreateSphere(spaceID, sphere->radius * maxScale);
 	} break;
 	case COLLISION_GEOM_TYPE_CAPSULE:
 	{
@@ -117,8 +122,8 @@ void createCollisionGeom(
 
 		node->geomID = dCreateCapsule(
 			spaceID,
-			capsule->radius,
-			capsule->length);
+			capsule->radius * maxScale,
+			capsule->length * maxScale);
 		dGeomSetQuaternion(node->geomID, (dReal*)&trans->globalRotation);
 	} break;
 	default:

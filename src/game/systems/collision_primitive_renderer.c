@@ -66,7 +66,11 @@ internal void drawCollisionPrimitive(
 	kmVec3 *color,
 	UUID entity);
 
-internal void addOffset(TransformComponent *transform, real32 offset);
+internal void addOffset(
+	TransformComponent *transform,
+	real32 offset,
+	real32 lastMaxScale,
+	real32 maxScale);
 
 internal
 void initCollisionPrimitiveRendererSystem(Scene *scene)
@@ -279,15 +283,30 @@ void drawCollisionPrimitives(
 
 			TransformComponent transform = *transformComponent;
 
+			real32 lastMaxScale = MAX(
+				MAX(transform.lastGlobalScale.x,
+					transform.lastGlobalScale.y),
+				transform.lastGlobalScale.z);
+			real32 maxScale = MAX(
+				MAX(transform.globalScale.x,
+					transform.globalScale.y),
+				transform.globalScale.z);
+
 			if (box)
 			{
-				kmVec3Assign(&transform.lastGlobalScale, &box->bounds);
+				kmVec3Mul(
+					&transform.lastGlobalScale,
+					&transform.lastGlobalScale,
+					&box->bounds);
 				kmVec3Scale(
 					&transform.lastGlobalScale,
 					&transform.lastGlobalScale,
 					2.0f);
 
-				kmVec3Assign(&transform.globalScale, &box->bounds);
+				kmVec3Mul(
+					&transform.globalScale,
+					&transform.globalScale,
+					&box->bounds);
 				kmVec3Scale(
 					&transform.globalScale,
 					&transform.globalScale,
@@ -295,25 +314,21 @@ void drawCollisionPrimitives(
 			}
 			else if (sphere)
 			{
+				kmVec3 radius;
 				kmVec3Fill(
-					&transform.lastGlobalScale,
+					&radius,
 					sphere->radius,
 					sphere->radius,
 					sphere->radius);
-				kmVec3Scale(
-					&transform.lastGlobalScale,
-					&transform.lastGlobalScale,
-					2.0f);
 
-				kmVec3Fill(
-					&transform.globalScale,
-					sphere->radius,
-					sphere->radius,
-					sphere->radius);
+				kmVec3Scale(
+					&transform.lastGlobalScale,
+					&radius,
+					lastMaxScale * 2.0f);
 				kmVec3Scale(
 					&transform.globalScale,
-					&transform.globalScale,
-					2.0f);
+					&radius,
+					maxScale * 2.0f);
 			}
 			else if (capsule)
 			{
@@ -324,8 +339,8 @@ void drawCollisionPrimitives(
 					capsule->radius * 2,
 					capsule->length);
 
-				kmVec3Assign(&transform.lastGlobalScale, &scale);
-				kmVec3Assign(&transform.globalScale, &scale);
+				kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
+				kmVec3Scale(&transform.globalScale, &scale, maxScale);
 
 				drawCollisionPrimitive(
 					&transform,
@@ -342,11 +357,15 @@ void drawCollisionPrimitives(
 					capsule->radius * 2,
 					capsule->radius * 2);
 
-				kmVec3Assign(&transform.lastGlobalScale, &scale);
-				kmVec3Assign(&transform.globalScale, &scale);
+				kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
+				kmVec3Scale(&transform.globalScale, &scale, maxScale);
 
 				TransformComponent offsetTransform = transform;
-				addOffset(&offsetTransform, capsule->length / 2);
+				addOffset(
+					&offsetTransform,
+					capsule->length / 2,
+					lastMaxScale,
+					maxScale);
 
 				drawCollisionPrimitive(
 					&offsetTransform,
@@ -355,7 +374,11 @@ void drawCollisionPrimitives(
 					&color,
 					entity);
 
-				addOffset(&transform, -capsule->length / 2);
+				addOffset(
+					&transform,
+					-capsule->length / 2,
+					lastMaxScale,
+					maxScale);
 
 				transform.lastGlobalScale.z *= -1.0f;
 				transform.globalScale.z *= -1.0f;
@@ -457,25 +480,31 @@ void drawCollisionPrimitive(
 	}
 }
 
-void addOffset(TransformComponent *transform, real32 offset)
+void addOffset(
+	TransformComponent *transform,
+	real32 offset,
+	real32 lastMaxScale,
+	real32 maxScale)
 {
 	kmVec3 positionOffset;
 	kmVec3Fill(&positionOffset, 0.0f, 0.0f, offset);
 
 	kmVec3 finalPositionOffset;
+	kmVec3Scale(&finalPositionOffset, &positionOffset, lastMaxScale);
 	kmQuaternionMultiplyVec3(
 		&finalPositionOffset,
 		&transform->lastGlobalRotation,
-		&positionOffset);
+		&finalPositionOffset);
 	kmVec3Add(
 		&transform->lastGlobalPosition,
 		&transform->lastGlobalPosition,
 		&finalPositionOffset);
 
+	kmVec3Scale(&finalPositionOffset, &positionOffset, maxScale);
 	kmQuaternionMultiplyVec3(
 		&finalPositionOffset,
 		&transform->globalRotation,
-		&positionOffset);
+		&finalPositionOffset);
 	kmVec3Add(
 		&transform->globalPosition,
 		&transform->globalPosition,
