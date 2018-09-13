@@ -56,7 +56,7 @@ int32 main(int32 argc, char *argv[])
 {
 	if (loadConfig() == -1)
 	{
-		return -1;
+		LOG("Using default configuration\n");
 	}
 
 	srand(time(0));
