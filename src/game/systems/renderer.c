@@ -225,17 +225,6 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	TransformComponent *transform = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		transformComponentID);
-
-	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
-		transform,
-		alpha);
-
-	setUniform(modelUniform, 1, &worldMatrix);
-
 	AnimationComponent *animationComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -265,8 +254,19 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		true : false;
 	setUniform(hasAnimationsUniform, 1, &hasAnimations);
 
+	TransformComponent *transform = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		transformComponentID);
+
+	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
+		transform,
+		alpha);
+
 	if (hasAnimations)
 	{
+		kmMat4Identity(&worldMatrix);
+
 		kmMat4 boneMatrices[MAX_BONE_COUNT];
 		for (uint32 i = 0; i < MAX_BONE_COUNT; i++)
 		{
@@ -306,6 +306,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_BONE_COUNT,
 			boneMatrices);
 	}
+
+	setUniform(modelUniform, 1, &worldMatrix);
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
