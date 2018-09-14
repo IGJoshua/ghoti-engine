@@ -72,3 +72,7 @@ function component:swap(name, staticModel, scene, uuid, removeSkeleton, skeleton
     end
   end
 end
+
+function component:swapMaterial(mesh, material)
+  C.swapMeshMaterial(self.name, mesh, material)
+end

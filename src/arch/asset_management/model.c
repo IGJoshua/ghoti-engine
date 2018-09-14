@@ -198,6 +198,30 @@ void freeModel(const char *name)
 	}
 }
 
+void swapMeshMaterial(
+	const char *modelName,
+	const char *meshName,
+	const char *materialName)
+{
+	Model *model = getModel(modelName);
+	if (!model)
+	{
+		return;
+	}
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Subset *subset = &model->subsets[i];
+		if (!strcmp(subset->name.string, meshName))
+		{
+			Material *material = &subset->material;
+			freeMaterial(material);
+			createMaterial(idFromName(materialName), material);
+			return;
+		}
+	}
+}
+
 int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
 {
 	LOG("Loading subset (%s)...\n", subset->name.string);

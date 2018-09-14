@@ -69,6 +69,37 @@ int32 loadMaterial(Material *material, FILE *file)
 	return 0;
 }
 
+int32 createMaterial(UUID name, Material *material)
+{
+	LOG("Loading material (%s)...\n", name.string);
+
+	material->name = name;
+	material->doubleSided = false;
+
+	loadMaterialFolders(material->name);
+
+	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		MaterialComponent *materialComponent = &material->components[i];
+		MaterialComponentType materialComponentType =
+			(MaterialComponentType)i;
+
+		if (loadMaterialComponentTexture(
+			material->name,
+			materialComponentType,
+			&materialComponent->texture) == -1)
+		{
+			return -1;
+		}
+
+		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
+	}
+
+	LOG("Successfully loaded material (%s)\n", name.string);
+
+	return 0;
+}
+
 void freeMaterial(Material *material)
 {
 	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)

@@ -57,8 +57,6 @@ typedef struct heightmap_model_t
 	Material material;
 } HeightmapModel;
 
-internal int32 createHeightmapMaterial(UUID name, Material *material);
-
 internal
 int32 ptrEq(void *thing1, void *thing2)
 {
@@ -425,7 +423,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		free(verts);
 		free(indices);
 
-		if (createHeightmapMaterial(
+		if (createMaterial(
 			idFromName(heightmap->materialName),
 			&hm.material) == -1)
 		{
@@ -608,35 +606,4 @@ System createRenderHeightmapSystem(void)
 	ret.shutdown = &shutdownRenderHeightmapSystem;
 
 	return ret;
-}
-
-int32 createHeightmapMaterial(UUID name, Material *material)
-{
-	LOG("Loading material (%s)...\n", name.string);
-
-	material->name = name;
-	material->doubleSided = false;
-
-	loadMaterialFolders(material->name);
-
-	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		MaterialComponent *materialComponent = &material->components[i];
-		MaterialComponentType materialComponentType =
-			(MaterialComponentType)i;
-
-		if (loadMaterialComponentTexture(
-			material->name,
-			materialComponentType,
-			&materialComponent->texture) == -1)
-		{
-			return -1;
-		}
-
-		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
-	}
-
-	LOG("Successfully loaded material (%s)\n", name.string);
-
-	return 0;
 }

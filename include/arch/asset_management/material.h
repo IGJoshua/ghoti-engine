@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 int32 loadMaterial(Material *material, FILE *file);
+int32 createMaterial(UUID name, Material *material);
 void loadMaterialFolders(UUID name);
 int32 loadMaterialComponentTexture(
 	UUID materialName,
