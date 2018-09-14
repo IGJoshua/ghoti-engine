@@ -27,6 +27,8 @@ int32 loadConfig(void)
 
 	if (window)
 	{
+		free(config.windowConfig.title);
+
 		cJSON *windowTitle = cJSON_GetObjectItem(window, "title");
 		config.windowConfig.title = malloc(
 			strlen(windowTitle->valuestring) + 1);
@@ -73,6 +75,9 @@ int32 loadConfig(void)
 
 	if (logging)
 	{
+		free(config.logConfig.engineFile);
+		free(config.logConfig.luaFile);
+
 		cJSON *loggingEngineFile = cJSON_GetObjectItem(logging, "engine_file");
 		config.logConfig.engineFile = malloc(
 			strlen(loggingEngineFile->valuestring) + 1);
