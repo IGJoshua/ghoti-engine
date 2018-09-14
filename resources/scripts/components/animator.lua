@@ -38,7 +38,7 @@ function component:reverse()
   self.speed = self.speed * -1.0
 end
 
-function component:restart(loopCount)
+function component:restart(loopCount, transitionTime)
   if self.speed < 0.0 then
     self.time = self.duration
   else
@@ -46,6 +46,8 @@ function component:restart(loopCount)
   end
 
   self.loopCount = loopCount or 0
+  self.paused = false
+  self.transitionTime = transitionTime or 0.0
 end
 
 function component:stop()

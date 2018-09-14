@@ -86,6 +86,12 @@ AnimationReference* setCurrentAnimationReference(
 
 void stopAnimation(AnimatorComponent *animator)
 {
+	if (animator->transitionTime < animator->transitionDuration &&
+		strlen(animator->currentAnimation) > 0)
+	{
+		return;
+	}
+
 	AnimationReference *animationReference = hashMapGetData(
 		animationReferences,
 		&animator);
