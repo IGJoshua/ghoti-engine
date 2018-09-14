@@ -504,7 +504,7 @@ void formatJSONArrays(const char *filename)
 							}
 
 							if (++formattedArrayLength + currentLineLength
-								<= MAX_JSON_LINE_LENGTH)
+								< MAX_JSON_LINE_LENGTH)
 							{
 								writeCharacter(' ', 1, file);
 

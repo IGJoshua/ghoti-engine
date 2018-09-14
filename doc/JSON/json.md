@@ -75,6 +75,8 @@ This utility exports JSON entity files to binary entity files that can be used i
 | char    | 1 byte      | 1 ascii character                                                                           | character            |
 | char(n) | n bytes     | maximum of n - 1 ascii characters                                                           | string               |
 | uuid    | 64 bytes    | ascii characters between `#` and `z` (inclusive) excluding the characters `\`, `[`, and `]` | uuid                 |
+| enum    | 4 bytes     | -2,147,483,648 to 2,147,483,647                                                             | enumerator           |
+| ptr     | 8 bytes     | 0 to 18,446,744,073,709,551,615                                                             | pointer              |
 
 ### Example
 
@@ -212,7 +214,7 @@ Example usage for the utility is shown.
 
 ### Description
 
-This utility exports JSON asset files to binary asset files that can be used in the engine at run time. Each mesh is associated with a material and its values as well as a material mask and an opacity mask. There is also physics information about the model's center of mass as well as the boxes, spheres, and capsules associated with the model.
+This utility exports JSON asset files to binary asset files and JSON entity files that can be used in the engine at run time. Each mesh is associated with a material and its values as well as a material mask and an opacity mask. There is also physics information about the model's center of mass as well as the boxes, spheres, and capsules associated with the model. If the asset has animations, a list of animation names are present along with the UUID of the root node of the skeleton.
 
 ### Example
 
@@ -227,8 +229,13 @@ This utility exports JSON asset files to binary asset files that can be used in 
 			"material":
 			{
 				"name": "wood",
-				"uv_map": 3,
 				"double-sided": false,
+
+				"uv":
+				{
+					"map": 3,
+					"swizzle": true
+				},
 
 				"values":
 				{
@@ -242,7 +249,11 @@ This utility exports JSON asset files to binary asset files that can be used in 
 
 			"masks":
 			{
-				"uv_map": 1,
+				"uv":
+				{
+					"map": 1,
+					"swizzle": true
+				},
 
 				"material":
 				{
@@ -304,8 +315,13 @@ This utility exports JSON asset files to binary asset files that can be used in 
 			"material":
 			{
 				"name": "glass",
-				"uv_map": 5,
 				"double-sided": true,
+
+				"uv":
+				{
+					"map": 5,
+					"swizzle": true
+				},
 
 				"values":
 				{
@@ -319,7 +335,11 @@ This utility exports JSON asset files to binary asset files that can be used in 
 
 			"masks":
 			{
-				"uv_map": 2,
+				"uv":
+				{
+					"map": 2,
+					"swizzle": true
+				},
 
 				"material":
 				{
@@ -387,6 +407,7 @@ This utility exports JSON asset files to binary asset files that can be used in 
 			{
 				"wall_1":
 				{
+					"entity": "XOWqBtdco3>g)yX;K-1^@BW(unQ#h4Y5hHLb25WBI=AHj#`;%fwC&L@x@np'wO1",
 					"position": [0.0, 0.0, 0.0],
 					"rotation": [0.0, 0.0, 0.0, 1.0],
 					"scale": [2.3, 5.0, 5.0]
@@ -394,6 +415,7 @@ This utility exports JSON asset files to binary asset files that can be used in 
 
 				"wall_2":
 				{
+					"entity": "Yw`1:pp<0&.;5LJ07*s2/ANLqLNr$q$Rna`.OO?TJBlk5i(<Z/AxSjo%7`u.aFq",
 					"position": [2.0, -3.0, 0.0],
 					"rotation": [0.0, 0.0, 0.0, 1.0],
 					"scale": [1.0, 7.0, 3.0]
@@ -404,6 +426,7 @@ This utility exports JSON asset files to binary asset files that can be used in 
 			{
 				"ground":
 				{
+					"entity": "L&xdE`,q23jSv@t&yQvx@Zhb:#H%+9N./0Id9@tB(E>E?ADmy8c8pQw(IEyQSMW",
 					"position": [-2.7, 0.0, 5.0],
 					"scale": 2.0
 				}
@@ -413,12 +436,294 @@ This utility exports JSON asset files to binary asset files that can be used in 
 			{
 				"player":
 				{
+					"entity": "CP=6=n2rJHTAxw`V@)X38dcNMx=eUPZn&t*@i101OaOMW-)t3V-HAelcc'N7T'+",
 					"position": [0.0, 0.0, 2.0],
 					"rotation": [0.707, 0.0, 0.0, 0.707],
 					"scale": [3.0, 4.0, 3.0]
 				}
 			}
 		}
+	},
+
+	"animation":
+	{
+		"skeleton": "/gbr$uH^kuj50UJ;;tNi)E9j@e4qQWa^DANE5t)&gh8uC_.RYBXtYH:<Q)b._FG",
+		"names": ["Idle", "Walk", "Run", "Jump", "Attack", "Block"],
+		"entity": "3B%k)#WG;M99(SRB4veHpi;W=b+WA;vC%u<Q:Lstb2q<Y2ENtj<cLT8^<@;Q0sK"
+	}
+}
+```
+
+#### asset_file_entity.json:
+
+``` json
+{
+	"uuid": "3B%k)#WG;M99(SRB4veHpi;W=b+WA;vC%u<Q:Lstb2q<Y2ENtj<cLT8^<@;Q0sK",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": "XOWqBtdco3>g)yX;K-1^@BW(unQ#h4Y5hHLb25WBI=AHj#`;%fwC&L@x@np'wO1"
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "name",
+				"char(64)": "example_asset"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "body ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "space ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "dynamic",
+				"bool": false
+			},
+
+			{
+				"name": "gravity",
+				"bool": false
+			},
+
+			{
+				"name": "mass",
+				"float32": 1
+			},
+
+			{
+				"name": "center of mass",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "angular velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "default damping",
+				"bool": true
+			},
+
+			{
+				"name": "linear damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "linear damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "max angular speed",
+				"float32": 0
+			},
+
+			{
+				"name": "moment of inertia type",
+				"enum": 0
+			},
+
+			{
+				"name": "moment of inertia",
+				"float32": [1, 1, 1, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collision tree",
+				"uuid": "XOWqBtdco3>g)yX;K-1^@BW(unQ#h4Y5hHLb25WBI=AHj#`;%fwC&L@x@np'wO1"
+			},
+
+			{
+				"name": "hit list",
+				"uuid": ""
+			},
+
+			{
+				"name": "last hit list",
+				"uuid": ""
+			}
+		],
+
+		"animation":
+		[
+			{
+				"name": "skeleton",
+				"uuid": "/gbr$uH^kuj50UJ;;tNi)E9j@e4qQWa^DANE5t)&gh8uC_.RYBXtYH:<Q)b._FG"
+			},
+
+			{
+				"name": "idle animation",
+				"char(64)": "Idle"
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0
+			}
+		],
+
+		"animator":
+		[
+			{
+				"name": "current animation",
+				"char(64)": ""
+			},
+
+			{
+				"name": "time",
+				"float64": 0
+			},
+
+			{
+				"name": "duration",
+				"float64": 0
+			},
+
+			{
+				"name": "loop count",
+				"int32": 0
+			},
+
+			{
+				"name": "speed",
+				"float32": 1
+			},
+
+			{
+				"name": "paused",
+				"bool": false
+			},
+
+			{
+				"name": "previous animation",
+				"char(64)": ""
+			},
+
+			{
+				"name": "previous animation time",
+				"float64": 0
+			},
+
+			{
+				"name": "transition time",
+				"float64": 0
+			},
+
+			{
+				"name": "transition duration",
+				"float64": 0
+			}
+		]
 	}
 }
 ```
@@ -435,7 +740,7 @@ or
 asset-exporter asset_file.json
 ```
 
-The utility will output to a binary file in the current directory named `asset_file.asset`.
+The utility will output to a binary file in the current directory named `asset_file.asset`. The utility will also output an entity to a JSON file named `asset_file_entity.json` and collision primitives, if present, as JSON files into a folder named `collision_primitives`.
 
 ``` shell
 asset-exporter --help
@@ -464,9 +769,12 @@ This utility generates a template for a scene by creating a folder containing fi
 			[
 				"clean_hit_information",
 				"clean_hit_list",
+				"animation",
 				"clean_global_transforms",
 				"apply_parent_transforms",
-				"simulate_rigid_bodies"
+				"simulate_rigid_bodies",
+				"joint_information",
+				"gui"
 			]
 		},
 
@@ -477,27 +785,59 @@ This utility generates a template for a scene by creating a folder containing fi
 
 			],
 
-			"internal": ["renderer"]
+			"internal":
+			[
+				"render_heightmap",
+				"renderer",
+				"wireframe_renderer",
+				"debug_renderer",
+				"collision_primitive_renderer",
+				"gui_renderer"
+			]
 		}
 	},
 
 	"component_limits":
 	{
-		"transform": 1024,
-		"model": 2048,
-		"camera": 16,
-		"collision": 1024,
+		"animation": 2048,
+		"animator": 2048,
+		"ball_socket_joint": 256,
+		"ball_socket2_joint": 256,
 		"box": 1024,
-		"sphere": 1024,
+		"button": 1024,
+		"camera": 8,
 		"capsule": 1024,
+		"collision_tree_node": 4096,
+		"collision": 1024,
+		"debug_collision_primitive": 2048,
+		"debug_line": 2048,
+		"debug_point": 4096,
+		"debug_primitive": 4096,
+		"debug_transform": 1024,
+		"font": 1024,
+		"gui_transform": 2048,
+		"heightmap": 256,
+		"hinge_joint": 256,
 		"hit_information": 4096,
 		"hit_list": 8192,
+		"image": 1024,
+		"joint_information": 256,
+		"joint_list": 512,
+		"joint": 8192,
+		"model": 2048,
+		"next_animation": 2048,
+		"panel": 512,
 		"rigid_body": 1024,
-		"collision_tree_node": 4096,
-		"surface_information": 4096
+		"slider_joint": 256,
+		"sphere": 1024,
+		"surface_information": 512,
+		"text": 1024,
+		"transform": 16384,
+		"widget": 1024,
+		"wireframe": 2048
 	},
 
-	"active_camera": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka",
+	"active_camera": "uDVo733UsOcF4S@ZB/g@fCcdf&8%b+FCV3OgC*J4O3PXm8#r%9^=y@xtU#V>t2N",
 	"gravity": -9.81
 }
 ```
@@ -506,7 +846,7 @@ This utility generates a template for a scene by creating a folder containing fi
 
 ``` json
 {
-	"uuid": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka",
+	"uuid": "uDVo733UsOcF4S@ZB/g@fCcdf&8%b+FCV3OgC*J4O3PXm8#r%9^=y@xtU#V>t2N",
 
 	"components":
 	{
@@ -602,7 +942,7 @@ This utility generates a template for a scene by creating a folder containing fi
 
 			{
 				"name": "projection type",
-				"int32": 0
+				"enum": 0
 			}
 		]
 	}
@@ -615,19 +955,13 @@ This utility generates a template for a scene by creating a folder containing fi
 scene-generator
 ```
 
-The utility will output to a JSON file in the current directory named `new_scene.json`.
+The utility will output JSON files into a folder in the current directory named `new_scene`.
 
 ``` shell
 scene-generator scene_1
 ```
 
-or
-
-``` shell
-scene-generator scene_1.json
-```
-
-The utility will output to a JSON file in the current directory named `scene_1.json`.
+The utility will output JSON files into a folder in the current directory named `scene_1`.
 
 ``` shell
 scene-generator --help
@@ -662,9 +996,12 @@ This utility exports JSON scene files to binary scene files that can be used in 
 			[
 				"clean_hit_information",
 				"clean_hit_list",
+				"animation",
 				"clean_global_transforms",
 				"apply_parent_transforms",
-				"simulate_rigid_bodies"
+				"simulate_rigid_bodies",
+				"joint_information",
+				"gui"
 			]
 		},
 
@@ -675,29 +1012,61 @@ This utility exports JSON scene files to binary scene files that can be used in 
 
 			],
 
-			"internal": ["renderer"]
+			"internal":
+			[
+				"render_heightmap",
+				"renderer",
+				"wireframe_renderer",
+				"debug_renderer",
+				"collision_primitive_renderer",
+				"gui_renderer"
+			]
 		}
 	},
 
 	"component_limits":
 	{
-		"transform": 1024,
-		"model": 2048,
-		"camera": 16,
-		"collision": 1024,
+		"animation": 2048,
+		"animator": 2048,
+		"ball_socket_joint": 256,
+		"ball_socket2_joint": 256,
 		"box": 1024,
-		"sphere": 1024,
+		"button": 1024,
+		"camera": 8,
 		"capsule": 1024,
+		"collision_tree_node": 4096,
+		"collision": 1024,
+		"debug_collision_primitive": 2048,
+		"debug_line": 2048,
+		"debug_point": 4096,
+		"debug_primitive": 4096,
+		"debug_transform": 1024,
+		"font": 1024,
+		"gui_transform": 2048,
+		"heightmap": 256,
+		"hinge_joint": 256,
 		"hit_information": 4096,
 		"hit_list": 8192,
+		"image": 1024,
+		"joint_information": 256,
+		"joint_list": 512,
+		"joint": 8192,
+		"model": 2048,
+		"next_animation": 2048,
+		"panel": 512,
 		"rigid_body": 1024,
-		"collision_tree_node": 4096,
-		"surface_information": 4096,
-		"player": 1,
-		"enemy": 128
+		"slider_joint": 256,
+		"sphere": 1024,
+		"surface_information": 512,
+		"text": 1024,
+		"transform": 16384,
+		"widget": 1024,
+		"wireframe": 2048,
+		"enemy": 128,
+		"player": 1
 	},
 
-	"active_camera": "Hf&<4`;5?4ojByWAYlld(kqg4($3BP/Va8<EHNYY;Ip3v7ahyKfjCSs@T$_5Rka",
+	"active_camera": "xTd99Vp<Q/;s=Q(94^F85Oi8$k7&Zh_h(4^9bjQEdk(3h6DLQQ^'9lw*N--/rbt",
 	"gravity": -9.81
 }
 ```
