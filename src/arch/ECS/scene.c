@@ -1020,23 +1020,35 @@ uint32 getDataTypeSize(DataType type)
 	switch (type)
 	{
 		case DATA_TYPE_UINT8:
+			return sizeof(uint8);
 		case DATA_TYPE_INT8:
+			return sizeof(int8);
 		case DATA_TYPE_CHAR:
+			return sizeof(char);
 		case DATA_TYPE_BOOL:
-			return 1;
+			return sizeof(bool);
 		case DATA_TYPE_UINT16:
+			return sizeof(uint16);
 		case DATA_TYPE_INT16:
-			return 2;
+			return sizeof(int16);
 		case DATA_TYPE_UINT32:
+			return sizeof(uint32);
 		case DATA_TYPE_INT32:
+			return sizeof(int32);
+		case DATA_TYPE_ENUM:
+			return sizeof(DataType);
 		case DATA_TYPE_FLOAT32:
-			return 4;
+			return sizeof(real32);
 		case DATA_TYPE_UINT64:
+			return sizeof(uint64);
+		case DATA_TYPE_PTR:
+			return sizeof(void*);
 		case DATA_TYPE_INT64:
+			return sizeof(int64);
 		case DATA_TYPE_FLOAT64:
-			return 8;
+			return sizeof(real64);
 		case DATA_TYPE_UUID:
-			return UUID_LENGTH + 1;
+			return sizeof(UUID);
 		default:
 			break;
 	}
@@ -1095,6 +1107,12 @@ char* getDataTypeString(
 			break;
 		case DATA_TYPE_UUID:
 			strcpy(dataTypeString, "uuid");
+			break;
+		case DATA_TYPE_ENUM:
+			strcpy(dataTypeString, "enum");
+			break;
+		case DATA_TYPE_PTR:
+			strcpy(dataTypeString, "ptr");
 			break;
 		default:
 			break;
@@ -1219,6 +1237,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 								(double)uint32Data);
 							break;
 						case DATA_TYPE_UINT64:
+						case DATA_TYPE_PTR:
 							uint64Data = *(uint64*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
@@ -1240,6 +1259,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 								(double)int16Data);
 							break;
 						case DATA_TYPE_INT32:
+						case DATA_TYPE_ENUM:
 							int32Data = *(int32*)valueData;
 							cJSON_AddNumberToObject(
 								jsonComponentValue,
@@ -1315,6 +1335,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 								cJSON_CreateNumber((double)uint32Data);
 							break;
 						case DATA_TYPE_UINT64:
+						case DATA_TYPE_PTR:
 							uint64Data = *(uint64*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)uint64Data);
@@ -1330,6 +1351,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 								cJSON_CreateNumber((double)int16Data);
 							break;
 						case DATA_TYPE_INT32:
+						case DATA_TYPE_ENUM:
 							int32Data = *(int32*)valueData;
 							jsonComponentValueDataArrayItem =
 								cJSON_CreateNumber((double)int32Data);

@@ -49,7 +49,9 @@ typedef enum data_type_e {
 	DATA_TYPE_BOOL,
 	DATA_TYPE_CHAR,
 	DATA_TYPE_STRING,
-	DATA_TYPE_UUID
+	DATA_TYPE_UUID,
+	DATA_TYPE_ENUM,
+	DATA_TYPE_PTR
 } DataType;
 
 typedef struct component_value_definition_t

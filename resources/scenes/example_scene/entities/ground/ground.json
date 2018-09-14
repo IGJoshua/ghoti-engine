@@ -116,12 +116,12 @@
 		[
 			{
 				"name": "body ID",
-				"int64": 0
+				"ptr": 0
 			},
 
 			{
 				"name": "space ID",
-				"int64": 0
+				"ptr": 0
 			},
 
 			{
@@ -191,7 +191,7 @@
 
 			{
 				"name": "moment of inertia type",
-				"int32": 0
+				"enum": 0
 			},
 
 			{

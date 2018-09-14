@@ -280,7 +280,7 @@ UUID readStringAsUUID(FILE *file)
 UUID readUUID(FILE *file)
 {
 	UUID uuid = {};
-	fread(uuid.string, UUID_LENGTH + 1, 1, file);
+	fread(uuid.string, sizeof(UUID), 1, file);
 	return uuid;
 }
 

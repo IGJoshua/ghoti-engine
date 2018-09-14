@@ -83,7 +83,7 @@
 		[
 			{
 				"name": "type",
-				"int32": 0
+				"enum": 0
 			},
 
 			{
@@ -103,7 +103,7 @@
 
 			{
 				"name": "geometry ID",
-				"int64": 0
+				"ptr": 0
 			}
 		]
 	}

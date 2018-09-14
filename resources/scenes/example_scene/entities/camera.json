@@ -95,7 +95,7 @@
 
 			{
 				"name": "projection type",
-				"int32": 0
+				"enum": 0
 			}
 		]
 	}
