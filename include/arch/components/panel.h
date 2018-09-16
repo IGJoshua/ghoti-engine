@@ -1,3 +1,4 @@
+#pragma once
 #include "defines.h"
 
 #include "components/component_types.h"

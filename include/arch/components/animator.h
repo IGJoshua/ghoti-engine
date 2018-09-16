@@ -1,3 +1,4 @@
+#pragma once
 #include "defines.h"
 
 #include "asset_management/asset_manager_types.h"
