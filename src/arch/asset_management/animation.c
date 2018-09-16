@@ -97,7 +97,7 @@ int32 loadAnimations(
 	return 0;
 }
 
-Animation *getAnimation(Model *model, const char *name)
+Animation* getAnimation(Model *model, const char *name)
 {
 	if (strlen(name) > 0)
 	{

@@ -10,7 +10,7 @@ int32 loadAnimations(
 	Animation **animations,
 	Skeleton *skeleton,
 	FILE *file);
-Animation *getAnimation(Model *model, const char *name);
+Animation* getAnimation(Model *model, const char *name);
 void freeAnimations(
 	uint32 numAnimations,
 	Animation *animations,
