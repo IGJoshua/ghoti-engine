@@ -140,26 +140,12 @@ int32 deleteFolder(const char *folder, bool errors)
 
 void copyFile(const char *filename, const char *destination)
 {
-	char *fileBuffer = NULL;
-	uint64 fileLength = 0;
-
-	FILE *file = fopen(filename, "rb");
-	if (file)
-	{
-		fseek(file, 0, SEEK_END);
-		fileLength = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		fileBuffer = calloc(fileLength + 1, 1);
-
-		if (fileBuffer)
-		{
-			fread(fileBuffer, 1, fileLength, file);
-		}
-	}
+	uint64 fileLength;
+	char *fileBuffer = readFile(filename, &fileLength);
 
 	if (fileBuffer)
 	{
-		file = freopen(destination, "wb", file);
+		FILE *file = fopen(destination, "wb");
 		fwrite(fileBuffer, fileLength, 1, file);
 		fclose(file);
 		free(fileBuffer);

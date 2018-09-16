@@ -351,7 +351,11 @@ void updateRigidBody(
 
 	updateRigidBodyPosition(scene, coll, body, trans);
 
-	if (!body->enabled)
+	if (body->enabled)
+	{
+		dBodyEnable(body->bodyID);
+	}
+	else
 	{
 		dBodyDisable(body->bodyID);
 	}
