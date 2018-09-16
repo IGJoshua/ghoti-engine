@@ -286,7 +286,7 @@ void writeString(const char *string, FILE *file)
 	fwrite(string, stringLength, 1, file);
 }
 
-void writeJSON(const cJSON *json, const char *filename)
+void writeJSON(const cJSON *json, const char *filename, bool formatted)
 {
 	char *jsonFilename = getFullFilePath(filename, "json", NULL);
 	FILE *file = fopen(jsonFilename, "w");
@@ -298,7 +298,11 @@ void writeJSON(const cJSON *json, const char *filename)
 	fclose(file);
 
 	json_prettify_file(jsonFilename);
-	formatJSON(jsonFilename);
+
+	if (formatted)
+	{
+		formatJSON(jsonFilename);
+	}
 
 	free(jsonFilename);
 }

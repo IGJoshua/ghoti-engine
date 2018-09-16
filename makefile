@@ -3,6 +3,10 @@ LIBNAME = ghoti
 
 CONFIG_FILE = $(PROJ).json
 DEFAULT_FONT = default_font.ttf
+BOX_MODEL = box
+SPHERE_MODEL = sphere
+CYLINDER_MODEL = cylinder
+HEMISPHERE_MODEL = hemisphere
 
 IDIRS = include/arch include/game vendor
 
@@ -130,6 +134,10 @@ release : clean
 	mkdir -p $(RELEASE_RESOURCES_FOLDER)/images/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/images/*
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
+	cp -r resources/models/$(BOX_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
+	cp -r resources/models/$(SPHERE_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
+	cp -r resources/models/$(CYLINDER_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
+	cp -r resources/models/$(HEMISPHERE_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*
 	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/
 	rm -rf $(RELEASE_RESOURCES_FOLDER)/saves/*

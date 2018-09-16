@@ -33,4 +33,4 @@ TransformComponent readTransform(FILE *file);
 void writeString(const char *string, FILE *file);
 
 cJSON* loadJSON(const char *filename);
-void writeJSON(const cJSON *json, const char *filename);
+void writeJSON(const cJSON *json, const char *filename, bool formatted);

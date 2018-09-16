@@ -104,6 +104,14 @@ int32 loadConfig(void)
 			cJSON_IsTrue(removeJSONEntities) ? true : false;
 	}
 
+	cJSON *jsonConfig = cJSON_GetObjectItem(json, "json");
+
+	if (jsonConfig)
+	{
+		cJSON *formatted = cJSON_GetObjectItem(jsonConfig, "formatted");
+		config.jsonConfig.formatted = cJSON_IsTrue(formatted) ? true : false;
+	}
+
 	cJSON_Delete(json);
 
 	return 0;
@@ -135,4 +143,6 @@ void initializeDefaultConfig(void)
 
 	config.savesConfig.removeJSONScenes = true;
 	config.savesConfig.removeJSONEntities = true;
+
+	config.jsonConfig.formatted = true;
 }

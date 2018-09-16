@@ -1404,7 +1404,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 		}
 	}
 
-	writeJSON(json, filename);
+	writeJSON(json, filename, config.jsonConfig.formatted);
 	cJSON_Delete(json);
 }
 
@@ -1518,7 +1518,7 @@ void exportSceneSnapshot(Scene *scene, const char *filename)
 	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
 	cJSON_AddNumberToObject(json, "gravity", scene->gravity);
 
-	writeJSON(json, filename);
+	writeJSON(json, filename, config.jsonConfig.formatted);
 	cJSON_Delete(json);
 
 	LOG("Successfully exported scene (%s)\n", scene->name);

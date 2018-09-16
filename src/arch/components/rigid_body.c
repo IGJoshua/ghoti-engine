@@ -314,8 +314,6 @@ void updateRigidBody(
 			body->centerOfMass.z);
 	}
 
-	dBodySetMass(body->bodyID, &mass);
-
 	if (body->gravity)
 	{
 		dBodySetGravityMode(body->bodyID, 1);
@@ -343,6 +341,7 @@ void updateRigidBody(
 	if (body->dynamic)
 	{
 		dBodySetDynamic(body->bodyID);
+		dBodySetMass(body->bodyID, &mass);
 	}
 	else
 	{

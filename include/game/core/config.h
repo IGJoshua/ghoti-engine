@@ -36,6 +36,11 @@ typedef struct saves_config_t
 	bool removeJSONEntities;
 } SavesConfig;
 
+typedef struct json_config_t
+{
+	bool formatted;
+} JSONConfig;
+
 typedef struct config_t
 {
 	WindowConfig windowConfig;
@@ -43,6 +48,7 @@ typedef struct config_t
 	GraphicsConfig graphicsConfig;
 	LogConfig logConfig;
 	SavesConfig savesConfig;
+	JSONConfig jsonConfig;
 } Config;
 
 int32 loadConfig(void);
