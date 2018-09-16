@@ -9,11 +9,11 @@ local previousMouse = ffi.new("kmVec2")
 local pitch = 0.0
 local yaw = 0.0
 
-local mouseSensitivity = -10.0
+local mouseSensitivity = -20.0
 local distanceFromOrigin = 6
 
 local cameraPosition = ffi.new("kmVec3[1]")
-local origin = ffi.new("kmVec3[1]")
+local target = ffi.new("kmVec3[1]")
 local up = ffi.new("kmVec3[1]")
 
 local cameraTransform = nil
@@ -23,7 +23,7 @@ function system.init(scene)
   input:register("click", input.BUTTON(mouse.buttons[1]))
 
   kazmath.kmVec3Fill(cameraPosition, 0.0, 0.0, distanceFromOrigin)
-  kazmath.kmVec3Zero(origin)
+  kazmath.kmVec3Zero(target)
   kazmath.kmVec3Fill(up, 0.0, 1.0, 0.0)
 
   cameraTransform = scene:getComponent("transform", scene.ptr.mainCamera)
@@ -57,7 +57,7 @@ function system.begin(scene, dt)
   end
 
   kazmath.kmQuaternionMultiplyVec3(cameraTransform.position, cameraTransform.rotation, cameraPosition)
-  kazmath.kmVec3Add(cameraTransform.position, origin, cameraTransform.position)
+  kazmath.kmVec3Add(cameraTransform.position, target, cameraTransform.position)
 
   cameraTransform:markDirty(scene)
 end
