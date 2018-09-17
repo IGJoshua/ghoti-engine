@@ -10,3 +10,4 @@ find resources/scenes/* -type d -not -path '*/entities*' -exec mkdir -p '{}/enti
 mkdir -p resources/audio/
 mkdir -p resources/heightmaps/
 mkdir -p resources/images/
+mkdir -p resources/saves/
