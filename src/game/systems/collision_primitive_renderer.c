@@ -32,6 +32,9 @@
 #define CYLINDER_MODEL_NAME "cylinder"
 #define HEMISPHERE_MODEL_NAME "hemisphere"
 
+#define VERTEX_SHADER_FILE "resources/shaders/model.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform modelUniform;
@@ -85,11 +88,11 @@ void initCollisionPrimitiveRendererSystem(Scene *scene)
 		loadModel(HEMISPHERE_MODEL_NAME);
 
 		createShaderProgram(
-			"resources/shaders/model.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/model.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 

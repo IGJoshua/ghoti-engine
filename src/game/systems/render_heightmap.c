@@ -42,6 +42,9 @@ internal uint32 rendererRefCount = 0;
 
 internal HashMap heightmapModels = NULL;
 
+#define VERTEX_SHADER_FILE "resources/shaders/model.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+
 internal GLuint shaderProgram = 0;
 
 internal Uniform modelUniform = {};
@@ -77,11 +80,11 @@ void initRenderHeightmapSystem(Scene *scene)
 			&ptrEq);
 
 		createShaderProgram(
-			"resources/shaders/model.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/model.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 

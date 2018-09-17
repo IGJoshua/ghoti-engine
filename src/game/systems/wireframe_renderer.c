@@ -32,6 +32,9 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#define VERTEX_SHADER_FILE "resources/shaders/model.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform modelUniform;
@@ -81,11 +84,11 @@ void initWireframeRendererSystem(Scene *scene)
 		LOG("Initializing wireframe renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/model.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/model.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 

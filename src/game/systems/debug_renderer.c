@@ -51,6 +51,9 @@ typedef struct debug_vertex_buffer_t
 DebugVertexBuffer pointVertexBuffer;
 DebugVertexBuffer lineVertexBuffer;
 
+#define VERTEX_SHADER_FILE "resources/shaders/debug.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/debug.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform viewUniform;
@@ -119,11 +122,11 @@ internal void initDebugRendererSystem(Scene *scene)
 		LOG("Initializing debug renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/debug.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/debug.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 

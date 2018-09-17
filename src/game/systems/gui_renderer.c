@@ -37,6 +37,9 @@ extern GLuint vertexBuffer;
 extern GLuint vertexArray;
 extern GLuint indexBuffer;
 
+#define VERTEX_SHADER_FILE "resources/shaders/gui.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/gui.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform projectionUniform;
@@ -57,11 +60,11 @@ internal void initGUIRendererSystem(Scene *scene)
 		LOG("Initializing GUI renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/gui.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/gui.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 
