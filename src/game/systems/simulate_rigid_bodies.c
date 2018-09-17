@@ -153,28 +153,33 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			return;
 		}
 
-		// create contact joints, and matching hit information
-		for (int32 i = 0; i < numContacts; ++i)
+		if (!node1->isTrigger && !node2->isTrigger)
 		{
-			dContact contact = {};
-			contact.geom = contacts[i];
+			// create contact joints, and matching hit information
+			for (int32 i = 0; i < numContacts; ++i)
+			{
+				dContact contact = {};
+				contact.geom = contacts[i];
 
-			contact.surface.mode = 0
-				| (temp.disableRolling ? 0 : dContactRolling)
-				| (temp.bounciness > 0 ? dContactBounce : 0);
-			contact.surface.mu =
-				temp.finiteFriction ? temp.friction : dInfinity;
-			contact.surface.bounce = temp.bounciness;
-			contact.surface.bounce_vel = temp.bounceVelocity;
-			contact.surface.rho = contact.surface.rho2 = temp.rollingFriction;
-			contact.surface.rhoN = temp.spinningFriction;
+				contact.surface.mode = 0
+					| (temp.disableRolling ? 0 : dContactRolling)
+					| (temp.bounciness > 0 ? dContactBounce : 0);
+				contact.surface.mu =
+					temp.finiteFriction ? temp.friction : dInfinity;
+				contact.surface.bounce = temp.bounciness;
+				contact.surface.bounce_vel = temp.bounceVelocity;
+				contact.surface.rho =
+					contact.surface.rho2 =
+					temp.rollingFriction;
+				contact.surface.rhoN = temp.spinningFriction;
 
-			dJointID joint = dJointCreateContact(
-				scene->physicsWorld,
-				scene->contactGroup,
-				&contact);
+				dJointID joint = dJointCreateContact(
+					scene->physicsWorld,
+					scene->contactGroup,
+					&contact);
 
-			dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+				dJointAttach(joint, dGeomGetBody(o1), dGeomGetBody(o2));
+			}
 		}
 
 		dContact contact = {};
