@@ -45,6 +45,10 @@ struct nk_buffer cmds;
 internal FontComponent *defaultFontComponent;
 internal Font *defaultFont;
 
+#define WIDGET_BACKGROUND "widget_background"
+
+internal Image *widgetBackground;
+
 internal int32 previousViewportWidth = 0;
 internal int32 previousViewportHeight = 0;
 
@@ -141,6 +145,9 @@ internal void initGUISystem(Scene *scene)
 				defaultFontComponent->name,
 				defaultFontComponent->size);
 			nk_style_set_font(&ctx, &defaultFont->font->handle);
+
+			loadImage(WIDGET_BACKGROUND);
+			widgetBackground = getImage(WIDGET_BACKGROUND);
 
 			memset(&nkConfig, 0, sizeof(struct nk_convert_config));
 			nkConfig.shape_AA = NK_ANTI_ALIASING_ON;
@@ -305,6 +312,8 @@ internal void shutdownGUISystem(Scene *scene)
 	if (--guiRefCount == 0)
 	{
 		LOG("Shutting down GUI...\n");
+
+		freeImage(WIDGET_BACKGROUND);
 
 		nk_free(&ctx);
 		nk_buffer_free(&cmds);
@@ -474,6 +483,15 @@ void addWidgets(
 					&fontComponent);
 
 				nk_style_set_font(&ctx, &font->font->handle);
+
+				nk_layout_space_push(
+					&ctx,
+					getRect(guiTransform, panelWidth, panelHeight));
+
+				nk_image_color(
+					&ctx,
+					nk_image_id(widgetBackground->id),
+					getColor(&widget->backgroundColor));
 
 				TextComponent *text = sceneGetComponentFromEntity(
 					scene,
