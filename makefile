@@ -1,13 +1,6 @@
 PROJ = ghoti
 LIBNAME = ghoti
 
-CONFIG_FILE = $(PROJ).json
-DEFAULT_FONT = default_font.ttf
-BOX_MODEL = box
-SPHERE_MODEL = sphere
-CYLINDER_MODEL = cylinder
-HEMISPHERE_MODEL = hemisphere
-
 IDIRS = include/arch include/game vendor
 
 SRCDIR = src
@@ -34,11 +27,6 @@ CFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR)) -fPIC
 DBFLAGS = -g -D_DEBUG -O0 -Wall
 RELFLAGS = -O3
 SHAREDFLAGS = -shared
-
-RELEASE_RESOURCES_FOLDER = release/resources
-RELEASE_SCRIPTS_FOLDER = $(RELEASE_RESOURCES_FOLDER)/scripts
-RELEASE_INIT_FILE = $(RELEASE_SCRIPTS_FOLDER)/init.lua
-RELEASE_DEBUG_FILES = $(RELEASE_SCRIPTS_FOLDER)/components/debug $(RELEASE_SCRIPTS_FOLDER)/systems/debug
 
 _LIBS = json-utilities cjson frozen glfw GLEW GLU GL ILU IL luajit-5.1 kazmath m SDL2 ode
 LIBS = $(foreach LIB,$(_LIBS),-l$(LIB))
@@ -85,7 +73,7 @@ clean:
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 	touch local-$(SUPPRESSIONS)
-	./clean_resources.sh
+	build_scripts/clean_resources.sh
 
 .PHONY: run
 
@@ -120,32 +108,7 @@ rebuild : clean build
 
 release : clean
 	@make RELEASE=yes$(if $(WINDOWS), windows,)
-	mkdir release/
-	find build/* -type f -not -path '*/obj/*' -exec cp {} release/ \;
-	$(if $(WINDOWS),,mv release/$(PROJ) release/$(PROJ)-bin)
-	cp -r resources/ release/
-	find $(RELEASE_RESOURCES_FOLDER)/fonts/* -type f -not -path '*$(DEFAULT_FONT)' -exec rm {} \;
-	cp -r doc/ release/
-	cp $(CONFIG_FILE) release/
-	mkdir -p $(RELEASE_RESOURCES_FOLDER)/audio/
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/audio/*
-	mkdir -p $(RELEASE_RESOURCES_FOLDER)/heightmaps/
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/heightmaps/*
-	mkdir -p $(RELEASE_RESOURCES_FOLDER)/images/
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/images/*
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/models/*
-	cp -r resources/models/$(BOX_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
-	cp -r resources/models/$(SPHERE_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
-	cp -r resources/models/$(CYLINDER_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
-	cp -r resources/models/$(HEMISPHERE_MODEL) $(RELEASE_RESOURCES_FOLDER)/models/
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/scenes/*
-	mkdir -p $(RELEASE_RESOURCES_FOLDER)/saves/
-	rm -rf $(RELEASE_RESOURCES_FOLDER)/saves/*
-	rm $(RELEASE_INIT_FILE)
-	echo "-- NOTE(Joshua): This is where you load the main scene" > $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "math.randomseed(os.time())" >> $(RELEASE_INIT_FILE) && echo "" >> $(RELEASE_INIT_FILE) && echo "local C = engine.C" >> $(RELEASE_INIT_FILE)
-	rm -rf $(RELEASE_DEBUG_FILES) && echo "" >> $(RELEASE_INIT_FILE)
-	$(if $(WINDOWS),,cp -r lib/ release/)
-	$(if $(WINDOWS),,echo '#!/bin/bash' > release/$(PROJ) && echo 'LD_LIBRARY_PATH=.:./lib ./$(PROJ)-bin' >> release/$(PROJ) && chmod +x release/$(PROJ))
+	build_scripts/build_release.sh$(if $(WINDOWS), windows,)
 
 WINCC = x86_64-w64-mingw32-clang
 WINCFLAGS = $(foreach DIR,$(IDIRS),-I$(DIR))
