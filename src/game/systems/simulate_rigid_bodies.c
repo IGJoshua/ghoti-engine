@@ -264,15 +264,24 @@ void beginSimulateRigidbodiesSystem(Scene *scene, real64 dt)
 	{
 		body = (RigidBodyComponent *)cdtIteratorGetData(itr);
 
+		UUID entity = cdtIteratorGetUUID(itr);
+
 		trans = sceneGetComponentFromEntity(
 			scene,
-			cdtIteratorGetUUID(itr),
+			entity,
 			transformComponentID);
 
 		coll = sceneGetComponentFromEntity(
 			scene,
-			cdtIteratorGetUUID(itr),
+			entity,
 			collisionComponentID);
+
+		if (kmQuaternionLengthSq(&trans->globalRotation) == 0.0f)
+		{
+			LOG("ERROR: Rotation with a magnitude of 0 on entity: %s\n",
+				entity.string);
+			ASSERT(false);
+		}
 
 		updateRigidBody(scene, coll, body, trans);
 	}

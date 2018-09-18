@@ -183,6 +183,13 @@ void registerRigidBody(Scene *scene, UUID entity)
 		entity,
 		idFromName("transform"));
 
+	if (kmQuaternionLengthSq(&trans->globalRotation) == 0.0f)
+	{
+		LOG("ERROR: Rotation with a magnitude of 0 on entity: %s\n",
+			entity.string);
+		ASSERT(false);
+	}
+
 	body->bodyID = dBodyCreate(scene->physicsWorld);
 	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
 
