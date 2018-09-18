@@ -1,8 +1,10 @@
 ffi.cdef[[
 
-int32 generateEntity(const char *filename, const char *logFilename);
-int32 exportEntity(const char *filename, const char *logFilename);
-int32 generateScene(const char *filename, const char *logFilename);
-int32 exportScene(const char *filename, const char *logFilename);
+typedef void (*Log)(const char *format, ...);
+
+int32 generateEntity(const char *filename, Log log);
+int32 exportEntity(const char *filename, Log log);
+int32 generateScene(const char *filename, Log log);
+int32 exportScene(const char *filename, Log log);
 
 ]]

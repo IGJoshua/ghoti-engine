@@ -16,7 +16,7 @@ int32 loadConfig(void)
 {
 	initializeDefaultConfig();
 
-	cJSON *json = loadJSON(CONFIG_FILE);
+	cJSON *json = loadJSON(CONFIG_FILE, &logFunction);
 	if (!json)
 	{
 		LOG("Failed to load %s.json\n", CONFIG_FILE);

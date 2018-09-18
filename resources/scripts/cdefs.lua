@@ -70,6 +70,7 @@ typedef union uuid_t
 } UUID;
 
 UUID idFromName(const char *name);
+UUID stringToUUID(const char *string);
 
 bool getVSYNCMode(void);
 void switchVSYNCMode(void);

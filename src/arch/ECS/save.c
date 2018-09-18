@@ -31,7 +31,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 	MKDIR(SAVE_FOLDER);
 
 	char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
-	deleteFolder(saveFolder, false);
+	deleteFolder(saveFolder, false, &logFunction);
 	MKDIR(saveFolder);
 
 	char *saveFilename = getFullFilePath(saveName, "save", saveFolder);
@@ -91,7 +91,10 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 						NULL,
 						saveFolder);
 
-					if (copyFolder(folderPath, destinationFolderPath) == -1)
+					if (copyFolder(
+						folderPath,
+						destinationFolderPath,
+						&logFunction) == -1)
 					{
 						free(folderPath);
 						free(destinationFolderPath);
@@ -126,7 +129,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 
 		exportSceneSnapshot(scene, sceneFilename);
 
-		if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
+		if (exportScene(sceneFilename, &logFunction) == -1)
 		{
 			free(saveFolder);
 			free(sceneFolder);
@@ -163,7 +166,7 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 			UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 			exportEntitySnapshot(scene, *entity, entityFilename);
 
-			if (exportEntity(entityFilename, LOG_FILE_NAME) == -1)
+			if (exportEntity(entityFilename, &logFunction) == -1)
 			{
 				free(saveFolder);
 				free(sceneFolder);
@@ -224,7 +227,7 @@ int32 loadSave(uint32 slot, void **data)
 			char *sceneName = readString(file);
 			char *sceneFolder = getFullFilePath(sceneName, NULL, saveFolder);
 
-			deleteFolder(RUNTIME_STATE_DIR, false);
+			deleteFolder(RUNTIME_STATE_DIR, false, &logFunction);
 			MKDIR(RUNTIME_STATE_DIR);
 
 			DIR *dir = opendir(saveFolder);
@@ -253,7 +256,8 @@ int32 loadSave(uint32 slot, void **data)
 
 							error = copyFolder(
 								folderPath,
-								destinationFolderPath);
+								destinationFolderPath,
+								&logFunction);
 
 							free(destinationFolderPath);
 
@@ -359,7 +363,7 @@ int32 deleteSave(uint32 slot)
 	{
 		char *saveFolder = getFullFilePath(saveName, NULL, SAVE_FOLDER);
 
-		error = deleteFolder(saveFolder, true);
+		error = deleteFolder(saveFolder, true, &logFunction);
 		free(saveFolder);
 
 		if (error != -1)

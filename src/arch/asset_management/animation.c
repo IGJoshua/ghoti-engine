@@ -2,6 +2,8 @@
 
 #include "file/utilities.h"
 
+#include "components/transform.h"
+
 #include <malloc.h>
 
 internal void freeBone(Bone *bone);

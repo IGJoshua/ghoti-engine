@@ -105,7 +105,7 @@ int32 main(int32 argc, char *argv[])
 
 	initSystems();
 
-	deleteFolder(RUNTIME_STATE_DIR, false);
+	deleteFolder(RUNTIME_STATE_DIR, false, &logFunction);
 
 	// Init Lua
 	L = luaL_newstate();
@@ -275,7 +275,7 @@ int32 main(int32 argc, char *argv[])
 		freeScene(&scene);
 	}
 
-	deleteFolder(RUNTIME_STATE_DIR, false);
+	deleteFolder(RUNTIME_STATE_DIR, false, &logFunction);
 
 	if (L)
 	{

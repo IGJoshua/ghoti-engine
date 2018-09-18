@@ -46,3 +46,4 @@ void tConcatenateTransforms(
 	TransformComponent *transformB);
 
 void removeTransform(Scene *scene, UUID entity, TransformComponent *transform);
+TransformComponent readTransform(FILE *file);

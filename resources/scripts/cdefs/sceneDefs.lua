@@ -28,9 +28,6 @@ int32 reloadAllScenes(void);
 int32 unloadScene(const char *name);
 
 List activeScenes;
-bool changeScene;
-bool reloadingScene;
-List unloadedScenes;
 
 void sceneRegisterEntity(Scene *s, UUID newEntity);
 UUID sceneCreateEntity(Scene *s);

@@ -135,7 +135,7 @@ int32 exportSceneJSONEntities(const char *folder)
 
 						if (exportEntity(
 							jsonEntityFilename,
-							LOG_FILE_NAME) == -1)
+							&logFunction) == -1)
 						{
 							LOG("Failed to export entity\n");
 							free(jsonEntityFilename);
@@ -439,7 +439,7 @@ int32 loadSceneFile(const char *name, Scene **scene)
 
 	if (access(jsonSceneFilename, F_OK) != -1)
 	{
-		if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
+		if (exportScene(sceneFilename, &logFunction) == -1)
 		{
 			LOG("Failed to export scene.\n");
 			free(jsonSceneFilename);
@@ -702,7 +702,7 @@ void exportRuntimeScene(Scene *scene)
 		NULL,
 		RUNTIME_STATE_DIR);
 
-	deleteFolder(sceneFolder, false);
+	deleteFolder(sceneFolder, false, &logFunction);
 
 	char *sceneFilename = getFullFilePath(
 		scene->name,
@@ -715,7 +715,7 @@ void exportRuntimeScene(Scene *scene)
 
 	exportSceneSnapshot(scene, sceneFilename);
 
-	if (exportScene(sceneFilename, LOG_FILE_NAME) == -1)
+	if (exportScene(sceneFilename, &logFunction) == -1)
 	{
 		free(sceneFolder);
 		free(sceneFilename);
@@ -746,7 +746,7 @@ void exportRuntimeScene(Scene *scene)
 		UUID *entity = (UUID*)hashMapIteratorGetKey(itr);
 		exportEntitySnapshot(scene, *entity, entityFilename);
 
-		if (exportEntity(entityFilename, LOG_FILE_NAME) == -1)
+		if (exportEntity(entityFilename, &logFunction) == -1)
 		{
 			free(entityFilename);
 			free(sceneFolder);
@@ -1404,7 +1404,7 @@ void exportEntitySnapshot(Scene *scene, UUID entity, const char *filename)
 		}
 	}
 
-	writeJSON(json, filename, config.jsonConfig.formatted);
+	writeJSON(json, filename, config.jsonConfig.formatted, &logFunction);
 	cJSON_Delete(json);
 }
 
@@ -1518,7 +1518,7 @@ void exportSceneSnapshot(Scene *scene, const char *filename)
 	cJSON_AddStringToObject(json, "active_camera", scene->mainCamera.string);
 	cJSON_AddNumberToObject(json, "gravity", scene->gravity);
 
-	writeJSON(json, filename, config.jsonConfig.formatted);
+	writeJSON(json, filename, config.jsonConfig.formatted, &logFunction);
 	cJSON_Delete(json);
 
 	LOG("Successfully exported scene (%s)\n", scene->name);
@@ -1980,11 +1980,5 @@ void *sceneGetComponentFromEntity(
 inline
 UUID idFromName(const char *name)
 {
-	UUID uuid = {};
-	if (name)
-	{
-		strcpy(uuid.string, name);
-	}
-
-	return uuid;
+	return stringToUUID(name);
 }

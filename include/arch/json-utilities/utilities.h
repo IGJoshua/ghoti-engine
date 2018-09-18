@@ -1,9 +1,9 @@
 #pragma once
 #include "defines.h"
 
-int32 generateEntity(const char *filename, const char *logFilename);
-int32 exportEntity(const char *filename, const char *logFilename);
-int32 generateScene(const char *filename, const char *logFilename);
-int32 exportScene(const char *filename, const char *logFilename);
+#include "file/utilities.h"
 
-UUID generateUUID(void);
+int32 generateEntity(const char *filename, Log log);
+int32 exportEntity(const char *filename, Log log);
+int32 generateScene(const char *filename, Log log);
+int32 exportScene(const char *filename, Log log);

@@ -3,6 +3,8 @@
 
 #include "core/config.h"
 
+#include "file/utilities.h"
+
 #include <stdio.h>
 
 FILE *logFile;
@@ -18,3 +20,5 @@ extern Config config;
 				 fprintf(logFile, __VA_ARGS__); \
 				 fclose(logFile)
 #endif
+
+void logFunction(const char *format, ...);

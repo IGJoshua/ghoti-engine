@@ -36,7 +36,7 @@ int32 compileShaderFromFile(
 	}
 
 	uint64 fileLength;
-	char *source = readFile(filename, &fileLength);
+	char *source = readFile(filename, &fileLength, &logFunction);
 	if (source)
 	{
 		LOG("Loaded %s\n", filename);
