@@ -1,8 +1,10 @@
 #include "core/input.h"
 #include "core/log.h"
+#include "core/window.h"
 
 #include <GL/glew.h>
 #include <GL/glu.h>
+
 #include <GLFW/glfw3.h>
 
 #include <luajit-2.0/lua.h>
@@ -146,7 +148,6 @@ void mouseButtonCallback(
 		{
 			real64 x, y;
 			glfwGetCursorPos(window, &x, &y);
-
 			nk_input_button(&ctx, nkButton, x, y, action == GLFW_PRESS);
 		}
 	}
@@ -579,7 +580,6 @@ int32 initInput(GLFWwindow *window)
 	SDL_GameControllerEventState(SDL_ENABLE);
 	controller = SDL_GameControllerOpen(0);
 
-
 	return 0;
 }
 
@@ -596,16 +596,6 @@ void shutdownInput()
 
 void inputHandleEvents()
 {
-	if (guiRefCount > 0)
-	{
-		nk_input_begin(&ctx);
-	}
-
 	glfwPollEvents();
 	handleSDLEvents();
-
-	if (guiRefCount > 0)
-	{
-		nk_input_end(&ctx);
-	}
 }

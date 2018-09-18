@@ -1,0 +1,65 @@
+{
+	"uuid": "qrK_gnns^xAB@1V'g>oPcCXN<ua$i#WXjw>Xl*QH)h_Fv;JN7*/XWiRBb::@o*=",
+
+	"components":
+	{
+		"gui_transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0]
+			},
+
+			{
+				"name": "size",
+				"float32": [0.5, 0.5]
+			},
+
+			{
+				"name": "pivot",
+				"enum": 4
+			}
+		],
+
+		"widget":
+		[
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "background color",
+				"float32": [1.0, 1.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "next widget",
+				"uuid": ""
+			}
+		],
+
+		"button":
+		[
+			{
+				"name": "text",
+				"char(1024)": "test"
+			},
+
+			{
+				"name": "pressed",
+				"bool": false
+			},
+
+			{
+				"name": "held",
+				"bool": false
+			},
+
+			{
+				"name": "released",
+				"bool": false
+			}
+		]
+	}
+}

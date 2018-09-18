@@ -73,6 +73,9 @@ clean:
 	$(ARCHDIRS)
 	$(GAMEDIRS)
 	touch local-$(SUPPRESSIONS)
+	find include/ -type d -empty -delete
+	find src/ -type d -empty -delete
+	find vendor/ -type d -empty -delete
 	build_scripts/clean_resources.sh
 
 .PHONY: run

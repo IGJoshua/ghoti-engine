@@ -215,6 +215,7 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
+	nk_input_end(&ctx);
 	nk_clear(&ctx);
 
 	if (viewportWidth != previousViewportWidth ||
@@ -305,6 +306,8 @@ internal void endGUISystem(Scene *scene, real64 dt)
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	nk_input_begin(&ctx);
 }
 
 internal void shutdownGUISystem(Scene *scene)
