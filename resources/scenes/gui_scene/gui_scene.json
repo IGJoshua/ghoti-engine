@@ -1,0 +1,81 @@
+{
+	"systems":
+	{
+		"update":
+		{
+			"external": ["basic_input"],
+			"internal":
+			[
+				"clean_hit_information",
+				"clean_hit_list",
+				"animation",
+				"clean_global_transforms",
+				"apply_parent_transforms",
+				"simulate_rigid_bodies",
+				"joint_information",
+				"gui"
+			]
+		},
+
+		"draw":
+		{
+			"external":
+			[
+				
+			],
+
+			"internal":
+			[
+				"render_heightmap",
+				"renderer",
+				"wireframe_renderer",
+				"debug_renderer",
+				"collision_primitive_renderer",
+				"gui_renderer"
+			]
+		}
+	},
+
+	"component_limits":
+	{
+		"animation": 2048,
+		"animator": 2048,
+		"ball_socket_joint": 256,
+		"ball_socket2_joint": 256,
+		"box": 1024,
+		"button": 1024,
+		"camera": 8,
+		"capsule": 1024,
+		"collision_tree_node": 4096,
+		"collision": 1024,
+		"debug_collision_primitive": 2048,
+		"debug_line": 2048,
+		"debug_point": 4096,
+		"debug_primitive": 4096,
+		"debug_transform": 1024,
+		"font": 1024,
+		"gui_transform": 2048,
+		"heightmap": 256,
+		"hinge_joint": 256,
+		"hit_information": 4096,
+		"hit_list": 8192,
+		"image": 1024,
+		"joint_information": 256,
+		"joint_list": 512,
+		"joint": 8192,
+		"model": 2048,
+		"next_animation": 2048,
+		"panel": 512,
+		"rigid_body": 1024,
+		"slider_joint": 256,
+		"sphere": 1024,
+		"surface_information": 512,
+		"text": 1024,
+		"transform": 16384,
+		"widget": 1024,
+		"wireframe": 2048
+	},
+
+	"active_camera": ",'-g3M4ODfK/oHKFMQuBDv+B)UGbJ-SY8AiZJ6%6V),tQO?wB^A>^XD:u%aP/3/",
+	"gravity": -9.81
+}
