@@ -26,6 +26,8 @@
 
 #include <GL/glew.h>
 
+#include <GLFW/glfw3.h>
+
 internal UUID guiTransformComponentID = {};
 internal UUID panelComponentID = {};
 internal UUID widgetComponentID = {};
@@ -38,6 +40,11 @@ uint32 guiRefCount = 0;
 
 struct nk_context ctx;
 struct nk_buffer cmds;
+
+#define KEY_REPEAT_DELAY 0.03
+
+int8 nkKeys[NK_KEY_MAX];
+internal real64 keyRepeatTimer;
 
 #define DEFAULT_FONT "default_font"
 #define DEFAULT_FONT_SIZE 18
@@ -136,6 +143,9 @@ internal void initGUISystem(Scene *scene)
 		else
 		{
 			nk_buffer_init_default(&cmds);
+
+			memset(nkKeys, 0, NK_KEY_MAX * sizeof(int8));
+			keyRepeatTimer = KEY_REPEAT_DELAY;
 
 			defaultFontComponent = sceneGetComponentFromEntity(
 				scene,
@@ -308,6 +318,23 @@ internal void endGUISystem(Scene *scene, real64 dt)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	nk_input_begin(&ctx);
+
+	keyRepeatTimer -= dt;
+
+	for (uint32 i = 0; i < NK_KEY_MAX; i++)
+	{
+		if (nkKeys[i] == GLFW_REPEAT && keyRepeatTimer <= 0.0)
+		{
+			nk_input_key(&ctx, i, false);
+		}
+
+		nk_input_key(&ctx, i, nkKeys[i]);
+	}
+
+	if (keyRepeatTimer <= 0.0)
+	{
+		keyRepeatTimer = KEY_REPEAT_DELAY;
+	}
 }
 
 internal void shutdownGUISystem(Scene *scene)

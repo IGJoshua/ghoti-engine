@@ -27,15 +27,60 @@ SDL_GameController *controller;
 
 extern uint32 guiRefCount;
 extern struct nk_context ctx;
+extern int8 nkKeys[NK_KEY_MAX];
 
 internal
 void keyCallback(
 	GLFWwindow *window,
-	int key,
-	int scancode,
-	int action,
-	int mods)
+	int32 key,
+	int32 scancode,
+	int32 action,
+	int32 mods)
 {
+	if (guiRefCount > 0)
+	{
+		enum nk_keys nkKey = NK_KEY_NONE;
+		switch (key)
+		{
+			case GLFW_KEY_LEFT_SHIFT:
+			case GLFW_KEY_RIGHT_SHIFT:
+				nkKey = NK_KEY_SHIFT;
+				break;
+			case GLFW_KEY_LEFT_CONTROL:
+			case GLFW_KEY_RIGHT_CONTROL:
+				nkKey = NK_KEY_CTRL;
+				break;
+			case GLFW_KEY_DELETE:
+				nkKey = NK_KEY_DEL;
+				break;
+			case GLFW_KEY_ENTER:
+				nkKey = NK_KEY_ENTER;
+				break;
+			case GLFW_KEY_TAB:
+				nkKey = NK_KEY_TAB;
+				break;
+			case GLFW_KEY_BACKSPACE:
+				nkKey = NK_KEY_BACKSPACE;
+				break;
+			case GLFW_KEY_UP:
+				nkKey = NK_KEY_UP;
+				break;
+			case GLFW_KEY_DOWN:
+				nkKey = NK_KEY_DOWN;
+				break;
+			case GLFW_KEY_LEFT:
+				nkKey = NK_KEY_LEFT;
+				break;
+			case GLFW_KEY_RIGHT:
+				nkKey = NK_KEY_RIGHT;
+				break;
+			default:
+				break;
+		}
+
+		nkKeys[nkKey] = action;
+	}
+
 	if (L)
 	{
 		lua_checkstack(L, 4);
@@ -90,8 +135,8 @@ void keyCallback(
 internal
 void cursorPositionCallback(
 	GLFWwindow *window,
-	double xpos,
-	double ypos)
+	real64 xpos,
+	real64 ypos)
 {
 	if (guiRefCount > 0)
 	{
@@ -122,9 +167,9 @@ void cursorPositionCallback(
 internal
 void mouseButtonCallback(
 	GLFWwindow *window,
-	int button,
-	int action,
-	int mods)
+	int32 button,
+	int32 action,
+	int32 mods)
 {
 	if (guiRefCount > 0)
 	{
@@ -205,8 +250,8 @@ void mouseButtonCallback(
 internal
 void mouseScrollCallback(
 	GLFWwindow *window,
-	double xoffset,
-	double yoffset)
+	real64 xoffset,
+	real64 yoffset)
 {
 	if (L)
 	{
@@ -236,6 +281,15 @@ void mouseScrollCallback(
 	else
 	{
 		LOG("No lua state exists, failing to register mouse scroll\n");
+	}
+}
+
+internal
+void characterCallback(GLFWwindow *window, uint32 codepoint)
+{
+	if (guiRefCount > 0)
+	{
+		nk_input_unicode(&ctx, codepoint);
 	}
 }
 
@@ -575,6 +629,7 @@ int32 initInput(GLFWwindow *window)
 	glfwSetCursorPosCallback(window, &cursorPositionCallback);
 	glfwSetMouseButtonCallback(window, &mouseButtonCallback);
 	glfwSetScrollCallback(window, &mouseScrollCallback);
+	glfwSetCharCallback(window, &characterCallback);
 
 	SDL_JoystickEventState(SDL_ENABLE);
 	SDL_GameControllerEventState(SDL_ENABLE);
