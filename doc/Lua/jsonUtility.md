@@ -6,25 +6,20 @@ The main JSON page can be found [here](../JSON/json.md)
 ## int generateEntity
 Generates an entity from file
 ```c
-int generateEntity(const char *filename);
+int32 generateEntity(const char *filename, Log log);
 ```
 ## int exportEntity
 Exports an entity to file
 ```c
-int exportEntity(const char *filename);
+int32 exportEntity(const char *filename, Log log);
 ```
 ## int exportAsset
 Exports an asset to file
 ```c
-int exportAsset(const char *filename);
+int32 exportAsset(const char *filename, Log log);
 ```
 ## int generateScene
 Generates a scene from file
 ```c
-int generateScene(const char *filename);
-```
-## int exportScene
-Exports a scene to file
-```c
-int exportScene(const char *filename);
+int32 generateScene(const char *filename, Log log);
 ```

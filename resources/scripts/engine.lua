@@ -13,6 +13,20 @@ local C = engine.C
 
 io.write("Loaded ghoti library\n")
 
+engine.file = ffi.load(
+  ffi.os == "Windows"
+    and "./file-utilities.dll"
+	or "./lib/libfile-utilities.so")
+
+io.write("Loaded file utilities library\n")
+
+engine.json = ffi.load(
+  ffi.os == "Windows"
+    and "./json-utilities.dll"
+	or "./lib/libjson-utilities.so")
+
+io.write("Loaded json utilities library\n")
+
 engine.kazmath = ffi.load(
   ffi.os == "Windows"
     and "./kazmath.dll"

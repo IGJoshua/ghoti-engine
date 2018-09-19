@@ -18,6 +18,8 @@ mv release/resources/models/box/ release/resources/temp/
 mv release/resources/models/sphere/ release/resources/temp/
 mv release/resources/models/cylinder/ release/resources/temp/
 mv release/resources/models/hemisphere/ release/resources/temp/
+rm -rf release/resources/temp/*.fbx
+rm -rf release/resources/temp/*.json
 
 rm -rf release/resources/audio/*
 rm -rf release/resources/fonts/*
