@@ -95,13 +95,13 @@ typedef struct animator_component_t
 	real64 transitionDuration;
 } AnimatorComponent;
 
-typedef struct audio_manager_t
+typedef struct audio_manager_component_t
 {
 	uint32 buffers;
 	uint32 sources;
-} AudioManagerComonent;
+} AudioManagerComponent;
 
-typedef struct audio_source_t
+typedef struct audio_source_component_t
 {
 	uint32 id;
 	real32 pitch;
@@ -158,7 +158,7 @@ typedef struct collision_tree_node_t
 	UUID nextCollider;
 	bool isTrigger;
 	dGeomID geomID;
-} CollisionTreeNode;
+} CollisionTreeNodeComponent;
 
 typedef struct collision_component_t
 {
@@ -373,6 +373,11 @@ typedef struct text_component_t
 	char text[4096];
 	TextAlignment alignment;
 } TextComponent;
+
+typedef struct text_field_component_t
+{
+	char text[4096];
+} TextFieldComponent;
 
 typedef struct transform_component_t
 {

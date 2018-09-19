@@ -39,26 +39,11 @@
 			}
 		],
 
-		"button":
+		"text_field":
 		[
 			{
 				"name": "text",
-				"char(1024)": "test"
-			},
-
-			{
-				"name": "pressed",
-				"bool": false
-			},
-
-			{
-				"name": "held",
-				"bool": false
-			},
-
-			{
-				"name": "released",
-				"bool": false
+				"char(4096)": "test"
 			}
 		]
 	}

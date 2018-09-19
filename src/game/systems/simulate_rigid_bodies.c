@@ -60,12 +60,12 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 		UUID *volume1 = dGeomGetData(o1);
 		UUID *volume2 = dGeomGetData(o2);
 
-		CollisionTreeNode *node1 = sceneGetComponentFromEntity(
+		CollisionTreeNodeComponent *node1 = sceneGetComponentFromEntity(
 			scene,
 			*volume1,
 			collisionTreeNodeComponentID);
 
-		CollisionTreeNode *node2 = sceneGetComponentFromEntity(
+		CollisionTreeNodeComponent *node2 = sceneGetComponentFromEntity(
 			scene,
 			*volume2,
 			collisionTreeNodeComponentID);

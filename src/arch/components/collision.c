@@ -9,13 +9,13 @@ void removeCollisionComponent(Scene *scene, CollisionComponent *coll)
 		return;
 	}
 
-	CollisionTreeNode *node = NULL;
+	CollisionTreeNodeComponent *node = NULL;
 	UUID collisionTreeNodeID = idFromName("collision_tree_node");
 	UUID currentCollider = coll->collisionTree;
 	UUID nextCollider = {};
 	while (currentCollider.string[0] != 0)
 	{
-		node = (CollisionTreeNode *)sceneGetComponentFromEntity(
+		node = (CollisionTreeNodeComponent *)sceneGetComponentFromEntity(
 			scene,
 			currentCollider,
 			collisionTreeNodeID);

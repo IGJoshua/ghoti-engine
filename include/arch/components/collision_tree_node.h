@@ -6,4 +6,4 @@
 void removeCollisionTreeNode(
 	Scene *scene,
 	UUID entity,
-	CollisionTreeNode *node);
+	CollisionTreeNodeComponent *node);

@@ -13,7 +13,7 @@ typedef struct collision_tree_node_t
   UUID nextCollider;
   bool isTrigger;
   dGeomID geomID;
-} CollisionTreeNode;
+} CollisionTreeNodeComponent;
 ]]
 
-local component = engine.components:register("collision_tree_node", "CollisionTreeNode")
+local component = engine.components:register("collision_tree_node", "CollisionTreeNodeComponent")

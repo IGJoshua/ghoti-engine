@@ -35,6 +35,7 @@ internal UUID fontComponentID = {};
 internal UUID textComponentID = {};
 internal UUID imageComponentID = {};
 internal UUID buttonComponentID = {};
+internal UUID textFieldComponentID = {};
 
 extern uint32 guiRefCount;
 
@@ -127,6 +128,7 @@ internal void addImage(
 	real32 panelWidth,
 	real32 panelHeight);
 internal void addButton(ButtonComponent *button);
+internal void addTextField(TextFieldComponent *textField);
 
 internal void fillCommandBuffer(void);
 
@@ -368,6 +370,7 @@ System createGUISystem(void)
 	textComponentID = idFromName("text");
 	imageComponentID = idFromName("image");
 	buttonComponentID = idFromName("button");
+	textFieldComponentID = idFromName("text_field");
 
 	System system = {};
 
@@ -535,6 +538,10 @@ void addWidgets(
 					scene,
 					entity,
 					buttonComponentID);
+				TextFieldComponent *textField = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					textFieldComponentID);
 
 				if (!image)
 				{
@@ -554,6 +561,10 @@ void addWidgets(
 				else if (button)
 				{
 					addButton(button);
+				}
+				else if (textField)
+				{
+					addTextField(textField);
 				}
 			}
 
@@ -670,6 +681,19 @@ void addButton(ButtonComponent *button)
 	button->held = nk_button_label(&ctx, button->text);
 	button->pressed = !held && button->held;
 	button->released = held && !button->held;
+}
+
+void addTextField(TextFieldComponent *textField)
+{
+	nk_edit_string_zero_terminated(
+		&ctx,
+		NK_EDIT_ALLOW_TAB |
+		NK_EDIT_SELECTABLE |
+		NK_EDIT_ALWAYS_INSERT_MODE |
+		NK_EDIT_GOTO_END_ON_ACTIVATE,
+		textField->text,
+		4096,
+		NULL);
 }
 
 void fillCommandBuffer(void)

@@ -8,7 +8,7 @@
 
 #include "file/utilities.h"
 
-#include "json-utilities/utilities.h"
+#include "json/utilities.h"
 
 #include <sys/stat.h>
 

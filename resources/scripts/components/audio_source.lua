@@ -1,5 +1,5 @@
 ffi.cdef[[
-typedef struct audio_source_t
+typedef struct audio_source_component_t
 {
 	uint32 id;
 	real32 pitch;

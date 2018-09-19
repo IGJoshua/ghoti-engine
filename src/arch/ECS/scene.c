@@ -25,7 +25,7 @@
 
 #include <cjson/cJSON.h>
 
-#include "json-utilities/utilities.h"
+#include "json/utilities.h"
 
 #include <luajit-2.0/lauxlib.h>
 #include <luajit-2.0/lualib.h>
@@ -1937,7 +1937,7 @@ void sceneRemoveComponentFromEntity(
 		removeCollisionTreeNode(
 			s,
 			entity,
-			(CollisionTreeNode*)cdtGet(*table, entity));
+			(CollisionTreeNodeComponent*)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "panel"))
 	{

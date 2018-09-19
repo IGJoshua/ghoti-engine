@@ -10,7 +10,7 @@
 void removeCollisionTreeNode(
 	Scene *scene,
 	UUID entity,
-	CollisionTreeNode *node)
+	CollisionTreeNodeComponent *node)
 {
 	UUID collisionComponentID = idFromName("collision");
 	UUID nodeComponentID = idFromName("collision_tree_node");
@@ -23,7 +23,7 @@ void removeCollisionTreeNode(
 
 	UUID nodeID = collisionComponent->collisionTree;
 
-	CollisionTreeNode *nodeComponent = sceneGetComponentFromEntity(
+	CollisionTreeNodeComponent *nodeComponent = sceneGetComponentFromEntity(
 		scene,
 		nodeID,
 		nodeComponentID);
@@ -40,7 +40,7 @@ void removeCollisionTreeNode(
 	{
 		while (nodeComponent)
 		{
-			CollisionTreeNode *previousNodeComponent = nodeComponent;
+			CollisionTreeNodeComponent *previousNodeComponent = nodeComponent;
 
 			nodeID = nodeComponent->nextCollider;
 			nodeComponent = sceneGetComponentFromEntity(

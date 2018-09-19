@@ -10,7 +10,7 @@ internal
 void updateCollisionGeom(
 	TransformComponent *bodyTrans,
 	TransformComponent *trans,
-	CollisionTreeNode *node)
+	CollisionTreeNodeComponent *node)
 {
 	kmVec3 pos, scal;
 	kmQuaternion rot;
@@ -39,7 +39,7 @@ void updateCollisionGeoms(
 	TransformComponent *bodyTrans,
 	CollisionComponent *coll)
 {
-	CollisionTreeNode *node = 0;
+	CollisionTreeNodeComponent *node = 0;
 	TransformComponent *trans = 0;
 	UUID collisionTreeNodeComponentID = idFromName("collision_tree_node");
 	UUID transformComponentID = idFromName("transform");
@@ -72,7 +72,7 @@ void createCollisionGeom(
 	RigidBodyComponent *body,
 	dSpaceID spaceID)
 {
-	CollisionTreeNode *node = sceneGetComponentFromEntity(
+	CollisionTreeNodeComponent *node = sceneGetComponentFromEntity(
 		scene,
 		entity,
 		idFromName("collision_tree_node"));
@@ -150,7 +150,7 @@ void createCollisionGeoms(
 	CollisionComponent *coll,
 	dSpaceID spaceID)
 {
-	CollisionTreeNode *node = 0;
+	CollisionTreeNodeComponent *node = 0;
 	UUID collisionTreeNodeID = idFromName("collision_tree_node");
 
 	// Walk the tree of collision geometry
