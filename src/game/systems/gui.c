@@ -36,6 +36,7 @@ internal UUID textComponentID = {};
 internal UUID imageComponentID = {};
 internal UUID buttonComponentID = {};
 internal UUID textFieldComponentID = {};
+internal UUID progressBarComponentID = {};
 
 extern uint32 guiRefCount;
 
@@ -110,6 +111,7 @@ internal Font* getEntityFont(
 	Font *fallBackFont,
 	FontComponent **fontComponent);
 internal struct nk_color getColor(kmVec4 *color);
+internal struct nk_color getOpaqueColor(kmVec3 *color);
 internal struct nk_rect getRect(
 	GUITransformComponent *guiTransform,
 	real32 width,
@@ -129,6 +131,7 @@ internal void addImage(
 	real32 panelHeight);
 internal void addButton(ButtonComponent *button);
 internal void addTextField(TextFieldComponent *textField);
+internal void addProgressBar(ProgressBarComponent *progressBar);
 
 internal void fillCommandBuffer(void);
 
@@ -182,6 +185,8 @@ internal void initGUISystem(Scene *scene)
 			ctx.style.button.rounding = 0.0f;
 
 			nk_button_set_behavior(&ctx, NK_BUTTON_REPEATER);
+
+			ctx.style.progress.padding = nk_vec2(0.0f, 0.0f);
 
 			glGenBuffers(1, &vertexBuffer);
 			glGenVertexArrays(1, &vertexArray);
@@ -371,6 +376,7 @@ System createGUISystem(void)
 	imageComponentID = idFromName("image");
 	buttonComponentID = idFromName("button");
 	textFieldComponentID = idFromName("text_field");
+	progressBarComponentID = idFromName("progress_bar");
 
 	System system = {};
 
@@ -426,6 +432,11 @@ struct nk_color getColor(kmVec4 *color)
 		color->y * 255,
 		color->z * 255,
 		color->w * 255);
+}
+
+struct nk_color getOpaqueColor(kmVec3 *color)
+{
+	return nk_rgb(color->x * 255, color->y * 255, color->z * 255);
 }
 
 struct nk_rect getRect(
@@ -542,6 +553,10 @@ void addWidgets(
 					scene,
 					entity,
 					textFieldComponentID);
+				ProgressBarComponent *progressBar = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					progressBarComponentID);
 
 				if (!image)
 				{
@@ -565,6 +580,10 @@ void addWidgets(
 				else if (textField)
 				{
 					addTextField(textField);
+				}
+				else if (progressBar)
+				{
+					addProgressBar(progressBar);
 				}
 			}
 
@@ -694,6 +713,26 @@ void addTextField(TextFieldComponent *textField)
 		textField->text,
 		4096,
 		NULL);
+}
+
+void addProgressBar(ProgressBarComponent *progressBar)
+{
+	kmVec3 *color = progressBar->reversed ?
+		&progressBar->backgroundColor : &progressBar->color;
+	kmVec3 *backgroundColor = progressBar->reversed ?
+		&progressBar->color : &progressBar->backgroundColor;
+
+	ctx.style.progress.cursor_normal = nk_style_item_color(
+		getOpaqueColor(color));
+	ctx.style.progress.normal = nk_style_item_color(
+		getOpaqueColor(backgroundColor));
+
+	nk_prog(
+		&ctx,
+		progressBar->reversed ?
+			progressBar->maxValue - progressBar->value : progressBar->value,
+		progressBar->maxValue,
+		false);
 }
 
 void fillCommandBuffer(void)

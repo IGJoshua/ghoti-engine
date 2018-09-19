@@ -325,6 +325,15 @@ typedef struct panel_component_t
 	UUID firstWidget;
 } PanelComponent;
 
+typedef struct progress_bar_component_t
+{
+	uint64 value;
+	uint64 maxValue;
+	kmVec3 color;
+	kmVec3 backgroundColor;
+	bool reversed;
+} ProgressBarComponent;
+
 typedef struct rigid_body_component_t
 {
 	dBodyID bodyID;

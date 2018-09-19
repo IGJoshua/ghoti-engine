@@ -16,7 +16,7 @@ end
 
 function system.begin(scene, dt)
   if input.close.keydown then
-    engine.C.closeWindow()
+    C.closeWindow()
   end
 
   if input.reload.updated and input.reload.keydown then
