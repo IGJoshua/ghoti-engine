@@ -51,6 +51,7 @@ internal uint32 collisionPrimitiveRendererRefCount = 0;
 internal UUID transformComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID debugCollisionPrimitiveComponentID = {};
+internal UUID collisionTreeNodeComponentID = {};
 internal UUID boxComponentID = {};
 internal UUID sphereComponentID = {};
 internal UUID capsuleComponentID = {};
@@ -61,7 +62,8 @@ internal void drawCollisionPrimitives(
 	Scene *scene,
 	UUID entity,
 	TransformComponent *transformComponent,
-	DebugCollisionPrimitiveComponent *debugCollisionPrimitive);
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive,
+	CollisionTreeNodeComponent *collisionTreeNode);
 internal void drawCollisionPrimitive(
 	TransformComponent *transform,
 	DebugCollisionPrimitiveComponent *debugCollisionPrimitive,
@@ -167,12 +169,17 @@ void runCollisionPrimitiveRendererSystem(Scene *scene, UUID entity, real64 dt)
 		scene,
 		entity,
 		transformComponentID);
+	CollisionTreeNodeComponent *collisionTreeNode = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		collisionTreeNodeComponentID);
 
 	drawCollisionPrimitives(
 		scene,
 		entity,
 		transform,
-		debugCollisionPrimitive);
+		debugCollisionPrimitive,
+		collisionTreeNode);
 }
 
 internal
@@ -207,6 +214,7 @@ System createCollisionPrimitiveRendererSystem(void)
 	cameraComponentID = idFromName("camera");
 	debugCollisionPrimitiveComponentID =
 		idFromName("debug_collision_primitive");
+	collisionTreeNodeComponentID = idFromName("collision_tree_node");
 	boxComponentID = idFromName("box");
 	sphereComponentID = idFromName("sphere");
 	capsuleComponentID = idFromName("capsule");
@@ -228,174 +236,9 @@ void drawCollisionPrimitives(
 	Scene *scene,
 	UUID entity,
 	TransformComponent *transformComponent,
-	DebugCollisionPrimitiveComponent *debugCollisionPrimitive)
+	DebugCollisionPrimitiveComponent *debugCollisionPrimitive,
+	CollisionTreeNodeComponent *collisionTreeNode)
 {
-	BoxComponent *box = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		boxComponentID);
-	SphereComponent *sphere = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		sphereComponentID);
-	CapsuleComponent *capsule = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		capsuleComponentID);
-
-	bool skip = false;
-
-	const char *modelName = "";
-	kmVec3 color;
-
-	if (box)
-	{
-		modelName = BOX_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->boxColor);
-	}
-	else if (sphere)
-	{
-		modelName = SPHERE_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->sphereColor);
-	}
-	else if (capsule)
-	{
-		modelName = CYLINDER_MODEL_NAME;
-		kmVec3Assign(&color, &debugCollisionPrimitive->capsuleColor);
-	}
-	else
-	{
-		skip = true;
-	}
-
-	if (!skip)
-	{
-		Model *model = getModel(modelName);
-		if (!model)
-		{
-			skip = true;
-		}
-
-		if (!skip)
-		{
-			bool hasAnimations = false;
-			setUniform(hasAnimationsUniform, 1, &hasAnimations);
-
-			bool useCustomColor = true;
-			setUniform(useCustomColorUniform, 1, &useCustomColor);
-
-			TransformComponent transform = *transformComponent;
-
-			real32 lastMaxScale = MAX(
-				MAX(transform.lastGlobalScale.x,
-					transform.lastGlobalScale.y),
-				transform.lastGlobalScale.z);
-			real32 maxScale = MAX(
-				MAX(transform.globalScale.x,
-					transform.globalScale.y),
-				transform.globalScale.z);
-
-			if (box)
-			{
-				kmVec3Mul(
-					&transform.lastGlobalScale,
-					&transform.lastGlobalScale,
-					&box->bounds);
-				kmVec3Scale(
-					&transform.lastGlobalScale,
-					&transform.lastGlobalScale,
-					2.0f);
-
-				kmVec3Mul(
-					&transform.globalScale,
-					&transform.globalScale,
-					&box->bounds);
-				kmVec3Scale(
-					&transform.globalScale,
-					&transform.globalScale,
-					2.0f);
-			}
-			else if (sphere)
-			{
-				kmVec3 radius;
-				kmVec3Fill(
-					&radius,
-					sphere->radius,
-					sphere->radius,
-					sphere->radius);
-
-				kmVec3Scale(
-					&transform.lastGlobalScale,
-					&radius,
-					lastMaxScale * 2.0f);
-				kmVec3Scale(
-					&transform.globalScale,
-					&radius,
-					maxScale * 2.0f);
-			}
-			else if (capsule)
-			{
-				kmVec3 scale;
-				kmVec3Fill(
-					&scale,
-					capsule->radius * 2,
-					capsule->radius * 2,
-					capsule->length);
-
-				kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
-				kmVec3Scale(&transform.globalScale, &scale, maxScale);
-
-				drawCollisionPrimitive(
-					&transform,
-					debugCollisionPrimitive,
-					model,
-					&color,
-					entity);
-
-				model = getModel(HEMISPHERE_MODEL_NAME);
-
-				kmVec3Fill(
-					&scale,
-					capsule->radius * 2,
-					capsule->radius * 2,
-					capsule->radius * 2);
-
-				kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
-				kmVec3Scale(&transform.globalScale, &scale, maxScale);
-
-				TransformComponent offsetTransform = transform;
-				addOffset(
-					&offsetTransform,
-					capsule->length / 2,
-					lastMaxScale,
-					maxScale);
-
-				drawCollisionPrimitive(
-					&offsetTransform,
-					debugCollisionPrimitive,
-					model,
-					&color,
-					entity);
-
-				addOffset(
-					&transform,
-					-capsule->length / 2,
-					lastMaxScale,
-					maxScale);
-
-				transform.lastGlobalScale.z *= -1.0f;
-				transform.globalScale.z *= -1.0f;
-			}
-
-			drawCollisionPrimitive(
-				&transform,
-				debugCollisionPrimitive,
-				model,
-				&color,
-				entity);
-		}
-	}
-
 	if (debugCollisionPrimitive->recursive)
 	{
 		UUID child = transformComponent->firstChild;
@@ -405,6 +248,11 @@ void drawCollisionPrimitives(
 				scene,
 				child,
 				transformComponentID);
+			CollisionTreeNodeComponent *childCollisionTreeNode =
+				sceneGetComponentFromEntity(
+					scene,
+					child,
+					collisionTreeNodeComponentID);
 
 			if (childTransform)
 			{
@@ -412,7 +260,8 @@ void drawCollisionPrimitives(
 					scene,
 					child,
 					childTransform,
-					debugCollisionPrimitive);
+					debugCollisionPrimitive,
+					childCollisionTreeNode);
 				child = childTransform->nextSibling;
 			}
 			else
@@ -421,6 +270,176 @@ void drawCollisionPrimitives(
 			}
 		} while (true);
 	}
+
+	if (!collisionTreeNode)
+	{
+		return;
+	}
+
+	BoxComponent *box = NULL;
+	SphereComponent *sphere = NULL;
+	CapsuleComponent *capsule = NULL;
+
+	const char *modelName = "";
+	kmVec3 color;
+
+	switch (collisionTreeNode->type)
+	{
+		case COLLISION_GEOM_TYPE_BOX:
+			box = sceneGetComponentFromEntity(
+				scene,
+				entity,
+				boxComponentID);
+
+			modelName = BOX_MODEL_NAME;
+			kmVec3Assign(&color, &debugCollisionPrimitive->boxColor);
+
+			break;
+		case COLLISION_GEOM_TYPE_SPHERE:
+			sphere = sceneGetComponentFromEntity(
+				scene,
+				entity,
+				sphereComponentID);
+
+			modelName = SPHERE_MODEL_NAME;
+			kmVec3Assign(&color, &debugCollisionPrimitive->sphereColor);
+
+			break;
+		case COLLISION_GEOM_TYPE_CAPSULE:
+			capsule = sceneGetComponentFromEntity(
+				scene,
+				entity,
+				capsuleComponentID);
+
+			modelName = CYLINDER_MODEL_NAME;
+			kmVec3Assign(&color, &debugCollisionPrimitive->capsuleColor);
+
+			break;
+		default:
+			return;
+	}
+
+	Model *model = getModel(modelName);
+	if (!model)
+	{
+		return;
+	}
+
+	bool hasAnimations = false;
+	setUniform(hasAnimationsUniform, 1, &hasAnimations);
+
+	bool useCustomColor = true;
+	setUniform(useCustomColorUniform, 1, &useCustomColor);
+
+	TransformComponent transform = *transformComponent;
+
+	real32 lastMaxScale = MAX(
+		MAX(transform.lastGlobalScale.x,
+			transform.lastGlobalScale.y),
+		transform.lastGlobalScale.z);
+	real32 maxScale = MAX(
+		MAX(transform.globalScale.x,
+			transform.globalScale.y),
+		transform.globalScale.z);
+
+	if (box)
+	{
+		kmVec3Mul(
+			&transform.lastGlobalScale,
+			&transform.lastGlobalScale,
+			&box->bounds);
+		kmVec3Scale(
+			&transform.lastGlobalScale,
+			&transform.lastGlobalScale,
+			2.0f);
+
+		kmVec3Mul(
+			&transform.globalScale,
+			&transform.globalScale,
+			&box->bounds);
+		kmVec3Scale(
+			&transform.globalScale,
+			&transform.globalScale,
+			2.0f);
+	}
+	else if (sphere)
+	{
+		kmVec3 radius;
+		kmVec3Fill(
+			&radius,
+			sphere->radius,
+			sphere->radius,
+			sphere->radius);
+
+		kmVec3Scale(
+			&transform.lastGlobalScale,
+			&radius,
+			lastMaxScale * 2.0f);
+		kmVec3Scale(
+			&transform.globalScale,
+			&radius,
+			maxScale * 2.0f);
+	}
+	else if (capsule)
+	{
+		kmVec3 scale;
+		kmVec3Fill(
+			&scale,
+			capsule->radius * 2,
+			capsule->radius * 2,
+			capsule->length);
+
+		kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
+		kmVec3Scale(&transform.globalScale, &scale, maxScale);
+
+		drawCollisionPrimitive(
+			&transform,
+			debugCollisionPrimitive,
+			model,
+			&color,
+			entity);
+
+		model = getModel(HEMISPHERE_MODEL_NAME);
+
+		kmVec3Fill(
+			&scale,
+			capsule->radius * 2,
+			capsule->radius * 2,
+			capsule->radius * 2);
+
+		kmVec3Scale(&transform.lastGlobalScale, &scale, lastMaxScale);
+		kmVec3Scale(&transform.globalScale, &scale, maxScale);
+
+		TransformComponent offsetTransform = transform;
+		addOffset(
+			&offsetTransform,
+			capsule->length / 2,
+			lastMaxScale,
+			maxScale);
+
+		drawCollisionPrimitive(
+			&offsetTransform,
+			debugCollisionPrimitive,
+			model,
+			&color,
+			entity);
+
+		addOffset(
+			&transform,
+			-capsule->length / 2,
+			lastMaxScale,
+			maxScale);
+
+		transform.lastGlobalScale.z *= -1.0f;
+		transform.globalScale.z *= -1.0f;
+	}
+
+	drawCollisionPrimitive(
+		&transform,
+		debugCollisionPrimitive,
+		model,
+		&color,
+		entity);
 }
 
 void drawCollisionPrimitive(

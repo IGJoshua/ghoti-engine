@@ -19,33 +19,6 @@
 #include <string.h>
 
 internal UUID transformComponentID = {};
-internal UUID emptyID = {};
-
-internal
-void applyParentTransform(Scene *scene, TransformComponent *outTransform)
-{
-	if (strcmp(emptyID.string, outTransform->parent.string))
-	{
-		TransformComponent *parentTransform = sceneGetComponentFromEntity(
-			scene,
-			outTransform->parent,
-			transformComponentID);
-
-		if (parentTransform->dirty)
-		{
-			applyParentTransform(scene, parentTransform);
-		}
-
-		tConcatenateTransforms(parentTransform, outTransform);
-	}
-	else
-	{
-		outTransform->globalPosition = outTransform->position;
-		outTransform->globalRotation = outTransform->rotation;
-		outTransform->globalScale = outTransform->scale;
-	}
-	outTransform->dirty = false;
-}
 
 internal
 void initApplyParentTransformsSystem(Scene *scene)

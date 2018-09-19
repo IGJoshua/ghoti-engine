@@ -57,10 +57,8 @@ function system.run(scene, entityID, dt)
 	transform.globalScale = vecOut[0]
 	transform.lastGlobalScale = vecOut[0]
 
-	scene:addComponentToEntity("transform", entity, transform)
-
 	local model = ffi.new("ModelComponent")
-	model.name = "newbox"
+	model.name = "cube"
 	model.visible = true
 	scene:addComponentToEntity("model", entity, model)
 
@@ -113,10 +111,12 @@ function system.run(scene, entityID, dt)
 	colliderTransform.dirty = true
 
 	transform.firstChild = colliderEntity
+	scene:addComponentToEntity("transform", entity, transform)
+
 	colliderTransform.parent = entity
 	scene:addComponentToEntity("transform", colliderEntity, colliderTransform)
 
-	local collisionTreeNode = ffi.new("CollisionTreeNode")
+	local collisionTreeNode = ffi.new("CollisionTreeNodeComponent")
 	collisionTreeNode.type = 0
 	collisionTreeNode.collisionVolume = entity
 	collisionTreeNode.nextCollider = C.idFromName("")
@@ -132,6 +132,17 @@ function system.run(scene, entityID, dt)
 	collision.collisionTree = colliderEntity
 
 	scene:addComponentToEntity("collision", entity, collision)
+
+	local debugCollisionPrimitive = ffi.new("DebugCollisionPrimitiveComponent")
+	debugCollisionPrimitive.visible = true
+	debugCollisionPrimitive.recursive = false
+	debugCollisionPrimitive.lineWidth = 2.0
+	kazmath.kmVec3Fill(vecOut, 0, 1, 0)
+	debugCollisionPrimitive.boxColor = vecOut[0]
+	debugCollisionPrimitive.sphereColor = vecOut[0]
+	debugCollisionPrimitive.capsuleColor = vecOut[0]
+
+	scene:addComponentToEntity("debug_collision_primitive", colliderEntity, debugCollisionPrimitive)
 
 	C.registerRigidBody(scene.ptr, entity)
   end

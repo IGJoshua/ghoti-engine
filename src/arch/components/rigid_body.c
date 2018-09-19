@@ -1,5 +1,4 @@
 #include "components/rigid_body.h"
-
 #include "components/transform.h"
 
 #include "core/log.h"
@@ -8,6 +7,8 @@
 
 internal
 void updateCollisionGeom(
+	Scene *scene,
+	UUID entity,
 	TransformComponent *bodyTrans,
 	TransformComponent *trans,
 	CollisionTreeNodeComponent *node)
@@ -32,6 +33,46 @@ void updateCollisionGeom(
 	quat[3] = rot.z;
 
 	dGeomSetOffsetQuaternion(node->geomID, quat);
+
+	real32 maxScale = MAX(
+	MAX(trans->globalScale.x,
+		trans->globalScale.y),
+	trans->globalScale.z);
+
+	BoxComponent *box = NULL;
+	SphereComponent *sphere = NULL;
+	CapsuleComponent *capsule = NULL;
+
+	switch (node->type)
+	{
+		case COLLISION_GEOM_TYPE_BOX:
+			box = sceneGetComponentFromEntity(scene, entity, idFromName("box"));
+			dGeomBoxSetLengths(
+				node->geomID,
+				box->bounds.x * trans->globalScale.x * 2,
+				box->bounds.y * trans->globalScale.y * 2,
+				box->bounds.z * trans->globalScale.z * 2);
+			break;
+		case COLLISION_GEOM_TYPE_SPHERE:
+			sphere = sceneGetComponentFromEntity(
+				scene,
+				entity,
+				idFromName("sphere"));
+			dGeomSphereSetRadius(node->geomID, sphere->radius * maxScale);
+			break;
+		case COLLISION_GEOM_TYPE_CAPSULE:
+			capsule = sceneGetComponentFromEntity(
+				scene,
+				entity,
+				idFromName("capsule"));
+			dGeomCapsuleSetParams(
+				node->geomID,
+				capsule->radius * maxScale,
+				capsule->length * maxScale);
+			break;
+		default:
+			break;
+	}
 }
 
 void updateCollisionGeoms(
@@ -60,7 +101,7 @@ void updateCollisionGeoms(
 			collisionTreeNodeComponentID);
 
 		// Add each piece of collision geometry as a different geom
-		updateCollisionGeom(bodyTrans, trans, node);
+		updateCollisionGeom(scene, currentCollider, bodyTrans, trans, node);
 	}
 }
 
@@ -82,6 +123,11 @@ void createCollisionGeom(
 		idFromName("transform"));
 
 	ASSERT(node && "Collision tree pointed to a node with no node structure");
+
+	if (trans->dirty)
+	{
+		applyParentTransform(scene, trans);
+	}
 
 	real32 maxScale = MAX(
 		MAX(trans->globalScale.x,
@@ -139,7 +185,7 @@ void createCollisionGeom(
 	memcpy(userData, &entity, sizeof(UUID));
 	dGeomSetData(node->geomID, userData);
 
-	updateCollisionGeom(bodyTrans, trans, node);
+	updateCollisionGeom(scene, entity, bodyTrans, trans, node);
 }
 
 internal

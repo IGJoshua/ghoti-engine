@@ -274,6 +274,31 @@ void tConcatenateTransforms(
 	tDecomposeMat4(&transformMatrix, NULL, NULL, &transformB->globalScale);
 }
 
+void applyParentTransform(Scene *scene, TransformComponent *outTransform)
+{
+	if (strlen(outTransform->parent.string) > 0)
+	{
+		TransformComponent *parentTransform = sceneGetComponentFromEntity(
+			scene,
+			outTransform->parent,
+			idFromName("transform"));
+
+		if (parentTransform->dirty)
+		{
+			applyParentTransform(scene, parentTransform);
+		}
+
+		tConcatenateTransforms(parentTransform, outTransform);
+	}
+	else
+	{
+		outTransform->globalPosition = outTransform->position;
+		outTransform->globalRotation = outTransform->rotation;
+		outTransform->globalScale = outTransform->scale;
+	}
+	outTransform->dirty = false;
+}
+
 void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 {
 	UUID transformComponentID = idFromName("transform");

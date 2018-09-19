@@ -39,11 +39,31 @@
 			}
 		],
 
-		"text_field":
+		"progress_bar":
 		[
 			{
-				"name": "text",
-				"char(4096)": "test"
+				"name": "value",
+				"uint64": 50
+			},
+
+			{
+				"name": "max value",
+				"uint64": 100
+			},
+
+			{
+				"name": "color",
+				"float32": [1.0, 1.0, 1.0]
+			},
+
+			{
+				"name": "background color",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "reversed",
+				"bool": false
 			}
 		]
 	}
