@@ -23,6 +23,8 @@ SYSTEM(ApplyParentTransforms);
 SYSTEM(SimulateRigidbodies);
 SYSTEM(JointInformation);
 SYSTEM(GUI);
+SYSTEM(Audio);
+
 SYSTEM(RenderHeightmap);
 SYSTEM(Renderer);
 SYSTEM(WireframeRenderer);
@@ -50,6 +52,8 @@ void initSystems(void)
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
 	REGISTER_SYSTEM(GUI, "gui");
+	REGISTER_SYSTEM(Audio, "audio");
+
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(Renderer, "renderer");
 	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");

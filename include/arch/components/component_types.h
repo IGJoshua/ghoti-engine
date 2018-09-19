@@ -95,6 +95,20 @@ typedef struct animator_component_t
 	real64 transitionDuration;
 } AnimatorComponent;
 
+typedef struct audio_manager_t
+{
+	uint32 buffers;
+	uint32 sources;
+} AudioManagerComonent;
+
+typedef struct audio_source_t
+{
+	uint32 id;
+	real32 pitch;
+	real32 gain;
+	bool looping;
+} AudioSourceComponent;
+
 typedef struct ball_socket_joint_component_t
 {
 	dJointID id;

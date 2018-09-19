@@ -18,7 +18,7 @@ local component = engine.components:register("animator", "AnimatorComponent")
 
 local C = engine.C
 
-function component:play(scene, uuid, name, loopCount, speed, transitionDuration)
+function component:play(name, scene, uuid, loopCount, speed, transitionDuration)
   loopCount = loopCount or 0
   speed = speed or 1.0
   transitionDuration = transitionDuration or 0.0
@@ -30,7 +30,7 @@ function component:pause()
   self.paused = true
 end
 
-function component:unpause()
+function component:resume()
   self.paused = false
 end
 

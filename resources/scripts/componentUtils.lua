@@ -1,4 +1,5 @@
 ffi.cdef[[
+
 void registerRigidBody(Scene *scene, UUID entity);
 void destroyRigidBody(RigidBodyComponent *body);
 
@@ -29,4 +30,13 @@ void resetAnimator(
 	AnimatorComponent *animator,
 	void *animationReference);
 void removeAnimator(AnimatorComponent *animator);
+
+void playSoundAtSource(
+	AudioSourceComponent *audioSource,
+	const char *soundName);
+void pauseSoundAtSource(AudioSourceComponent *audioSource);
+void resumeSoundAtSource(AudioSourceComponent *audioSource);
+void stopSoundAtSource(AudioSourceComponent *audioSource);
+bool isSourceActive(AudioSourceComponent *audioSource);
+
 ]]

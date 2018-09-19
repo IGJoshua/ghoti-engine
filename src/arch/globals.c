@@ -19,6 +19,7 @@ HashMap textures;
 HashMap materialFolders;
 HashMap fonts;
 HashMap images;
+HashMap audioFiles;
 
 bool assetsChanged;
 
@@ -44,3 +45,5 @@ bool reloadingScene;
 List unloadedScenes;
 bool loadingSave;
 List savedScenes;
+
+Scene *listenerScene = NULL;

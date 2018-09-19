@@ -4,8 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
-extern uint32 guiRefCount;
-extern struct nk_context ctx;
+uint32 guiRefCount = 0;
+struct nk_context ctx;
 
 void guiSetMousePosition(int32 x, int32 y)
 {

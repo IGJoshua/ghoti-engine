@@ -36,9 +36,9 @@ internal UUID textComponentID = {};
 internal UUID imageComponentID = {};
 internal UUID buttonComponentID = {};
 
-uint32 guiRefCount = 0;
+extern uint32 guiRefCount;
 
-struct nk_context ctx;
+extern struct nk_context ctx;
 struct nk_buffer cmds;
 
 #define KEY_REPEAT_DELAY 0.03

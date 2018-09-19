@@ -1,6 +1,7 @@
 #include "ECS/system.h"
-
 #include "ECS/component.h"
+
+#include "core/log.h"
 
 #include "data/list.h"
 #include "data/hash_map.h"
@@ -38,11 +39,21 @@ void systemRun(
 
 	if (system->run)
 	{
+		UUID *componentID = (UUID*)system->componentTypes.front->data;
+		ComponentDataTable **cdt = (ComponentDataTable **)hashMapGetData(
+			scene->componentTypes,
+			componentID);
+
+		if (!cdt || !*cdt)
+		{
+			LOG("ERROR: Component limit for the %s component "
+				"is missing from the scene\n",
+				componentID->string);
+			ASSERT(false);
+		}
+
 		// For each entity in the first component table
-		for (ComponentDataTableIterator itr = cdtGetIterator(
-				 *(ComponentDataTable **)hashMapGetData(
-					 scene->componentTypes,
-					 (UUID*)system->componentTypes.front->data));
+		for (ComponentDataTableIterator itr = cdtGetIterator(*cdt);
 			 !cdtIteratorAtEnd(itr);
 			 cdtMoveIterator(&itr))
 		{
@@ -55,12 +66,19 @@ void systemRun(
 				 listMoveIterator(&litr))
 			{
 				// Get the component to check
-				UUID *componentID = LIST_ITERATOR_GET_ELEMENT(UUID, litr);
+				componentID = LIST_ITERATOR_GET_ELEMENT(UUID, litr);
 				ComponentDataTable **table = hashMapGetData(
 					scene->componentTypes,
 					componentID);
 
-				if (!table || !*table || !componentID)
+				if (!table || !*table)
+				{
+					LOG("ERROR: Component limit for the %s component "
+						"is missing from the scene\n",
+						componentID->string);
+					ASSERT(false);
+				}
+				else if (!componentID)
 				{
 					continue;
 				}

@@ -18,7 +18,8 @@
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",
 				"joint_information",
-				"gui"
+				"gui",
+				"audio"
 			]
 		},
 
@@ -45,6 +46,8 @@
 	{
 		"animation": 2048,
 		"animator": 2048,
+		"audio_manager": 32,
+		"audio_source": 1024,
 		"ball_socket_joint": 256,
 		"ball_socket2_joint": 256,
 		"box": 1024,

@@ -20,6 +20,8 @@
 #include "data/list.h"
 #include "data/hash_map.h"
 
+#include "audio/audio.h"
+
 #include <GL/glew.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
@@ -51,6 +53,8 @@ extern List savedScenes;
 
 internal void update(real64 dt, bool skipLoadedThisFrame);
 internal void draw(GLFWwindow *window, real64 frameTime);
+
+extern Scene *listenerScene;
 
 int32 main(int32 argc, char *argv[])
 {
@@ -224,6 +228,11 @@ int32 main(int32 argc, char *argv[])
 					if (deactivateScene(*scene) == -1)
 					{
 						continue;
+					}
+
+					if (*scene == listenerScene)
+					{
+						listenerScene = NULL;
 					}
 
 					shutdownScene(scene);
