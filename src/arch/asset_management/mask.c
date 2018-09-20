@@ -15,7 +15,7 @@
 
 extern HashMap textures;
 
-int32 loadMask(Mask *mask, FILE *file)
+void loadMask(Mask *mask, FILE *file)
 {
 	LOG("Loading masks...\n");
 
@@ -25,8 +25,6 @@ int32 loadMask(Mask *mask, FILE *file)
 	fread(&mask->opacity, sizeof(real32), 1, file);
 
 	LOG("Successfully loaded masks\n");
-
-	return 0;
 }
 
 int32 loadMaskTexture(const char *masksFolder,

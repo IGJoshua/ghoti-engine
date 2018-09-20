@@ -7,12 +7,32 @@
 
 #include <kazmath/vec3.h>
 
+#define NUM_VERTEX_ATTRIBUTES 9
+#define NUM_BONES 4
+#define MAX_BONE_COUNT 128
+
+typedef struct vertex_t
+{
+	kmVec3 position;
+	kmVec4 color;
+	kmVec3 normal;
+	kmVec3 tangent;
+	kmVec3 bitangent;
+	kmVec2 materialUV;
+	kmVec2 maskUV;
+	uint32 bones[NUM_BONES];
+	real32 weights[NUM_BONES];
+} Vertex;
+
 typedef struct mesh_t
 {
 	GLuint vertexBuffer;
 	GLuint vertexArray;
 	GLuint indexBuffer;
+	uint32 numVertices;
+	Vertex *vertices;
 	uint32 numIndices;
+	uint32 *indices;
 } Mesh;
 
 typedef enum material_component_type_e

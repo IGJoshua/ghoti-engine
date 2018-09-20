@@ -148,6 +148,25 @@ int32 loadModel(const char *name)
 	return error;
 }
 
+void uploadModelToGPU(Model *model)
+{
+	LOG("Transferring model (%s) onto GPU...\n", model->name.string);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Subset *subset = &model->subsets[i];
+
+		LOG("Transferring mesh (%s) onto GPU...\n", subset->name.string);
+
+		uploadMeshToGPU(&subset->mesh);
+
+		LOG("Successfully transferred mesh (%s) onto GPU\n",
+			subset->name.string);
+	}
+
+	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
+}
+
 Model* getModel(const char *name)
 {
 	Model *model = NULL;
@@ -231,15 +250,8 @@ int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
 		return -1;
 	}
 
-	if (loadMask(&subset->mask, assetFile) == -1)
-	{
-		return -1;
-	}
-
-	if (loadMesh(&subset->mesh, meshFile) == -1)
-	{
-		return -1;
-	}
+	loadMask(&subset->mask, assetFile);
+	loadMesh(&subset->mesh, meshFile);
 
 	LOG("Successfully loaded subset (%s)\n", subset->name.string);
 

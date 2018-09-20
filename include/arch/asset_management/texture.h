@@ -10,6 +10,7 @@ int32 loadTextureData(
 	const char *filename,
 	TextureFormat format,
 	ILuint *devilID);
+int32 uploadTextureToGPU(Texture *texture);
 Texture* getTexture(const char *name);
 char* getFullTextureFilename(const char *filename);
 void freeTexture(UUID name);

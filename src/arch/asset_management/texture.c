@@ -47,67 +47,24 @@ int32 loadTexture(const char *filename, const char *name)
 		texture.name = idFromName(name);
 		texture.refCount = 1;
 
-		ILuint devilID;
-		error = loadTextureData(filename, TEXTURE_FORMAT_RGBA8, &devilID);
+		error = loadTextureData(
+			filename,
+			TEXTURE_FORMAT_RGBA8,
+			&texture.devilID);
 
-		if (error != -1)
-		{
-			glGenTextures(1, &texture.id);
-			glBindTexture(GL_TEXTURE_2D, texture.id);
-
-			GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
-			GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-
-			glTexStorage2D(
-				GL_TEXTURE_2D,
-				1,
-				GL_RGBA8,
-				textureWidth,
-				textureHeight);
-
-			const GLvoid *textureData = ilGetData();
-			glTexSubImage2D(
-				GL_TEXTURE_2D,
-				0,
-				0,
-				0,
-				textureWidth,
-				textureHeight,
-				GL_RGBA,
-				GL_UNSIGNED_BYTE,
-				textureData);
-
-			error = logGLError(
-				false,
-				"Error while transferring texture onto GPU");
-
-			if (error != -1)
-			{
-				glGenerateMipmap(GL_TEXTURE_2D);
-				glTexParameteri(
-					GL_TEXTURE_2D,
-					GL_TEXTURE_MAG_FILTER,
-					GL_LINEAR);
-				glTexParameteri(
-					GL_TEXTURE_2D,
-					GL_TEXTURE_MIN_FILTER,
-					GL_LINEAR_MIPMAP_LINEAR);
-
-				glBindTexture(GL_TEXTURE_2D, 0);
-				ilDeleteImages(1, &devilID);
-			}
-		}
+		ilBindImage(0);
 
 		if (error != - 1)
 		{
-			hashMapInsert(textures, &texture.name, &texture);
+			error = uploadTextureToGPU(&texture);
 
-			LOG("Successfully loaded texture (%s)\n", textureName);
-			LOG("Texture Count: %d\n", textures->count);
-		}
-		else
-		{
-			LOG("Failed to load texture (%s)\n", textureName);
+			if (error != -1)
+			{
+				hashMapInsert(textures, &texture.name, &texture);
+
+				LOG("Successfully loaded texture (%s)\n", textureName);
+				LOG("Texture Count: %d\n", textures->count);
+			}
 		}
 	}
 	else
@@ -131,7 +88,7 @@ int32 loadTextureData(
 	ILenum ilError = ilGetError();
 	if (ilError != IL_NO_ERROR)
 	{
-		LOG("Error while loading texture: %s\n", iluErrorString(ilError));
+		LOG("Failed to load texture: %s\n", iluErrorString(ilError));
 		return -1;
 	}
 
@@ -154,6 +111,62 @@ int32 loadTextureData(
 	ilConvertImage(ilColorFormat, ilByteFormat);
 
 	return 0;
+}
+
+int32 uploadTextureToGPU(Texture *texture)
+{
+	LOG("Transferring texture data onto GPU...\n");
+
+	ilBindImage(texture->devilID);
+
+	glGenTextures(1, &texture->id);
+	glBindTexture(GL_TEXTURE_2D, texture->id);
+
+	GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
+	GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
+
+	glTexStorage2D(
+		GL_TEXTURE_2D,
+		1,
+		GL_RGBA8,
+		textureWidth,
+		textureHeight);
+
+	const GLvoid *textureData = ilGetData();
+	glTexSubImage2D(
+		GL_TEXTURE_2D,
+		0,
+		0,
+		0,
+		textureWidth,
+		textureHeight,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		textureData);
+
+	int32 error = logGLError(false, "Failed to transfer texture onto GPU");
+
+	if (error != -1)
+	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR_MIPMAP_LINEAR);
+
+		LOG("Successfully transferred texture data onto GPU\n");
+	}
+
+	ilDeleteImages(1, &texture->devilID);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	ilBindImage(0);
+
+	return error;
 }
 
 Texture* getTexture(const char *name)

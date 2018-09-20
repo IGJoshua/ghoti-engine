@@ -3,6 +3,8 @@
 
 #include "renderer/renderer_types.h"
 
+#include <IL/il.h>
+
 #include <AL/al.h>
 
 #include <kazmath/vec2.h>
@@ -17,23 +19,6 @@
 
 #include <nuklear/nuklear.h>
 
-#define NUM_VERTEX_ATTRIBUTES 9
-#define NUM_BONES 4
-#define MAX_BONE_COUNT 128
-
-typedef struct vertex_t
-{
-	kmVec3 position;
-	kmVec4 color;
-	kmVec3 normal;
-	kmVec3 tangent;
-	kmVec3 bitangent;
-	kmVec2 materialUV;
-	kmVec2 maskUV;
-	uint32 bones[NUM_BONES];
-	real32 weights[NUM_BONES];
-} Vertex;
-
 typedef enum texture_format_e
 {
 	TEXTURE_FORMAT_RGBA8 = 0,
@@ -44,6 +29,7 @@ typedef struct texture_t
 {
 	UUID name;
 	GLuint id;
+	ILuint devilID;
 	uint32 refCount;
 } Texture;
 
