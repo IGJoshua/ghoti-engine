@@ -9,5 +9,6 @@ mkdir -p resources/audio/
 mkdir -p resources/heightmaps/
 mkdir -p resources/images/
 mkdir -p resources/materials/
+mkdir -p resources/particles/
 mkdir -p resources/saves/
 mkdir -p resources/scenes/

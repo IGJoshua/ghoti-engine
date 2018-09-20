@@ -94,3 +94,14 @@ typedef struct audio_file_t
 	int16 *output;
 	ALenum format;
 } AudioFile;
+
+typedef struct particle_t
+{
+	UUID name;
+	GLuint id;
+	uint32 refCount;
+	GLsizei width;
+	GLsizei height;
+	GLsizei spriteWidth;
+	GLsizei spriteHeight;
+} Particle;

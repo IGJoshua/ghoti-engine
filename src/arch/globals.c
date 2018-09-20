@@ -20,6 +20,7 @@ HashMap materialFolders;
 HashMap fonts;
 HashMap images;
 HashMap audioFiles;
+HashMap particles;
 
 bool assetsChanged;
 

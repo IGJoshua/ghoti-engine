@@ -15,6 +15,7 @@ extern HashMap textures;
 extern HashMap materialFolders;
 extern HashMap fonts;
 extern HashMap images;
+extern HashMap particles;
 
 extern bool assetsChanged;
 
@@ -47,6 +48,12 @@ void initializeAssetManager(void) {
 		sizeof(UUID),
 		sizeof(Image),
 		IMAGES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+
+	particles = createHashMap(
+		sizeof(UUID),
+		sizeof(Particle),
+		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 }
 
@@ -86,4 +93,5 @@ void shutdownAssetManager(void) {
 
 	freeHashMap(&fonts);
 	freeHashMap(&images);
+	freeHashMap(&particles);
 }
