@@ -17,6 +17,16 @@
 		"background_color": [0.0, 0.0, 0.0]
 	},
 
+	"assets":
+	{
+		"minimum_audio_lifetime": 60.0,
+		"minimum_font_lifetime": 60.0,
+		"minimum_image_lifetime": 60.0,
+		"minimum_texture_lifetime": 60.0,
+		"minimum_model_lifetime": 60.0,
+		"minimum_particle_lifetime": 60.0
+	},
+
 	"logging":
 	{
 		"engine_file": "engine.log",

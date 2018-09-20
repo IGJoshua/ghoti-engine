@@ -24,6 +24,16 @@ typedef struct graphics_config_t
 	kmVec3 backgroundColor;
 } GraphicsConfig;
 
+typedef struct assets_config_t
+{
+	real64 minimumAudioLifetime;
+	real64 minimumFontLifetime;
+	real64 minimumImageLifetime;
+	real64 minimumTextureLifetime;
+	real64 minimumModelLifetime;
+	real64 minimumParticleLifetime;
+} AssetsConfig;
+
 typedef struct log_config_t
 {
 	char *engineFile;
@@ -46,6 +56,7 @@ typedef struct config_t
 	WindowConfig windowConfig;
 	PhysicsConfig physicsConfig;
 	GraphicsConfig graphicsConfig;
+	AssetsConfig assetsConfig;
 	LogConfig logConfig;
 	SavesConfig savesConfig;
 	JSONConfig jsonConfig;

@@ -71,6 +71,47 @@ int32 loadConfig(void)
 			graphicsBackgroundColor->child->next->next->valuedouble);
 	}
 
+	cJSON *assets = cJSON_GetObjectItem(json, "assets");
+
+	if (assets)
+	{
+		cJSON *minimumAudioLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_audio_lifetime");
+		config.assetsConfig.minimumAudioLifetime =
+			minimumAudioLifetime->valuedouble;
+
+		cJSON *minimumFontLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_font_lifetime");
+		config.assetsConfig.minimumFontLifetime =
+			minimumFontLifetime->valuedouble;
+
+		cJSON *minimumImageLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_image_lifetime");
+		config.assetsConfig.minimumImageLifetime =
+			minimumImageLifetime->valuedouble;
+
+		cJSON *minimumTextureLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_texture_lifetime");
+		config.assetsConfig.minimumTextureLifetime =
+			minimumTextureLifetime->valuedouble;
+
+		cJSON *minimumModelLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_model_lifetime");
+		config.assetsConfig.minimumModelLifetime =
+			minimumModelLifetime->valuedouble;
+
+		cJSON *minimumParticleLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_particle_lifetime");
+		config.assetsConfig.minimumParticleLifetime =
+			minimumParticleLifetime->valuedouble;
+	}
+
 	cJSON *logging = cJSON_GetObjectItem(json, "logging");
 
 	if (logging)
@@ -135,6 +176,13 @@ void initializeDefaultConfig(void)
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
+
+	config.assetsConfig.minimumAudioLifetime = 60.0;
+	config.assetsConfig.minimumFontLifetime = 60.0;
+	config.assetsConfig.minimumImageLifetime = 60.0;
+	config.assetsConfig.minimumTextureLifetime = 60.0;
+	config.assetsConfig.minimumModelLifetime = 60.0;
+	config.assetsConfig.minimumParticleLifetime = 60.0;
 
 	config.logConfig.engineFile = malloc(11);
 	strcpy(config.logConfig.engineFile, "engine.log");
