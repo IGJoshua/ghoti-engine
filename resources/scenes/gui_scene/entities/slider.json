@@ -12,7 +12,7 @@
 
 			{
 				"name": "size",
-				"float32": [0.5, 0.5]
+				"float32": [1.0, 1.0]
 			},
 
 			{
@@ -30,7 +30,7 @@
 
 			{
 				"name": "background color",
-				"float32": [1.0, 1.0, 1.0, 1.0]
+				"float32": [1.0, 1.0, 1.0, 0.0]
 			},
 
 			{
@@ -39,31 +39,56 @@
 			}
 		],
 
-		"progress_bar":
+		"slider":
 		[
 			{
 				"name": "value",
-				"uint64": 50
+				"int32": 0
 			},
 
 			{
-				"name": "max value",
-				"uint64": 100
+				"name": "minValue",
+				"int32": -50
 			},
 
 			{
-				"name": "color",
-				"float32": [1.0, 1.0, 1.0]
+				"name": "maxValue",
+				"int32": 50
+			},
+
+			{
+				"name": "stepSize",
+				"int32": 5
+			},
+
+			{
+				"name": "height",
+				"float32": 0.2
+			},
+
+			{
+				"name": "length",
+				"float32": 0.9
+			},
+
+			{
+				"name": "buttonSize",
+				"float32": 1.3
+			},
+
+			{
+				"name": "fill color",
+				"float32": [1, 1, 0, 1]
 			},
 
 			{
 				"name": "background color",
-				"float32": [0.0, 0.0, 0.0]
+				"float32": [0.2, 0.2, 0.2, 1]
 			},
 
 			{
-				"name": "reversed",
-				"bool": false
+				"name": "button color",
+				"float32": [1, 1, 1, 1]
 			}
 		]
 	}

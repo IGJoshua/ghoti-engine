@@ -355,6 +355,20 @@ typedef struct rigid_body_component_t
 	real32 moiParams[6];
 } RigidBodyComponent;
 
+typedef struct slider_component_t
+{
+	int32 value;
+	int32 minValue;
+	int32 maxValue;
+	int32 stepSize;
+	real32 height;
+	real32 length;
+	real32 buttonSize;
+	kmVec4 fillColor;
+	kmVec4 backgroundColor;
+	kmVec4 buttonColor;
+} SliderComponent;
+
 typedef struct slider_joint_component_t
 {
 	dJointID id;

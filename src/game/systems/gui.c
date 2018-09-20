@@ -37,6 +37,7 @@ internal UUID imageComponentID = {};
 internal UUID buttonComponentID = {};
 internal UUID textFieldComponentID = {};
 internal UUID progressBarComponentID = {};
+internal UUID sliderComponentID = {};
 
 extern uint32 guiRefCount;
 
@@ -132,6 +133,11 @@ internal void addImage(
 internal void addButton(ButtonComponent *button);
 internal void addTextField(TextFieldComponent *textField);
 internal void addProgressBar(ProgressBarComponent *progressBar);
+internal void addSlider(
+	SliderComponent *slider,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight);
 
 internal void fillCommandBuffer(void);
 
@@ -377,6 +383,7 @@ System createGUISystem(void)
 	buttonComponentID = idFromName("button");
 	textFieldComponentID = idFromName("text_field");
 	progressBarComponentID = idFromName("progress_bar");
+	sliderComponentID = idFromName("slider");
 
 	System system = {};
 
@@ -502,7 +509,6 @@ void addWidgets(
 		defaultFont,
 		&panelFontComponent);
 
-	// TODO: Add all types of widgets
 	do
 	{
 		GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
@@ -528,10 +534,12 @@ void addWidgets(
 
 				nk_style_set_font(&ctx, &font->font->handle);
 
-				nk_layout_space_push(
-					&ctx,
-					getRect(guiTransform, panelWidth, panelHeight));
+				struct nk_rect rect = getRect(
+					guiTransform,
+					panelWidth,
+					panelHeight);
 
+				nk_layout_space_push(&ctx, rect);
 				nk_image_color(
 					&ctx,
 					nk_image_id(widgetBackground->id),
@@ -557,12 +565,14 @@ void addWidgets(
 					scene,
 					entity,
 					progressBarComponentID);
+				SliderComponent *slider = sceneGetComponentFromEntity(
+					scene,
+					entity,
+					sliderComponentID);
 
-				if (!image)
+				if (!image && !slider)
 				{
-					nk_layout_space_push(
-						&ctx,
-						getRect(guiTransform, panelWidth, panelHeight));
+					nk_layout_space_push(&ctx, rect);
 				}
 
 				if (text)
@@ -584,6 +594,10 @@ void addWidgets(
 				else if (progressBar)
 				{
 					addProgressBar(progressBar);
+				}
+				else if (slider)
+				{
+					addSlider(slider, guiTransform, panelWidth, panelHeight);
 				}
 			}
 
@@ -733,6 +747,47 @@ void addProgressBar(ProgressBarComponent *progressBar)
 			progressBar->maxValue - progressBar->value : progressBar->value,
 		progressBar->maxValue,
 		false);
+}
+
+void addSlider(
+	SliderComponent *slider,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight)
+{
+	GUITransformComponent sliderTransform = *guiTransform;
+	sliderTransform.size.y *= 6.0f * slider->height;
+
+	struct nk_rect rect = getRect(&sliderTransform, panelWidth, panelHeight);
+	nk_layout_space_push(&ctx, rect);
+
+	real32 widgetHeight = panelHeight * guiTransform->size.y;
+	real32 sliderHeight = widgetHeight * slider->height;
+
+	ctx.style.slider.cursor_size.x = slider->buttonSize * sliderHeight;
+	ctx.style.slider.cursor_size.y = slider->buttonSize * sliderHeight;
+
+	real32 widgetWidth = panelWidth * guiTransform->size.x;
+	real32 padding = (widgetWidth - (widgetWidth * slider->length)) / 2;
+	ctx.style.slider.padding = nk_vec2(padding, 0.0f);
+
+	ctx.style.slider.cursor_normal = nk_style_item_color(
+		getColor(&slider->buttonColor));
+	ctx.style.slider.cursor_active = ctx.style.slider.cursor_normal;
+	ctx.style.slider.cursor_hover = ctx.style.slider.cursor_normal;
+
+	ctx.style.slider.bar_filled = getColor(&slider->fillColor);
+
+	ctx.style.slider.bar_normal = getColor(&slider->backgroundColor);
+	ctx.style.slider.bar_active = ctx.style.slider.bar_normal;
+	ctx.style.slider.bar_hover = ctx.style.slider.bar_normal;
+
+	nk_slider_int(
+		&ctx,
+		slider->minValue,
+		&slider->value,
+		slider->maxValue,
+		slider->stepSize);
 }
 
 void fillCommandBuffer(void)

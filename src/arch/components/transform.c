@@ -299,7 +299,7 @@ void applyParentTransform(Scene *scene, TransformComponent *outTransform)
 	outTransform->dirty = false;
 }
 
-void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
+int32 removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 {
 	UUID transformComponentID = idFromName("transform");
 
@@ -332,7 +332,7 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 			LOG("ERROR: Failed to remove invalid transform component "
 				"from entity: %s\n",
 				entity.string);
-			return;
+			return -1;
 		}
 
 		TransformComponent *previousTransform = transform;
@@ -346,7 +346,7 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 			LOG("ERROR: Failed to remove invalid transform component "
 				"from entity: %s\n",
 				entity.string);
-			return;
+			return -1;
 		}
 
 		if (!strcmp(entity.string, previousTransform->firstChild.string))
@@ -369,7 +369,7 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 					LOG("ERROR: Failed to remove invalid transform component "
 						"from entity: %s\n",
 						entity.string);
-					return;
+					return -1;
 				}
 
 				if (!strcmp(entity.string, sibling.string))
@@ -380,6 +380,8 @@ void removeTransform(Scene *scene, UUID entity, TransformComponent *transform)
 			} while (transform);
 		}
 	}
+
+	return 0;
 }
 
 TransformComponent readTransform(FILE *file)

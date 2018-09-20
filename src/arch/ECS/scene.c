@@ -1777,13 +1777,14 @@ void sceneRegisterEntity(Scene *s, UUID newEntity)
 	List *entityList;
 	if ((entityList = hashMapGetData(s->entities, &newEntity)))
 	{
-		LOG(
-			"ERROR: Entity %s already exists in scene %s\n",
+		LOG("ERROR: Entity %s already exists in scene %s\n",
 			newEntity.string,
 			s->name);
 
 		listClear(entityList);
 		hashMapDelete(s->entities, &newEntity);
+
+		ASSERT(false);
 	}
 #endif
 
@@ -1907,7 +1908,13 @@ void sceneRemoveComponentFromEntity(
 	// Check to ensure that the component has been properly freed
 	if (!strcmp(componentType.string, "transform"))
 	{
-		removeTransform(s, entity, (TransformComponent*)cdtGet(*table, entity));
+		if (removeTransform(
+			s,
+			entity,
+			(TransformComponent*)cdtGet(*table, entity)) == -1)
+		{
+			ASSERT(false);
+		}
 	}
 	else if (!strcmp(componentType.string, "model"))
 	{
