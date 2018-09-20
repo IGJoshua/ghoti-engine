@@ -14,3 +14,4 @@ int32 uploadTextureToGPU(Texture *texture);
 Texture* getTexture(const char *name);
 char* getFullTextureFilename(const char *filename);
 void freeTexture(UUID name);
+void freeTextureData(Texture *texture);

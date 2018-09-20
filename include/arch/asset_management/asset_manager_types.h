@@ -31,6 +31,7 @@ typedef struct texture_t
 	GLuint id;
 	ILuint devilID;
 	uint32 refCount;
+	real64 lifetime;
 } Texture;
 
 typedef struct material_folder_t
@@ -43,6 +44,7 @@ typedef struct model_t
 {
 	UUID name;
 	uint32 refCount;
+	real64 lifetime;
 	UUID materialTexture;
 	UUID opacityTexture;
 	uint32 numSubsets;

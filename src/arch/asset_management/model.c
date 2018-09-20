@@ -21,8 +21,6 @@ extern HashMap textures;
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
 internal void freeSubset(Subset *subset);
 
-internal void deleteModel(const char *name);
-
 int32 loadModel(const char *name)
 {
 	int32 error = 0;
@@ -179,42 +177,40 @@ Model* getModel(const char *name)
 	return model;
 }
 
-void deleteModel(const char *name)
-{
-	UUID nameID = idFromName(name);
-	hashMapDelete(models, &nameID);
-}
-
 void freeModel(const char *name)
 {
 	Model *model = getModel(name);
 	if (model)
 	{
-		if (--model->refCount == 0)
-		{
-			LOG("Freeing model (%s)...\n", name);
-
-			freeTexture(model->materialTexture);
-			freeTexture(model->opacityTexture);
-
-			for (uint32 i = 0; i < model->numSubsets; i++)
-			{
-				freeSubset(&model->subsets[i]);
-			}
-
-			free(model->subsets);
-
-			freeAnimations(
-				model->numAnimations,
-				model->animations,
-				&model->skeleton);
-
-			deleteModel(name);
-
-			LOG("Successfully freed model (%s)\n", name);
-			LOG("Model Count: %d\n", models->count);
-		}
+		model->refCount--;
 	}
+}
+
+void freeModelData(Model *model)
+{
+	UUID modelName = model->name;
+
+	LOG("Freeing model (%s)...\n", modelName.string);
+
+	freeTexture(model->materialTexture);
+	freeTexture(model->opacityTexture);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		freeSubset(&model->subsets[i]);
+	}
+
+	free(model->subsets);
+
+	freeAnimations(
+		model->numAnimations,
+		model->animations,
+		&model->skeleton);
+
+	hashMapDelete(models, &modelName);
+
+	LOG("Successfully freed model (%s)\n", modelName.string);
+	LOG("Model Count: %d\n", models->count);
 }
 
 void swapMeshMaterial(

@@ -203,15 +203,19 @@ void freeTexture(UUID name)
 	Texture *texture = (Texture*)hashMapGetData(textures, &name);
 	if (texture)
 	{
-		if (--texture->refCount == 0)
-		{
-			LOG("Freeing texture (%s)...\n", name.string);
-
-			glDeleteTextures(1, &texture->id);
-			hashMapDelete(textures, &name);
-
-			LOG("Successfully freed texture (%s)\n", name.string);
-			LOG("Texture Count: %d\n", textures->count);
-		}
+		texture->refCount--;
 	}
+}
+
+void freeTextureData(Texture *texture)
+{
+	UUID textureName = texture->name;
+
+	LOG("Freeing texture (%s)...\n", textureName.string);
+
+	glDeleteTextures(1, &texture->id);
+	hashMapDelete(textures, &textureName);
+
+	LOG("Successfully freed texture (%s)\n", textureName.string);
+	LOG("Texture Count: %d\n", textures->count);
 }

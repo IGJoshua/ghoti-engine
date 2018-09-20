@@ -1,14 +1,20 @@
 #include "asset_management/asset_manager.h"
 #include "asset_management/asset_manager_types.h"
+#include "asset_management/model.h"
+#include "asset_management/texture.h"
 #include "asset_management/font.h"
+
+#include "components/component_types.h"
+
+#include "core/log.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
 
-#include "components/component_types.h"
-
 #include <string.h>
+
+extern Config config;
 
 extern HashMap models;
 extern HashMap textures;
@@ -62,7 +68,65 @@ void activateAssetsChangedFlag(void)
 	assetsChanged = true;
 }
 
+void updateAssetManager(real64 dt)
+{
+	for (HashMapIterator itr = hashMapGetIterator(models);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Model *model = (Model*)hashMapIteratorGetValue(itr);
+		if (model->refCount == 0)
+		{
+			model->lifetime -= dt;
+			if (model->lifetime <= 0.0)
+			{
+				freeModelData(model);
+			}
+		}
+		else
+		{
+			model->lifetime = config.assetsConfig.minimumModelLifetime;
+		}
+	}
+
+	for (HashMapIterator itr = hashMapGetIterator(textures);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
+		if (texture->refCount == 0)
+		{
+			texture->lifetime -= dt;
+			if (texture->lifetime <= 0.0)
+			{
+				freeTextureData(texture);
+			}
+		}
+		else
+		{
+			texture->lifetime = config.assetsConfig.minimumTextureLifetime;
+		}
+	}
+}
+
 void shutdownAssetManager(void) {
+	for (HashMapIterator itr = hashMapGetIterator(models);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		Model *model = (Model*)hashMapIteratorGetValue(itr);
+		hashMapMoveIterator(&itr);
+		freeModelData(model);
+	}
+
+	for (HashMapIterator itr = hashMapGetIterator(textures);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
+		hashMapMoveIterator(&itr);
+		freeTextureData(texture);
+	}
+
 	freeHashMap(&models);
 	freeHashMap(&textures);
 

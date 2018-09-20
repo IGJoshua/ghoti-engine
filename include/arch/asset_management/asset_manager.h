@@ -12,4 +12,5 @@
 
 void initializeAssetManager(void);
 void activateAssetsChangedFlag(void);
+void updateAssetManager(real64 dt);
 void shutdownAssetManager(void);

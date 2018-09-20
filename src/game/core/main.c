@@ -357,6 +357,8 @@ void update(real64 dt, bool skipLoadedThisFrame)
 			L = 0;
 		}
 	}
+
+	updateAssetManager(dt);
 }
 
 void draw(GLFWwindow *window, real64 frameTime)
