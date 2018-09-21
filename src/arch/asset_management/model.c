@@ -16,7 +16,6 @@
 #include "ECS/scene.h"
 
 extern HashMap models;
-extern HashMap textures;
 
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
 
@@ -127,10 +126,12 @@ int32 loadModel(const char *name)
 
 		if (error != -1)
 		{
+			// Lock mutex
 			hashMapInsert(models, &model.name, &model);
 
 			ASSET_LOG("Successfully loaded model (%s)\n", name);
 			ASSET_LOG("Model Count: %d\n", models->count);
+			// Unlock mutex
 		}
 		else
 		{
@@ -170,7 +171,10 @@ Model* getModel(const char *name)
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
+
+		// Lock mutex
 		model = hashMapGetData(models, &nameID);
+		// Unlock mutex
 	}
 
 	return model;
@@ -213,10 +217,12 @@ void freeModelData(Model *model)
 		model->animations,
 		&model->skeleton);
 
+	// Lock mutex
 	hashMapDelete(models, &modelName);
 
 	ASSET_LOG("Successfully freed model (%s)\n", modelName.string);
 	ASSET_LOG("Model Count: %d\n", models->count);
+	// Unlock mutex
 }
 
 void swapMeshMaterial(

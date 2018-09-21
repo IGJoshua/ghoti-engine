@@ -14,7 +14,6 @@
 #include <malloc.h>
 #include <string.h>
 
-extern HashMap textures;
 extern bool asyncAssetLoading;
 
 void loadMask(Mask *mask, FILE *file)
@@ -47,8 +46,10 @@ int32 loadMaskTexture(
 
 	if (fullFilename)
 	{
+		// Lock mutex
 		if (asyncAssetLoading)
 		{
+			// Unlock mutex
 			loadAssetAsync(
 				ASSET_TYPE_TEXTURE,
 				textureName->string,
@@ -56,6 +57,7 @@ int32 loadMaskTexture(
 		}
 		else
 		{
+			// Unlock mutex
 			if (loadTexture(fullFilename, textureName->string) == -1)
 			{
 				free(fullFilename);

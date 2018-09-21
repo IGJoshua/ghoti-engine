@@ -93,6 +93,7 @@ void initializeAssetManager(void) {
 
 void updateAssetManager(real64 dt)
 {
+	// Lock mutex
 	for (ListIterator listItr = listGetIterator(&assetsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
@@ -106,10 +107,15 @@ void updateAssetManager(real64 dt)
 
 				if (error != -1)
 				{
+					// Lock mutex
 					Model *model = hashMapGetData(models, &asset->name);
+					// Unlock mutex
+
 					if (model->refCount == 1)
 					{
+						// Lock mutex
 						listPushBack(&uploadModelsQueue, &model);
+						// Unlock mutex
 					}
 				}
 
@@ -119,10 +125,15 @@ void updateAssetManager(real64 dt)
 
 				if (error != -1)
 				{
-					Texture *texture = getTexture(asset->name.string);
+					// Lock mutex
+					Texture *texture = hashMapGetData(textures, &asset->name);
+					// Unlock mutex
+
 					if (texture->refCount == 1)
 					{
+						// Lock mutex
 						listPushBack(&uploadTexturesQueue, &texture);
+						// Unlock mutex
 					}
 				}
 
@@ -135,7 +146,9 @@ void updateAssetManager(real64 dt)
 
 		listRemove(&assetsQueue, &listItr);
 	}
+	// Unlock mutex
 
+	// Lock mutex
 	for (HashMapIterator itr = hashMapGetIterator(models);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
@@ -146,7 +159,9 @@ void updateAssetManager(real64 dt)
 			model->lifetime -= dt;
 			if (model->lifetime <= 0.0)
 			{
+				// Lock mutex
 				listPushBack(&freeModelsQueue, &model);
+				// Unlock mutex
 			}
 		}
 		else
@@ -155,6 +170,9 @@ void updateAssetManager(real64 dt)
 		}
 	}
 
+	// Unlock mutex
+
+	// Lock mutex
 	for (HashMapIterator itr = hashMapGetIterator(textures);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
@@ -165,7 +183,9 @@ void updateAssetManager(real64 dt)
 			texture->lifetime -= dt;
 			if (texture->lifetime <= 0.0)
 			{
+				// Lock mutex
 				listPushBack(&freeTexturesQueue, &texture);
+				// Unlock mutex
 			}
 		}
 		else
@@ -173,6 +193,8 @@ void updateAssetManager(real64 dt)
 			texture->lifetime = config.assetsConfig.minimumTextureLifetime;
 		}
 	}
+
+	// Unlock mutex
 }
 
 void shutdownAssetManager(void)
@@ -261,40 +283,68 @@ void shutdownAssetManager(void)
 
 void uploadAssets(void)
 {
+	// Lock mutex
 	for (ListIterator listItr = listGetIterator(&uploadModelsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
 		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
+
+		// Unlock mutex
 		uploadModelToGPU(model);
+		// Lock mutex
+
 		listRemove(&uploadModelsQueue, &listItr);
 	}
 
+	// Unlock mutex
+
+	// Lock mutex
 	for (ListIterator listItr = listGetIterator(&uploadTexturesQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
 		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
+
+		// Unlock mutex
 		uploadTextureToGPU(texture);
+		// Lock mutex
+
 		listRemove(&uploadTexturesQueue, &listItr);
 	}
+
+	// Unlock mutex
 }
 
 void freeAssets(void)
 {
+	// Lock mutex
 	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
 		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
+
+		// Unlock mutex
 		freeModelData(model);
+		// Lock mutex
+
 		listRemove(&freeModelsQueue, &listItr);
 	}
 
+	// Unlock mutex
+
+	// Lock mutex
 	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
 		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
+
+		// Unlock mutex
 		freeTextureData(texture);
+		// Lock mutex
+
 		listRemove(&freeTexturesQueue, &listItr);
 	}
+
+	// Unlock mutex
 }
 
 void loadAssetAsync(AssetType type, const char *name, const char *filename)
@@ -310,7 +360,9 @@ void loadAssetAsync(AssetType type, const char *name, const char *filename)
 		strcpy(asset.filename, filename);
 	}
 
+	// Lock mutex
 	listPushBack(&assetsQueue, &asset);
+	// Unlock mutex
 }
 
 void activateAssetsChangedFlag(void)
@@ -320,5 +372,7 @@ void activateAssetsChangedFlag(void)
 
 void setAsyncAssetLoading(bool async)
 {
+	// Lock mutex
 	asyncAssetLoading = async;
+	// Unlock mutex
 }

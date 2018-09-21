@@ -16,7 +16,6 @@
 
 #include <string.h>
 
-extern HashMap textures;
 extern HashMap materialFolders;
 extern bool asyncAssetLoading;
 
@@ -243,8 +242,10 @@ int32 loadMaterialComponentTexture(
 
 	if (fullFilename)
 	{
+		// Lock mutex
 		if (asyncAssetLoading)
 		{
+			// Unlock mutex
 			loadAssetAsync(
 				ASSET_TYPE_TEXTURE,
 				textureName->string,
@@ -252,6 +253,7 @@ int32 loadMaterialComponentTexture(
 		}
 		else
 		{
+			// Unlock mutex
 			if (loadTexture(fullFilename, textureName->string) == -1)
 			{
 				free(fullFilename);

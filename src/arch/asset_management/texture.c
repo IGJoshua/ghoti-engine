@@ -56,10 +56,12 @@ int32 loadTexture(const char *filename, const char *name)
 
 		if (error != - 1)
 		{
+			// Lock mutex
 			hashMapInsert(textures, &texture.name, &texture);
 
 			ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
 			ASSET_LOG("Texture Count: %d\n", textures->count);
+			// Unlock mutex
 		}
 	}
 	else
@@ -170,7 +172,10 @@ Texture* getTexture(const char *name)
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
+
+		// Lock mutex
 		texture = hashMapGetData(textures, &nameID);
+		// Unlock mutex
 	}
 
 	return texture;
@@ -209,8 +214,11 @@ void freeTextureData(Texture *texture)
 	ASSET_LOG("Freeing texture (%s)...\n", textureName.string);
 
 	glDeleteTextures(1, &texture->id);
+
+	// Lock mutex
 	hashMapDelete(textures, &textureName);
 
 	ASSET_LOG("Successfully freed texture (%s)\n", textureName.string);
 	ASSET_LOG("Texture Count: %d\n", textures->count);
+	// Unlock mutex
 }
