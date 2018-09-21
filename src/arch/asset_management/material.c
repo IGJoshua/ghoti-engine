@@ -15,9 +15,12 @@
 #include "ECS/scene.h"
 
 #include <string.h>
+#include <pthread.h>
 
 extern HashMap materialFolders;
+
 extern bool asyncAssetLoading;
+extern pthread_mutex_t asyncAssetLoadingMutex;
 
 internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
@@ -242,10 +245,10 @@ int32 loadMaterialComponentTexture(
 
 	if (fullFilename)
 	{
-		// Lock mutex
+		pthread_mutex_lock(&asyncAssetLoadingMutex);
 		if (asyncAssetLoading)
 		{
-			// Unlock mutex
+			pthread_mutex_unlock(&asyncAssetLoadingMutex);
 			loadAssetAsync(
 				ASSET_TYPE_TEXTURE,
 				textureName->string,
@@ -253,7 +256,7 @@ int32 loadMaterialComponentTexture(
 		}
 		else
 		{
-			// Unlock mutex
+			pthread_mutex_unlock(&asyncAssetLoadingMutex);
 			if (loadTexture(fullFilename, textureName->string) == -1)
 			{
 				free(fullFilename);

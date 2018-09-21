@@ -30,6 +30,8 @@ pthread_mutex_t texturesMutex;
 bool assetsChanged;
 bool asyncAssetLoading;
 
+pthread_mutex_t asyncAssetLoadingMutex;
+
 int32 viewportWidth;
 int32 viewportHeight;
 

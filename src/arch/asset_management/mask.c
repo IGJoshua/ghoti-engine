@@ -13,8 +13,10 @@
 
 #include <malloc.h>
 #include <string.h>
+#include <pthread.h>
 
 extern bool asyncAssetLoading;
+extern pthread_mutex_t asyncAssetLoadingMutex;
 
 void loadMask(Mask *mask, FILE *file)
 {
@@ -46,10 +48,10 @@ int32 loadMaskTexture(
 
 	if (fullFilename)
 	{
-		// Lock mutex
+		pthread_mutex_lock(&asyncAssetLoadingMutex);
 		if (asyncAssetLoading)
 		{
-			// Unlock mutex
+			pthread_mutex_unlock(&asyncAssetLoadingMutex);
 			loadAssetAsync(
 				ASSET_TYPE_TEXTURE,
 				textureName->string,
@@ -57,7 +59,7 @@ int32 loadMaskTexture(
 		}
 		else
 		{
-			// Unlock mutex
+			pthread_mutex_unlock(&asyncAssetLoadingMutex);
 			if (loadTexture(fullFilename, textureName->string) == -1)
 			{
 				free(fullFilename);

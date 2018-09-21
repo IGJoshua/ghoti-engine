@@ -43,8 +43,18 @@ internal List uploadTexturesQueue;
 internal List freeModelsQueue;
 internal List freeTexturesQueue;
 
+internal pthread_mutex_t assetsQueueMutex;
+
+internal pthread_mutex_t uploadModelsMutex;
+internal pthread_mutex_t uploadTexturesMutex;
+
+internal pthread_mutex_t freeModelsMutex;
+internal pthread_mutex_t freeTexturesMutex;
+
 extern bool assetsChanged;
 extern bool asyncAssetLoading;
+
+extern pthread_mutex_t asyncAssetLoadingMutex;
 
 void initializeAssetManager(void) {
 	models = createHashMap(
@@ -78,9 +88,6 @@ void initializeAssetManager(void) {
 		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 
-	pthread_mutex_init(&modelsMutex, NULL);
-	pthread_mutex_init(&texturesMutex, NULL);
-
 	assetsQueue = createList(sizeof(Asset));
 
 	uploadModelsQueue = createList(sizeof(Model*));
@@ -91,11 +98,38 @@ void initializeAssetManager(void) {
 
 	assetsChanged = false;
 	asyncAssetLoading = true;
+
+	pthread_mutex_init(&modelsMutex, NULL);
+	pthread_mutex_init(&texturesMutex, NULL);
+	pthread_mutex_init(&assetsQueueMutex, NULL);
+	pthread_mutex_init(&uploadModelsMutex, NULL);
+	pthread_mutex_init(&uploadTexturesMutex, NULL);
+	pthread_mutex_init(&freeModelsMutex, NULL);
+	pthread_mutex_init(&freeTexturesMutex, NULL);
+	pthread_mutex_init(&asyncAssetLoadingMutex, NULL);
+}
+
+void loadAssetAsync(AssetType type, const char *name, const char *filename)
+{
+	Asset asset = {};
+
+	asset.type = type;
+	asset.name = idFromName(name);
+
+	if (filename)
+	{
+		asset.filename = calloc(1, strlen(filename) + 1);
+		strcpy(asset.filename, filename);
+	}
+
+	pthread_mutex_lock(&assetsQueueMutex);
+	listPushBack(&assetsQueue, &asset);
+	pthread_mutex_unlock(&assetsQueueMutex);
 }
 
 void updateAssetManager(real64 dt)
 {
-	// Lock mutex
+	pthread_mutex_lock(&assetsQueueMutex);
 	for (ListIterator listItr = listGetIterator(&assetsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
@@ -105,7 +139,9 @@ void updateAssetManager(real64 dt)
 		switch (asset->type)
 		{
 			case ASSET_TYPE_MODEL:
+				pthread_mutex_unlock(&assetsQueueMutex);
 				error = loadModel(asset->name.string);
+				pthread_mutex_lock(&assetsQueueMutex);
 
 				if (error != -1)
 				{
@@ -115,15 +151,17 @@ void updateAssetManager(real64 dt)
 
 					if (model->refCount == 1)
 					{
-						// Lock mutex
+						pthread_mutex_lock(&uploadModelsMutex);
 						listPushBack(&uploadModelsQueue, &model);
-						// Unlock mutex
+						pthread_mutex_unlock(&uploadModelsMutex);
 					}
 				}
 
 				break;
 			case ASSET_TYPE_TEXTURE:
+				pthread_mutex_unlock(&assetsQueueMutex);
 				error = loadTexture(asset->filename, asset->name.string);
+				pthread_mutex_lock(&assetsQueueMutex);
 
 				if (error != -1)
 				{
@@ -133,9 +171,9 @@ void updateAssetManager(real64 dt)
 
 					if (texture->refCount == 1)
 					{
-						// Lock mutex
+						pthread_mutex_lock(&uploadTexturesMutex);
 						listPushBack(&uploadTexturesQueue, &texture);
-						// Unlock mutex
+						pthread_mutex_unlock(&uploadTexturesMutex);
 					}
 				}
 
@@ -148,7 +186,8 @@ void updateAssetManager(real64 dt)
 
 		listRemove(&assetsQueue, &listItr);
 	}
-	// Unlock mutex
+
+	pthread_mutex_unlock(&assetsQueueMutex);
 
 	pthread_mutex_lock(&modelsMutex);
 	for (HashMapIterator itr = hashMapGetIterator(models);
@@ -161,9 +200,9 @@ void updateAssetManager(real64 dt)
 			model->lifetime -= dt;
 			if (model->lifetime <= 0.0)
 			{
-				// Lock mutex
+				pthread_mutex_lock(&freeModelsMutex);
 				listPushBack(&freeModelsQueue, &model);
-				// Unlock mutex
+				pthread_mutex_unlock(&freeModelsMutex);
 			}
 		}
 		else
@@ -185,9 +224,9 @@ void updateAssetManager(real64 dt)
 			texture->lifetime -= dt;
 			if (texture->lifetime <= 0.0)
 			{
-				// Lock mutex
+				pthread_mutex_lock(&freeTexturesMutex);
 				listPushBack(&freeTexturesQueue, &texture);
-				// Unlock mutex
+				pthread_mutex_unlock(&freeTexturesMutex);
 			}
 		}
 		else
@@ -197,6 +236,72 @@ void updateAssetManager(real64 dt)
 	}
 
 	pthread_mutex_unlock(&texturesMutex);
+}
+
+void uploadAssets(void)
+{
+	pthread_mutex_lock(&uploadModelsMutex);
+	for (ListIterator listItr = listGetIterator(&uploadModelsQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
+
+		pthread_mutex_unlock(&uploadModelsMutex);
+		uploadModelToGPU(model);
+		pthread_mutex_lock(&uploadModelsMutex);
+
+		listRemove(&uploadModelsQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&uploadModelsMutex);
+
+	pthread_mutex_lock(&uploadTexturesMutex);
+	for (ListIterator listItr = listGetIterator(&uploadTexturesQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
+
+		pthread_mutex_unlock(&uploadTexturesMutex);
+		uploadTextureToGPU(texture);
+		pthread_mutex_lock(&uploadTexturesMutex);
+
+		listRemove(&uploadTexturesQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&uploadTexturesMutex);
+}
+
+void freeAssets(void)
+{
+	pthread_mutex_lock(&freeModelsMutex);
+	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
+
+		pthread_mutex_unlock(&freeModelsMutex);
+		freeModelData(model);
+		pthread_mutex_lock(&freeModelsMutex);
+
+		listRemove(&freeModelsQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeModelsMutex);
+
+	pthread_mutex_lock(&freeTexturesMutex);
+	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
+
+		pthread_mutex_unlock(&freeTexturesMutex);
+		freeTextureData(texture);
+		pthread_mutex_lock(&freeTexturesMutex);
+
+		listRemove(&freeTexturesQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeTexturesMutex);
 }
 
 void shutdownAssetManager(void)
@@ -281,90 +386,15 @@ void shutdownAssetManager(void)
 	freeHashMap(&fonts);
 	freeHashMap(&images);
 	freeHashMap(&particles);
-}
 
-void uploadAssets(void)
-{
-	// Lock mutex
-	for (ListIterator listItr = listGetIterator(&uploadModelsQueue);
-		 !listIteratorAtEnd(listItr);)
-	{
-		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
-
-		// Unlock mutex
-		uploadModelToGPU(model);
-		// Lock mutex
-
-		listRemove(&uploadModelsQueue, &listItr);
-	}
-
-	// Unlock mutex
-
-	// Lock mutex
-	for (ListIterator listItr = listGetIterator(&uploadTexturesQueue);
-		 !listIteratorAtEnd(listItr);)
-	{
-		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
-
-		// Unlock mutex
-		uploadTextureToGPU(texture);
-		// Lock mutex
-
-		listRemove(&uploadTexturesQueue, &listItr);
-	}
-
-	// Unlock mutex
-}
-
-void freeAssets(void)
-{
-	// Lock mutex
-	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
-		 !listIteratorAtEnd(listItr);)
-	{
-		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
-
-		// Unlock mutex
-		freeModelData(model);
-		// Lock mutex
-
-		listRemove(&freeModelsQueue, &listItr);
-	}
-
-	// Unlock mutex
-
-	// Lock mutex
-	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
-		 !listIteratorAtEnd(listItr);)
-	{
-		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
-
-		// Unlock mutex
-		freeTextureData(texture);
-		// Lock mutex
-
-		listRemove(&freeTexturesQueue, &listItr);
-	}
-
-	// Unlock mutex
-}
-
-void loadAssetAsync(AssetType type, const char *name, const char *filename)
-{
-	Asset asset = {};
-
-	asset.type = type;
-	asset.name = idFromName(name);
-
-	if (filename)
-	{
-		asset.filename = calloc(1, strlen(filename) + 1);
-		strcpy(asset.filename, filename);
-	}
-
-	// Lock mutex
-	listPushBack(&assetsQueue, &asset);
-	// Unlock mutex
+	pthread_mutex_destroy(&modelsMutex);
+	pthread_mutex_destroy(&texturesMutex);
+	pthread_mutex_destroy(&assetsQueueMutex);
+	pthread_mutex_destroy(&uploadModelsMutex);
+	pthread_mutex_destroy(&uploadTexturesMutex);
+	pthread_mutex_destroy(&freeModelsMutex);
+	pthread_mutex_destroy(&freeTexturesMutex);
+	pthread_mutex_destroy(&asyncAssetLoadingMutex);
 }
 
 void activateAssetsChangedFlag(void)
@@ -374,7 +404,7 @@ void activateAssetsChangedFlag(void)
 
 void setAsyncAssetLoading(bool async)
 {
-	// Lock mutex
+	pthread_mutex_lock(&asyncAssetLoadingMutex);
 	asyncAssetLoading = async;
-	// Unlock mutex
+	pthread_mutex_unlock(&asyncAssetLoadingMutex);
 }
