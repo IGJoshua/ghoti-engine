@@ -17,14 +17,14 @@ extern HashMap textures;
 
 void loadMask(Mask *mask, FILE *file)
 {
-	LOG("Loading masks...\n");
+	ASSET_LOG("Loading masks...\n");
 
 	loadMaterial(&mask->collectionMaterial, file);
 	loadMaterial(&mask->grungeMaterial, file);
 	loadMaterial(&mask->wearMaterial, file);
 	fread(&mask->opacity, sizeof(real32), 1, file);
 
-	LOG("Successfully loaded masks\n");
+	ASSET_LOG("Successfully loaded masks\n");
 }
 
 int32 loadMaskTexture(const char *masksFolder,

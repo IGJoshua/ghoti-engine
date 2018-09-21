@@ -30,6 +30,7 @@
 	"logging":
 	{
 		"engine_file": "engine.log",
+		"asset_manager_file": "asset_manager.log",
 		"lua_file": "lua.log"
 	},
 

@@ -40,7 +40,7 @@ int32 loadTexture(const char *filename, const char *name)
 			textureName += 1;
 		}
 
-		LOG("Loading texture (%s)...\n", textureName);
+		ASSET_LOG("Loading texture (%s)...\n", textureName);
 
 		Texture texture = {};
 
@@ -62,8 +62,8 @@ int32 loadTexture(const char *filename, const char *name)
 			{
 				hashMapInsert(textures, &texture.name, &texture);
 
-				LOG("Successfully loaded texture (%s)\n", textureName);
-				LOG("Texture Count: %d\n", textures->count);
+				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
+				ASSET_LOG("Texture Count: %d\n", textures->count);
 			}
 		}
 	}
@@ -88,7 +88,7 @@ int32 loadTextureData(
 	ILenum ilError = ilGetError();
 	if (ilError != IL_NO_ERROR)
 	{
-		LOG("Failed to load texture: %s\n", iluErrorString(ilError));
+		ASSET_LOG("Failed to load texture: %s\n", iluErrorString(ilError));
 		return -1;
 	}
 
@@ -115,7 +115,7 @@ int32 loadTextureData(
 
 int32 uploadTextureToGPU(Texture *texture)
 {
-	LOG("Transferring texture data onto GPU...\n");
+	ASSET_LOG("Transferring texture data onto GPU...\n");
 
 	ilBindImage(texture->devilID);
 
@@ -158,7 +158,7 @@ int32 uploadTextureToGPU(Texture *texture)
 			GL_TEXTURE_MIN_FILTER,
 			GL_LINEAR_MIPMAP_LINEAR);
 
-		LOG("Successfully transferred texture data onto GPU\n");
+		ASSET_LOG("Successfully transferred texture data onto GPU\n");
 	}
 
 	ilDeleteImages(1, &texture->devilID);
@@ -211,11 +211,11 @@ void freeTextureData(Texture *texture)
 {
 	UUID textureName = texture->name;
 
-	LOG("Freeing texture (%s)...\n", textureName.string);
+	ASSET_LOG("Freeing texture (%s)...\n", textureName.string);
 
 	glDeleteTextures(1, &texture->id);
 	hashMapDelete(textures, &textureName);
 
-	LOG("Successfully freed texture (%s)\n", textureName.string);
-	LOG("Texture Count: %d\n", textures->count);
+	ASSET_LOG("Successfully freed texture (%s)\n", textureName.string);
+	ASSET_LOG("Texture Count: %d\n", textures->count);
 }

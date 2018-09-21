@@ -117,12 +117,22 @@ int32 loadConfig(void)
 	if (logging)
 	{
 		free(config.logConfig.engineFile);
+		free(config.logConfig.assetManagerFile);
 		free(config.logConfig.luaFile);
 
 		cJSON *loggingEngineFile = cJSON_GetObjectItem(logging, "engine_file");
 		config.logConfig.engineFile = malloc(
 			strlen(loggingEngineFile->valuestring) + 1);
 		strcpy(config.logConfig.engineFile, loggingEngineFile->valuestring);
+
+		cJSON *loggingAssetManagerFile = cJSON_GetObjectItem(
+			logging,
+			"asset_manager_file");
+		config.logConfig.assetManagerFile = malloc(
+			strlen(loggingAssetManagerFile->valuestring) + 1);
+		strcpy(
+			config.logConfig.assetManagerFile,
+			loggingAssetManagerFile->valuestring);
 
 		cJSON *loggingLuaFile = cJSON_GetObjectItem(logging, "lua_file");
 		config.logConfig.luaFile = malloc(
@@ -162,6 +172,7 @@ void freeConfig(void)
 {
 	free(config.windowConfig.title);
 	free(config.logConfig.engineFile);
+	free(config.logConfig.assetManagerFile);
 	free(config.logConfig.luaFile);
 }
 
@@ -186,6 +197,8 @@ void initializeDefaultConfig(void)
 
 	config.logConfig.engineFile = malloc(11);
 	strcpy(config.logConfig.engineFile, "engine.log");
+	config.logConfig.assetManagerFile = malloc(18);
+	strcpy(config.logConfig.assetManagerFile, "asset_manager.log");
 	config.logConfig.luaFile = malloc(8);
 	strcpy(config.logConfig.luaFile, "lua.log");
 

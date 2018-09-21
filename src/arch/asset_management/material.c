@@ -28,7 +28,7 @@ int32 loadMaterial(Material *material, FILE *file)
 
 	if (strlen(material->name.string) > 0)
 	{
-		LOG("Loading material (%s)...\n", material->name.string);
+		ASSET_LOG("Loading material (%s)...\n", material->name.string);
 
 		fread(&material->doubleSided, sizeof(bool), 1, file);
 
@@ -63,7 +63,7 @@ int32 loadMaterial(Material *material, FILE *file)
 			}
 		}
 
-		LOG("Successfully loaded material (%s)\n", material->name.string);
+		ASSET_LOG("Successfully loaded material (%s)\n", material->name.string);
 	}
 
 	return 0;
@@ -71,7 +71,7 @@ int32 loadMaterial(Material *material, FILE *file)
 
 int32 createMaterial(UUID name, Material *material)
 {
-	LOG("Loading material (%s)...\n", name.string);
+	ASSET_LOG("Loading material (%s)...\n", name.string);
 
 	material->name = name;
 	material->doubleSided = false;
@@ -95,7 +95,7 @@ int32 createMaterial(UUID name, Material *material)
 		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
 	}
 
-	LOG("Successfully loaded material (%s)\n", name.string);
+	ASSET_LOG("Successfully loaded material (%s)\n", name.string);
 
 	return 0;
 }

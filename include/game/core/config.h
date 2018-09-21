@@ -37,6 +37,7 @@ typedef struct assets_config_t
 typedef struct log_config_t
 {
 	char *engineFile;
+	char *assetManagerFile;
 	char *luaFile;
 } LogConfig;
 

@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 FILE *logFile;
+FILE *assetLogFile;
 
 extern Config config;
 
@@ -20,5 +21,10 @@ extern Config config;
 				 fprintf(logFile, __VA_ARGS__); \
 				 fclose(logFile)
 #endif
+
+#define ASSET_LOG_FILE_NAME config.logConfig.assetManagerFile
+#define ASSET_LOG(...) assetLogFile = fopen(ASSET_LOG_FILE_NAME, "a"); \
+					   fprintf(assetLogFile, __VA_ARGS__); \
+					   fclose(assetLogFile)
 
 void logFunction(const char *format, ...);
