@@ -15,7 +15,10 @@
 
 #include "ECS/scene.h"
 
+#include <pthread.h>
+
 extern HashMap models;
+extern pthread_mutex_t modelsMutex;
 
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
 
@@ -126,12 +129,14 @@ int32 loadModel(const char *name)
 
 		if (error != -1)
 		{
-			// Lock mutex
+			pthread_mutex_lock(&modelsMutex);
+
 			hashMapInsert(models, &model.name, &model);
 
 			ASSET_LOG("Successfully loaded model (%s)\n", name);
 			ASSET_LOG("Model Count: %d\n", models->count);
-			// Unlock mutex
+
+			pthread_mutex_unlock(&modelsMutex);
 		}
 		else
 		{
@@ -172,9 +177,9 @@ Model* getModel(const char *name)
 	{
 		UUID nameID = idFromName(name);
 
-		// Lock mutex
+		pthread_mutex_lock(&modelsMutex);
 		model = hashMapGetData(models, &nameID);
-		// Unlock mutex
+		pthread_mutex_unlock(&modelsMutex);
 	}
 
 	return model;
@@ -217,12 +222,14 @@ void freeModelData(Model *model)
 		model->animations,
 		&model->skeleton);
 
-	// Lock mutex
+	pthread_mutex_lock(&modelsMutex);
+
 	hashMapDelete(models, &modelName);
 
 	ASSET_LOG("Successfully freed model (%s)\n", modelName.string);
 	ASSET_LOG("Model Count: %d\n", models->count);
-	// Unlock mutex
+
+	pthread_mutex_unlock(&modelsMutex);
 }
 
 void swapMeshMaterial(

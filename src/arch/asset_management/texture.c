@@ -15,8 +15,10 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 extern HashMap textures;
+extern pthread_mutex_t texturesMutex;
 
 #define NUM_TEXTURE_FILE_FORMATS 7
 internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
@@ -56,12 +58,14 @@ int32 loadTexture(const char *filename, const char *name)
 
 		if (error != - 1)
 		{
-			// Lock mutex
+			pthread_mutex_lock(&texturesMutex);
+
 			hashMapInsert(textures, &texture.name, &texture);
 
 			ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
 			ASSET_LOG("Texture Count: %d\n", textures->count);
-			// Unlock mutex
+
+			pthread_mutex_unlock(&texturesMutex);
 		}
 	}
 	else
@@ -173,9 +177,9 @@ Texture* getTexture(const char *name)
 	{
 		UUID nameID = idFromName(name);
 
-		// Lock mutex
+		pthread_mutex_lock(&texturesMutex);
 		texture = hashMapGetData(textures, &nameID);
-		// Unlock mutex
+		pthread_mutex_unlock(&texturesMutex);
 	}
 
 	return texture;
@@ -215,10 +219,12 @@ void freeTextureData(Texture *texture)
 
 	glDeleteTextures(1, &texture->id);
 
-	// Lock mutex
+	pthread_mutex_lock(&texturesMutex);
+
 	hashMapDelete(textures, &textureName);
 
 	ASSET_LOG("Successfully freed texture (%s)\n", textureName.string);
 	ASSET_LOG("Texture Count: %d\n", textures->count);
-	// Unlock mutex
+
+	pthread_mutex_unlock(&texturesMutex);
 }

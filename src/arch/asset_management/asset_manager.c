@@ -14,6 +14,7 @@
 #include "ECS/scene.h"
 
 #include <string.h>
+#include <pthread.h>
 
 typedef struct asset_t
 {
@@ -30,6 +31,9 @@ extern HashMap materialFolders;
 extern HashMap fonts;
 extern HashMap images;
 extern HashMap particles;
+
+extern pthread_mutex_t modelsMutex;
+extern pthread_mutex_t texturesMutex;
 
 internal List assetsQueue;
 
@@ -48,36 +52,34 @@ void initializeAssetManager(void) {
 		sizeof(Model),
 		MODELS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-
 	textures = createHashMap(
 		sizeof(UUID),
 		sizeof(Texture),
 		TEXTURES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-
 	materialFolders = createHashMap(
 		sizeof(UUID),
 		sizeof(List),
 		MATERIAL_FOLDERS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-
 	fonts = createHashMap(
 		sizeof(UUID),
 		sizeof(Font),
 		FONTS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-
 	images = createHashMap(
 		sizeof(UUID),
 		sizeof(Image),
 		IMAGES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
-
 	particles = createHashMap(
 		sizeof(UUID),
 		sizeof(Particle),
 		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+
+	pthread_mutex_init(&modelsMutex, NULL);
+	pthread_mutex_init(&texturesMutex, NULL);
 
 	assetsQueue = createList(sizeof(Asset));
 
@@ -107,9 +109,9 @@ void updateAssetManager(real64 dt)
 
 				if (error != -1)
 				{
-					// Lock mutex
+					pthread_mutex_lock(&modelsMutex);
 					Model *model = hashMapGetData(models, &asset->name);
-					// Unlock mutex
+					pthread_mutex_unlock(&modelsMutex);
 
 					if (model->refCount == 1)
 					{
@@ -125,9 +127,9 @@ void updateAssetManager(real64 dt)
 
 				if (error != -1)
 				{
-					// Lock mutex
+					pthread_mutex_lock(&texturesMutex);
 					Texture *texture = hashMapGetData(textures, &asset->name);
-					// Unlock mutex
+					pthread_mutex_unlock(&texturesMutex);
 
 					if (texture->refCount == 1)
 					{
@@ -148,7 +150,7 @@ void updateAssetManager(real64 dt)
 	}
 	// Unlock mutex
 
-	// Lock mutex
+	pthread_mutex_lock(&modelsMutex);
 	for (HashMapIterator itr = hashMapGetIterator(models);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
@@ -170,9 +172,9 @@ void updateAssetManager(real64 dt)
 		}
 	}
 
-	// Unlock mutex
+	pthread_mutex_unlock(&modelsMutex);
 
-	// Lock mutex
+	pthread_mutex_lock(&texturesMutex);
 	for (HashMapIterator itr = hashMapGetIterator(textures);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
@@ -194,7 +196,7 @@ void updateAssetManager(real64 dt)
 		}
 	}
 
-	// Unlock mutex
+	pthread_mutex_unlock(&texturesMutex);
 }
 
 void shutdownAssetManager(void)

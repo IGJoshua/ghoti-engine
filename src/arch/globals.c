@@ -10,6 +10,8 @@
 
 #include <luajit-2.0/lua.h>
 
+#include <pthread.h>
+
 Config config;
 
 // NOTE(Joshua): Asset Management globals
@@ -21,6 +23,9 @@ HashMap fonts;
 HashMap images;
 HashMap audioFiles;
 HashMap particles;
+
+pthread_mutex_t modelsMutex;
+pthread_mutex_t texturesMutex;
 
 bool assetsChanged;
 bool asyncAssetLoading;
