@@ -19,7 +19,6 @@ extern HashMap models;
 extern HashMap textures;
 
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
-internal void freeSubset(Subset *subset);
 
 int32 loadModel(const char *name)
 {
@@ -159,7 +158,7 @@ void uploadModelToGPU(Model *model)
 		uploadMeshToGPU(&subset->mesh);
 
 		ASSET_LOG("Successfully transferred mesh (%s) onto GPU\n",
-			subset->name.string);
+				  subset->name.string);
 	}
 
 	ASSET_LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
@@ -182,6 +181,16 @@ void freeModel(const char *name)
 	Model *model = getModel(name);
 	if (model)
 	{
+		freeTexture(model->materialTexture);
+		freeTexture(model->opacityTexture);
+
+		for (uint32 i = 0; i < model->numSubsets; i++)
+		{
+			Subset *subset = &model->subsets[i];
+			freeMaterial(&subset->material);
+			freeMask(&subset->mask);
+		}
+
 		model->refCount--;
 	}
 }
@@ -192,12 +201,9 @@ void freeModelData(Model *model)
 
 	ASSET_LOG("Freeing model (%s)...\n", modelName.string);
 
-	freeTexture(model->materialTexture);
-	freeTexture(model->opacityTexture);
-
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
-		freeSubset(&model->subsets[i]);
+		freeMesh(&model->subsets[i].mesh);
 	}
 
 	free(model->subsets);
@@ -252,11 +258,4 @@ int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
 	ASSET_LOG("Successfully loaded subset (%s)\n", subset->name.string);
 
 	return 0;
-}
-
-void freeSubset(Subset *subset)
-{
-	freeMesh(&subset->mesh);
-	freeMaterial(&subset->material);
-	freeMask(&subset->mask);
 }

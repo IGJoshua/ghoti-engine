@@ -21,8 +21,6 @@ void loadMesh(Mesh *mesh, FILE *file)
 	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
 	ASSET_LOG("Successfully loaded mesh data\n");
-
-	uploadMeshToGPU(mesh);
 }
 
 void uploadMeshToGPU(Mesh *mesh)

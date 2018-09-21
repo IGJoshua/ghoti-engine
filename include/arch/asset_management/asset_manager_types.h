@@ -19,6 +19,12 @@
 
 #include <nuklear/nuklear.h>
 
+typedef enum asset_type_e
+{
+	ASSET_TYPE_MODEL,
+	ASSET_TYPE_TEXTURE
+} AssetType;
+
 typedef enum texture_format_e
 {
 	TEXTURE_FORMAT_RGBA8 = 0,

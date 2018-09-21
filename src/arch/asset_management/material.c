@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
 
@@ -17,6 +18,7 @@
 
 extern HashMap textures;
 extern HashMap materialFolders;
+extern bool asyncAssetLoading;
 
 internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
@@ -195,8 +197,8 @@ void loadMaterialFolders(UUID name)
 int32 loadMaterialComponentTexture(
 	UUID materialName,
 	MaterialComponentType materialComponentType,
-	UUID *textureName
-) {
+	UUID *textureName)
+{
 	memset(textureName, 0, sizeof(UUID));
 
 	List *materialFoldersList = (List*)hashMapGetData(
@@ -241,10 +243,20 @@ int32 loadMaterialComponentTexture(
 
 	if (fullFilename)
 	{
-		if (loadTexture(fullFilename, textureName->string) == -1)
+		if (asyncAssetLoading)
 		{
-			free(fullFilename);
-			return -1;
+			loadAssetAsync(
+				ASSET_TYPE_TEXTURE,
+				textureName->string,
+				fullFilename);
+		}
+		else
+		{
+			if (loadTexture(fullFilename, textureName->string) == -1)
+			{
+				free(fullFilename);
+				return -1;
+			}
 		}
 
 		free(fullFilename);

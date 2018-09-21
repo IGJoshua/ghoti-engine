@@ -1,6 +1,13 @@
 ffi.cdef[[
 
-int32 loadModel(const char *name);
+typedef enum asset_type_e
+{
+	ASSET_TYPE_MODEL,
+	ASSET_TYPE_TEXTURE
+} AssetType;
+
+void loadAssetAsync(AssetType type, const char *name, const char *filename);
+
 void freeModel(const char *name);
 void swapMeshMaterial(
 	const char *modelName,

@@ -23,6 +23,7 @@ HashMap audioFiles;
 HashMap particles;
 
 bool assetsChanged;
+bool asyncAssetLoading;
 
 int32 viewportWidth;
 int32 viewportHeight;

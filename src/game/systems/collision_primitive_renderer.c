@@ -3,6 +3,7 @@
 #include "core/log.h"
 
 #include "asset_management/asset_manager_types.h"
+#include "asset_management/asset_manager.h"
 #include "asset_management/model.h"
 
 #include "renderer/renderer_types.h"
@@ -84,10 +85,10 @@ void initCollisionPrimitiveRendererSystem(Scene *scene)
 	{
 		LOG("Initializing collision primitive renderer...\n");
 
-		loadModel(BOX_MODEL_NAME);
-		loadModel(SPHERE_MODEL_NAME);
-		loadModel(CYLINDER_MODEL_NAME);
-		loadModel(HEMISPHERE_MODEL_NAME);
+		loadAssetAsync(ASSET_TYPE_MODEL, BOX_MODEL_NAME, NULL);
+		loadAssetAsync(ASSET_TYPE_MODEL, SPHERE_MODEL_NAME, NULL);
+		loadAssetAsync(ASSET_TYPE_MODEL, CYLINDER_MODEL_NAME, NULL);
+		loadAssetAsync(ASSET_TYPE_MODEL, HEMISPHERE_MODEL_NAME, NULL);
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,

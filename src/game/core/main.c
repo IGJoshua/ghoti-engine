@@ -70,6 +70,9 @@ int32 main(int32 argc, char *argv[])
 		remove(LOG_FILE_NAME);
 	}
 
+	remove(ASSET_LOG_FILE_NAME);
+	remove(config.logConfig.luaFile);
+
 	GLFWwindow *window = initWindow(
 		config.windowConfig.size.x,
 		config.windowConfig.size.y,
@@ -359,6 +362,8 @@ void update(real64 dt, bool skipLoadedThisFrame)
 	}
 
 	updateAssetManager(dt);
+	uploadAssets();
+	freeAssets();
 }
 
 void draw(GLFWwindow *window, real64 frameTime)

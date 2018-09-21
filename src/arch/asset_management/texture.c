@@ -56,15 +56,10 @@ int32 loadTexture(const char *filename, const char *name)
 
 		if (error != - 1)
 		{
-			error = uploadTextureToGPU(&texture);
+			hashMapInsert(textures, &texture.name, &texture);
 
-			if (error != -1)
-			{
-				hashMapInsert(textures, &texture.name, &texture);
-
-				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
-				ASSET_LOG("Texture Count: %d\n", textures->count);
-			}
+			ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
+			ASSET_LOG("Texture Count: %d\n", textures->count);
 		}
 	}
 	else

@@ -11,11 +11,11 @@ local component = engine.components:register("model", "ModelComponent")
 local C = engine.C
 
 function component:swap(name, staticModel, scene, uuid, removeSkeleton, skeleton, idleAnimation, speed, transitionDuration)
-  C.freeModel(self.name)
-  self.name = name
-  C.loadModel(name)
+--   C.freeModel(self.name)
+--   self.name = name
+--   C.loadModel(name)
 
-  C.activateAssetsChangedFlag()
+--   C.activateAssetsChangedFlag()
 
   staticModel = staticModel or false
 

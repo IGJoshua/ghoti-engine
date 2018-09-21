@@ -17,6 +17,7 @@
 #include "components/collision.h"
 #include "components/collision_tree_node.h"
 
+#include "asset_management/asset_manager.h"
 #include "asset_management/model.h"
 #include "asset_management/font.h"
 #include "asset_management/image.h"
@@ -1851,7 +1852,10 @@ int32 sceneAddComponentToEntity(
 
 	if (!strcmp(componentType.string, "model"))
 	{
-		loadModel(((ModelComponent*)componentData)->name);
+		loadAssetAsync(
+			ASSET_TYPE_MODEL,
+			((ModelComponent*)componentData)->name,
+			NULL);
 	}
 	else if (!strcmp(componentType.string, "font"))
 	{

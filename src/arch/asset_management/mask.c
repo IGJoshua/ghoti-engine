@@ -1,4 +1,5 @@
 #include "asset_management/asset_manager_types.h"
+#include "asset_management/asset_manager.h"
 #include "asset_management/mask.h"
 #include "asset_management/material.h"
 #include "asset_management/texture.h"
@@ -14,6 +15,7 @@
 #include <string.h>
 
 extern HashMap textures;
+extern bool asyncAssetLoading;
 
 void loadMask(Mask *mask, FILE *file)
 {
@@ -27,7 +29,8 @@ void loadMask(Mask *mask, FILE *file)
 	ASSET_LOG("Successfully loaded masks\n");
 }
 
-int32 loadMaskTexture(const char *masksFolder,
+int32 loadMaskTexture(
+	const char *masksFolder,
 	Model *model,
 	char suffix,
 	UUID *textureName)
@@ -44,10 +47,20 @@ int32 loadMaskTexture(const char *masksFolder,
 
 	if (fullFilename)
 	{
-		if (loadTexture(fullFilename, textureName->string) == -1)
+		if (asyncAssetLoading)
 		{
-			free(fullFilename);
-			return -1;
+			loadAssetAsync(
+				ASSET_TYPE_TEXTURE,
+				textureName->string,
+				fullFilename);
+		}
+		else
+		{
+			if (loadTexture(fullFilename, textureName->string) == -1)
+			{
+				free(fullFilename);
+				return -1;
+			}
 		}
 
 		free(fullFilename);
