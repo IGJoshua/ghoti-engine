@@ -8,7 +8,7 @@
 
 void loadMesh(Mesh *mesh, FILE *file)
 {
-	ASSET_LOG("Loading mesh data...\n");
+	ASSET_LOG("Loading mesh...\n");
 
 	fread(&mesh->numVertices, sizeof(uint32), 1, file);
 
@@ -20,12 +20,12 @@ void loadMesh(Mesh *mesh, FILE *file)
 	mesh->indices = calloc(mesh->numIndices, sizeof(uint32));
 	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
-	ASSET_LOG("Successfully loaded mesh data\n");
+	ASSET_LOG("Successfully loaded mesh\n");
 }
 
 void uploadMeshToGPU(Mesh *mesh)
 {
-	ASSET_LOG("Transferring mesh data onto GPU...\n");
+	LOG("Transferring mesh data onto GPU...\n");
 
 	glGenBuffers(1, &mesh->vertexBuffer);
 	glGenVertexArrays(1, &mesh->vertexArray);
@@ -121,9 +121,9 @@ void uploadMeshToGPU(Mesh *mesh)
 	free(mesh->vertices);
 	free(mesh->indices);
 
-	ASSET_LOG("Successfully transferred mesh data onto GPU\n");
-	ASSET_LOG("Vertex Count: %d\n", mesh->numVertices);
-	ASSET_LOG("Triangle Count: %d\n", mesh->numIndices / 3);
+	LOG("Successfully transferred mesh data onto GPU\n");
+	LOG("Vertex Count: %d\n", mesh->numVertices);
+	LOG("Triangle Count: %d\n", mesh->numIndices / 3);
 }
 
 void freeMesh(Mesh *mesh)

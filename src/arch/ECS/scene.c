@@ -1850,14 +1850,7 @@ int32 sceneAddComponentToEntity(
 
 	List *l = hashMapGetData(s->entities, &entity);
 
-	if (!strcmp(componentType.string, "model"))
-	{
-		loadAssetAsync(
-			ASSET_TYPE_MODEL,
-			((ModelComponent*)componentData)->name,
-			NULL);
-	}
-	else if (!strcmp(componentType.string, "font"))
+	if (!strcmp(componentType.string, "font"))
 	{
 		FontComponent *fontComponent = (FontComponent*)componentData;
 		loadFont(fontComponent->name, fontComponent->size);
@@ -1922,20 +1915,20 @@ void sceneRemoveComponentFromEntity(
 	}
 	else if (!strcmp(componentType.string, "model"))
 	{
-		freeModel(((ModelComponent *)cdtGet(*table, entity))->name);
+		freeModel(((ModelComponent*)cdtGet(*table, entity))->name);
 	}
 	else if (!strcmp(componentType.string, "animator"))
 	{
-		removeAnimator((AnimatorComponent *)cdtGet(*table, entity));
+		removeAnimator((AnimatorComponent*)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "image"))
 	{
-		freeImage(((ImageComponent *)cdtGet(*table, entity))->name);
+		freeImage(((ImageComponent*)cdtGet(*table, entity))->name);
 	}
 	else if (!strcmp(componentType.string, "rigid_body"))
 	{
 		sceneRemoveComponentFromEntity(s, entity, idFromName("collision"));
-		destroyRigidBody((RigidBodyComponent *)cdtGet(*table, entity));
+		destroyRigidBody((RigidBodyComponent*)cdtGet(*table, entity));
 	}
 	else if (!strcmp(componentType.string, "collision"))
 	{

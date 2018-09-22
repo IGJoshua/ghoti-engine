@@ -116,7 +116,7 @@ int32 loadTextureData(
 
 int32 uploadTextureToGPU(Texture *texture)
 {
-	ASSET_LOG("Transferring texture data onto GPU...\n");
+	LOG("Transferring texture data onto GPU...\n");
 
 	ilBindImage(texture->devilID);
 
@@ -159,7 +159,9 @@ int32 uploadTextureToGPU(Texture *texture)
 			GL_TEXTURE_MIN_FILTER,
 			GL_LINEAR_MIPMAP_LINEAR);
 
-		ASSET_LOG("Successfully transferred texture data onto GPU\n");
+		texture->uploaded = true;
+
+		LOG("Successfully transferred texture data onto GPU\n");
 	}
 
 	ilDeleteImages(1, &texture->devilID);
@@ -213,18 +215,9 @@ void freeTexture(UUID name)
 
 void freeTextureData(Texture *texture)
 {
-	UUID textureName = texture->name;
-
-	ASSET_LOG("Freeing texture (%s)...\n", textureName.string);
+	LOG("Freeing texture data (%s)...\n", texture->name.string);
 
 	glDeleteTextures(1, &texture->id);
 
-	pthread_mutex_lock(&texturesMutex);
-
-	hashMapDelete(textures, &textureName);
-
-	ASSET_LOG("Successfully freed texture (%s)\n", textureName.string);
-	ASSET_LOG("Texture Count: %d\n", textures->count);
-
-	pthread_mutex_unlock(&texturesMutex);
+	LOG("Successfully freed texture data (%s)\n", texture->name.string);
 }

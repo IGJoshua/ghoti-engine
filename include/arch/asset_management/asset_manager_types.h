@@ -34,10 +34,11 @@ typedef enum texture_format_e
 typedef struct texture_t
 {
 	UUID name;
-	GLuint id;
-	ILuint devilID;
 	uint32 refCount;
 	real64 lifetime;
+	bool uploaded;
+	GLuint id;
+	ILuint devilID;
 } Texture;
 
 typedef struct material_folder_t
@@ -51,6 +52,7 @@ typedef struct model_t
 	UUID name;
 	uint32 refCount;
 	real64 lifetime;
+	bool uploaded;
 	UUID materialTexture;
 	UUID opacityTexture;
 	uint32 numSubsets;

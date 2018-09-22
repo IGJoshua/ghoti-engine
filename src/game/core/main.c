@@ -96,7 +96,10 @@ int32 main(int32 argc, char *argv[])
 	unloadedScenes = createList(sizeof(Scene *));
 	savedScenes = createList(sizeof(char*));
 
-	initializeAssetManager();
+	// Fixed timestep
+	real64 dt = 1.0 / config.physicsConfig.fps;
+
+	initializeAssetManager(&dt);
 
 	dInitODE();
 
@@ -152,8 +155,6 @@ int32 main(int32 argc, char *argv[])
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
-	// Fixed timestep
-	real64 dt = 1.0 / config.physicsConfig.fps;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
@@ -361,7 +362,7 @@ void update(real64 dt, bool skipLoadedThisFrame)
 		}
 	}
 
-	updateAssetManager(dt);
+	setUpdateAssetManagerFlag();
 	uploadAssets();
 	freeAssets();
 }

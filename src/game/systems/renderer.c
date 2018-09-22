@@ -3,6 +3,7 @@
 #include "core/log.h"
 
 #include "asset_management/asset_manager_types.h"
+#include "asset_management/asset_manager.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
 #include "asset_management/texture.h"
@@ -217,6 +218,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	Model *model = getModel(modelComponent->name);
 	if (!model)
 	{
+		loadAssetAsync(ASSET_TYPE_MODEL, modelComponent->name, NULL);
 		return;
 	}
 
