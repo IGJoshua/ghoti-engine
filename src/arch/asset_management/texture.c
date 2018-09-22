@@ -29,7 +29,11 @@ int32 loadTexture(const char *filename, const char *name)
 {
 	int32 error = 0;
 
-	Texture *textureResource = getTexture(name);
+	UUID nameID = idFromName(name);
+	pthread_mutex_lock(&texturesMutex);
+	Texture *textureResource = hashMapGetData(textures, &nameID);
+	pthread_mutex_unlock(&texturesMutex);
+
 	if (!textureResource)
 	{
 		const char *textureName = strrchr(filename, '/');
@@ -184,6 +188,11 @@ Texture* getTexture(const char *name)
 		pthread_mutex_unlock(&texturesMutex);
 	}
 
+	if (texture && texture->refCount == 0)
+	{
+		texture = NULL;
+	}
+
 	return texture;
 }
 
@@ -217,7 +226,10 @@ void freeTextureData(Texture *texture)
 {
 	LOG("Freeing texture data (%s)...\n", texture->name.string);
 
-	glDeleteTextures(1, &texture->id);
+	if (texture->uploaded)
+	{
+		glDeleteTextures(1, &texture->id);
+	}
 
 	LOG("Successfully freed texture data (%s)\n", texture->name.string);
 }

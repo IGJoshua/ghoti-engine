@@ -67,6 +67,9 @@ internal pthread_cond_t updateAssetManagerCondition;
 
 internal void* updateAssetManager(void *arg);
 
+internal void addFreeModel(Model *model);
+internal void addFreeTexture(Texture *texture);
+
 void initializeAssetManager(real64 *dt) {
 	models = createHashMap(
 		sizeof(UUID),
@@ -104,8 +107,8 @@ void initializeAssetManager(real64 *dt) {
 	uploadModelsQueue = createList(sizeof(Model*));
 	uploadTexturesQueue = createList(sizeof(Texture*));
 
-	freeModelsQueue = createList(sizeof(Model*));
-	freeTexturesQueue = createList(sizeof(Texture*));
+	freeModelsQueue = createList(sizeof(Model));
+	freeTexturesQueue = createList(sizeof(Texture));
 
 	assetsChanged = false;
 	asyncAssetLoading = true;
@@ -192,7 +195,6 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&exitAssetManagerMutex);
-
 		pthread_mutex_lock(&assetsQueueMutex);
 
 		for (ListIterator listItr = listGetIterator(&assetsQueue);
@@ -255,11 +257,10 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&assetsQueueMutex);
-
 		pthread_mutex_lock(&modelsMutex);
+
 		for (HashMapIterator itr = hashMapGetIterator(models);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			!hashMapIteratorAtEnd(itr);)
 		{
 			Model *model = (Model*)hashMapIteratorGetValue(itr);
 			if (model->refCount == 0)
@@ -267,29 +268,29 @@ void* updateAssetManager(void *arg)
 				model->lifetime -= dt;
 				if (model->lifetime <= 0.0)
 				{
-					pthread_mutex_lock(&freeModelsMutex);
-					listPushBack(&freeModelsQueue, &model);
-					pthread_mutex_unlock(&freeModelsMutex);
-
-					hashMapDelete(models, &model->name);
+					addFreeModel(model);
 
 					ASSET_LOG("Model queued to be freed (%s)\n",
 							  model->name.string);
 					ASSET_LOG("Model Count: %d\n", models->count);
+
+					hashMapMoveIterator(&itr);
+					UUID modelName = model->name;
+					hashMapDelete(models, &modelName);
 				}
 			}
 			else
 			{
 				model->lifetime = config.assetsConfig.minimumModelLifetime;
+				hashMapMoveIterator(&itr);
 			}
 		}
 
 		pthread_mutex_unlock(&modelsMutex);
-
 		pthread_mutex_lock(&texturesMutex);
+
 		for (HashMapIterator itr = hashMapGetIterator(textures);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			!hashMapIteratorAtEnd(itr);)
 		{
 			Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
 			if (texture->refCount == 0)
@@ -297,25 +298,25 @@ void* updateAssetManager(void *arg)
 				texture->lifetime -= dt;
 				if (texture->lifetime <= 0.0)
 				{
-					pthread_mutex_lock(&freeTexturesMutex);
-					listPushBack(&freeTexturesQueue, &texture);
-					pthread_mutex_unlock(&freeTexturesMutex);
-
-					hashMapDelete(textures, &texture->name);
+					addFreeTexture(texture);
 
 					ASSET_LOG("Texture queued to be freed (%s)\n",
 							  texture->name.string);
 					ASSET_LOG("Texture Count: %d\n", textures->count);
+
+					hashMapMoveIterator(&itr);
+					UUID textureName = texture->name;
+					hashMapDelete(textures, &textureName);
 				}
 			}
 			else
 			{
 				texture->lifetime = config.assetsConfig.minimumTextureLifetime;
+				hashMapMoveIterator(&itr);
 			}
 		}
 
 		pthread_mutex_unlock(&texturesMutex);
-
 		pthread_mutex_lock(&updateAssetManagerMutex);
 
 		while (!updateAssetManagerFlag)
@@ -336,6 +337,7 @@ void* updateAssetManager(void *arg)
 void uploadAssets(void)
 {
 	pthread_mutex_lock(&uploadModelsMutex);
+
 	for (ListIterator listItr = listGetIterator(&uploadModelsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
@@ -349,8 +351,8 @@ void uploadAssets(void)
 	}
 
 	pthread_mutex_unlock(&uploadModelsMutex);
-
 	pthread_mutex_lock(&uploadTexturesMutex);
+
 	for (ListIterator listItr = listGetIterator(&uploadTexturesQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
@@ -369,10 +371,11 @@ void uploadAssets(void)
 void freeAssets(void)
 {
 	pthread_mutex_lock(&freeModelsMutex);
+
 	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
-		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
+		Model *model = LIST_ITERATOR_GET_ELEMENT(Model, listItr);
 
 		pthread_mutex_unlock(&freeModelsMutex);
 		freeModelData(model);
@@ -382,12 +385,12 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeModelsMutex);
-
 	pthread_mutex_lock(&freeTexturesMutex);
+
 	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
 		 !listIteratorAtEnd(listItr);)
 	{
-		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
+		Texture *texture = LIST_ITERATOR_GET_ELEMENT(Texture, listItr);
 
 		pthread_mutex_unlock(&freeTexturesMutex);
 		freeTextureData(texture);
@@ -419,7 +422,7 @@ void shutdownAssetManager(void)
 		 hashMapMoveIterator(&itr))
 	{
 		Model *model = (Model*)hashMapIteratorGetValue(itr);
-		listPushBack(&freeModelsQueue, &model);
+		addFreeModel(model);
 	}
 
 	for (HashMapIterator itr = hashMapGetIterator(textures);
@@ -427,7 +430,7 @@ void shutdownAssetManager(void)
 		 hashMapMoveIterator(&itr))
 	{
 		Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
-		listPushBack(&freeTexturesQueue, &texture);
+		addFreeTexture(texture);
 	}
 
 	for (ListIterator listItr = listGetIterator(&assetsQueue);
@@ -444,7 +447,7 @@ void shutdownAssetManager(void)
 		 listMoveIterator(&listItr))
 	{
 		Model *model = *LIST_ITERATOR_GET_ELEMENT(Model*, listItr);
-		listPushBack(&freeModelsQueue, &model);
+		addFreeModel(model);
 	}
 
 	for (ListIterator listItr = listGetIterator(&uploadTexturesQueue);
@@ -452,7 +455,7 @@ void shutdownAssetManager(void)
 		 listMoveIterator(&listItr))
 	{
 		Texture *texture = *LIST_ITERATOR_GET_ELEMENT(Texture*, listItr);
-		listPushBack(&freeTexturesQueue, &texture);
+		addFreeTexture(texture);
 	}
 
 	listClear(&uploadModelsQueue);
@@ -461,7 +464,7 @@ void shutdownAssetManager(void)
 	freeAssets();
 
 	listClear(&freeModelsQueue);
-	listClear(&freeModelsQueue);
+	listClear(&freeTexturesQueue);
 
 	freeHashMap(&models);
 	freeHashMap(&textures);
@@ -515,4 +518,54 @@ void setAsyncAssetLoading(bool async)
 	pthread_mutex_lock(&asyncAssetLoadingMutex);
 	asyncAssetLoading = async;
 	pthread_mutex_unlock(&asyncAssetLoadingMutex);
+}
+
+void addFreeModel(Model *model)
+{
+	bool duplicate = false;
+
+	pthread_mutex_lock(&freeModelsMutex);
+	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Model *freeModel = LIST_ITERATOR_GET_ELEMENT(Model, listItr);
+		if (!strcmp(freeModel->name.string, model->name.string))
+		{
+			duplicate = true;
+			break;
+		}
+	}
+
+	if (!duplicate)
+	{
+		listPushBack(&freeModelsQueue, model);
+	}
+
+	pthread_mutex_unlock(&freeModelsMutex);
+}
+
+void addFreeTexture(Texture *texture)
+{
+	bool duplicate = false;
+
+	pthread_mutex_lock(&freeTexturesMutex);
+	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Texture *freeTexture = LIST_ITERATOR_GET_ELEMENT(Texture, listItr);
+		if (!strcmp(freeTexture->name.string, texture->name.string))
+		{
+			duplicate = true;
+			break;
+		}
+	}
+
+	if (!duplicate)
+	{
+		listPushBack(&freeTexturesQueue, texture);
+	}
+
+	pthread_mutex_unlock(&freeTexturesMutex);
 }
