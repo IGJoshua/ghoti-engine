@@ -26,7 +26,11 @@ int32 loadModel(const char *name)
 {
 	int32 error = 0;
 
-	Model *modelResource = getModel(name);
+	UUID nameID = idFromName(name);
+	pthread_mutex_lock(&modelsMutex);
+	Model *modelResource = hashMapGetData(models, &nameID);
+	pthread_mutex_unlock(&modelsMutex);
+
 	if (!modelResource)
 	{
 		Model model = {};
@@ -184,6 +188,11 @@ Model* getModel(const char *name)
 		pthread_mutex_unlock(&modelsMutex);
 	}
 
+	if (model && model->refCount == 0)
+	{
+		model = NULL;
+	}
+
 	return model;
 }
 
@@ -210,9 +219,12 @@ void freeModelData(Model *model)
 {
 	LOG("Freeing model data (%s)...\n", model->name.string);
 
-	for (uint32 i = 0; i < model->numSubsets; i++)
+	if (model->uploaded)
 	{
-		freeMesh(&model->subsets[i].mesh);
+		for (uint32 i = 0; i < model->numSubsets; i++)
+		{
+			freeMesh(&model->subsets[i].mesh);
+		}
 	}
 
 	free(model->subsets);

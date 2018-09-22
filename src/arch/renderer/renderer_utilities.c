@@ -87,7 +87,7 @@ void activateMaterialTextures(Material *material, GLint *textureIndex)
 void activateTexture(UUID name, GLint *textureIndex)
 {
 	Texture *texture = getTexture(name.string);
-	if (texture)
+	if (texture && texture->uploaded)
 	{
 		glActiveTexture(GL_TEXTURE0 + *textureIndex);
 		glBindTexture(GL_TEXTURE_2D, texture->id);

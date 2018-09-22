@@ -321,7 +321,7 @@ void drawCollisionPrimitives(
 	}
 
 	Model *model = getModel(modelName);
-	if (!model)
+	if (!model || !model->uploaded)
 	{
 		return;
 	}
@@ -401,6 +401,11 @@ void drawCollisionPrimitives(
 			entity);
 
 		model = getModel(HEMISPHERE_MODEL_NAME);
+
+		if (!model || !model->uploaded)
+		{
+			return;
+		}
 
 		kmVec3Fill(
 			&scale,

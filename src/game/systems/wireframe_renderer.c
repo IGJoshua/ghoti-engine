@@ -225,7 +225,7 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		modelComponentID);
 
 	Model *model = getModel(modelComponent->name);
-	if (!model)
+	if (!model || !model->uploaded)
 	{
 		return;
 	}

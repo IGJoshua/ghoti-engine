@@ -135,6 +135,11 @@ internal void runAnimationSystem(Scene *scene, UUID entityID, real64 dt)
 
 		if (!animationReference->currentAnimation)
 		{
+			if (strlen(animator->currentAnimation) > 0)
+			{
+				return;
+			}
+
 			if (nextAnimation)
 			{
 				playAnimation(

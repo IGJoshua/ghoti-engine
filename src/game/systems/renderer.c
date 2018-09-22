@@ -222,6 +222,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
+	if (!model->uploaded)
+	{
+		return;
+	}
+
 	if (!modelComponent->visible)
 	{
 		return;
