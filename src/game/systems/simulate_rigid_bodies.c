@@ -80,9 +80,7 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			node2->collisionVolume,
 			rigidBodyComponentID);
 
-		// FIXME: This should not collide if both bodies are kinematic
-		if ((node1->isTrigger && node2->isTrigger)
-			|| ((body1 && !body1->dynamic) && (body2 && !body2->dynamic)))
+		if (!body1 || !body2 || (node1->isTrigger && node2->isTrigger))
 		{
 			return;
 		}
