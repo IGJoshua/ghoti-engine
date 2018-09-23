@@ -20,6 +20,9 @@
 extern HashMap models;
 extern pthread_mutex_t modelsMutex;
 
+extern HashMap uploadModelsQueue;
+extern pthread_mutex_t uploadModelsMutex;
+
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
 
 int32 loadModel(const char *name)
@@ -34,6 +37,16 @@ int32 loadModel(const char *name)
 	if (!modelResource)
 	{
 		pthread_mutex_unlock(&modelsMutex);
+
+		pthread_mutex_lock(&uploadModelsMutex);
+
+		if (hashMapGetData(uploadModelsQueue, &modelName))
+		{
+			pthread_mutex_unlock(&uploadModelsMutex);
+			return 0;
+		}
+
+		pthread_mutex_unlock(&uploadModelsMutex);
 
 		Model model = {};
 
@@ -135,14 +148,11 @@ int32 loadModel(const char *name)
 
 		if (error != -1)
 		{
-			pthread_mutex_lock(&modelsMutex);
-
-			hashMapInsert(models, &model.name, &model);
+			pthread_mutex_lock(&uploadModelsMutex);
+			hashMapInsert(uploadModelsQueue, &modelName, &model);
+			pthread_mutex_unlock(&uploadModelsMutex);
 
 			ASSET_LOG("Successfully loaded model (%s)\n", name);
-			ASSET_LOG("Model Count: %d\n", models->count);
-
-			pthread_mutex_unlock(&modelsMutex);
 		}
 		else
 		{

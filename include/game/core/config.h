@@ -26,12 +26,13 @@ typedef struct graphics_config_t
 
 typedef struct assets_config_t
 {
-	real64 minimumAudioLifetime;
-	real64 minimumFontLifetime;
-	real64 minimumImageLifetime;
-	real64 minimumTextureLifetime;
-	real64 minimumModelLifetime;
-	real64 minimumParticleLifetime;
+	real64 minAudioLifetime;
+	real64 minFontLifetime;
+	real64 minImageLifetime;
+	real64 minTextureLifetime;
+	real64 minModelLifetime;
+	real64 minParticleLifetime;
+	uint32 maxThreadCount;
 } AssetsConfig;
 
 typedef struct log_config_t

@@ -28,6 +28,15 @@ HashMap images;
 HashMap audioFiles;
 HashMap particles;
 
+HashMap uploadModelsQueue;
+pthread_mutex_t uploadModelsMutex;
+
+HashMap uploadTexturesQueue;
+pthread_mutex_t uploadTexturesMutex;
+
+uint32 assetThreadCount;
+pthread_mutex_t assetThreadsMutex;
+pthread_cond_t assetThreadsCondition;
 
 bool assetsChanged;
 

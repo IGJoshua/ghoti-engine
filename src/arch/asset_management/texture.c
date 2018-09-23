@@ -20,6 +20,9 @@
 extern HashMap textures;
 extern pthread_mutex_t texturesMutex;
 
+extern HashMap uploadTexturesQueue;
+extern pthread_mutex_t uploadTexturesMutex;
+
 #define NUM_TEXTURE_FILE_FORMATS 7
 internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
 	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
@@ -37,6 +40,16 @@ int32 loadTexture(const char *filename, const char *name)
 	if (!textureResource)
 	{
 		pthread_mutex_unlock(&texturesMutex);
+
+		pthread_mutex_lock(&uploadTexturesMutex);
+
+		if (hashMapGetData(uploadTexturesQueue, &nameID))
+		{
+			pthread_mutex_unlock(&uploadTexturesMutex);
+			return 0;
+		}
+
+		pthread_mutex_unlock(&uploadTexturesMutex);
 
 		const char *textureName = strrchr(filename, '/');
 		if (!textureName)
@@ -64,19 +77,11 @@ int32 loadTexture(const char *filename, const char *name)
 
 		if (error != - 1)
 		{
-			error = uploadTextureToGPU(&texture);
+			pthread_mutex_lock(&uploadTexturesMutex);
+			hashMapInsert(uploadTexturesQueue, &nameID, &texture);
+			pthread_mutex_unlock(&uploadTexturesMutex);
 
-			if (error != -1)
-			{
-				pthread_mutex_lock(&texturesMutex);
-
-				hashMapInsert(textures, &texture.name, &texture);
-
-				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
-				ASSET_LOG("Texture Count: %d\n", textures->count);
-
-				pthread_mutex_unlock(&texturesMutex);
-			}
+			ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
 		}
 	}
 	else

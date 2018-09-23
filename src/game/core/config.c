@@ -75,69 +75,74 @@ int32 loadConfig(void)
 
 	if (assets)
 	{
-		cJSON *minimumAudioLifetime = cJSON_GetObjectItem(
+		cJSON *minAudioLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_audio_lifetime");
-		config.assetsConfig.minimumAudioLifetime =
-			minimumAudioLifetime->valuedouble;
+		config.assetsConfig.minAudioLifetime =
+			minAudioLifetime->valuedouble;
 
-		cJSON *minimumFontLifetime = cJSON_GetObjectItem(
+		cJSON *minFontLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_font_lifetime");
-		config.assetsConfig.minimumFontLifetime =
-			minimumFontLifetime->valuedouble;
+		config.assetsConfig.minFontLifetime =
+			minFontLifetime->valuedouble;
 
-		cJSON *minimumImageLifetime = cJSON_GetObjectItem(
+		cJSON *minImageLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_image_lifetime");
-		config.assetsConfig.minimumImageLifetime =
-			minimumImageLifetime->valuedouble;
+		config.assetsConfig.minImageLifetime =
+			minImageLifetime->valuedouble;
 
-		cJSON *minimumTextureLifetime = cJSON_GetObjectItem(
+		cJSON *minTextureLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_texture_lifetime");
-		config.assetsConfig.minimumTextureLifetime =
-			minimumTextureLifetime->valuedouble;
+		config.assetsConfig.minTextureLifetime =
+			minTextureLifetime->valuedouble;
 
-		cJSON *minimumModelLifetime = cJSON_GetObjectItem(
+		cJSON *minModelLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_model_lifetime");
-		config.assetsConfig.minimumModelLifetime =
-			minimumModelLifetime->valuedouble;
+		config.assetsConfig.minModelLifetime =
+			minModelLifetime->valuedouble;
 
-		cJSON *minimumParticleLifetime = cJSON_GetObjectItem(
+		cJSON *minParticleLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_particle_lifetime");
-		config.assetsConfig.minimumParticleLifetime =
-			minimumParticleLifetime->valuedouble;
+		config.assetsConfig.minParticleLifetime =
+			minParticleLifetime->valuedouble;
+
+		cJSON *maxThreadCount = cJSON_GetObjectItem(
+			assets,
+			"maximum_thread_count");
+		config.assetsConfig.maxThreadCount = maxThreadCount->valueint;
 	}
 
-	cJSON *logging = cJSON_GetObjectItem(json, "logging");
+	cJSON *log = cJSON_GetObjectItem(json, "log");
 
-	if (logging)
+	if (log)
 	{
 		free(config.logConfig.engineFile);
 		free(config.logConfig.assetManagerFile);
 		free(config.logConfig.luaFile);
 
-		cJSON *loggingEngineFile = cJSON_GetObjectItem(logging, "engine_file");
+		cJSON *engineFile = cJSON_GetObjectItem(log, "engine_file");
 		config.logConfig.engineFile = malloc(
-			strlen(loggingEngineFile->valuestring) + 1);
-		strcpy(config.logConfig.engineFile, loggingEngineFile->valuestring);
+			strlen(engineFile->valuestring) + 1);
+		strcpy(config.logConfig.engineFile, engineFile->valuestring);
 
-		cJSON *loggingAssetManagerFile = cJSON_GetObjectItem(
-			logging,
+		cJSON *assetManagerFile = cJSON_GetObjectItem(
+			log,
 			"asset_manager_file");
 		config.logConfig.assetManagerFile = malloc(
-			strlen(loggingAssetManagerFile->valuestring) + 1);
+			strlen(assetManagerFile->valuestring) + 1);
 		strcpy(
 			config.logConfig.assetManagerFile,
-			loggingAssetManagerFile->valuestring);
+			assetManagerFile->valuestring);
 
-		cJSON *loggingLuaFile = cJSON_GetObjectItem(logging, "lua_file");
+		cJSON *luaFile = cJSON_GetObjectItem(log, "lua_file");
 		config.logConfig.luaFile = malloc(
-			strlen(loggingLuaFile->valuestring) + 1);
-		strcpy(config.logConfig.luaFile, loggingLuaFile->valuestring);
+			strlen(luaFile->valuestring) + 1);
+		strcpy(config.logConfig.luaFile, luaFile->valuestring);
 	}
 
 	cJSON *saves = cJSON_GetObjectItem(json, "saves");
@@ -188,12 +193,13 @@ void initializeDefaultConfig(void)
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
 
-	config.assetsConfig.minimumAudioLifetime = 60.0;
-	config.assetsConfig.minimumFontLifetime = 60.0;
-	config.assetsConfig.minimumImageLifetime = 60.0;
-	config.assetsConfig.minimumTextureLifetime = 60.0;
-	config.assetsConfig.minimumModelLifetime = 60.0;
-	config.assetsConfig.minimumParticleLifetime = 60.0;
+	config.assetsConfig.minAudioLifetime = 60.0;
+	config.assetsConfig.minFontLifetime = 60.0;
+	config.assetsConfig.minImageLifetime = 60.0;
+	config.assetsConfig.minTextureLifetime = 60.0;
+	config.assetsConfig.minModelLifetime = 60.0;
+	config.assetsConfig.minParticleLifetime = 60.0;
+	config.assetsConfig.maxThreadCount = 4;
 
 	config.logConfig.engineFile = malloc(11);
 	strcpy(config.logConfig.engineFile, "engine.log");

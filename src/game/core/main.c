@@ -363,6 +363,7 @@ void update(real64 dt, bool skipLoadedThisFrame)
 	}
 
 	setUpdateAssetManagerFlag();
+	uploadAssets();
 	freeAssets();
 }
 
