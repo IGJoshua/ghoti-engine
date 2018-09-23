@@ -163,7 +163,7 @@
 
 			{
 				"name": "moment of inertia type",
-				"enum": 0
+				"enum": 2
 			},
 
 			{

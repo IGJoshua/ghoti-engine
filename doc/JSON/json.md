@@ -622,7 +622,7 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 			{
 				"name": "moment of inertia type",
-				"enum": 0
+				"enum": 2
 			},
 
 			{

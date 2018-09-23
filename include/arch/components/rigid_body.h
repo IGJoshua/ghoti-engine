@@ -7,6 +7,11 @@
 #include "components/component_types.h"
 
 void registerRigidBody(Scene *scene, UUID entity);
+void createCollisionGeoms(
+	Scene *scene,
+	TransformComponent *bodyTrans,
+	RigidBodyComponent *body,
+	CollisionComponent *coll);
 void destroyRigidBody(RigidBodyComponent *body);
 
 void updateRigidBodyPosition(
