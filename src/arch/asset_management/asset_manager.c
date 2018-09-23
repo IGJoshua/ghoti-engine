@@ -3,6 +3,7 @@
 #include "asset_management/model.h"
 #include "asset_management/texture.h"
 #include "asset_management/font.h"
+#include "asset_management/audio.h"
 
 #include "components/component_types.h"
 
@@ -28,6 +29,7 @@ extern pthread_mutex_t materialFoldersMutex;
 
 extern HashMap fonts;
 extern HashMap images;
+extern HashMap audioFiles;
 extern HashMap particles;
 
 extern HashMap loadingModels;
@@ -96,6 +98,11 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(UUID),
 		sizeof(Image),
 		IMAGES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	audioFiles = createHashMap(
+		sizeof(UUID),
+		sizeof(AudioFile),
+		AUDIO_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	particles = createHashMap(
 		sizeof(UUID),
@@ -494,5 +501,16 @@ void shutdownAssetManager(void)
 
 	freeHashMap(&fonts);
 	freeHashMap(&images);
+
+	for (HashMapIterator itr = hashMapGetIterator(audioFiles);
+		!hashMapIteratorAtEnd(itr);)
+	{
+		AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
+		hashMapMoveIterator(&itr);
+		freeAudio(audio);
+	}
+
+	freeHashMap(&audioFiles);
+
 	freeHashMap(&particles);
 }

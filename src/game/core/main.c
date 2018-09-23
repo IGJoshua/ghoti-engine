@@ -1,26 +1,26 @@
 #include "defines.h"
 
+#include "asset_management/asset_manager.h"
+
+#include "audio/audio.h"
+
+#include "components/component_types.h"
+
 #include "core/log.h"
 #include "core/config.h"
 #include "core/window.h"
 #include "core/input.h"
 
-#include "asset_management/asset_manager.h"
+#include "data/data_types.h"
+#include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
 #include "file/utilities.h"
 
-#include "components/component_types.h"
-
 #include "systems.h"
-
-#include "data/data_types.h"
-#include "data/list.h"
-#include "data/hash_map.h"
-
-#include "audio/audio.h"
 
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -91,6 +91,14 @@ int32 main(int32 argc, char *argv[])
 		freeConfig();
 		freeWindow(window);
 		return err;
+	}
+
+	if (initAudio() == -1)
+	{
+		freeConfig();
+		freeWindow(window);
+		shutdownInput();
+		return -1;
 	}
 
 	activeScenes = createList(sizeof(Scene*));
@@ -296,6 +304,7 @@ int32 main(int32 argc, char *argv[])
 	shutdownAssetManager();
 	dCloseODE();
 	shutdownInput();
+	shutdownAudio();
 	freeWindow(window);
 	shutdownAssetLog();
 	freeConfig();

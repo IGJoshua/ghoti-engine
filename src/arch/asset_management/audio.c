@@ -1,6 +1,8 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/audio.h"
 
+#include "audio/audio.h"
+
 #include "core/log.h"
 
 #include "file/utilities.h"
@@ -9,28 +11,23 @@
 #include "data/hash_map.h"
 
 #include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <AL/efx-creative.h>
-#include <AL/efx.h>
-#include <AL/efx-presets.h>
 
 #include <stb/stb_vorbis.c>
 
 #include "ECS/scene.h"
 
 extern HashMap audioFiles;
-ALuint *g_Buffers = 0;
-ALenum errorCode = 0;
-uint64 freeBuffer = 0;
-uint64 NUM_BUFF = 32;
+extern ALuint *g_Buffers;
+
+internal ALenum errorCode = 0;
+internal uint64 freeBuffer = 0;
 
 int32 loadAudio(const char *name)
 {
     AudioFile * existingAudio = getAudio(name);
     if(!existingAudio)
     {
-        if (freeBuffer >= NUM_BUFF)
+        if (freeBuffer >= NUM_AUDIO_BUFF)
         {
             LOG("Unable to load %s.ogg. Too few buffers\n", name);
             return -1;

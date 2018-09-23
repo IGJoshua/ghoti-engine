@@ -4,6 +4,8 @@
 
 #include "asset_management/audio.h"
 
+#include "audio/audio.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -15,25 +17,9 @@
 #include "components/audio.h"
 
 #include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <AL/efx-creative.h>
-#include <AL/efx.h>
-#include <AL/efx-presets.h>
 
-
-extern ALCdevice *device;
-extern ALCcontext *context;
-extern ALCboolean g_bEAX;
 extern ALuint *g_Buffers;
-ALuint *g_Sources = 0;
-extern ALenum errorCode;
-
-extern uint64 freeBuffer;
-extern uint64 NUM_BUFF;
-uint64 NUM_SRC = 32;
-
-bool system_setup;
+extern ALuint *g_Sources;
 
 void playSoundAtSource(
 	AudioSourceComponent *audioSource,
@@ -80,7 +66,7 @@ void queueSoundAtSource(
         1,
         &g_Buffers[audioData->id]);
 
-    errorCode = alGetError();
+    ALenum errorCode = alGetError();
     if (errorCode != AL_NO_ERROR)
     {
         LOG("OpenAL ERROR: unable to queue : %s\n", alGetString(errorCode));
@@ -122,15 +108,15 @@ bool isSourceActive(AudioSourceComponent *audioSource)
 
 void pauseAllAudio(void)
 {
-    alSourcePausev(NUM_SRC, g_Sources);
+    alSourcePausev(NUM_AUDIO_SRC, g_Sources);
 }
 
 void stopAllAudio(void)
 {
-    alSourceStopv(NUM_SRC, g_Sources);
+    alSourceStopv(NUM_AUDIO_SRC, g_Sources);
 }
 
 void playAllAudio(void)
 {
-    alSourcePlayv(NUM_SRC, g_Sources);
+    alSourcePlayv(NUM_AUDIO_SRC, g_Sources);
 }

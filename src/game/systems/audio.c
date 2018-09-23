@@ -4,6 +4,8 @@
 
 #include "asset_management/audio.h"
 
+#include "audio/audio.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -16,31 +18,16 @@
 #include "components/audio.h"
 
 #include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <AL/efx-creative.h>
-#include <AL/efx.h>
-#include <AL/efx-presets.h>
-
-#define AUDIO_BUCKET_COUNT 101
 
 internal UUID transformComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID audioManagerComponentID = {};
 internal UUID audioSourceComponentID = {};
 
-ALCdevice *device = NULL;
-ALCcontext *context = NULL;
-ALCboolean g_bEAX = 0;
-extern ALuint *g_Buffers;
-extern ALuint *g_Sources;
-extern ALenum errorCode;
-extern uint64 freeBuffer;
-extern uint64 NUM_BUFF;
-extern uint64 NUM_SRC;
 uint32 audioSystemRefCount = 0;
 
-extern HashMap audioFiles;
+extern ALuint *g_Sources;
+
 extern Scene *listenerScene;
 
 internal
@@ -48,56 +35,6 @@ void initAudioSystem(Scene *scene)
 {
 	if (audioSystemRefCount == 0)
 	{
-		//Init
-		device = alcOpenDevice(NULL);
-
-		if (device)
-		{
-			context = alcCreateContext(device, NULL);
-
-			if (context)
-			{
-				alcMakeContextCurrent(context);
-			}
-			else
-			{
-				LOG("Could not create a context\n");
-				return;
-			}
-		}
-		else
-		{
-			LOG("Could not create device\n");
-			return;
-		}
-
-		//Check for EAX 2.0
-		g_bEAX = alIsExtensionPresent("EAX2.0");
-
-		//Create Buffers
-		alGetError();
-
-		g_Buffers = malloc(sizeof(ALuint)*NUM_BUFF);
-		alGenBuffers(NUM_BUFF, g_Buffers);
-
-		errorCode = alGetError();
-		if (errorCode != AL_NO_ERROR)
-		{
-			LOG("alGenBuffers has errored: %s\n", alGetString(errorCode));
-			return;
-		}
-
-		// Generate Sources
-		g_Sources = malloc(sizeof(ALuint)*NUM_SRC);
-		alGenSources(NUM_SRC, g_Sources);
-
-		errorCode = alGetError();
-		if (errorCode != AL_NO_ERROR)
-		{
-			LOG("alGenSources has errored : %s\n", alGetString(errorCode));
-			return;
-		}
-
 		if (!listenerScene)
 		{
 			listenerScene = scene;
@@ -147,12 +84,6 @@ void initAudioSystem(Scene *scene)
 			listenerVel[2] = camRigid->velocity.z;
 		}
 		alListenerfv(AL_VELOCITY,listenerVel);
-
-		audioFiles = createHashMap(
-			sizeof(UUID),
-			sizeof(AudioFile),
-			AUDIO_BUCKET_COUNT,
-			(ComparisonOp)&strcmp);
 	}
 
 	audioSystemRefCount++;
@@ -175,7 +106,7 @@ void beginAudioSystem(Scene *scene, real64 dt)
 			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &audioSourceComponentID));
-		 !cdtIteratorAtEnd(itr) && sourceID < NUM_SRC;
+		 !cdtIteratorAtEnd(itr) && sourceID < NUM_AUDIO_SRC;
 		 cdtMoveIterator(&itr), sourceID++)
     {
         UUID entityID = cdtIteratorGetUUID(itr);
@@ -332,24 +263,7 @@ void shutdownAudioSystem(Scene *scene)
 {
 	if (--audioSystemRefCount == 0)
 	{
-		alSourceStopv(NUM_SRC, g_Sources);
-		alDeleteBuffers(NUM_BUFF, g_Buffers);
-		free(g_Buffers);
-		alDeleteSources(NUM_SRC, g_Sources);
-		free(g_Sources);
-		alcMakeContextCurrent(NULL);
-		alcDestroyContext(context);
-		alcCloseDevice(device);
-
-		for (HashMapIterator itr = hashMapGetIterator(audioFiles);
-			!hashMapIteratorAtEnd(itr);)
-		{
-			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
-			hashMapMoveIterator(&itr);
-			freeAudio(audio);
-		}
-
-		freeHashMap(&audioFiles);
+		stopAllAudio();
 	}
 }
 
