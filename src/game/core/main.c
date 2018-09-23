@@ -362,10 +362,8 @@ void update(real64 dt, bool skipLoadedThisFrame)
 		}
 	}
 
-	// TODO: Add stuff here
-	// setUpdateAssetManagerFlag();
-	// uploadAssets();
-	// freeAssets();
+	setUpdateAssetManagerFlag();
+	freeAssets();
 }
 
 void draw(GLFWwindow *window, real64 frameTime)

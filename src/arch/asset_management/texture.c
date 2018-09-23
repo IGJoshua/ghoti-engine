@@ -15,8 +15,10 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 extern HashMap textures;
+extern pthread_mutex_t texturesMutex;
 
 #define NUM_TEXTURE_FILE_FORMATS 7
 internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
@@ -27,9 +29,15 @@ int32 loadTexture(const char *filename, const char *name)
 {
 	int32 error = 0;
 
-	Texture *textureResource = getTexture(name);
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&texturesMutex);
+	Texture *textureResource = hashMapGetData(textures, &nameID);
+
 	if (!textureResource)
 	{
+		pthread_mutex_unlock(&texturesMutex);
+
 		const char *textureName = strrchr(filename, '/');
 		if (!textureName)
 		{
@@ -44,7 +52,7 @@ int32 loadTexture(const char *filename, const char *name)
 
 		Texture texture = {};
 
-		texture.name = idFromName(name);
+		texture.name = nameID;
 		texture.refCount = 1;
 
 		error = loadTextureData(
@@ -60,16 +68,21 @@ int32 loadTexture(const char *filename, const char *name)
 
 			if (error != -1)
 			{
+				pthread_mutex_lock(&texturesMutex);
+
 				hashMapInsert(textures, &texture.name, &texture);
 
 				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
 				ASSET_LOG("Texture Count: %d\n", textures->count);
+
+				pthread_mutex_unlock(&texturesMutex);
 			}
 		}
 	}
 	else
 	{
 		textureResource->refCount++;
+		pthread_mutex_unlock(&texturesMutex);
 	}
 
 	return error;
@@ -169,13 +182,21 @@ int32 uploadTextureToGPU(Texture *texture)
 	return error;
 }
 
-Texture* getTexture(const char *name)
+Texture getTexture(const char *name)
 {
-	Texture *texture = NULL;
+	Texture texture = {};
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
-		texture = hashMapGetData(textures, &nameID);
+
+		pthread_mutex_lock(&texturesMutex);
+		Texture *textureResource = hashMapGetData(textures, &nameID);
+		pthread_mutex_unlock(&texturesMutex);
+
+		if (textureResource)
+		{
+			texture = *textureResource;
+		}
 	}
 
 	return texture;
@@ -200,11 +221,14 @@ char* getFullTextureFilename(const char *filename)
 
 void freeTexture(UUID name)
 {
+	pthread_mutex_lock(&texturesMutex);
 	Texture *texture = (Texture*)hashMapGetData(textures, &name);
 	if (texture)
 	{
 		texture->refCount--;
 	}
+
+	pthread_mutex_unlock(&texturesMutex);
 }
 
 void freeTextureData(Texture *texture)

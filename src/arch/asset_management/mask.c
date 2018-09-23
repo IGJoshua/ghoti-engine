@@ -13,8 +13,6 @@
 #include <malloc.h>
 #include <string.h>
 
-extern HashMap textures;
-
 void loadMask(Mask *mask, FILE *file)
 {
 	ASSET_LOG("Loading masks...\n");

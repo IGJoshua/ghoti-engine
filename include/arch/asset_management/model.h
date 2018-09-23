@@ -5,7 +5,7 @@
 
 int32 loadModel(const char *name);
 void uploadModelToGPU(Model *model);
-Model* getModel(const char *name);
+Model getModel(const char *name);
 void freeModel(const char *name);
 void freeModelData(Model *model);
 

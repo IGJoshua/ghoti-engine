@@ -10,7 +10,9 @@
 #define IMAGES_BUCKET_COUNT 1031
 #define PARTICLES_BUCKET_COUNT 1031
 
-void initializeAssetManager(void);
-void activateAssetsChangedFlag(void);
-void updateAssetManager(real64 dt);
+void initializeAssetManager(real64 *dt);
+void setUpdateAssetManagerFlag(void);
+void freeAssets(void);
 void shutdownAssetManager(void);
+
+void activateAssetsChangedFlag(void);

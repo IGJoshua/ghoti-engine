@@ -15,24 +15,31 @@
 
 #include "ECS/scene.h"
 
+#include <pthread.h>
+
 extern HashMap models;
-extern HashMap textures;
+extern pthread_mutex_t modelsMutex;
 
 internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
-internal void freeSubset(Subset *subset);
 
 int32 loadModel(const char *name)
 {
 	int32 error = 0;
 
-	Model *modelResource = getModel(name);
+	UUID modelName = idFromName(name);
+
+	pthread_mutex_lock(&modelsMutex);
+	Model *modelResource = hashMapGetData(models, &modelName);
+
 	if (!modelResource)
 	{
+		pthread_mutex_unlock(&modelsMutex);
+
 		Model model = {};
 
 		ASSET_LOG("Loading model (%s)...\n", name);
 
-		model.name = idFromName(name);
+		model.name = modelName;
 		model.refCount = 1;
 
 		char *modelFolder = getFullFilePath(name, NULL, "resources/models");
@@ -128,10 +135,14 @@ int32 loadModel(const char *name)
 
 		if (error != -1)
 		{
+			pthread_mutex_lock(&modelsMutex);
+
 			hashMapInsert(models, &model.name, &model);
 
 			ASSET_LOG("Successfully loaded model (%s)\n", name);
 			ASSET_LOG("Model Count: %d\n", models->count);
+
+			pthread_mutex_unlock(&modelsMutex);
 		}
 		else
 		{
@@ -141,6 +152,7 @@ int32 loadModel(const char *name)
 	else
 	{
 		modelResource->refCount++;
+		pthread_mutex_unlock(&modelsMutex);
 	}
 
 	return error;
@@ -165,13 +177,22 @@ void uploadModelToGPU(Model *model)
 	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
 }
 
-Model* getModel(const char *name)
+Model getModel(const char *name)
 {
-	Model *model = NULL;
+	Model model = {};
+
 	if (strlen(name) > 0)
 	{
 		UUID nameID = idFromName(name);
-		model = hashMapGetData(models, &nameID);
+
+		pthread_mutex_lock(&modelsMutex);
+		Model *modelResource = hashMapGetData(models, &nameID);
+		pthread_mutex_unlock(&modelsMutex);
+
+		if (modelResource)
+		{
+			model = *modelResource;
+		}
 	}
 
 	return model;
@@ -179,7 +200,11 @@ Model* getModel(const char *name)
 
 void freeModel(const char *name)
 {
-	Model *model = getModel(name);
+	UUID modelName = idFromName(name);
+
+	pthread_mutex_lock(&modelsMutex);
+	Model *model = hashMapGetData(models, &modelName);
+
 	if (model)
 	{
 		freeTexture(model->materialTexture);
@@ -194,6 +219,8 @@ void freeModel(const char *name)
 
 		model->refCount--;
 	}
+
+	pthread_mutex_unlock(&modelsMutex);
 }
 
 void freeModelData(Model *model)
@@ -220,23 +247,27 @@ void swapMeshMaterial(
 	const char *meshName,
 	const char *materialName)
 {
-	Model *model = getModel(modelName);
-	if (!model)
-	{
-		return;
-	}
+	UUID name = idFromName(modelName);
 
-	for (uint32 i = 0; i < model->numSubsets; i++)
+	pthread_mutex_lock(&modelsMutex);
+	Model *model = hashMapGetData(models, &name);
+
+	if (model)
 	{
-		Subset *subset = &model->subsets[i];
-		if (!strcmp(subset->name.string, meshName))
+		for (uint32 i = 0; i < model->numSubsets; i++)
 		{
-			Material *material = &subset->material;
-			freeMaterial(material);
-			createMaterial(idFromName(materialName), material);
-			return;
+			Subset *subset = &model->subsets[i];
+			if (!strcmp(subset->name.string, meshName))
+			{
+				Material *material = &subset->material;
+				freeMaterial(material);
+				createMaterial(idFromName(materialName), material);
+				return;
+			}
 		}
 	}
+
+	pthread_mutex_unlock(&modelsMutex);
 }
 
 int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)

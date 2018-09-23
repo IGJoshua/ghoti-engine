@@ -20,6 +20,8 @@ void loadMesh(Mesh *mesh, FILE *file)
 	mesh->indices = calloc(mesh->numIndices, sizeof(uint32));
 	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
+	uploadMeshToGPU(mesh);
+
 	ASSET_LOG("Successfully loaded mesh\n");
 }
 

@@ -15,7 +15,6 @@
 
 #include <string.h>
 
-extern HashMap textures;
 extern HashMap materialFolders;
 
 internal const char materialComponentCharacters[] = {

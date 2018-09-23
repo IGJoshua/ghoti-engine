@@ -86,11 +86,11 @@ void activateMaterialTextures(Material *material, GLint *textureIndex)
 
 void activateTexture(UUID name, GLint *textureIndex)
 {
-	Texture *texture = getTexture(name.string);
-	if (texture)
+	Texture texture = getTexture(name.string);
+	if (strlen(texture.name.string) > 0)
 	{
 		glActiveTexture(GL_TEXTURE0 + *textureIndex);
-		glBindTexture(GL_TEXTURE_2D, texture->id);
+		glBindTexture(GL_TEXTURE_2D, texture.id);
 	}
 
 	(*textureIndex)++;
