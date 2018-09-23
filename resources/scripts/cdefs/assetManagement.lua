@@ -13,6 +13,4 @@ void freeFont(void *font);
 
 int32 loadAudio(const char *name);
 
-void activateAssetsChangedFlag(void);
-
 ]]

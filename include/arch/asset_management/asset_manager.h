@@ -21,5 +21,3 @@ void setUpdateAssetManagerFlag(void);
 void uploadAssets(void);
 void freeAssets(void);
 void shutdownAssetManager(void);
-
-void activateAssetsChangedFlag(void);

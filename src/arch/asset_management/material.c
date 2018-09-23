@@ -14,8 +14,10 @@
 #include "ECS/scene.h"
 
 #include <string.h>
+#include <pthread.h>
 
 extern HashMap materialFolders;
+extern pthread_mutex_t materialFoldersMutex;
 
 internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
@@ -117,8 +119,11 @@ void freeMaterial(Material *material)
 
 void loadMaterialFolders(UUID name)
 {
+	pthread_mutex_lock(&materialFoldersMutex);
 	if (!hashMapGetData(materialFolders, &name))
 	{
+		pthread_mutex_unlock(&materialFoldersMutex);
+
 		List materialNames = createList(sizeof(UUID));
 
 		UUID fullMaterialName = name;
@@ -192,11 +197,14 @@ void loadMaterialFolders(UUID name)
 		listClear(&materialNames);
 		free(materialFolderPath);
 
+		pthread_mutex_lock(&materialFoldersMutex);
 		hashMapInsert(
 			materialFolders,
 			&fullMaterialName,
 			&materialFoldersList);
 	}
+
+	pthread_mutex_unlock(&materialFoldersMutex);
 }
 
 int32 loadMaterialComponentTexture(
@@ -206,12 +214,12 @@ int32 loadMaterialComponentTexture(
 {
 	memset(textureName, 0, sizeof(UUID));
 
-	List *materialFoldersList = (List*)hashMapGetData(
+	List materialFoldersList = *(List*)hashMapGetData(
 		materialFolders,
 		&materialName);
 
 	char *fullFilename = NULL;
-	for (ListIterator itr = listGetIterator(materialFoldersList);
+	for (ListIterator itr = listGetIterator(&materialFoldersList);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{

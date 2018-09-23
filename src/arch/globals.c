@@ -23,6 +23,8 @@ HashMap textures;
 pthread_mutex_t texturesMutex;
 
 HashMap materialFolders;
+pthread_mutex_t materialFoldersMutex;
+
 HashMap fonts;
 HashMap images;
 HashMap audioFiles;
@@ -45,8 +47,6 @@ pthread_mutex_t assetThreadsMutex;
 pthread_cond_t assetThreadsCondition;
 
 pthread_mutex_t devilMutex;
-
-bool assetsChanged;
 
 int32 viewportWidth;
 int32 viewportHeight;

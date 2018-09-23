@@ -24,6 +24,8 @@ extern HashMap textures;
 extern pthread_mutex_t texturesMutex;
 
 extern HashMap materialFolders;
+extern pthread_mutex_t materialFoldersMutex;
+
 extern HashMap fonts;
 extern HashMap images;
 extern HashMap particles;
@@ -45,8 +47,6 @@ extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
 
 extern pthread_mutex_t devilMutex;
-
-extern bool assetsChanged;
 
 internal List freeModelsQueue;
 internal pthread_mutex_t freeModelsMutex;
@@ -85,6 +85,8 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(List),
 		MATERIAL_FOLDERS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&materialFoldersMutex, NULL);
+
 	fonts = createHashMap(
 		sizeof(UUID),
 		sizeof(Font),
@@ -140,8 +142,6 @@ void initializeAssetManager(real64 *dt) {
 	pthread_cond_init(&assetThreadsCondition, NULL);
 
 	pthread_mutex_init(&devilMutex, NULL);
-
-	assetsChanged = false;
 
 	exitAssetManagerThread = false;
 	pthread_mutex_init(&exitAssetManagerMutex, NULL);
@@ -482,6 +482,7 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&materialFolders);
+	pthread_mutex_destroy(&materialFoldersMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(fonts);
 		 !hashMapIteratorAtEnd(itr);)
@@ -494,9 +495,4 @@ void shutdownAssetManager(void)
 	freeHashMap(&fonts);
 	freeHashMap(&images);
 	freeHashMap(&particles);
-}
-
-void activateAssetsChangedFlag(void)
-{
-	assetsChanged = true;
 }

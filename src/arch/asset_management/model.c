@@ -365,6 +365,8 @@ void swapMeshMaterial(
 				Material *material = &subset->material;
 				freeMaterial(material);
 				createMaterial(idFromName(materialName), material);
+
+				pthread_mutex_unlock(&modelsMutex);
 				return;
 			}
 		}
