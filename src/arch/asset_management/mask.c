@@ -43,12 +43,7 @@ int32 loadMaskTexture(
 
 	if (fullFilename)
 	{
-		if (loadTexture(fullFilename, textureName->string) == -1)
-		{
-			free(fullFilename);
-			return -1;
-		}
-
+		loadTexture(fullFilename, textureName->string);
 		free(fullFilename);
 	}
 

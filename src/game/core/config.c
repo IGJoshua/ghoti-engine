@@ -54,7 +54,11 @@ int32 loadConfig(void)
 	if (physics)
 	{
 		cJSON *physicsFPS = cJSON_GetObjectItem(physics, "fps");
-		config.physicsConfig.fps = physicsFPS->valuedouble;
+
+		if (physicsFPS->valuedouble >= 5.0)
+		{
+			config.physicsConfig.fps = physicsFPS->valuedouble;
+		}
 	}
 
 	cJSON *graphics = cJSON_GetObjectItem(json, "graphics");
@@ -114,7 +118,11 @@ int32 loadConfig(void)
 		cJSON *maxThreadCount = cJSON_GetObjectItem(
 			assets,
 			"maximum_thread_count");
-		config.assetsConfig.maxThreadCount = maxThreadCount->valueint;
+
+		if (maxThreadCount->valueint >= 1)
+		{
+			config.assetsConfig.maxThreadCount = maxThreadCount->valueint;
+		}
 	}
 
 	cJSON *log = cJSON_GetObjectItem(json, "log");

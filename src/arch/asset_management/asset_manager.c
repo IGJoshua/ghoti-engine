@@ -232,9 +232,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_unlock(&updateAssetManagerMutex);
 	}
 
-	pthread_exit(NULL);
-
-	return NULL;
+	EXIT_THREAD(NULL);
 }
 
 void uploadAssets(void)
@@ -342,6 +340,15 @@ void shutdownAssetManager(void)
 
 	pthread_mutex_destroy(&assetThreadsMutex);
 	pthread_cond_destroy(&assetThreadsCondition);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount > 0)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	pthread_mutex_unlock(&assetThreadsMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
 		 !hashMapIteratorAtEnd(itr);

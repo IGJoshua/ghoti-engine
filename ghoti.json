@@ -22,8 +22,8 @@
 		"minimum_audio_lifetime": 60.0,
 		"minimum_font_lifetime": 60.0,
 		"minimum_image_lifetime": 60.0,
-		"minimum_texture_lifetime": 0.0,
-		"minimum_model_lifetime": 0.0,
+		"minimum_texture_lifetime": 60.0,
+		"minimum_model_lifetime": 60.0,
 		"minimum_particle_lifetime": 60.0,
 		"maximum_thread_count": 4
 	},

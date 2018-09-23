@@ -2,6 +2,7 @@
 #include "asset_management/texture.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -17,20 +18,75 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define NUM_TEXTURE_FILE_FORMATS 7
+internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
+	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
+};
+
+typedef struct texture_thread_args_t
+{
+	char *filename;
+	char *name;
+} TextureThreadArgs;
+
+extern Config config;
+
 extern HashMap textures;
 extern pthread_mutex_t texturesMutex;
 
 extern HashMap uploadTexturesQueue;
 extern pthread_mutex_t uploadTexturesMutex;
 
-#define NUM_TEXTURE_FILE_FORMATS 7
-internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
-	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
-};
+extern uint32 assetThreadCount;
+extern pthread_mutex_t assetThreadsMutex;
+extern pthread_cond_t assetThreadsCondition;
 
-int32 loadTexture(const char *filename, const char *name)
+internal void* acquireTextureThread(void *arg);
+internal void* loadTextureThread(void *arg);
+
+void loadTexture(const char *filename, const char *name)
+{
+	TextureThreadArgs *arg = malloc(sizeof(TextureThreadArgs));
+
+	arg->filename = calloc(1, strlen(filename) + 1);
+	strcpy(arg->filename, filename);
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	pthread_t acquisitionThread;
+	pthread_create(&acquisitionThread, NULL, &acquireTextureThread, (void*)arg);
+	pthread_detach(acquisitionThread);
+}
+
+void* acquireTextureThread(void *arg)
+{
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount == config.assetsConfig.maxThreadCount)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	assetThreadCount++;
+
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	pthread_t loadingThread;
+	pthread_create(&loadingThread, NULL, &loadTextureThread, arg);
+	pthread_detach(loadingThread);
+
+	EXIT_THREAD(NULL);
+}
+
+void* loadTextureThread(void *arg)
 {
 	int32 error = 0;
+
+	TextureThreadArgs *threadArgs = arg;
+	char *filename = threadArgs->filename;
+	char *name = threadArgs->name;
 
 	UUID nameID = idFromName(name);
 
@@ -40,48 +96,50 @@ int32 loadTexture(const char *filename, const char *name)
 	if (!textureResource)
 	{
 		pthread_mutex_unlock(&texturesMutex);
-
 		pthread_mutex_lock(&uploadTexturesMutex);
 
 		if (hashMapGetData(uploadTexturesQueue, &nameID))
 		{
 			pthread_mutex_unlock(&uploadTexturesMutex);
-			return 0;
+			error = 1;
 		}
 
 		pthread_mutex_unlock(&uploadTexturesMutex);
 
-		const char *textureName = strrchr(filename, '/');
-		if (!textureName)
+		if (error != 1)
 		{
-			textureName = filename;
-		}
-		else
-		{
-			textureName += 1;
-		}
+			const char *textureName = strrchr(filename, '/');
+			if (!textureName)
+			{
+				textureName = filename;
+			}
+			else
+			{
+				textureName += 1;
+			}
 
-		ASSET_LOG("Loading texture (%s)...\n", textureName);
+			ASSET_LOG("Loading texture (%s)...\n", textureName);
 
-		Texture texture = {};
+			Texture texture = {};
 
-		texture.name = nameID;
-		texture.refCount = 1;
+			texture.name = nameID;
+			texture.refCount = 1;
 
-		error = loadTextureData(
-			filename,
-			TEXTURE_FORMAT_RGBA8,
-			&texture.devilID);
+			error = loadTextureData(
+				filename,
+				TEXTURE_FORMAT_RGBA8,
+				&texture.devilID);
 
-		ilBindImage(0);
+			ilBindImage(0);
 
-		if (error != - 1)
-		{
-			pthread_mutex_lock(&uploadTexturesMutex);
-			hashMapInsert(uploadTexturesQueue, &nameID, &texture);
-			pthread_mutex_unlock(&uploadTexturesMutex);
+			if (error != - 1)
+			{
+				pthread_mutex_lock(&uploadTexturesMutex);
+				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
+				pthread_mutex_unlock(&uploadTexturesMutex);
 
-			ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
+				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
+			}
 		}
 	}
 	else
@@ -90,7 +148,16 @@ int32 loadTexture(const char *filename, const char *name)
 		pthread_mutex_unlock(&texturesMutex);
 	}
 
-	return error;
+	free(arg);
+	free(filename);
+	free(name);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+	assetThreadCount--;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	EXIT_THREAD(NULL);
 }
 
 int32 loadTextureData(

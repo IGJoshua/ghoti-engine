@@ -5,7 +5,7 @@
 
 #include <IL/il.h>
 
-int32 loadTexture(const char *filename, const char *name);
+void loadTexture(const char *filename, const char *name);
 int32 loadTextureData(
 	const char *filename,
 	TextureFormat format,
