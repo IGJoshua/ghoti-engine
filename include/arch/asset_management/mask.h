@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-void loadMask(Mask *mask, FILE *file);
+void loadMask(Mask *mask, FILE *file, const char *modelName);
 int32 loadMaskTexture(
 	const char *masksFolder,
 	Model *model,

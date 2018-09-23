@@ -21,13 +21,17 @@ internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
 };
 
-int32 loadMaterial(Material *material, FILE *file)
+int32 loadMaterial(Material *material, FILE *file, const char *modelName)
 {
 	material->name = readStringAsUUID(file);
 
 	if (strlen(material->name.string) > 0)
 	{
-		ASSET_LOG("Loading material (%s)...\n", material->name.string);
+		ASSET_LOG(
+			MODEL,
+			modelName,
+			"Loading material (%s)...\n",
+			material->name.string);
 
 		fread(&material->doubleSided, sizeof(bool), 1, file);
 
@@ -62,7 +66,11 @@ int32 loadMaterial(Material *material, FILE *file)
 			}
 		}
 
-		ASSET_LOG("Successfully loaded material (%s)\n", material->name.string);
+		ASSET_LOG(
+			MODEL,
+			modelName,
+			"Successfully loaded material (%s)\n",
+			material->name.string);
 	}
 
 	return 0;

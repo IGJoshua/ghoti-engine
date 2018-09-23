@@ -33,7 +33,11 @@ extern pthread_cond_t assetThreadsCondition;
 internal void* acquireModelThread(void *arg);
 internal void* loadModelThread(void *arg);
 
-internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
+internal int32 loadSubset(
+	Subset *subset,
+	FILE *assetFile,
+	FILE *meshFile,
+	const char *modelName);
 
 void loadModel(const char *name)
 {
@@ -98,7 +102,7 @@ void* loadModelThread(void *arg)
 		{
 			Model model = {};
 
-			ASSET_LOG("Loading model (%s)...\n", name);
+			ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
 
 			model.name = modelName;
 			model.refCount = 1;
@@ -152,7 +156,8 @@ void* loadModelThread(void *arg)
 							error = loadSubset(
 								&model.subsets[i],
 								assetFile,
-								meshFile);
+								meshFile,
+								name);
 
 							if (error == -1)
 							{
@@ -172,7 +177,7 @@ void* loadModelThread(void *arg)
 				}
 				else
 				{
-					ASSET_LOG("Failed to open %s\n", meshFilename);
+					ASSET_LOG(MODEL, name, "Failed to open %s\n", meshFilename);
 					error = -1;
 				}
 
@@ -185,7 +190,7 @@ void* loadModelThread(void *arg)
 			}
 			else
 			{
-				ASSET_LOG("Failed to open %s\n", assetFilename);
+				ASSET_LOG(MODEL, name, "Failed to open %s\n", assetFilename);
 				error = -1;
 			}
 
@@ -203,11 +208,15 @@ void* loadModelThread(void *arg)
 				hashMapInsert(uploadModelsQueue, &modelName, &model);
 				pthread_mutex_unlock(&uploadModelsMutex);
 
-				ASSET_LOG("Successfully loaded model (%s)\n", name);
+				ASSET_LOG(
+					MODEL,
+					name,
+					"Successfully loaded model (%s)\n",
+					name);
 			}
 			else
 			{
-				ASSET_LOG("Failed to load model (%s)\n", name);
+				ASSET_LOG(MODEL, name, "Failed to load model (%s)\n", name);
 			}
 		}
 	}
@@ -217,6 +226,7 @@ void* loadModelThread(void *arg)
 		pthread_mutex_unlock(&modelsMutex);
 	}
 
+	ASSET_LOG_COMMIT(MODEL, name);
 	free(name);
 
 	pthread_mutex_lock(&assetThreadsMutex);
@@ -339,19 +349,31 @@ void swapMeshMaterial(
 	pthread_mutex_unlock(&modelsMutex);
 }
 
-int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
+int32 loadSubset(
+	Subset *subset,
+	FILE *assetFile,
+	FILE *meshFile,
+	const char *modelName)
 {
-	ASSET_LOG("Loading subset (%s)...\n", subset->name.string);
+	ASSET_LOG(
+		MODEL,
+		modelName,
+		"Loading subset (%s)...\n",
+		subset->name.string);
 
-	if (loadMaterial(&subset->material, assetFile) == -1)
+	if (loadMaterial(&subset->material, assetFile, modelName) == -1)
 	{
 		return -1;
 	}
 
-	loadMask(&subset->mask, assetFile);
-	loadMesh(&subset->mesh, meshFile);
+	loadMask(&subset->mask, assetFile, modelName);
+	loadMesh(&subset->mesh, meshFile, modelName);
 
-	ASSET_LOG("Successfully loaded subset (%s)\n", subset->name.string);
+	ASSET_LOG(
+		MODEL,
+		modelName,
+		"Successfully loaded subset (%s)\n",
+		subset->name.string);
 
 	return 0;
 }

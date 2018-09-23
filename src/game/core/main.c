@@ -73,6 +73,8 @@ int32 main(int32 argc, char *argv[])
 	remove(ASSET_LOG_FILE_NAME);
 	remove(config.logConfig.luaFile);
 
+	initializeAssetLog();
+
 	GLFWwindow *window = initWindow(
 		config.windowConfig.size.x,
 		config.windowConfig.size.y,
@@ -300,6 +302,7 @@ int32 main(int32 argc, char *argv[])
 	dCloseODE();
 	shutdownInput();
 	freeWindow(window);
+	shutdownAssetLog();
 	freeConfig();
 
 	return 0;

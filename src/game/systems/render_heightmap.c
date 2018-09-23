@@ -146,6 +146,9 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		ILuint imageID;
 		if (loadTextureData(
+				ASSET_LOG_TYPE_NONE,
+				"heightmap",
+				NULL,
 				fullHeightmapFilename,
 				TEXTURE_FORMAT_R8,
 				&imageID) == -1)

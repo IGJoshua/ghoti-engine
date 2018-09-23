@@ -6,9 +6,9 @@
 #include <malloc.h>
 #include <stddef.h>
 
-void loadMesh(Mesh *mesh, FILE *file)
+void loadMesh(Mesh *mesh, FILE *file, const char *modelName)
 {
-	ASSET_LOG("Loading mesh...\n");
+	ASSET_LOG(MODEL, modelName, "Loading mesh...\n");
 
 	fread(&mesh->numVertices, sizeof(uint32), 1, file);
 
@@ -20,7 +20,7 @@ void loadMesh(Mesh *mesh, FILE *file)
 	mesh->indices = calloc(mesh->numIndices, sizeof(uint32));
 	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
-	ASSET_LOG("Successfully loaded mesh\n");
+	ASSET_LOG(MODEL, modelName, "Successfully loaded mesh\n");
 }
 
 void uploadMeshToGPU(Mesh *mesh)

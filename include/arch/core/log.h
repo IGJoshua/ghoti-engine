@@ -8,7 +8,6 @@
 #include <stdio.h>
 
 FILE *logFile;
-FILE *assetLogFile;
 
 extern Config config;
 
@@ -22,9 +21,34 @@ extern Config config;
 				 fclose(logFile)
 #endif
 
-#define ASSET_LOG_FILE_NAME config.logConfig.assetManagerFile
-#define ASSET_LOG(...) //assetLogFile = fopen(ASSET_LOG_FILE_NAME, "a"); \
-					   //fprintf(assetLogFile, __VA_ARGS__); \
-					   //fclose(assetLogFile)
+typedef enum asset_log_type_e
+{
+	ASSET_LOG_TYPE_NONE = -1,
+	ASSET_LOG_TYPE_MODEL,
+	ASSET_LOG_TYPE_TEXTURE
+} AssetLogType;
 
+#define ASSET_LOG_FILE_NAME config.logConfig.assetManagerFile
+#define ASSET_LOG(type, name, ...) assetLogWrite( \
+	ASSET_LOG_TYPE_ ## type, \
+	name, \
+	__VA_ARGS__)
+
+#define ASSET_LOG_FULL_TYPE(type, name, ...) assetLogWrite( \
+	type, \
+	name, \
+	__VA_ARGS__)
+
+#define ASSET_LOG_COMMIT(type, name) assetLogCommit( \
+	ASSET_LOG_TYPE_ ## type, \
+	name)
+
+void initializeAssetLog(void);
 void logFunction(const char *format, ...);
+void assetLogWrite(
+	AssetLogType type,
+	const char *name,
+	const char *format,
+	...);
+void assetLogCommit(AssetLogType type, const char *name);
+void shutdownAssetLog(void);

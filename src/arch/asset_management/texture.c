@@ -1,7 +1,6 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/texture.h"
 
-#include "core/log.h"
 #include "core/config.h"
 
 #include "data/data_types.h"
@@ -118,7 +117,7 @@ void* loadTextureThread(void *arg)
 				textureName += 1;
 			}
 
-			ASSET_LOG("Loading texture (%s)...\n", textureName);
+			ASSET_LOG(TEXTURE, name, "Loading texture (%s)...\n", textureName);
 
 			Texture texture = {};
 
@@ -126,6 +125,9 @@ void* loadTextureThread(void *arg)
 			texture.refCount = 1;
 
 			error = loadTextureData(
+				ASSET_LOG_TYPE_TEXTURE,
+				"texture",
+				name,
 				filename,
 				TEXTURE_FORMAT_RGBA8,
 				&texture.devilID);
@@ -138,7 +140,11 @@ void* loadTextureThread(void *arg)
 				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
 				pthread_mutex_unlock(&uploadTexturesMutex);
 
-				ASSET_LOG("Successfully loaded texture (%s)\n", textureName);
+				ASSET_LOG(
+					TEXTURE,
+					name,
+					"Successfully loaded texture (%s)\n",
+					textureName);
 			}
 		}
 	}
@@ -147,6 +153,8 @@ void* loadTextureThread(void *arg)
 		textureResource->refCount++;
 		pthread_mutex_unlock(&texturesMutex);
 	}
+
+	ASSET_LOG_COMMIT(TEXTURE, name);
 
 	free(arg);
 	free(filename);
@@ -161,6 +169,9 @@ void* loadTextureThread(void *arg)
 }
 
 int32 loadTextureData(
+	AssetLogType type,
+	const char *typeName,
+	const char *name,
 	const char *filename,
 	TextureFormat format,
 	ILuint *devilID)
@@ -173,7 +184,22 @@ int32 loadTextureData(
 	ILenum ilError = ilGetError();
 	if (ilError != IL_NO_ERROR)
 	{
-		ASSET_LOG("Failed to load texture: %s\n", iluErrorString(ilError));
+		if (name)
+		{
+			ASSET_LOG_FULL_TYPE(
+				type,
+				name,
+				"Failed to load %s: %s\n",
+				typeName,
+				iluErrorString(ilError));
+		}
+		else
+		{
+			LOG("Failed to load %s: %s\n",
+				typeName,
+				iluErrorString(ilError));
+		}
+
 		return -1;
 	}
 

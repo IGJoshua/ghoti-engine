@@ -52,7 +52,12 @@ int32 loadImage(const char *name)
 			image.refCount = 1;
 
 			ILuint devilID;
+
+			// TODO: Change to ASSET_LOG_TYPE_IMAGE
 			error = loadTextureData(
+				ASSET_LOG_TYPE_NONE,
+				"image",
+				NULL,
 				fullFilename,
 				TEXTURE_FORMAT_RGBA8,
 				&devilID);

@@ -54,7 +54,11 @@ int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
 			particle.spriteHeight = spriteHeight;
 
 			ILuint devilID;
+			// TODO: Change to ASSET_LOG_TYPE_PARTICLE
 			error = loadTextureData(
+				ASSET_LOG_TYPE_NONE,
+				"particle",
+				NULL,
 				fullFilename,
 				TEXTURE_FORMAT_RGBA8,
 				&devilID);

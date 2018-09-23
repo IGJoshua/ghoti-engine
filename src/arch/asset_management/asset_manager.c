@@ -172,9 +172,17 @@ void* updateAssetManager(void *arg)
 					hashMapMoveIterator(&itr);
 					hashMapDelete(models, &modelName);
 
-					ASSET_LOG("Model queued to be freed (%s)\n",
-							  modelName.string);
-					ASSET_LOG("Model Count: %d\n", models->count);
+					ASSET_LOG(
+						MODEL,
+						modelName.string,
+						"Model queued to be freed (%s)\n",
+						modelName.string);
+					ASSET_LOG(
+						MODEL,
+						modelName.string,
+						"Model Count: %d\n",
+						models->count);
+					ASSET_LOG_COMMIT(MODEL, modelName.string);
 				}
 			}
 			else
@@ -205,9 +213,17 @@ void* updateAssetManager(void *arg)
 					hashMapMoveIterator(&itr);
 					hashMapDelete(textures, &textureName);
 
-					ASSET_LOG("Texture queued to be freed (%s)\n",
-							  textureName.string);
-					ASSET_LOG("Texture Count: %d\n", textures->count);
+					ASSET_LOG(
+						TEXTURE,
+						textureName.string,
+						"Texture queued to be freed (%s)\n",
+						textureName.string);
+					ASSET_LOG(
+						TEXTURE,
+						textureName.string,
+						"Texture Count: %d\n",
+						textures->count);
+					ASSET_LOG_COMMIT(TEXTURE, textureName.string);
 				}
 			}
 			else
