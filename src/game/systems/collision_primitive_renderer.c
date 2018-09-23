@@ -401,6 +401,11 @@ void drawCollisionPrimitives(
 
 		model = getModel(HEMISPHERE_MODEL_NAME);
 
+		if (!model)
+		{
+			return;
+		}
+
 		kmVec3Fill(
 			&scale,
 			capsule->radius * 2,

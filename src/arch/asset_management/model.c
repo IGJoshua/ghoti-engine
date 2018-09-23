@@ -148,21 +148,21 @@ int32 loadModel(const char *name)
 
 void uploadModelToGPU(Model *model)
 {
-	ASSET_LOG("Transferring model (%s) onto GPU...\n", model->name.string);
+	LOG("Transferring model (%s) onto GPU...\n", model->name.string);
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
 		Subset *subset = &model->subsets[i];
 
-		ASSET_LOG("Transferring mesh (%s) onto GPU...\n", subset->name.string);
+		LOG("Transferring mesh (%s) onto GPU...\n", subset->name.string);
 
 		uploadMeshToGPU(&subset->mesh);
 
-		ASSET_LOG("Successfully transferred mesh (%s) onto GPU\n",
-			subset->name.string);
+		LOG("Successfully transferred mesh (%s) onto GPU\n",
+				  subset->name.string);
 	}
 
-	ASSET_LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
+	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
 }
 
 Model* getModel(const char *name)
@@ -182,22 +182,27 @@ void freeModel(const char *name)
 	Model *model = getModel(name);
 	if (model)
 	{
+		freeTexture(model->materialTexture);
+		freeTexture(model->opacityTexture);
+
+		for (uint32 i = 0; i < model->numSubsets; i++)
+		{
+			Subset *subset = &model->subsets[i];
+			freeMaterial(&subset->material);
+			freeMask(&subset->mask);
+		}
+
 		model->refCount--;
 	}
 }
 
 void freeModelData(Model *model)
 {
-	UUID modelName = model->name;
-
-	ASSET_LOG("Freeing model (%s)...\n", modelName.string);
-
-	freeTexture(model->materialTexture);
-	freeTexture(model->opacityTexture);
+	LOG("Freeing model data (%s)...\n", model->name.string);
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
-		freeSubset(&model->subsets[i]);
+		freeMesh(&model->subsets[i].mesh);
 	}
 
 	free(model->subsets);
@@ -207,10 +212,7 @@ void freeModelData(Model *model)
 		model->animations,
 		&model->skeleton);
 
-	hashMapDelete(models, &modelName);
-
-	ASSET_LOG("Successfully freed model (%s)\n", modelName.string);
-	ASSET_LOG("Model Count: %d\n", models->count);
+	LOG("Successfully freed model data (%s)\n", model->name.string);
 }
 
 void swapMeshMaterial(
@@ -252,11 +254,4 @@ int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
 	ASSET_LOG("Successfully loaded subset (%s)\n", subset->name.string);
 
 	return 0;
-}
-
-void freeSubset(Subset *subset)
-{
-	freeMesh(&subset->mesh);
-	freeMaterial(&subset->material);
-	freeMask(&subset->mask);
 }

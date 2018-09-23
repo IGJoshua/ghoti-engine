@@ -71,7 +71,7 @@ int32 loadMaterial(Material *material, FILE *file)
 
 int32 createMaterial(UUID name, Material *material)
 {
-	ASSET_LOG("Loading material (%s)...\n", name.string);
+	LOG("Loading material (%s)...\n", name.string);
 
 	material->name = name;
 	material->doubleSided = false;
@@ -95,7 +95,7 @@ int32 createMaterial(UUID name, Material *material)
 		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
 	}
 
-	ASSET_LOG("Successfully loaded material (%s)\n", name.string);
+	LOG("Successfully loaded material (%s)\n", name.string);
 
 	return 0;
 }
@@ -195,8 +195,8 @@ void loadMaterialFolders(UUID name)
 int32 loadMaterialComponentTexture(
 	UUID materialName,
 	MaterialComponentType materialComponentType,
-	UUID *textureName
-) {
+	UUID *textureName)
+{
 	memset(textureName, 0, sizeof(UUID));
 
 	List *materialFoldersList = (List*)hashMapGetData(

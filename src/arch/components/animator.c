@@ -70,7 +70,6 @@ AnimationReference* setCurrentAnimationReference(
 	Model *model = getModel(modelComponent->name);
 	if (!model)
 	{
-		resetAnimator(animator, animationReference);
 		return NULL;
 	}
 

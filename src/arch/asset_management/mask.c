@@ -27,7 +27,8 @@ void loadMask(Mask *mask, FILE *file)
 	ASSET_LOG("Successfully loaded masks\n");
 }
 
-int32 loadMaskTexture(const char *masksFolder,
+int32 loadMaskTexture(
+	const char *masksFolder,
 	Model *model,
 	char suffix,
 	UUID *textureName)
