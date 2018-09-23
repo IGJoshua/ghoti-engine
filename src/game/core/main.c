@@ -94,8 +94,8 @@ int32 main(int32 argc, char *argv[])
 		return err;
 	}
 
-	activeScenes = createList(sizeof(Scene *));
-	unloadedScenes = createList(sizeof(Scene *));
+	activeScenes = createList(sizeof(Scene*));
+	unloadedScenes = createList(sizeof(Scene*));
 	savedScenes = createList(sizeof(char*));
 
 	// Fixed timestep
@@ -296,6 +296,10 @@ int32 main(int32 argc, char *argv[])
 	{
 		lua_close(L);
 	}
+
+	listClear(&activeScenes);
+	listClear(&unloadedScenes);
+	listClear(&savedScenes);
 
 	freeSystems();
 	shutdownAssetManager();
