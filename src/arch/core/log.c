@@ -20,6 +20,8 @@ internal pthread_mutex_t modelsLogMutex;
 internal HashMap texturesLog;
 internal pthread_mutex_t texturesLogMutex;
 
+internal pthread_mutex_t assetLogMutex;
+
 internal FILE *assetLogFile;
 
 internal void lockAssetLogMutex(AssetLogType type);
@@ -46,6 +48,8 @@ void initializeAssetLog(void)
 		TEXTURES_LOG_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&texturesLogMutex, NULL);
+
+	pthread_mutex_init(&assetLogMutex, NULL);
 }
 
 void logFunction(const char *format, ...)
@@ -103,9 +107,13 @@ void assetLogCommit(AssetLogType type, const char *name)
 	char **logBuffer = getAssetLogBuffer(type, name);
 	if (logBuffer && *logBuffer)
 	{
+		pthread_mutex_lock(&assetLogMutex);
+
 		assetLogFile = fopen(ASSET_LOG_FILE_NAME, "a");
 		fprintf(assetLogFile, "%s", *logBuffer);
 		fclose(assetLogFile);
+
+		pthread_mutex_unlock(&assetLogMutex);
 
 		free(*logBuffer);
 		removeAssetLogBuffer(type, name);
@@ -121,6 +129,8 @@ void shutdownAssetLog(void)
 
 	freeHashMap(&texturesLog);
 	pthread_mutex_destroy(&texturesLogMutex);
+
+	pthread_mutex_destroy(&assetLogMutex);
 }
 
 void lockAssetLogMutex(AssetLogType type)
