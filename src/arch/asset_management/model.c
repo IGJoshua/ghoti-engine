@@ -23,6 +23,9 @@ extern Config config;
 extern HashMap models;
 extern pthread_mutex_t modelsMutex;
 
+extern HashMap loadingModels;
+extern pthread_mutex_t loadingModelsMutex;
+
 extern HashMap uploadModelsQueue;
 extern pthread_mutex_t uploadModelsMutex;
 
@@ -88,18 +91,34 @@ void* loadModelThread(void *arg)
 	if (!modelResource)
 	{
 		pthread_mutex_unlock(&modelsMutex);
-		pthread_mutex_lock(&uploadModelsMutex);
+		pthread_mutex_lock(&loadingModelsMutex);
 
-		if (hashMapGetData(uploadModelsQueue, &modelName))
+		if (hashMapGetData(loadingModels, &modelName))
 		{
-			pthread_mutex_unlock(&uploadModelsMutex);
 			error = 1;
 		}
 
-		pthread_mutex_unlock(&uploadModelsMutex);
+		pthread_mutex_unlock(&loadingModelsMutex);
 
 		if (error != 1)
 		{
+			pthread_mutex_lock(&uploadModelsMutex);
+
+			if (hashMapGetData(uploadModelsQueue, &modelName))
+			{
+				error = 1;
+			}
+
+			pthread_mutex_unlock(&uploadModelsMutex);
+		}
+
+		if (error != 1)
+		{
+			bool loading = true;
+			pthread_mutex_lock(&loadingModelsMutex);
+			hashMapInsert(loadingModels, &modelName, &loading);
+			pthread_mutex_unlock(&loadingModelsMutex);
+
 			Model model = {};
 
 			ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
@@ -208,6 +227,10 @@ void* loadModelThread(void *arg)
 				hashMapInsert(uploadModelsQueue, &modelName, &model);
 				pthread_mutex_unlock(&uploadModelsMutex);
 
+				pthread_mutex_lock(&loadingModelsMutex);
+				hashMapDelete(loadingModels, &modelName);
+				pthread_mutex_unlock(&loadingModelsMutex);
+
 				ASSET_LOG(
 					MODEL,
 					name,
@@ -218,6 +241,8 @@ void* loadModelThread(void *arg)
 			{
 				ASSET_LOG(MODEL, name, "Failed to load model (%s)\n", name);
 			}
+
+			ASSET_LOG_COMMIT(MODEL, name);
 		}
 	}
 	else
@@ -226,7 +251,6 @@ void* loadModelThread(void *arg)
 		pthread_mutex_unlock(&modelsMutex);
 	}
 
-	ASSET_LOG_COMMIT(MODEL, name);
 	free(name);
 
 	pthread_mutex_lock(&assetThreadsMutex);

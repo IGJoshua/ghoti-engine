@@ -33,12 +33,17 @@ extern Config config;
 extern HashMap textures;
 extern pthread_mutex_t texturesMutex;
 
+extern HashMap loadingTextures;
+extern pthread_mutex_t loadingTexturesMutex;
+
 extern HashMap uploadTexturesQueue;
 extern pthread_mutex_t uploadTexturesMutex;
 
 extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
+
+extern pthread_mutex_t devilMutex;
 
 internal void* acquireTextureThread(void *arg);
 internal void* loadTextureThread(void *arg);
@@ -95,18 +100,34 @@ void* loadTextureThread(void *arg)
 	if (!textureResource)
 	{
 		pthread_mutex_unlock(&texturesMutex);
-		pthread_mutex_lock(&uploadTexturesMutex);
+		pthread_mutex_lock(&loadingTexturesMutex);
 
-		if (hashMapGetData(uploadTexturesQueue, &nameID))
+		if (hashMapGetData(loadingTextures, &nameID))
 		{
-			pthread_mutex_unlock(&uploadTexturesMutex);
 			error = 1;
 		}
 
-		pthread_mutex_unlock(&uploadTexturesMutex);
+		pthread_mutex_unlock(&loadingTexturesMutex);
 
 		if (error != 1)
 		{
+			pthread_mutex_lock(&uploadTexturesMutex);
+
+			if (hashMapGetData(uploadTexturesQueue, &nameID))
+			{
+				error = 1;
+			}
+
+			pthread_mutex_unlock(&uploadTexturesMutex);
+		}
+
+		if (error != 1)
+		{
+			bool loading = true;
+			pthread_mutex_lock(&loadingTexturesMutex);
+			hashMapInsert(loadingTextures, &nameID, &loading);
+			pthread_mutex_unlock(&loadingTexturesMutex);
+
 			const char *textureName = strrchr(filename, '/');
 			if (!textureName)
 			{
@@ -140,12 +161,18 @@ void* loadTextureThread(void *arg)
 				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
 				pthread_mutex_unlock(&uploadTexturesMutex);
 
+				pthread_mutex_lock(&loadingTexturesMutex);
+				hashMapDelete(loadingTextures, &nameID);
+				pthread_mutex_unlock(&loadingTexturesMutex);
+
 				ASSET_LOG(
 					TEXTURE,
 					name,
 					"Successfully loaded texture (%s)\n",
 					textureName);
 			}
+
+			ASSET_LOG_COMMIT(TEXTURE, name);
 		}
 	}
 	else
@@ -153,8 +180,6 @@ void* loadTextureThread(void *arg)
 		textureResource->refCount++;
 		pthread_mutex_unlock(&texturesMutex);
 	}
-
-	ASSET_LOG_COMMIT(TEXTURE, name);
 
 	free(arg);
 	free(filename);
@@ -176,6 +201,8 @@ int32 loadTextureData(
 	TextureFormat format,
 	ILuint *devilID)
 {
+	pthread_mutex_lock(&devilMutex);
+
 	ilGenImages(1, devilID);
 	ilBindImage(*devilID);
 
@@ -220,6 +247,8 @@ int32 loadTextureData(
 	}
 
 	ilConvertImage(ilColorFormat, ilByteFormat);
+
+	pthread_mutex_unlock(&devilMutex);
 
 	return 0;
 }

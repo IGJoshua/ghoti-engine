@@ -28,6 +28,12 @@ extern HashMap fonts;
 extern HashMap images;
 extern HashMap particles;
 
+extern HashMap loadingModels;
+extern pthread_mutex_t loadingModelsMutex;
+
+extern HashMap loadingTextures;
+extern pthread_mutex_t loadingTexturesMutex;
+
 extern HashMap uploadModelsQueue;
 extern pthread_mutex_t uploadModelsMutex;
 
@@ -37,6 +43,8 @@ extern pthread_mutex_t uploadTexturesMutex;
 extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
+
+extern pthread_mutex_t devilMutex;
 
 extern bool assetsChanged;
 
@@ -93,6 +101,20 @@ void initializeAssetManager(real64 *dt) {
 		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 
+	loadingModels = createHashMap(
+		sizeof(UUID),
+		sizeof(bool),
+		LOADING_MODELS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingModelsMutex, NULL);
+
+	loadingTextures = createHashMap(
+		sizeof(UUID),
+		sizeof(Texture),
+		LOADING_TEXTURES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingTexturesMutex, NULL);
+
 	uploadModelsQueue = createHashMap(
 		sizeof(UUID),
 		sizeof(Model),
@@ -116,6 +138,8 @@ void initializeAssetManager(real64 *dt) {
 	assetThreadCount = 0;
 	pthread_mutex_init(&assetThreadsMutex, NULL);
 	pthread_cond_init(&assetThreadsCondition, NULL);
+
+	pthread_mutex_init(&devilMutex, NULL);
 
 	assetsChanged = false;
 
@@ -354,9 +378,6 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&updateAssetManagerMutex);
 	pthread_cond_destroy(&updateAssetManagerCondition);
 
-	pthread_mutex_destroy(&assetThreadsMutex);
-	pthread_cond_destroy(&assetThreadsCondition);
-
 	pthread_mutex_lock(&assetThreadsMutex);
 
 	while (assetThreadCount > 0)
@@ -365,6 +386,17 @@ void shutdownAssetManager(void)
 	}
 
 	pthread_mutex_unlock(&assetThreadsMutex);
+
+	pthread_mutex_destroy(&assetThreadsMutex);
+	pthread_cond_destroy(&assetThreadsCondition);
+
+	pthread_mutex_destroy(&devilMutex);
+
+	freeHashMap(&loadingModels);
+	pthread_mutex_destroy(&loadingModelsMutex);
+
+	freeHashMap(&loadingTextures);
+	pthread_mutex_destroy(&loadingTexturesMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
 		 !hashMapIteratorAtEnd(itr);
