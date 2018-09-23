@@ -30,6 +30,8 @@
 #include <kazmath/mat3.h>
 #include <kazmath/mat4.h>
 
+#include <pthread.h>
+
 #define SCENE_BUCKET_COUNT 7
 
 #define INDEX(x, y, max) ((y) * (max) + (x))
@@ -59,6 +61,8 @@ typedef struct heightmap_model_t
 	Mesh mesh;
 	Material material;
 } HeightmapModel;
+
+extern pthread_mutex_t devilMutex;
 
 internal
 int32 ptrEq(void *thing1, void *thing2)
@@ -144,6 +148,8 @@ void initRenderHeightmapSystem(Scene *scene)
 		char *fullHeightmapFilename = getFullTextureFilename(heightmapFilename);
 		free(heightmapFilename);
 
+		pthread_mutex_lock(&devilMutex);
+
 		ILuint imageID;
 		if (loadTextureData(
 				ASSET_LOG_TYPE_NONE,
@@ -156,6 +162,8 @@ void initRenderHeightmapSystem(Scene *scene)
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);
 			free(fullHeightmapFilename);
+
+			pthread_mutex_unlock(&devilMutex);
 			continue;
 		}
 
@@ -297,6 +305,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		}
 
 		ilDeleteImage(imageID);
+		pthread_mutex_unlock(&devilMutex);
 
 		// Create the index buffer
 		uint32 numIndices = (heightmap->sizeX * heightmap->sizeZ) * 6;

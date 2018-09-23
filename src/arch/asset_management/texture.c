@@ -145,6 +145,8 @@ void* loadTextureThread(void *arg)
 			texture.name = nameID;
 			texture.refCount = 1;
 
+			pthread_mutex_lock(&devilMutex);
+
 			error = loadTextureData(
 				ASSET_LOG_TYPE_TEXTURE,
 				"texture",
@@ -152,8 +154,9 @@ void* loadTextureThread(void *arg)
 				filename,
 				TEXTURE_FORMAT_RGBA8,
 				&texture.devilID);
-
 			ilBindImage(0);
+
+			pthread_mutex_unlock(&devilMutex);
 
 			if (error != - 1)
 			{
@@ -201,8 +204,6 @@ int32 loadTextureData(
 	TextureFormat format,
 	ILuint *devilID)
 {
-	pthread_mutex_lock(&devilMutex);
-
 	ilGenImages(1, devilID);
 	ilBindImage(*devilID);
 
@@ -248,14 +249,14 @@ int32 loadTextureData(
 
 	ilConvertImage(ilColorFormat, ilByteFormat);
 
-	pthread_mutex_unlock(&devilMutex);
-
 	return 0;
 }
 
 int32 uploadTextureToGPU(Texture *texture)
 {
 	LOG("Transferring texture data onto GPU...\n");
+
+	pthread_mutex_lock(&devilMutex);
 
 	ilBindImage(texture->devilID);
 
@@ -284,6 +285,11 @@ int32 uploadTextureToGPU(Texture *texture)
 		GL_UNSIGNED_BYTE,
 		textureData);
 
+	ilDeleteImages(1, &texture->devilID);
+	ilBindImage(0);
+
+	pthread_mutex_unlock(&devilMutex);
+
 	int32 error = logGLError(false, "Failed to transfer texture onto GPU");
 
 	if (error != -1)
@@ -301,10 +307,7 @@ int32 uploadTextureToGPU(Texture *texture)
 		LOG("Successfully transferred texture data onto GPU\n");
 	}
 
-	ilDeleteImages(1, &texture->devilID);
-
 	glBindTexture(GL_TEXTURE_2D, 0);
-	ilBindImage(0);
 
 	return error;
 }

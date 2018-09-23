@@ -208,6 +208,8 @@ void* updateAssetManager(void *arg)
 						models->count);
 					ASSET_LOG_COMMIT(MODEL, modelName.string);
 				}
+
+				hashMapMoveIterator(&itr);
 			}
 			else
 			{
@@ -249,6 +251,8 @@ void* updateAssetManager(void *arg)
 						textures->count);
 					ASSET_LOG_COMMIT(TEXTURE, textureName.string);
 				}
+
+				hashMapMoveIterator(&itr);
 			}
 			else
 			{
@@ -421,7 +425,8 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&uploadTexturesMutex);
 
 	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
-		 !listIteratorAtEnd(listItr);)
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
 	{
 		Model *model = LIST_ITERATOR_GET_ELEMENT(Model, listItr);
 		hashMapInsert(models, &model->name, model);
@@ -431,7 +436,8 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&freeModelsMutex);
 
 	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
-		 !listIteratorAtEnd(listItr);)
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
 	{
 		Texture *texture = LIST_ITERATOR_GET_ELEMENT(Texture, listItr);
 		hashMapInsert(textures, &texture->name, texture);

@@ -13,7 +13,11 @@
 
 #include "renderer/renderer_utilities.h"
 
+#include <pthread.h>
+
 extern HashMap images;
+
+extern pthread_mutex_t devilMutex;
 
 internal void deleteImage(const char *name);
 internal char* getFullImageFilename(const char *name);
@@ -51,9 +55,10 @@ int32 loadImage(const char *name)
 			image.name = idFromName(name);
 			image.refCount = 1;
 
-			ILuint devilID;
+			pthread_mutex_lock(&devilMutex);
 
 			// TODO: Change to ASSET_LOG_TYPE_IMAGE
+			ILuint devilID;
 			error = loadTextureData(
 				ASSET_LOG_TYPE_NONE,
 				"image",
@@ -99,6 +104,8 @@ int32 loadImage(const char *name)
 					ilDeleteImages(1, &devilID);
 				}
 			}
+
+			pthread_mutex_unlock(&devilMutex);
 		}
 
 		if (error != - 1)

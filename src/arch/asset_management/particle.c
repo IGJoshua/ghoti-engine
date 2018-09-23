@@ -13,7 +13,11 @@
 
 #include "renderer/renderer_utilities.h"
 
+#include <pthread.h>
+
 extern HashMap particles;
+
+extern pthread_mutex_t devilMutex;
 
 internal void deleteParticle(const char *name);
 internal char* getFullParticleFilename(const char *name);
@@ -52,6 +56,8 @@ int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
 			particle.refCount = 1;
 			particle.spriteWidth = spriteWidth;
 			particle.spriteHeight = spriteHeight;
+
+			pthread_mutex_lock(&devilMutex);
 
 			ILuint devilID;
 			// TODO: Change to ASSET_LOG_TYPE_PARTICLE
@@ -100,6 +106,8 @@ int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
 					ilDeleteImages(1, &devilID);
 				}
 			}
+
+			pthread_mutex_unlock(&devilMutex);
 		}
 
 		if (error != - 1)
