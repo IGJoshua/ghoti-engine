@@ -327,10 +327,9 @@ typedef struct panel_component_t
 
 typedef struct progress_bar_component_t
 {
-	uint64 value;
-	uint64 maxValue;
-	kmVec3 color;
-	kmVec3 backgroundColor;
+	real32 value;
+	kmVec4 color;
+	kmVec4 backgroundColor;
 	bool reversed;
 } ProgressBarComponent;
 

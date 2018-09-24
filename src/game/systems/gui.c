@@ -112,7 +112,6 @@ internal Font* getEntityFont(
 	Font *fallBackFont,
 	FontComponent **fontComponent);
 internal struct nk_color getColor(kmVec4 *color);
-internal struct nk_color getOpaqueColor(kmVec3 *color);
 internal struct nk_rect getRect(
 	GUITransformComponent *guiTransform,
 	real32 width,
@@ -132,7 +131,11 @@ internal void addImage(
 	real32 panelHeight);
 internal void addButton(ButtonComponent *button);
 internal void addTextField(TextFieldComponent *textField);
-internal void addProgressBar(ProgressBarComponent *progressBar);
+internal void addProgressBar(
+	ProgressBarComponent *progressBar,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight);
 internal void addSlider(
 	SliderComponent *slider,
 	GUITransformComponent *guiTransform,
@@ -191,8 +194,6 @@ internal void initGUISystem(Scene *scene)
 			ctx.style.button.rounding = 0.0f;
 
 			nk_button_set_behavior(&ctx, NK_BUTTON_REPEATER);
-
-			ctx.style.progress.padding = nk_vec2(0.0f, 0.0f);
 
 			glGenBuffers(1, &vertexBuffer);
 			glGenVertexArrays(1, &vertexArray);
@@ -441,11 +442,6 @@ struct nk_color getColor(kmVec4 *color)
 		color->w * 255);
 }
 
-struct nk_color getOpaqueColor(kmVec3 *color)
-{
-	return nk_rgb(color->x * 255, color->y * 255, color->z * 255);
-}
-
 struct nk_rect getRect(
 	GUITransformComponent *guiTransform,
 	real32 width,
@@ -570,7 +566,7 @@ void addWidgets(
 					entity,
 					sliderComponentID);
 
-				if (!image && !slider)
+				if (!image && !progressBar && !slider)
 				{
 					nk_layout_space_push(&ctx, rect);
 				}
@@ -593,7 +589,11 @@ void addWidgets(
 				}
 				else if (progressBar)
 				{
-					addProgressBar(progressBar);
+					addProgressBar(
+						progressBar,
+						guiTransform,
+						panelWidth,
+						panelHeight);
 				}
 				else if (slider)
 				{
@@ -729,24 +729,39 @@ void addTextField(TextFieldComponent *textField)
 		NULL);
 }
 
-void addProgressBar(ProgressBarComponent *progressBar)
+void addProgressBar(
+	ProgressBarComponent *progressBar,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight)
 {
-	kmVec3 *color = progressBar->reversed ?
-		&progressBar->backgroundColor : &progressBar->color;
-	kmVec3 *backgroundColor = progressBar->reversed ?
-		&progressBar->color : &progressBar->backgroundColor;
+	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
 
-	ctx.style.progress.cursor_normal = nk_style_item_color(
-		getOpaqueColor(color));
-	ctx.style.progress.normal = nk_style_item_color(
-		getOpaqueColor(backgroundColor));
-
-	nk_prog(
+	nk_layout_space_push(&ctx, widgetRect);
+	nk_image_color(
 		&ctx,
-		progressBar->reversed ?
-			progressBar->maxValue - progressBar->value : progressBar->value,
-		progressBar->maxValue,
-		false);
+		nk_image_id(widgetBackground->id),
+		getColor(&progressBar->backgroundColor));
+
+	GUITransformComponent progressBarTransform = *guiTransform;
+	progressBarTransform.size.x *= progressBar->value;
+
+	struct nk_rect rect = getRect(
+		&progressBarTransform,
+		panelWidth,
+		panelHeight);
+
+	int32 offsetDirection = progressBar->reversed ? 1 : -1;
+	real32 offset = (1.0f - progressBar->value) / 2.0f;
+	real32 finalOffset = offsetDirection * widgetRect.w * offset;
+
+	rect.x += finalOffset;
+
+	nk_layout_space_push(&ctx, rect);
+	nk_image_color(
+		&ctx,
+		nk_image_id(widgetBackground->id),
+		getColor(&progressBar->color));
 }
 
 void addSlider(
