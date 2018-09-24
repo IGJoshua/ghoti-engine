@@ -28,7 +28,7 @@ function system.begin(scene, dt)
   end
 
   if input.save.updated and input.save.keydown then
-    C.exportSave(nil, 0, 1)
+	C.exportSave(nil, 0, 1)
   end
 
   if input.load_save.updated and input.load_save.keydown then

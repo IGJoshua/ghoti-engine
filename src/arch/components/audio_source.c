@@ -25,98 +25,98 @@ void playSoundAtSource(
 	AudioSourceComponent *audioSource,
 	const char *soundName)
 {
-    loadAudio(soundName);
+	loadAudio(soundName);
 
-    AudioFile *audioData;
-    audioData = getAudio(soundName);
+	AudioFile *audioData;
+	audioData = getAudio(soundName);
 
-    if (!audioData)
-    {
-        LOG("%s.ogg was unable to be loaded\n", soundName);
-        return;
-    }
+	if (!audioData)
+	{
+		LOG("%s.ogg was unable to be loaded\n", soundName);
+		return;
+	}
 
-    alSourceRewind(g_Sources[audioSource->id]);
+	alSourceRewind(g_Sources[audioSource->id]);
 
-    alSourcei(
-        g_Sources[audioSource->id],
-        AL_BUFFER,
-        g_Buffers[audioData->id]);
+	alSourcei(
+		g_Sources[audioSource->id],
+		AL_BUFFER,
+		g_Buffers[audioData->id]);
 
-    alSourcePlay(g_Sources[audioSource->id]);
+	alSourcePlay(g_Sources[audioSource->id]);
 }
 
 void queueSoundAtSource(
 	AudioSourceComponent *audioSource,
 	const char *soundName)
 {
-    loadAudio(soundName);
+	loadAudio(soundName);
 
-    AudioFile *audioData;
-    audioData = getAudio(soundName);
+	AudioFile *audioData;
+	audioData = getAudio(soundName);
 
-    if (!audioData)
-    {
-        LOG("%s.ogg was unable to be loaded\n", soundName);
-        return;
-    }
+	if (!audioData)
+	{
+		LOG("%s.ogg was unable to be loaded\n", soundName);
+		return;
+	}
 
-    alSourceQueueBuffers(
-        g_Sources[audioSource->id],
-        1,
-        &g_Buffers[audioData->id]);
+	alSourceQueueBuffers(
+		g_Sources[audioSource->id],
+		1,
+		&g_Buffers[audioData->id]);
 
-    ALenum errorCode = alGetError();
-    if (errorCode != AL_NO_ERROR)
-    {
-        LOG("OpenAL ERROR: unable to queue : %s\n", alGetString(errorCode));
-        return;
-    }
+	ALenum errorCode = alGetError();
+	if (errorCode != AL_NO_ERROR)
+	{
+		LOG("OpenAL ERROR: unable to queue : %s\n", alGetString(errorCode));
+		return;
+	}
 }
 
 void pauseSoundAtSource(AudioSourceComponent *audioSource)
 {
-    alSourcePause(g_Sources[audioSource->id]);
+	alSourcePause(g_Sources[audioSource->id]);
 }
 
 void resumeSoundAtSource(AudioSourceComponent *audioSource)
 {
-    alSourcePlay(g_Sources[audioSource->id]);
+	alSourcePlay(g_Sources[audioSource->id]);
 }
 
 void stopSoundAtSource(AudioSourceComponent *audioSource)
 {
-    alSourceStop(g_Sources[audioSource->id]);
+	alSourceStop(g_Sources[audioSource->id]);
 }
 
 bool isSourceActive(AudioSourceComponent *audioSource)
 {
-    ALint state = 0;
+	ALint state = 0;
 
-    alGetSourcei(
-        g_Sources[audioSource->id],
-        AL_SOURCE_STATE,
-        &state);
+	alGetSourcei(
+		g_Sources[audioSource->id],
+		AL_SOURCE_STATE,
+		&state);
 
-    if (state == AL_PLAYING || state == AL_PAUSED)
-    {
-        return true;
-    }
+	if (state == AL_PLAYING || state == AL_PAUSED)
+	{
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 void pauseAllAudio(void)
 {
-    alSourcePausev(NUM_AUDIO_SRC, g_Sources);
+	alSourcePausev(NUM_AUDIO_SRC, g_Sources);
 }
 
 void stopAllAudio(void)
 {
-    alSourceStopv(NUM_AUDIO_SRC, g_Sources);
+	alSourceStopv(NUM_AUDIO_SRC, g_Sources);
 }
 
 void playAllAudio(void)
 {
-    alSourcePlayv(NUM_AUDIO_SRC, g_Sources);
+	alSourcePlayv(NUM_AUDIO_SRC, g_Sources);
 }

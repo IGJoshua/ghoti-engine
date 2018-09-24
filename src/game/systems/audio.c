@@ -92,92 +92,92 @@ void initAudioSystem(Scene *scene)
 internal
 void beginAudioSystem(Scene *scene, real64 dt)
 {
-    if (audioSystemRefCount == 0 || !listenerScene)
-    {
-        return;
-    }
+	if (audioSystemRefCount == 0 || !listenerScene)
+	{
+		return;
+	}
 
-    AudioSourceComponent * sourceComp;
-    TransformComponent * transformComp;
-    RigidBodyComponent * rigidBodyComp;
+	AudioSourceComponent * sourceComp;
+	TransformComponent * transformComp;
+	RigidBodyComponent * rigidBodyComp;
 
-    uint32 sourceID = 0;
-    for (ComponentDataTableIterator itr = cdtGetIterator(
+	uint32 sourceID = 0;
+	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &audioSourceComponentID));
 		 !cdtIteratorAtEnd(itr) && sourceID < NUM_AUDIO_SRC;
 		 cdtMoveIterator(&itr), sourceID++)
-    {
-        UUID entityID = cdtIteratorGetUUID(itr);
+	{
+		UUID entityID = cdtIteratorGetUUID(itr);
 
-        sourceComp = (AudioSourceComponent *)cdtIteratorGetData(itr);
+		sourceComp = (AudioSourceComponent *)cdtIteratorGetData(itr);
 
-        sourceComp->id = sourceID;
+		sourceComp->id = sourceID;
 
-        alSourcef(g_Sources[sourceID], AL_PITCH, sourceComp->pitch);
-    	alSourcef(g_Sources[sourceID], AL_GAIN, sourceComp->gain);
+		alSourcef(g_Sources[sourceID], AL_PITCH, sourceComp->pitch);
+		alSourcef(g_Sources[sourceID], AL_GAIN, sourceComp->gain);
 
-        transformComp = sceneGetComponentFromEntity(
-            scene,
-            entityID,
-            transformComponentID);
+		transformComp = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
 
-        ALfloat sourcePos[3] = {};
+		ALfloat sourcePos[3] = {};
 
-        if (transformComp)
-        {
-            sourcePos[0] = transformComp->globalPosition.x;
-            sourcePos[1] = transformComp->globalPosition.y;
-            sourcePos[2] = transformComp->globalPosition.z;
-        }
+		if (transformComp)
+		{
+			sourcePos[0] = transformComp->globalPosition.x;
+			sourcePos[1] = transformComp->globalPosition.y;
+			sourcePos[2] = transformComp->globalPosition.z;
+		}
 
-        rigidBodyComp = sceneGetComponentFromEntity(
-            scene,
-            entityID,
-            rigidBodyComponentID);
+		rigidBodyComp = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			rigidBodyComponentID);
 
-        ALfloat sourceVel[3]={};
+		ALfloat sourceVel[3]={};
 
-        if (rigidBodyComp)
-        {
-            sourceVel[0] = rigidBodyComp->velocity.x;
-            sourceVel[1] = rigidBodyComp->velocity.y;
-            sourceVel[2] = rigidBodyComp->velocity.z;
-        }
+		if (rigidBodyComp)
+		{
+			sourceVel[0] = rigidBodyComp->velocity.x;
+			sourceVel[1] = rigidBodyComp->velocity.y;
+			sourceVel[2] = rigidBodyComp->velocity.z;
+		}
 
-        alSourcefv(g_Sources[sourceID], AL_POSITION, sourcePos);
-    	alSourcefv(g_Sources[sourceID], AL_VELOCITY, sourceVel);
-        alSourcei(g_Sources[sourceID], AL_LOOPING, AL_FALSE);
+		alSourcefv(g_Sources[sourceID], AL_POSITION, sourcePos);
+		alSourcefv(g_Sources[sourceID], AL_VELOCITY, sourceVel);
+		alSourcei(g_Sources[sourceID], AL_LOOPING, AL_FALSE);
 
-        if (!strcmp(entityID.string, listenerScene->mainCamera.string))
-        {
-            ALfloat	listenerOri[6]={0,0,0, 0,1,0};
+		if (!strcmp(entityID.string, listenerScene->mainCamera.string))
+		{
+			ALfloat	listenerOri[6]={0,0,0, 0,1,0};
 
-            if (transformComp)
-            {
-                kmVec3 atVec, upVec;
+			if (transformComp)
+			{
+				kmVec3 atVec, upVec;
 
-                kmQuaternionGetForwardVec3RH(
-                    &atVec,
-                    &transformComp->globalRotation);
+				kmQuaternionGetForwardVec3RH(
+					&atVec,
+					&transformComp->globalRotation);
 
-                kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
+				kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
 
-                listenerOri[0] = atVec.x;
-                listenerOri[1] = atVec.y;
-                listenerOri[2] = atVec.z;
+				listenerOri[0] = atVec.x;
+				listenerOri[1] = atVec.y;
+				listenerOri[2] = atVec.z;
 
-                listenerOri[3] = upVec.x;
-                listenerOri[4] = upVec.y;
-                listenerOri[5] = upVec.z;
-            }
+				listenerOri[3] = upVec.x;
+				listenerOri[4] = upVec.y;
+				listenerOri[5] = upVec.z;
+			}
 
-            alListenerfv(AL_POSITION,sourcePos);
-            alListenerfv(AL_ORIENTATION,listenerOri);
-            alListenerfv(AL_VELOCITY,sourceVel);
-        }
-    }
+			alListenerfv(AL_POSITION,sourcePos);
+			alListenerfv(AL_ORIENTATION,listenerOri);
+			alListenerfv(AL_VELOCITY,sourceVel);
+		}
+	}
 }
 
 internal
