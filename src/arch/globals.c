@@ -26,7 +26,10 @@ HashMap materialFolders;
 pthread_mutex_t materialFoldersMutex;
 
 HashMap fonts;
+
 HashMap images;
+pthread_mutex_t imagesMutex;
+
 HashMap audioFiles;
 HashMap particles;
 

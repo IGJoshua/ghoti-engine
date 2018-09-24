@@ -66,8 +66,10 @@ typedef struct font_t
 typedef struct image_t
 {
 	UUID name;
-	GLuint id;
 	uint32 refCount;
+	real64 lifetime;
+	GLuint id;
+	ILuint devilID;
 	GLsizei width;
 	GLsizei height;
 } Image;

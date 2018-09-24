@@ -488,7 +488,7 @@ void drawCollisionPrimitive(
 
 		logGLError(
 			false,
-			"Error when drawing collision primitive (%s), entity (%s)",
+			"Failed to draw collision primitive (%s), entity (%s)",
 			model->name.string,
 			entity.string);
 

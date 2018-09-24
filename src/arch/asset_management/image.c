@@ -58,54 +58,18 @@ int32 loadImage(const char *name)
 			pthread_mutex_lock(&devilMutex);
 
 			// TODO: Change to ASSET_LOG_TYPE_IMAGE
-			ILuint devilID;
 			error = loadTextureData(
 				ASSET_LOG_TYPE_NONE,
 				"image",
 				NULL,
 				fullFilename,
 				TEXTURE_FORMAT_RGBA8,
-				&devilID);
-
-			if (error != -1)
-			{
-				glGenTextures(1, &image.id);
-				glBindTexture(GL_TEXTURE_2D, image.id);
-
-				image.width = ilGetInteger(IL_IMAGE_WIDTH);
-				image.height = ilGetInteger(IL_IMAGE_HEIGHT);
-
-				glTexStorage2D(
-					GL_TEXTURE_2D,
-					1,
-					GL_RGBA8,
-					image.width,
-					image.height);
-
-				const GLvoid *imageData = ilGetData();
-				glTexSubImage2D(
-					GL_TEXTURE_2D,
-					0,
-					0,
-					0,
-					image.width,
-					image.height,
-					GL_RGBA,
-					GL_UNSIGNED_BYTE,
-					imageData);
-
-				error = logGLError(
-					false,
-					"Error while transferring image onto GPU");
-
-				if (error != -1)
-				{
-					glBindTexture(GL_TEXTURE_2D, 0);
-					ilDeleteImages(1, &devilID);
-				}
-			}
+				&image.devilID);
+			ilBindImage(0);
 
 			pthread_mutex_unlock(&devilMutex);
+
+			uploadImageToGPU(&image);
 		}
 
 		if (error != - 1)
@@ -126,6 +90,57 @@ int32 loadImage(const char *name)
 	{
 		imageResource->refCount++;
 	}
+
+	return error;
+}
+
+int32 uploadImageToGPU(Image *image)
+{
+	LOG("Transferring image (%s) onto GPU...\n", image->name.string);
+
+	pthread_mutex_lock(&devilMutex);
+
+	ilBindImage(image->devilID);
+
+	glGenTextures(1, &image->id);
+	glBindTexture(GL_TEXTURE_2D, image->id);
+
+	image->width = ilGetInteger(IL_IMAGE_WIDTH);
+	image->height = ilGetInteger(IL_IMAGE_HEIGHT);
+
+	glTexStorage2D(
+		GL_TEXTURE_2D,
+		1,
+		GL_RGBA8,
+		image->width,
+		image->height);
+
+	const GLvoid *imageData = ilGetData();
+	glTexSubImage2D(
+		GL_TEXTURE_2D,
+		0,
+		0,
+		0,
+		image->width,
+		image->height,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		imageData);
+
+	ilDeleteImages(1, &image->devilID);
+	ilBindImage(0);
+
+	pthread_mutex_unlock(&devilMutex);
+
+	int32 error = logGLError(false, "Failed to transfer image onto GPU");
+
+	if (error != -1)
+	{
+		LOG("Successfully transferred image (%s) onto GPU\n",
+			image->name.string);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return error;
 }

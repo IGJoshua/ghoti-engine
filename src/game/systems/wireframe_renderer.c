@@ -388,7 +388,7 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		logGLError(
 			false,
-			"Error when drawing wireframe for model (%s), subset (%s)",
+			"Failed to draw wireframe for model (%s), subset (%s)",
 			model.name.string,
 			subset->name.string);
 

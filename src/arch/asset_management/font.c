@@ -85,7 +85,7 @@ int32 loadFont(const char *name, real32 size)
 				GL_UNSIGNED_BYTE,
 				image);
 
-			error = logGLError(false, "Error while transferring font onto GPU");
+			error = logGLError(false, "Failed to transfer font onto GPU");
 
 			glBindTexture(GL_TEXTURE_2D, 0);
 

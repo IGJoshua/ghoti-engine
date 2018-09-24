@@ -254,7 +254,7 @@ int32 loadTextureData(
 
 int32 uploadTextureToGPU(Texture *texture)
 {
-	LOG("Transferring texture data onto GPU...\n");
+	LOG("Transferring texture (%s) onto GPU...\n", texture->name.string);
 
 	pthread_mutex_lock(&devilMutex);
 
@@ -304,7 +304,8 @@ int32 uploadTextureToGPU(Texture *texture)
 			GL_TEXTURE_MIN_FILTER,
 			GL_LINEAR_MIPMAP_LINEAR);
 
-		LOG("Successfully transferred texture data onto GPU\n");
+		LOG("Successfully transferred texture (%s) onto GPU\n",
+			texture->name.string);
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);

@@ -23,9 +23,9 @@ void loadMesh(Mesh *mesh, FILE *file, const char *modelName)
 	ASSET_LOG(MODEL, modelName, "Successfully loaded mesh\n");
 }
 
-void uploadMeshToGPU(Mesh *mesh)
+void uploadMeshToGPU(Mesh *mesh, const char *name)
 {
-	LOG("Transferring mesh data onto GPU...\n");
+	LOG("Transferring mesh (%s) onto GPU...\n", name);
 
 	glGenBuffers(1, &mesh->vertexBuffer);
 	glGenVertexArrays(1, &mesh->vertexArray);
@@ -121,7 +121,7 @@ void uploadMeshToGPU(Mesh *mesh)
 	free(mesh->vertices);
 	free(mesh->indices);
 
-	LOG("Successfully transferred mesh data onto GPU\n");
+	LOG("Successfully transferred mesh (%s) onto GPU\n", name);
 	LOG("Vertex Count: %d\n", mesh->numVertices);
 	LOG("Triangle Count: %d\n", mesh->numIndices / 3);
 }

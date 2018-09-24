@@ -529,7 +529,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		heightmap->numIndices,
 		GL_UNSIGNED_INT,
 		NULL);
-	logGLError(false, "Error while drawing heightmap");
+	logGLError(false, "Failed to draw heightmap");
 
 	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{

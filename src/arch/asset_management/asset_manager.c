@@ -511,6 +511,5 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&audioFiles);
-
 	freeHashMap(&particles);
 }

@@ -359,7 +359,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		logGLError(
 			false,
-			"Error when drawing model (%s), subset (%s)",
+			"Failed to draw model (%s), subset (%s)",
 			model.name.string,
 			subset->name.string);
 

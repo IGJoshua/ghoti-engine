@@ -98,7 +98,7 @@ int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
 
 				error = logGLError(
 					false,
-					"Error while transferring particle onto GPU");
+					"Failed to transfer particle onto GPU");
 
 				if (error != -1)
 				{

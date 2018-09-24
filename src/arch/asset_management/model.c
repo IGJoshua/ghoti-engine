@@ -268,13 +268,7 @@ void uploadModelToGPU(Model *model)
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
 		Subset *subset = &model->subsets[i];
-
-		LOG("Transferring mesh (%s) onto GPU...\n", subset->name.string);
-
-		uploadMeshToGPU(&subset->mesh);
-
-		LOG("Successfully transferred mesh (%s) onto GPU\n",
-				  subset->name.string);
+		uploadMeshToGPU(&subset->mesh, subset->name.string);
 	}
 
 	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
