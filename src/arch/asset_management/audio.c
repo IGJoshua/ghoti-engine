@@ -96,8 +96,8 @@ AudioFile* getAudio(const char *name)
     AudioFile *sound = NULL;
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
-		sound = hashMapGetData(audioFiles, &nameID);
+		UUID audioName = idFromName(name);
+		sound = hashMapGetData(audioFiles, &audioName);
 	}
 
 	return sound;

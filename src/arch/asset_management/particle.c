@@ -137,8 +137,8 @@ Particle* getParticle(const char *name)
 	Particle *particle = NULL;
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
-		particle = hashMapGetData(particles, &nameID);
+		UUID particleName = idFromName(name);
+		particle = hashMapGetData(particles, &particleName);
 	}
 
 	return particle;
@@ -146,8 +146,8 @@ Particle* getParticle(const char *name)
 
 void deleteParticle(const char *name)
 {
-	UUID nameID = idFromName(name);
-	hashMapDelete(particles, &nameID);
+	UUID particleName = idFromName(name);
+	hashMapDelete(particles, &particleName);
 }
 
 void freeParticle(const char *name)

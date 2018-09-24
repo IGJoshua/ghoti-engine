@@ -318,10 +318,10 @@ Texture getTexture(const char *name)
 	Texture texture = {};
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
+		UUID textureName = idFromName(name);
 
 		pthread_mutex_lock(&texturesMutex);
-		Texture *textureResource = hashMapGetData(textures, &nameID);
+		Texture *textureResource = hashMapGetData(textures, &textureName);
 		pthread_mutex_unlock(&texturesMutex);
 
 		if (textureResource)
@@ -364,9 +364,13 @@ void freeTexture(UUID name)
 
 void freeTextureData(Texture *texture)
 {
-	LOG("Freeing texture data (%s)...\n", texture->name.string);
+	LOG("Freeing texture (%s)...\n", texture->name.string);
+
+	pthread_mutex_lock(&devilMutex);
+	ilDeleteImages(1, &texture->devilID);
+	pthread_mutex_unlock(&devilMutex);
 
 	glDeleteTextures(1, &texture->id);
 
-	LOG("Successfully freed texture data (%s)\n", texture->name.string);
+	LOG("Successfully freed texture (%s)\n", texture->name.string);
 }

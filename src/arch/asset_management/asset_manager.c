@@ -2,6 +2,7 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/texture.h"
+#include "asset_management/image.h"
 #include "asset_management/font.h"
 #include "asset_management/audio.h"
 
@@ -331,6 +332,52 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&texturesMutex);
+
+		// Free Images
+
+		pthread_mutex_lock(&imagesMutex);
+
+		for (HashMapIterator itr = hashMapGetIterator(images);
+			!hashMapIteratorAtEnd(itr);)
+		{
+			Image *image = (Image*)hashMapIteratorGetValue(itr);
+			if (image->refCount == 0)
+			{
+				image->lifetime -= dt;
+				if (image->lifetime <= 0.0)
+				{
+					pthread_mutex_lock(&freeImagesMutex);
+					listPushBack(&freeImagesQueue, image);
+					pthread_mutex_unlock(&freeImagesMutex);
+
+					UUID imageName = image->name;
+
+					hashMapMoveIterator(&itr);
+					hashMapDelete(images, &imageName);
+
+					ASSET_LOG(
+						IMAGE,
+						imageName.string,
+						"Image queued to be freed (%s)\n",
+						imageName.string);
+					ASSET_LOG(
+						IMAGE,
+						imageName.string,
+						"Image Count: %d\n",
+						images->count);
+					ASSET_LOG_COMMIT(IMAGE, imageName.string);
+				}
+
+				hashMapMoveIterator(&itr);
+			}
+			else
+			{
+				image->lifetime = config.assetsConfig.minImageLifetime;
+				hashMapMoveIterator(&itr);
+			}
+		}
+
+		pthread_mutex_unlock(&imagesMutex);
 		pthread_mutex_lock(&updateAssetManagerMutex);
 
 		while (!updateAssetManagerFlag)
@@ -363,9 +410,9 @@ void uploadAssets(void)
 		uploadModelToGPU(model);
 		pthread_mutex_lock(&uploadModelsMutex);
 
-		pthread_mutex_lock(&modelsMutex);
-
 		UUID modelName = model->name;
+
+		pthread_mutex_lock(&modelsMutex);
 
 		hashMapInsert(models, &modelName, model);
 		LOG("Model Count: %d\n", models->count);
@@ -391,9 +438,9 @@ void uploadAssets(void)
 		uploadTextureToGPU(texture);
 		pthread_mutex_lock(&uploadTexturesMutex);
 
-		pthread_mutex_lock(&texturesMutex);
-
 		UUID textureName = texture->name;
+
+		pthread_mutex_lock(&texturesMutex);
 
 		hashMapInsert(textures, &textureName, texture);
 		LOG("Texture Count: %d\n", textures->count);
@@ -405,6 +452,34 @@ void uploadAssets(void)
 	}
 
 	pthread_mutex_unlock(&uploadTexturesMutex);
+
+	// Upload Images
+
+	pthread_mutex_lock(&uploadImagesMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(uploadImagesQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		Image *image = hashMapIteratorGetValue(itr);
+
+		pthread_mutex_unlock(&uploadImagesMutex);
+		uploadImageToGPU(image);
+		pthread_mutex_lock(&uploadImagesMutex);
+
+		UUID imageName = image->name;
+
+		pthread_mutex_lock(&imagesMutex);
+
+		hashMapInsert(images, &imageName, image);
+		LOG("Image Count: %d\n", images->count);
+
+		pthread_mutex_unlock(&imagesMutex);
+
+		hashMapMoveIterator(&itr);
+		hashMapDelete(uploadImagesQueue, &imageName);
+	}
+
+	pthread_mutex_unlock(&uploadImagesMutex);
 }
 
 void freeAssets(void)
@@ -444,6 +519,24 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeTexturesMutex);
+
+	// Free Images
+
+	pthread_mutex_lock(&freeImagesMutex);
+
+	for (ListIterator listItr = listGetIterator(&freeImagesQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Image *image = LIST_ITERATOR_GET_ELEMENT(Image, listItr);
+
+		pthread_mutex_unlock(&freeImagesMutex);
+		freeImageData(image);
+		pthread_mutex_lock(&freeImagesMutex);
+
+		listRemove(&freeImagesQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeImagesMutex);
 }
 
 void shutdownAssetManager(void)
@@ -503,6 +596,17 @@ void shutdownAssetManager(void)
 	listClear(&freeTexturesQueue);
 	pthread_mutex_destroy(&freeTexturesMutex);
 
+	for (ListIterator listItr = listGetIterator(&freeImagesQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Image *image = LIST_ITERATOR_GET_ELEMENT(Image, listItr);
+		hashMapInsert(images, &image->name, image);
+	}
+
+	listClear(&freeImagesQueue);
+	pthread_mutex_destroy(&freeImagesMutex);
+
 	// Resource Uploading HashMaps
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
@@ -526,6 +630,17 @@ void shutdownAssetManager(void)
 
 	freeHashMap(&uploadTexturesQueue);
 	pthread_mutex_destroy(&uploadTexturesMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(uploadImagesQueue);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Image *image = hashMapIteratorGetValue(itr);
+		hashMapInsert(images, &image->name, image);
+	}
+
+	freeHashMap(&uploadImagesQueue);
+	pthread_mutex_destroy(&uploadImagesMutex);
 
 	// Resource Loading HashMaps
 
@@ -587,6 +702,14 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&fonts);
+
+	for (HashMapIterator itr = hashMapGetIterator(images);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		freeImageData(hashMapIteratorGetValue(itr));
+	}
+
 	freeHashMap(&images);
 
 	for (HashMapIterator itr = hashMapGetIterator(audioFiles);

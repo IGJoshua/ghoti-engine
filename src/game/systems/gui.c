@@ -57,7 +57,7 @@ internal Font *defaultFont;
 
 #define WIDGET_BACKGROUND "widget_background"
 
-internal Image *widgetBackground;
+internal Image widgetBackground;
 
 internal int32 previousViewportWidth = 0;
 internal int32 previousViewportHeight = 0;
@@ -542,7 +542,7 @@ void addWidgets(
 				nk_layout_space_push(&ctx, rect);
 				nk_image_color(
 					&ctx,
-					nk_image_id(widgetBackground->id),
+					nk_image_id(widgetBackground.id),
 					getColor(&widget->backgroundColor));
 
 				TextComponent *text = sceneGetComponentFromEntity(
@@ -666,9 +666,9 @@ void addImage(
 	real32 panelWidth,
 	real32 panelHeight)
 {
-	Image *image = getImage(imageComponent->name);
+	Image image = getImage(imageComponent->name);
 
-	if (!image)
+	if (strlen(image.name.string) == 0)
 	{
 		return;
 	}
@@ -679,8 +679,8 @@ void addImage(
 
 	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
 
-	real32 width = (image->width / widgetRect.w) * imageComponent->scale.x;
-	real32 height = (image->height / widgetRect.h) * imageComponent->scale.x;
+	real32 width = (image.width / widgetRect.w) * imageComponent->scale.x;
+	real32 height = (image.height / widgetRect.h) * imageComponent->scale.x;
 
 	if (width > 1.0f)
 	{
@@ -704,7 +704,7 @@ void addImage(
 
 	nk_image_color(
 		&ctx,
-		nk_image_id(image->id),
+		nk_image_id(image.id),
 		getColor(&imageComponent->color));
 }
 

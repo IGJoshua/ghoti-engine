@@ -119,8 +119,8 @@ Font* getFont(const char *name, real32 size)
 	Font *font = NULL;
 	if (strlen(name) > 0)
 	{
-		UUID nameID = getFontName(name, size);
-		font = hashMapGetData(fonts, &nameID);
+		UUID fontName = getFontName(name, size);
+		font = hashMapGetData(fonts, &fontName);
 	}
 
 	return font;

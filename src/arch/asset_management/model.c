@@ -280,10 +280,10 @@ Model getModel(const char *name)
 
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
+		UUID modelName = idFromName(name);
 
 		pthread_mutex_lock(&modelsMutex);
-		Model *modelResource = hashMapGetData(models, &nameID);
+		Model *modelResource = hashMapGetData(models, &modelName);
 		pthread_mutex_unlock(&modelsMutex);
 
 		if (modelResource)
@@ -322,7 +322,7 @@ void freeModel(const char *name)
 
 void freeModelData(Model *model)
 {
-	LOG("Freeing model data (%s)...\n", model->name.string);
+	LOG("Freeing model (%s)...\n", model->name.string);
 
 	for (uint32 i = 0; i < model->numSubsets; i++)
 	{
@@ -336,7 +336,7 @@ void freeModelData(Model *model)
 		model->animations,
 		&model->skeleton);
 
-	LOG("Successfully freed model data (%s)\n", model->name.string);
+	LOG("Successfully freed model (%s)\n", model->name.string);
 }
 
 void swapMeshMaterial(
