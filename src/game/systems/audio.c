@@ -15,7 +15,7 @@
 #include "ECS/component.h"
 
 #include "components/component_types.h"
-#include "components/audio.h"
+#include "components/audio_source.h"
 
 #include <AL/al.h>
 

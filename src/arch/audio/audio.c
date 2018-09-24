@@ -2,7 +2,7 @@
 
 #include "audio/audio.h"
 
-#include "components/audio.h"
+#include "components/audio_source.h"
 
 #include "core/log.h"
 

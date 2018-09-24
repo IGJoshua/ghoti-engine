@@ -1,10 +1,12 @@
 #include "defines.h"
 
-#include "core/log.h"
-
 #include "asset_management/audio.h"
 
 #include "audio/audio.h"
+
+#include "components/audio_source.h"
+
+#include "core/log.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -13,8 +15,6 @@
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 #include "ECS/component.h"
-
-#include "components/audio.h"
 
 #include <AL/al.h>
 
