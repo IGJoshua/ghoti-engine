@@ -13,6 +13,7 @@
 
 #define MODELS_LOG_BUCKET_COUNT 521
 #define TEXTURES_LOG_BUCKET_COUNT 2503
+#define FONTS_LOG_BUCKET_COUNT 127
 #define IMAGES_LOG_BUCKET_COUNT 521
 
 internal HashMap modelsLog;
@@ -20,6 +21,9 @@ internal pthread_mutex_t modelsLogMutex;
 
 internal HashMap texturesLog;
 internal pthread_mutex_t texturesLogMutex;
+
+internal HashMap fontsLog;
+internal pthread_mutex_t fontsLogMutex;
 
 internal HashMap imagesLog;
 internal pthread_mutex_t imagesLogMutex;
@@ -53,6 +57,13 @@ void initializeAssetLog(void)
 		TEXTURES_LOG_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&texturesLogMutex, NULL);
+
+	fontsLog = createHashMap(
+		sizeof(UUID),
+		sizeof(char*),
+		FONTS_LOG_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&fontsLogMutex, NULL);
 
 	imagesLog = createHashMap(
 		sizeof(UUID),
@@ -144,6 +155,9 @@ void shutdownAssetLog(void)
 	freeHashMap(&texturesLog);
 	pthread_mutex_destroy(&texturesLogMutex);
 
+	freeHashMap(&fontsLog);
+	pthread_mutex_destroy(&fontsLogMutex);
+
 	freeHashMap(&imagesLog);
 	pthread_mutex_destroy(&imagesLogMutex);
 
@@ -158,6 +172,8 @@ HashMap getAssetLog(AssetLogType type)
 			return modelsLog;
 		case ASSET_LOG_TYPE_TEXTURE:
 			return texturesLog;
+		case ASSET_LOG_TYPE_FONT:
+			return fontsLog;
 		case ASSET_LOG_TYPE_IMAGE:
 			return imagesLog;
 		default:
@@ -175,6 +191,8 @@ pthread_mutex_t* getAssetLogMutex(AssetLogType type)
 			return &modelsLogMutex;
 		case ASSET_LOG_TYPE_TEXTURE:
 			return &texturesLogMutex;
+		case ASSET_LOG_TYPE_FONT:
+			return &fontsLogMutex;
 		case ASSET_LOG_TYPE_IMAGE:
 			return &imagesLogMutex;
 		default:

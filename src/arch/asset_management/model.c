@@ -283,13 +283,14 @@ Model getModel(const char *name)
 		UUID modelName = idFromName(name);
 
 		pthread_mutex_lock(&modelsMutex);
-		Model *modelResource = hashMapGetData(models, &modelName);
-		pthread_mutex_unlock(&modelsMutex);
 
+		Model *modelResource = hashMapGetData(models, &modelName);
 		if (modelResource)
 		{
 			model = *modelResource;
 		}
+
+		pthread_mutex_unlock(&modelsMutex);
 	}
 
 	return model;

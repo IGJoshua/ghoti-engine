@@ -321,13 +321,14 @@ Texture getTexture(const char *name)
 		UUID textureName = idFromName(name);
 
 		pthread_mutex_lock(&texturesMutex);
-		Texture *textureResource = hashMapGetData(textures, &textureName);
-		pthread_mutex_unlock(&texturesMutex);
 
+		Texture *textureResource = hashMapGetData(textures, &textureName);
 		if (textureResource)
 		{
 			texture = *textureResource;
 		}
+
+		pthread_mutex_unlock(&texturesMutex);
 	}
 
 	return texture;

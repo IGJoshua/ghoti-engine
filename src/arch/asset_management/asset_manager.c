@@ -31,6 +31,7 @@ extern HashMap materialFolders;
 extern pthread_mutex_t materialFoldersMutex;
 
 extern HashMap fonts;
+extern pthread_mutex_t fontsMutex;
 
 extern HashMap images;
 extern pthread_mutex_t imagesMutex;
@@ -46,6 +47,9 @@ extern pthread_mutex_t loadingModelsMutex;
 extern HashMap loadingTextures;
 extern pthread_mutex_t loadingTexturesMutex;
 
+extern HashMap loadingFonts;
+extern pthread_mutex_t loadingFontsMutex;
+
 extern HashMap loadingImages;
 extern pthread_mutex_t loadingImagesMutex;
 
@@ -57,6 +61,9 @@ extern pthread_mutex_t uploadModelsMutex;
 extern HashMap uploadTexturesQueue;
 extern pthread_mutex_t uploadTexturesMutex;
 
+extern HashMap uploadFontsQueue;
+extern pthread_mutex_t uploadFontsMutex;
+
 extern HashMap uploadImagesQueue;
 extern pthread_mutex_t uploadImagesMutex;
 
@@ -67,6 +74,9 @@ internal pthread_mutex_t freeModelsMutex;
 
 internal List freeTexturesQueue;
 internal pthread_mutex_t freeTexturesMutex;
+
+internal List freeFontsQueue;
+internal pthread_mutex_t freeFontsMutex;
 
 internal List freeImagesQueue;
 internal pthread_mutex_t freeImagesMutex;
@@ -121,6 +131,7 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(Font),
 		FONTS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&fontsMutex, NULL);
 
 	images = createHashMap(
 		sizeof(UUID),
@@ -156,6 +167,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&loadingTexturesMutex, NULL);
 
+	loadingFonts = createHashMap(
+		sizeof(UUID),
+		sizeof(Font),
+		LOADING_FONTS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingFontsMutex, NULL);
+
 	loadingImages = createHashMap(
 		sizeof(UUID),
 		sizeof(Image),
@@ -179,6 +197,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&uploadTexturesMutex, NULL);
 
+	uploadFontsQueue = createHashMap(
+		sizeof(UUID),
+		sizeof(Font),
+		UPLOAD_FONTS_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&uploadFontsMutex, NULL);
+
 	uploadImagesQueue = createHashMap(
 		sizeof(UUID),
 		sizeof(Image),
@@ -193,6 +218,9 @@ void initializeAssetManager(real64 *dt) {
 
 	freeTexturesQueue = createList(sizeof(Texture));
 	pthread_mutex_init(&freeTexturesMutex, NULL);
+
+	freeFontsQueue = createList(sizeof(Font));
+	pthread_mutex_init(&freeFontsMutex, NULL);
 
 	freeImagesQueue = createList(sizeof(Image));
 	pthread_mutex_init(&freeImagesMutex, NULL);
@@ -275,8 +303,10 @@ void* updateAssetManager(void *arg)
 						models->count);
 					ASSET_LOG_COMMIT(MODEL, modelName.string);
 				}
-
-				hashMapMoveIterator(&itr);
+				else
+				{
+					hashMapMoveIterator(&itr);
+				}
 			}
 			else
 			{
@@ -321,8 +351,10 @@ void* updateAssetManager(void *arg)
 						textures->count);
 					ASSET_LOG_COMMIT(TEXTURE, textureName.string);
 				}
-
-				hashMapMoveIterator(&itr);
+				else
+				{
+					hashMapMoveIterator(&itr);
+				}
 			}
 			else
 			{
@@ -332,6 +364,46 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&texturesMutex);
+
+		// Free Fonts
+
+		pthread_mutex_lock(&fontsMutex);
+
+		for (HashMapIterator itr = hashMapGetIterator(fonts);
+			!hashMapIteratorAtEnd(itr);)
+		{
+			Font *font = (Font*)hashMapIteratorGetValue(itr);
+			font->lifetime -= dt;
+			if (font->lifetime <= 0.0)
+			{
+				pthread_mutex_lock(&freeFontsMutex);
+				listPushBack(&freeFontsQueue, font);
+				pthread_mutex_unlock(&freeFontsMutex);
+
+				UUID fontName = font->name;
+
+				hashMapMoveIterator(&itr);
+				hashMapDelete(fonts, &fontName);
+
+				ASSET_LOG(
+					FONT,
+					fontName.string,
+					"Font queued to be freed (%s)\n",
+					fontName.string);
+				ASSET_LOG(
+					FONT,
+					fontName.string,
+					"Font Count: %d\n",
+					fonts->count);
+				ASSET_LOG_COMMIT(FONT, fontName.string);
+			}
+			else
+			{
+				hashMapMoveIterator(&itr);
+			}
+		}
+
+		pthread_mutex_unlock(&fontsMutex);
 
 		// Free Images
 
@@ -367,8 +439,10 @@ void* updateAssetManager(void *arg)
 						images->count);
 					ASSET_LOG_COMMIT(IMAGE, imageName.string);
 				}
-
-				hashMapMoveIterator(&itr);
+				else
+				{
+					hashMapMoveIterator(&itr);
+				}
 			}
 			else
 			{
@@ -453,6 +527,34 @@ void uploadAssets(void)
 
 	pthread_mutex_unlock(&uploadTexturesMutex);
 
+	// Upload Fonts
+
+	pthread_mutex_lock(&uploadFontsMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(uploadFontsQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		Font *font = hashMapIteratorGetValue(itr);
+
+		pthread_mutex_unlock(&uploadFontsMutex);
+		uploadFontToGPU(font);
+		pthread_mutex_lock(&uploadFontsMutex);
+
+		UUID fontName = font->name;
+
+		pthread_mutex_lock(&fontsMutex);
+
+		hashMapInsert(fonts, &fontName, font);
+		LOG("Font Count: %d\n", fonts->count);
+
+		pthread_mutex_unlock(&fontsMutex);
+
+		hashMapMoveIterator(&itr);
+		hashMapDelete(uploadFontsQueue, &fontName);
+	}
+
+	pthread_mutex_unlock(&uploadFontsMutex);
+
 	// Upload Images
 
 	pthread_mutex_lock(&uploadImagesMutex);
@@ -519,6 +621,24 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeTexturesMutex);
+
+	// Free Fonts
+
+	pthread_mutex_lock(&freeFontsMutex);
+
+	for (ListIterator listItr = listGetIterator(&freeFontsQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Font *font = LIST_ITERATOR_GET_ELEMENT(Font, listItr);
+
+		pthread_mutex_unlock(&freeFontsMutex);
+		freeFontData(font);
+		pthread_mutex_lock(&freeFontsMutex);
+
+		listRemove(&freeFontsQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeFontsMutex);
 
 	// Free Images
 
@@ -596,6 +716,17 @@ void shutdownAssetManager(void)
 	listClear(&freeTexturesQueue);
 	pthread_mutex_destroy(&freeTexturesMutex);
 
+	for (ListIterator listItr = listGetIterator(&freeFontsQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Font *font = LIST_ITERATOR_GET_ELEMENT(Font, listItr);
+		hashMapInsert(fonts, &font->name, font);
+	}
+
+	listClear(&freeFontsQueue);
+	pthread_mutex_destroy(&freeFontsMutex);
+
 	for (ListIterator listItr = listGetIterator(&freeImagesQueue);
 		 !listIteratorAtEnd(listItr);
 		 listMoveIterator(&listItr))
@@ -631,6 +762,17 @@ void shutdownAssetManager(void)
 	freeHashMap(&uploadTexturesQueue);
 	pthread_mutex_destroy(&uploadTexturesMutex);
 
+	for (HashMapIterator itr = hashMapGetIterator(uploadFontsQueue);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Font *font = hashMapIteratorGetValue(itr);
+		hashMapInsert(fonts, &font->name, font);
+	}
+
+	freeHashMap(&uploadFontsQueue);
+	pthread_mutex_destroy(&uploadFontsMutex);
+
 	for (HashMapIterator itr = hashMapGetIterator(uploadImagesQueue);
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
@@ -649,6 +791,9 @@ void shutdownAssetManager(void)
 
 	freeHashMap(&loadingTextures);
 	pthread_mutex_destroy(&loadingTexturesMutex);
+
+	freeHashMap(&loadingFonts);
+	pthread_mutex_destroy(&loadingFontsMutex);
 
 	freeHashMap(&loadingImages);
 	pthread_mutex_destroy(&loadingImagesMutex);
@@ -694,11 +839,10 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&materialFoldersMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(fonts);
-		 !hashMapIteratorAtEnd(itr);)
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
-		Font *font = (Font*)hashMapIteratorGetValue(itr);
-		hashMapMoveIterator(&itr);
-		freeFont(font);
+		freeFontData(hashMapIteratorGetValue(itr));
 	}
 
 	freeHashMap(&fonts);

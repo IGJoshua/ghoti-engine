@@ -26,6 +26,7 @@ HashMap materialFolders;
 pthread_mutex_t materialFoldersMutex;
 
 HashMap fonts;
+pthread_mutex_t fontsMutex;
 
 HashMap images;
 pthread_mutex_t imagesMutex;
@@ -41,6 +42,9 @@ pthread_mutex_t loadingModelsMutex;
 HashMap loadingTextures;
 pthread_mutex_t loadingTexturesMutex;
 
+HashMap loadingFonts;
+pthread_mutex_t loadingFontsMutex;
+
 HashMap loadingImages;
 pthread_mutex_t loadingImagesMutex;
 
@@ -51,6 +55,9 @@ pthread_mutex_t uploadModelsMutex;
 
 HashMap uploadTexturesQueue;
 pthread_mutex_t uploadTexturesMutex;
+
+HashMap uploadFontsQueue;
+pthread_mutex_t uploadFontsMutex;
 
 HashMap uploadImagesQueue;
 pthread_mutex_t uploadImagesMutex;

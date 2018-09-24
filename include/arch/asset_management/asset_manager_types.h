@@ -57,10 +57,14 @@ typedef struct model_t
 typedef struct font_t
 {
 	UUID name;
+	real64 lifetime;
 	struct nk_font_atlas atlas;
 	struct nk_font *font;
 	struct nk_draw_null_texture null;
-	GLuint texture;
+	GLuint textureID;
+	const void *textureData;
+	int32 textureWidth;
+	int32 textureHeight;
 } Font;
 
 typedef struct image_t
@@ -92,6 +96,7 @@ typedef struct particle_t
 	uint32 refCount;
 	GLsizei width;
 	GLsizei height;
+	uint32 numSprites;
 	GLsizei spriteWidth;
 	GLsizei spriteHeight;
 } Particle;

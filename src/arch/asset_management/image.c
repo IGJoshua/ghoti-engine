@@ -250,13 +250,14 @@ Image getImage(const char *name)
 		UUID imageName = idFromName(name);
 
 		pthread_mutex_lock(&imagesMutex);
-		Image *imageResource = hashMapGetData(images, &imageName);
-		pthread_mutex_unlock(&imagesMutex);
 
+		Image *imageResource = hashMapGetData(images, &imageName);
 		if (imageResource)
 		{
 			image = *imageResource;
 		}
+
+		pthread_mutex_unlock(&imagesMutex);
 	}
 
 	return image;

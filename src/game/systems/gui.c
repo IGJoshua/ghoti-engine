@@ -53,7 +53,8 @@ internal real64 keyRepeatTimer;
 #define DEFAULT_FONT_SIZE 18
 
 internal FontComponent *defaultFontComponent;
-internal Font *defaultFont;
+internal Font defaultFont;
+internal bool updateDefaultFont;
 
 #define WIDGET_BACKGROUND "widget_background"
 
@@ -105,7 +106,7 @@ GLuint vertexBuffer;
 GLuint vertexArray;
 GLuint indexBuffer;
 
-internal Font* getEntityFont(
+internal Font getEntityFont(
 	Scene *scene,
 	UUID entity,
 	FontComponent *fallbackFontComponent,
@@ -162,10 +163,8 @@ internal void initGUISystem(Scene *scene)
 				scene,
 				idFromName("default_font"),
 				fontComponentID);
-			defaultFont = getFont(
-				defaultFontComponent->name,
-				defaultFontComponent->size);
-			nk_style_set_font(&ctx, &defaultFont->font->handle);
+
+			updateDefaultFont = true;
 
 			loadImage(WIDGET_BACKGROUND);
 			widgetBackground = getImage(WIDGET_BACKGROUND);
@@ -180,7 +179,6 @@ internal void initGUISystem(Scene *scene)
 			nkConfig.curve_segment_count = 22;
 			nkConfig.arc_segment_count = 22;
 			nkConfig.global_alpha = 1.0f;
-			nkConfig.null = defaultFont->null;
 
 			// TODO: Move styles to components
 
@@ -254,15 +252,33 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 			 cdtMoveIterator(&itr))
 		{
 			FontComponent *fontComponent = cdtIteratorGetData(itr);
-			if (!getFont(fontComponent->name, fontComponent->size))
+			if (strlen(getFont(
+					fontComponent->name,
+					fontComponent->size).name.string) == 0)
 			{
 				loadFont(fontComponent->name, fontComponent->size);
 			}
 		}
 
+		updateDefaultFont = true;
+	}
+
+	if (updateDefaultFont)
+	{
 		defaultFont = getFont(
 			defaultFontComponent->name,
 			defaultFontComponent->size);
+
+		if (strlen(defaultFont.name.string) > 0)
+		{
+			updateDefaultFont = false;
+			nk_style_set_font(&ctx, &defaultFont.font->handle);
+			nkConfig.null = defaultFont.null;
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	previousViewportWidth = viewportWidth;
@@ -288,6 +304,11 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 
 internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 {
+	if (updateDefaultFont)
+	{
+		return;
+	}
+
 	PanelComponent *panel = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -324,11 +345,14 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 internal void endGUISystem(Scene *scene, real64 dt)
 {
-	fillCommandBuffer();
+	if (!updateDefaultFont)
+	{
+		fillCommandBuffer();
 
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
 
 	nk_input_begin(&ctx);
 
@@ -400,7 +424,7 @@ System createGUISystem(void)
 	return system;
 }
 
-Font* getEntityFont(
+Font getEntityFont(
 	Scene *scene,
 	UUID entity,
 	FontComponent *fallbackFontComponent,
@@ -426,10 +450,17 @@ Font* getEntityFont(
 
 	if (entityFontComponent)
 	{
-		return getFont(entityFontComponent->name, entityFontComponent->size);
+		Font font = getFont(
+			entityFontComponent->name,
+			entityFontComponent->size);
+
+		if (strlen(font.name.string) > 0)
+		{
+			return font;
+		}
 	}
 
-	return fallBackFont;
+	return *fallBackFont;
 }
 
 struct nk_color getColor(kmVec4 *color)
@@ -502,11 +533,11 @@ void addWidgets(
 	real32 panelHeight)
 {
 	FontComponent *panelFontComponent;
-	Font *panelFont = getEntityFont(
+	Font panelFont = getEntityFont(
 		scene,
 		panel,
 		defaultFontComponent,
-		defaultFont,
+		&defaultFont,
 		&panelFontComponent);
 
 	do
@@ -525,14 +556,14 @@ void addWidgets(
 			if (widget->enabled)
 			{
 				FontComponent *fontComponent;
-				Font *font = getEntityFont(
+				Font font = getEntityFont(
 					scene,
 					entity,
 					panelFontComponent,
-					panelFont,
+					&panelFont,
 					&fontComponent);
 
-				nk_style_set_font(&ctx, &font->font->handle);
+				nk_style_set_font(&ctx, &font.font->handle);
 
 				struct nk_rect rect = getRect(
 					guiTransform,

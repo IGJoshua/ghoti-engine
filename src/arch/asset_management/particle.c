@@ -22,7 +22,11 @@ extern pthread_mutex_t devilMutex;
 internal void deleteParticle(const char *name);
 internal char* getFullParticleFilename(const char *name);
 
-int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
+int32 loadParticle(
+	const char *name,
+	uint32 numSprites,
+	int32 spriteWidth,
+	int32 spriteHeight)
 {
 	int32 error = 0;
 
@@ -54,6 +58,7 @@ int32 loadParticle(const char *name, int32 spriteWidth, int32 spriteHeight)
 
 			particle.name = idFromName(name);
 			particle.refCount = 1;
+			particle.numSprites = numSprites;
 			particle.spriteWidth = spriteWidth;
 			particle.spriteHeight = spriteHeight;
 
