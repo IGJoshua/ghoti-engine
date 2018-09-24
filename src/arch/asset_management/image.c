@@ -57,11 +57,10 @@ int32 loadImage(const char *name)
 
 			pthread_mutex_lock(&devilMutex);
 
-			// TODO: Change to ASSET_LOG_TYPE_IMAGE
 			error = loadTextureData(
-				ASSET_LOG_TYPE_NONE,
+				ASSET_LOG_TYPE_IMAGE,
 				"image",
-				NULL,
+				name,
 				fullFilename,
 				TEXTURE_FORMAT_RGBA8,
 				&image.devilID);

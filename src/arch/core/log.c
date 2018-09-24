@@ -13,6 +13,7 @@
 
 #define MODELS_LOG_BUCKET_COUNT 521
 #define TEXTURES_LOG_BUCKET_COUNT 2503
+#define IMAGES_LOG_BUCKET_COUNT 521
 
 internal HashMap modelsLog;
 internal pthread_mutex_t modelsLogMutex;
@@ -20,18 +21,22 @@ internal pthread_mutex_t modelsLogMutex;
 internal HashMap texturesLog;
 internal pthread_mutex_t texturesLogMutex;
 
+internal HashMap imagesLog;
+internal pthread_mutex_t imagesLogMutex;
+
 internal pthread_mutex_t assetLogMutex;
 
 internal FILE *assetLogFile;
 
-internal void lockAssetLogMutex(AssetLogType type);
+internal HashMap getAssetLog(AssetLogType type);
+internal pthread_mutex_t* getAssetLogMutex(AssetLogType type);
+
 internal char** getAssetLogBuffer(AssetLogType type, const char *name);
 internal void addAssetLogBuffer(
 	AssetLogType type,
 	const char *name,
 	char *logBuffer);
 internal void removeAssetLogBuffer(AssetLogType type, const char *name);
-internal void unlockAssetLogMutex(AssetLogType type);
 
 void initializeAssetLog(void)
 {
@@ -48,6 +53,13 @@ void initializeAssetLog(void)
 		TEXTURES_LOG_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&texturesLogMutex, NULL);
+
+	imagesLog = createHashMap(
+		sizeof(UUID),
+		sizeof(char*),
+		IMAGES_LOG_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&imagesLogMutex, NULL);
 
 	pthread_mutex_init(&assetLogMutex, NULL);
 }
@@ -79,7 +91,8 @@ void assetLogWrite(
 	vsprintf(message, format, args);
     va_end(args);
 
-	lockAssetLogMutex(type);
+	pthread_mutex_t* logMutex = getAssetLogMutex(type);
+	pthread_mutex_lock(logMutex);
 
 	char **logBuffer = getAssetLogBuffer(type, name);
 	if (!logBuffer || !*logBuffer)
@@ -95,14 +108,15 @@ void assetLogWrite(
 		*logBuffer = newLogBuffer;
 	}
 
-	unlockAssetLogMutex(type);
+	pthread_mutex_unlock(logMutex);
 
 	free(message);
 }
 
 void assetLogCommit(AssetLogType type, const char *name)
 {
-	lockAssetLogMutex(type);
+	pthread_mutex_t* logMutex = getAssetLogMutex(type);
+	pthread_mutex_lock(logMutex);
 
 	char **logBuffer = getAssetLogBuffer(type, name);
 	if (logBuffer && *logBuffer)
@@ -119,7 +133,7 @@ void assetLogCommit(AssetLogType type, const char *name)
 		removeAssetLogBuffer(type, name);
 	}
 
-	unlockAssetLogMutex(type);
+	pthread_mutex_unlock(logMutex);
 }
 
 void shutdownAssetLog(void)
@@ -130,40 +144,49 @@ void shutdownAssetLog(void)
 	freeHashMap(&texturesLog);
 	pthread_mutex_destroy(&texturesLogMutex);
 
+	freeHashMap(&imagesLog);
+	pthread_mutex_destroy(&imagesLogMutex);
+
 	pthread_mutex_destroy(&assetLogMutex);
 }
 
-void lockAssetLogMutex(AssetLogType type)
+HashMap getAssetLog(AssetLogType type)
 {
 	switch (type)
 	{
 		case ASSET_LOG_TYPE_MODEL:
-			pthread_mutex_lock(&modelsLogMutex);
-			break;
+			return modelsLog;
 		case ASSET_LOG_TYPE_TEXTURE:
-			pthread_mutex_lock(&texturesLogMutex);
-			break;
+			return texturesLog;
+		case ASSET_LOG_TYPE_IMAGE:
+			return imagesLog;
 		default:
 			break;
 	}
+
+	return NULL;
+}
+
+pthread_mutex_t* getAssetLogMutex(AssetLogType type)
+{
+	switch (type)
+	{
+		case ASSET_LOG_TYPE_MODEL:
+			return &modelsLogMutex;
+		case ASSET_LOG_TYPE_TEXTURE:
+			return &texturesLogMutex;
+		case ASSET_LOG_TYPE_IMAGE:
+			return &imagesLogMutex;
+		default:
+			break;
+	}
+
+	return NULL;
 }
 
 char** getAssetLogBuffer(AssetLogType type, const char *name)
 {
-	HashMap logBuffers = NULL;
-
-	switch (type)
-	{
-		case ASSET_LOG_TYPE_MODEL:
-			logBuffers = modelsLog;
-			break;
-		case ASSET_LOG_TYPE_TEXTURE:
-			logBuffers = texturesLog;
-			break;
-		default:
-			break;
-	}
-
+	HashMap logBuffers = getAssetLog(type);
 	if (logBuffers)
 	{
 		UUID nameID = idFromName(name);
@@ -178,20 +201,7 @@ void addAssetLogBuffer(
 	const char *name,
 	char *logBuffer)
 {
-	HashMap logBuffers = NULL;
-
-	switch (type)
-	{
-		case ASSET_LOG_TYPE_MODEL:
-			logBuffers = modelsLog;
-			break;
-		case ASSET_LOG_TYPE_TEXTURE:
-			logBuffers = texturesLog;
-			break;
-		default:
-			break;
-	}
-
+	HashMap logBuffers = getAssetLog(type);
 	if (logBuffers)
 	{
 		UUID nameID = idFromName(name);
@@ -201,38 +211,10 @@ void addAssetLogBuffer(
 
 void removeAssetLogBuffer(AssetLogType type, const char *name)
 {
-	HashMap logBuffers = NULL;
-
-	switch (type)
-	{
-		case ASSET_LOG_TYPE_MODEL:
-			logBuffers = modelsLog;
-			break;
-		case ASSET_LOG_TYPE_TEXTURE:
-			logBuffers = texturesLog;
-			break;
-		default:
-			break;
-	}
-
+	HashMap logBuffers = getAssetLog(type);
 	if (logBuffers)
 	{
 		UUID nameID = idFromName(name);
 		hashMapDelete(logBuffers, &nameID);
-	}
-}
-
-void unlockAssetLogMutex(AssetLogType type)
-{
-	switch (type)
-	{
-		case ASSET_LOG_TYPE_MODEL:
-			pthread_mutex_unlock(&modelsLogMutex);
-			break;
-		case ASSET_LOG_TYPE_TEXTURE:
-			pthread_mutex_unlock(&texturesLogMutex);
-			break;
-		default:
-			break;
 	}
 }

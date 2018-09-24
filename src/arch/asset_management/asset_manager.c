@@ -18,6 +18,8 @@
 
 extern Config config;
 
+// Resource HashMaps
+
 extern HashMap models;
 extern pthread_mutex_t modelsMutex;
 
@@ -28,9 +30,14 @@ extern HashMap materialFolders;
 extern pthread_mutex_t materialFoldersMutex;
 
 extern HashMap fonts;
+
 extern HashMap images;
+extern pthread_mutex_t imagesMutex;
+
 extern HashMap audioFiles;
 extern HashMap particles;
+
+// Resource Loading HashMaps
 
 extern HashMap loadingModels;
 extern pthread_mutex_t loadingModelsMutex;
@@ -38,11 +45,32 @@ extern pthread_mutex_t loadingModelsMutex;
 extern HashMap loadingTextures;
 extern pthread_mutex_t loadingTexturesMutex;
 
+extern HashMap loadingImages;
+extern pthread_mutex_t loadingImagesMutex;
+
+// Resource Uploading HashMaps
+
 extern HashMap uploadModelsQueue;
 extern pthread_mutex_t uploadModelsMutex;
 
 extern HashMap uploadTexturesQueue;
 extern pthread_mutex_t uploadTexturesMutex;
+
+extern HashMap uploadImagesQueue;
+extern pthread_mutex_t uploadImagesMutex;
+
+// Resource Freeing Lists
+
+internal List freeModelsQueue;
+internal pthread_mutex_t freeModelsMutex;
+
+internal List freeTexturesQueue;
+internal pthread_mutex_t freeTexturesMutex;
+
+internal List freeImagesQueue;
+internal pthread_mutex_t freeImagesMutex;
+
+// Asset Management Globals
 
 extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
@@ -50,11 +78,7 @@ extern pthread_cond_t assetThreadsCondition;
 
 extern pthread_mutex_t devilMutex;
 
-internal List freeModelsQueue;
-internal pthread_mutex_t freeModelsMutex;
-
-internal List freeTexturesQueue;
-internal pthread_mutex_t freeTexturesMutex;
+// Asset Management Locals
 
 internal pthread_t assetManagerThread;
 
@@ -68,6 +92,8 @@ internal pthread_cond_t updateAssetManagerCondition;
 internal void* updateAssetManager(void *arg);
 
 void initializeAssetManager(real64 *dt) {
+	// Resource HashMaps
+
 	models = createHashMap(
 		sizeof(UUID),
 		sizeof(Model),
@@ -94,11 +120,14 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(Font),
 		FONTS_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+
 	images = createHashMap(
 		sizeof(UUID),
 		sizeof(Image),
 		IMAGES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&imagesMutex, NULL);
+
 	audioFiles = createHashMap(
 		sizeof(UUID),
 		sizeof(AudioFile),
@@ -109,6 +138,8 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(Particle),
 		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+
+	// Resource Uploading HashMaps
 
 	loadingModels = createHashMap(
 		sizeof(UUID),
@@ -124,6 +155,15 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&loadingTexturesMutex, NULL);
 
+	loadingImages = createHashMap(
+		sizeof(UUID),
+		sizeof(Image),
+		LOADING_IMAGES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingImagesMutex, NULL);
+
+	// Resource Uploading HashMaps
+
 	uploadModelsQueue = createHashMap(
 		sizeof(UUID),
 		sizeof(Model),
@@ -138,17 +178,33 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&uploadTexturesMutex, NULL);
 
+	uploadImagesQueue = createHashMap(
+		sizeof(UUID),
+		sizeof(Image),
+		UPLOAD_IMAGES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&uploadImagesMutex, NULL);
+
+	// Resource Freeing Lists
+
 	freeModelsQueue = createList(sizeof(Model));
 	pthread_mutex_init(&freeModelsMutex, NULL);
 
 	freeTexturesQueue = createList(sizeof(Texture));
 	pthread_mutex_init(&freeTexturesMutex, NULL);
 
+	freeImagesQueue = createList(sizeof(Image));
+	pthread_mutex_init(&freeImagesMutex, NULL);
+
+	// Asset Management Globals
+
 	assetThreadCount = 0;
 	pthread_mutex_init(&assetThreadsMutex, NULL);
 	pthread_cond_init(&assetThreadsCondition, NULL);
 
 	pthread_mutex_init(&devilMutex, NULL);
+
+	// Asset Management Locals
 
 	exitAssetManagerThread = false;
 	pthread_mutex_init(&exitAssetManagerMutex, NULL);
@@ -183,6 +239,9 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&exitAssetManagerMutex);
+
+		// Free Models
+
 		pthread_mutex_lock(&modelsMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(models);
@@ -226,6 +285,9 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&modelsMutex);
+
+		// Free Textures
+
 		pthread_mutex_lock(&texturesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(textures);
@@ -288,6 +350,8 @@ void* updateAssetManager(void *arg)
 
 void uploadAssets(void)
 {
+	// Upload Models
+
 	pthread_mutex_lock(&uploadModelsMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
@@ -313,6 +377,9 @@ void uploadAssets(void)
 	}
 
 	pthread_mutex_unlock(&uploadModelsMutex);
+
+	// Upload Textures
+
 	pthread_mutex_lock(&uploadTexturesMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadTexturesQueue);
@@ -342,6 +409,8 @@ void uploadAssets(void)
 
 void freeAssets(void)
 {
+	// Free Models
+
 	pthread_mutex_lock(&freeModelsMutex);
 
 	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
@@ -357,6 +426,9 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeModelsMutex);
+
+	// Free Textures
+
 	pthread_mutex_lock(&freeTexturesMutex);
 
 	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
@@ -376,6 +448,8 @@ void freeAssets(void)
 
 void shutdownAssetManager(void)
 {
+	// Asset Management Locals
+
 	pthread_mutex_lock(&exitAssetManagerMutex);
 	exitAssetManagerThread = true;
 	pthread_mutex_unlock(&exitAssetManagerMutex);
@@ -388,6 +462,8 @@ void shutdownAssetManager(void)
 
 	pthread_mutex_destroy(&updateAssetManagerMutex);
 	pthread_cond_destroy(&updateAssetManagerCondition);
+
+	// Asset Management Globals
 
 	pthread_mutex_lock(&assetThreadsMutex);
 
@@ -403,11 +479,31 @@ void shutdownAssetManager(void)
 
 	pthread_mutex_destroy(&devilMutex);
 
-	freeHashMap(&loadingModels);
-	pthread_mutex_destroy(&loadingModelsMutex);
+	// Resource Freeing Lists
 
-	freeHashMap(&loadingTextures);
-	pthread_mutex_destroy(&loadingTexturesMutex);
+	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Model *model = LIST_ITERATOR_GET_ELEMENT(Model, listItr);
+		hashMapInsert(models, &model->name, model);
+	}
+
+	listClear(&freeModelsQueue);
+	pthread_mutex_destroy(&freeModelsMutex);
+
+	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Texture *texture = LIST_ITERATOR_GET_ELEMENT(Texture, listItr);
+		hashMapInsert(textures, &texture->name, texture);
+	}
+
+	listClear(&freeTexturesQueue);
+	pthread_mutex_destroy(&freeTexturesMutex);
+
+	// Resource Uploading HashMaps
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
 		 !hashMapIteratorAtEnd(itr);
@@ -431,27 +527,18 @@ void shutdownAssetManager(void)
 	freeHashMap(&uploadTexturesQueue);
 	pthread_mutex_destroy(&uploadTexturesMutex);
 
-	for (ListIterator listItr = listGetIterator(&freeModelsQueue);
-		 !listIteratorAtEnd(listItr);
-		 listMoveIterator(&listItr))
-	{
-		Model *model = LIST_ITERATOR_GET_ELEMENT(Model, listItr);
-		hashMapInsert(models, &model->name, model);
-	}
+	// Resource Loading HashMaps
 
-	listClear(&freeModelsQueue);
-	pthread_mutex_destroy(&freeModelsMutex);
+	freeHashMap(&loadingModels);
+	pthread_mutex_destroy(&loadingModelsMutex);
 
-	for (ListIterator listItr = listGetIterator(&freeTexturesQueue);
-		 !listIteratorAtEnd(listItr);
-		 listMoveIterator(&listItr))
-	{
-		Texture *texture = LIST_ITERATOR_GET_ELEMENT(Texture, listItr);
-		hashMapInsert(textures, &texture->name, texture);
-	}
+	freeHashMap(&loadingTextures);
+	pthread_mutex_destroy(&loadingTexturesMutex);
 
-	listClear(&freeTexturesQueue);
-	pthread_mutex_destroy(&freeTexturesMutex);
+	freeHashMap(&loadingImages);
+	pthread_mutex_destroy(&loadingImagesMutex);
+
+	// Resource HashMaps
 
 	for (HashMapIterator itr = hashMapGetIterator(models);
 		 !hashMapIteratorAtEnd(itr);
