@@ -26,14 +26,30 @@ internal UUID audioSourceComponentID = {};
 
 internal uint32 audioSystemRefCount = 0;
 
+#define PLAY_AUDIO_BUCKET_COUNT 1031
+
+HashMap playAudioQueue;
+
 extern Scene *listenerScene;
+extern ALuint *g_Buffers;
 extern ALuint *g_Sources;
+
+internal int32 ptrcmp(void *a, void *b)
+{
+	return *(uint64*)a != *(uint64*)b;
+}
 
 internal
 void initAudioSystem(Scene *scene)
 {
 	if (audioSystemRefCount == 0)
 	{
+		playAudioQueue = createHashMap(
+			sizeof(AudioSourceComponent*),
+			sizeof(PlayAudioQueueData),
+			PLAY_AUDIO_BUCKET_COUNT,
+			(ComparisonOp)&ptrcmp);
+
 		if (!listenerScene)
 		{
 			listenerScene = scene;
@@ -94,6 +110,47 @@ void beginAudioSystem(Scene *scene, real64 dt)
 	if (audioSystemRefCount == 0 || !listenerScene)
 	{
 		return;
+	}
+
+	for (HashMapIterator itr = hashMapGetIterator(playAudioQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		AudioSourceComponent *audioSource =
+			*(AudioSourceComponent**)hashMapIteratorGetKey(itr);
+
+		PlayAudioQueueData *audio = hashMapIteratorGetValue(itr);
+		audio->timer -= dt;
+
+		bool remove = false;
+
+		AudioFile audioData = getAudio(audio->name.string);
+		if (strlen(audioData.name.string) > 0)
+		{
+			alSourceRewind(g_Sources[audioSource->id]);
+
+			alSourcei(
+				g_Sources[audioSource->id],
+				AL_BUFFER,
+				g_Buffers[audioData.id]);
+
+			alSourcePlay(g_Sources[audioSource->id]);
+
+			remove = true;
+		}
+		else if (audio->timer < 0.0)
+		{
+			remove = true;
+		}
+
+		if (remove)
+		{
+			hashMapMoveIterator(&itr);
+			hashMapDelete(playAudioQueue, &audioSource);
+		}
+		else
+		{
+			hashMapMoveIterator(&itr);
+		}
 	}
 
 	AudioSourceComponent * sourceComp;
@@ -263,6 +320,7 @@ void shutdownAudioSystem(Scene *scene)
 	if (--audioSystemRefCount == 0)
 	{
 		stopAllAudio();
+		freeHashMap(&playAudioQueue);
 	}
 }
 
