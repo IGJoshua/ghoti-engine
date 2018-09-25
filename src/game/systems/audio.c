@@ -28,8 +28,7 @@ internal uint32 audioSystemRefCount = 0;
 
 #define PLAY_AUDIO_BUCKET_COUNT 1031
 
-HashMap playAudioQueue;
-
+extern HashMap playAudioQueue;
 extern Scene *listenerScene;
 extern ALuint *g_Buffers;
 extern ALuint *g_Sources;
