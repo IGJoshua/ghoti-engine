@@ -110,8 +110,7 @@ void createCollisionGeom(
 	Scene *scene,
 	UUID entity,
 	TransformComponent *bodyTrans,
-	RigidBodyComponent *body,
-	dSpaceID spaceID)
+	RigidBodyComponent *body)
 {
 	CollisionTreeNodeComponent *node = sceneGetComponentFromEntity(
 		scene,
@@ -144,7 +143,7 @@ void createCollisionGeom(
 			idFromName("box"));
 
 		node->geomID = dCreateBox(
-			spaceID,
+			body->spaceID,
 			box->bounds.x * trans->globalScale.x * 2,
 			box->bounds.y * trans->globalScale.y * 2,
 			box->bounds.z * trans->globalScale.z * 2);
@@ -157,7 +156,7 @@ void createCollisionGeom(
 			entity,
 			idFromName("sphere"));
 
-		node->geomID = dCreateSphere(spaceID, sphere->radius * maxScale);
+		node->geomID = dCreateSphere(body->spaceID, sphere->radius * maxScale);
 	} break;
 	case COLLISION_GEOM_TYPE_CAPSULE:
 	{
@@ -167,7 +166,7 @@ void createCollisionGeom(
 			idFromName("capsule"));
 
 		node->geomID = dCreateCapsule(
-			spaceID,
+			body->spaceID,
 			capsule->radius * maxScale,
 			capsule->length * maxScale);
 		dGeomSetQuaternion(node->geomID, (dReal*)&trans->globalRotation);
@@ -188,13 +187,11 @@ void createCollisionGeom(
 	updateCollisionGeom(scene, entity, bodyTrans, trans, node);
 }
 
-internal
 void createCollisionGeoms(
 	Scene *scene,
 	TransformComponent *bodyTrans,
 	RigidBodyComponent *body,
-	CollisionComponent *coll,
-	dSpaceID spaceID)
+	CollisionComponent *coll)
 {
 	CollisionTreeNodeComponent *node = 0;
 	UUID collisionTreeNodeID = idFromName("collision_tree_node");
@@ -205,7 +202,7 @@ void createCollisionGeoms(
 		 currentCollider = node->nextCollider)
 	{
 		// Add each piece of collision geometry as a different geom
-		createCollisionGeom(scene, currentCollider, bodyTrans, body, spaceID);
+		createCollisionGeom(scene, currentCollider, bodyTrans, body);
 
 		node = sceneGetComponentFromEntity(
 			scene,
@@ -241,12 +238,7 @@ void registerRigidBody(Scene *scene, UUID entity)
 
 	if (coll)
 	{
-		createCollisionGeoms(
-			scene,
-			trans,
-			body,
-			coll,
-			body->spaceID);
+		createCollisionGeoms(scene, trans, body, coll);
 	}
 
 	// update all the other information about the rigidbody

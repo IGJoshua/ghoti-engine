@@ -6,25 +6,26 @@
 #include <malloc.h>
 #include <stddef.h>
 
-int32 loadMesh(Mesh *mesh, FILE *file)
+void loadMesh(Mesh *mesh, FILE *file, const char *modelName)
 {
-	LOG("Loading mesh...\n");
-	LOG("Loading mesh data...\n");
+	ASSET_LOG(MODEL, modelName, "Loading mesh...\n");
 
-	uint32 numVertices;
-	fread(&numVertices, sizeof(uint32), 1, file);
+	fread(&mesh->numVertices, sizeof(uint32), 1, file);
 
-	Vertex *vertices = calloc(numVertices, sizeof(Vertex));
-	fread(vertices, numVertices, sizeof(Vertex), file);
+	mesh->vertices = calloc(mesh->numVertices, sizeof(Vertex));
+	fread(mesh->vertices, mesh->numVertices, sizeof(Vertex), file);
 
-	uint32 numIndices;
-	fread(&numIndices, sizeof(uint32), 1, file);
+	fread(&mesh->numIndices, sizeof(uint32), 1, file);
 
-	uint32 *indices = calloc(numIndices, sizeof(uint32));
-	fread(indices, numIndices, sizeof(uint32), file);
+	mesh->indices = calloc(mesh->numIndices, sizeof(uint32));
+	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
-	LOG("Successfully loaded mesh data\n");
-	LOG("Transferring mesh data onto GPU...\n");
+	ASSET_LOG(MODEL, modelName, "Successfully loaded mesh\n");
+}
+
+void uploadMeshToGPU(Mesh *mesh, const char *name)
+{
+	LOG("Transferring mesh (%s) onto GPU...\n", name);
 
 	glGenBuffers(1, &mesh->vertexBuffer);
 	glGenVertexArrays(1, &mesh->vertexArray);
@@ -34,8 +35,8 @@ int32 loadMesh(Mesh *mesh, FILE *file)
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->vertexBuffer);
 	glBufferData(
 		GL_ARRAY_BUFFER,
-		sizeof(Vertex) * numVertices,
-		vertices,
+		sizeof(Vertex) * mesh->numVertices,
+		mesh->vertices,
 		GL_STATIC_DRAW);
 
 	glBindVertexArray(mesh->vertexArray);
@@ -111,23 +112,18 @@ int32 loadMesh(Mesh *mesh, FILE *file)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
 	glBufferData(
 		GL_ELEMENT_ARRAY_BUFFER,
-		sizeof(uint32) * numIndices,
-		indices,
+		sizeof(uint32) * mesh->numIndices,
+		mesh->indices,
 		GL_STATIC_DRAW);
-
-	mesh->numIndices = numIndices;
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	free(vertices);
-	free(indices);
+	free(mesh->vertices);
+	free(mesh->indices);
 
-	LOG("Successfully transferred mesh data onto GPU\n");
-	LOG("Vertex Count: %d\n", numVertices);
-	LOG("Triangle Count: %d\n", numIndices / 3);
-	LOG("Successfully loaded mesh\n");
-
-	return 0;
+	LOG("Successfully transferred mesh (%s) onto GPU\n", name);
+	LOG("Vertex Count: %d\n", mesh->numVertices);
+	LOG("Triangle Count: %d\n", mesh->numIndices / 3);
 }
 
 void freeMesh(Mesh *mesh)

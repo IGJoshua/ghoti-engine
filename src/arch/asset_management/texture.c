@@ -1,7 +1,7 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/texture.h"
 
-#include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -15,110 +15,191 @@
 
 #include <string.h>
 #include <unistd.h>
-
-extern HashMap textures;
+#include <pthread.h>
 
 #define NUM_TEXTURE_FILE_FORMATS 7
 internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
 	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
 };
 
-int32 loadTexture(const char *filename, const char *name)
+typedef struct texture_thread_args_t
+{
+	char *filename;
+	char *name;
+} TextureThreadArgs;
+
+extern Config config;
+
+extern HashMap textures;
+extern pthread_mutex_t texturesMutex;
+
+extern HashMap loadingTextures;
+extern pthread_mutex_t loadingTexturesMutex;
+
+extern HashMap uploadTexturesQueue;
+extern pthread_mutex_t uploadTexturesMutex;
+
+extern uint32 assetThreadCount;
+extern pthread_mutex_t assetThreadsMutex;
+extern pthread_cond_t assetThreadsCondition;
+
+extern pthread_mutex_t devilMutex;
+
+internal void* acquireTextureThread(void *arg);
+internal void* loadTextureThread(void *arg);
+
+void loadTexture(const char *filename, const char *name)
+{
+	TextureThreadArgs *arg = malloc(sizeof(TextureThreadArgs));
+
+	arg->filename = calloc(1, strlen(filename) + 1);
+	strcpy(arg->filename, filename);
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	pthread_t acquisitionThread;
+	pthread_create(&acquisitionThread, NULL, &acquireTextureThread, (void*)arg);
+	pthread_detach(acquisitionThread);
+}
+
+void* acquireTextureThread(void *arg)
+{
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount == config.assetsConfig.maxThreadCount)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	assetThreadCount++;
+
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	pthread_t loadingThread;
+	pthread_create(&loadingThread, NULL, &loadTextureThread, arg);
+	pthread_detach(loadingThread);
+
+	EXIT_THREAD(NULL);
+}
+
+void* loadTextureThread(void *arg)
 {
 	int32 error = 0;
 
-	Texture *textureResource = getTexture(name);
+	TextureThreadArgs *threadArgs = arg;
+	char *filename = threadArgs->filename;
+	char *name = threadArgs->name;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&texturesMutex);
+	Texture *textureResource = hashMapGetData(textures, &nameID);
+
 	if (!textureResource)
 	{
-		const char *textureName = strrchr(filename, '/');
-		if (!textureName)
+		pthread_mutex_unlock(&texturesMutex);
+		pthread_mutex_lock(&loadingTexturesMutex);
+
+		if (hashMapGetData(loadingTextures, &nameID))
 		{
-			textureName = filename;
-		}
-		else
-		{
-			textureName += 1;
+			error = 1;
 		}
 
-		LOG("Loading texture (%s)...\n", textureName);
+		pthread_mutex_unlock(&loadingTexturesMutex);
 
-		Texture texture = {};
-
-		texture.name = idFromName(name);
-		texture.refCount = 1;
-
-		ILuint devilID;
-		error = loadTextureData(filename, TEXTURE_FORMAT_RGBA8, &devilID);
-
-		if (error != -1)
+		if (error != 1)
 		{
-			glGenTextures(1, &texture.id);
-			glBindTexture(GL_TEXTURE_2D, texture.id);
+			pthread_mutex_lock(&uploadTexturesMutex);
 
-			GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
-			GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-
-			glTexStorage2D(
-				GL_TEXTURE_2D,
-				1,
-				GL_RGBA8,
-				textureWidth,
-				textureHeight);
-
-			const GLvoid *textureData = ilGetData();
-			glTexSubImage2D(
-				GL_TEXTURE_2D,
-				0,
-				0,
-				0,
-				textureWidth,
-				textureHeight,
-				GL_RGBA,
-				GL_UNSIGNED_BYTE,
-				textureData);
-
-			error = logGLError(
-				false,
-				"Error while transferring texture onto GPU");
-
-			if (error != -1)
+			if (hashMapGetData(uploadTexturesQueue, &nameID))
 			{
-				glGenerateMipmap(GL_TEXTURE_2D);
-				glTexParameteri(
-					GL_TEXTURE_2D,
-					GL_TEXTURE_MAG_FILTER,
-					GL_LINEAR);
-				glTexParameteri(
-					GL_TEXTURE_2D,
-					GL_TEXTURE_MIN_FILTER,
-					GL_LINEAR_MIPMAP_LINEAR);
-
-				glBindTexture(GL_TEXTURE_2D, 0);
-				ilDeleteImages(1, &devilID);
+				error = 1;
 			}
+
+			pthread_mutex_unlock(&uploadTexturesMutex);
 		}
 
-		if (error != - 1)
+		if (error != 1)
 		{
-			hashMapInsert(textures, &texture.name, &texture);
+			bool loading = true;
+			pthread_mutex_lock(&loadingTexturesMutex);
+			hashMapInsert(loadingTextures, &nameID, &loading);
+			pthread_mutex_unlock(&loadingTexturesMutex);
 
-			LOG("Successfully loaded texture (%s)\n", textureName);
-			LOG("Texture Count: %d\n", textures->count);
-		}
-		else
-		{
-			LOG("Failed to load texture (%s)\n", textureName);
+			const char *textureName = strrchr(filename, '/');
+			if (!textureName)
+			{
+				textureName = filename;
+			}
+			else
+			{
+				textureName += 1;
+			}
+
+			ASSET_LOG(TEXTURE, name, "Loading texture (%s)...\n", textureName);
+
+			Texture texture = {};
+
+			texture.name = nameID;
+			texture.refCount = 1;
+
+			pthread_mutex_lock(&devilMutex);
+
+			error = loadTextureData(
+				ASSET_LOG_TYPE_TEXTURE,
+				"texture",
+				name,
+				filename,
+				TEXTURE_FORMAT_RGBA8,
+				&texture.devilID);
+			ilBindImage(0);
+
+			pthread_mutex_unlock(&devilMutex);
+
+			if (error != - 1)
+			{
+				pthread_mutex_lock(&uploadTexturesMutex);
+				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
+				pthread_mutex_unlock(&uploadTexturesMutex);
+
+				pthread_mutex_lock(&loadingTexturesMutex);
+				hashMapDelete(loadingTextures, &nameID);
+				pthread_mutex_unlock(&loadingTexturesMutex);
+
+				ASSET_LOG(
+					TEXTURE,
+					name,
+					"Successfully loaded texture (%s)\n",
+					textureName);
+			}
+
+			ASSET_LOG_COMMIT(TEXTURE, name);
 		}
 	}
 	else
 	{
 		textureResource->refCount++;
+		pthread_mutex_unlock(&texturesMutex);
 	}
 
-	return error;
+	free(arg);
+	free(filename);
+	free(name);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+	assetThreadCount--;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	EXIT_THREAD(NULL);
 }
 
 int32 loadTextureData(
+	AssetLogType type,
+	const char *typeName,
+	const char *name,
 	const char *filename,
 	TextureFormat format,
 	ILuint *devilID)
@@ -131,7 +212,22 @@ int32 loadTextureData(
 	ILenum ilError = ilGetError();
 	if (ilError != IL_NO_ERROR)
 	{
-		LOG("Error while loading texture: %s\n", iluErrorString(ilError));
+		if (name)
+		{
+			ASSET_LOG_FULL_TYPE(
+				type,
+				name,
+				"Failed to load %s: %s\n",
+				typeName,
+				iluErrorString(ilError));
+		}
+		else
+		{
+			LOG("Failed to load %s: %s\n",
+				typeName,
+				iluErrorString(ilError));
+		}
+
 		return -1;
 	}
 
@@ -156,13 +252,83 @@ int32 loadTextureData(
 	return 0;
 }
 
-Texture* getTexture(const char *name)
+int32 uploadTextureToGPU(Texture *texture)
 {
-	Texture *texture = NULL;
+	LOG("Transferring texture (%s) onto GPU...\n", texture->name.string);
+
+	pthread_mutex_lock(&devilMutex);
+
+	ilBindImage(texture->devilID);
+
+	glGenTextures(1, &texture->id);
+	glBindTexture(GL_TEXTURE_2D, texture->id);
+
+	GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
+	GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
+
+	glTexStorage2D(
+		GL_TEXTURE_2D,
+		1,
+		GL_RGBA8,
+		textureWidth,
+		textureHeight);
+
+	const GLvoid *textureData = ilGetData();
+	glTexSubImage2D(
+		GL_TEXTURE_2D,
+		0,
+		0,
+		0,
+		textureWidth,
+		textureHeight,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		textureData);
+
+	ilDeleteImages(1, &texture->devilID);
+	ilBindImage(0);
+
+	pthread_mutex_unlock(&devilMutex);
+
+	int32 error = logGLError(false, "Failed to transfer texture onto GPU");
+
+	if (error != -1)
+	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR_MIPMAP_LINEAR);
+
+		LOG("Successfully transferred texture (%s) onto GPU\n",
+			texture->name.string);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return error;
+}
+
+Texture getTexture(const char *name)
+{
+	Texture texture = {};
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
-		texture = hashMapGetData(textures, &nameID);
+		UUID textureName = idFromName(name);
+
+		pthread_mutex_lock(&texturesMutex);
+
+		Texture *textureResource = hashMapGetData(textures, &textureName);
+		if (textureResource)
+		{
+			texture = *textureResource;
+		}
+
+		pthread_mutex_unlock(&texturesMutex);
 	}
 
 	return texture;
@@ -187,18 +353,26 @@ char* getFullTextureFilename(const char *filename)
 
 void freeTexture(UUID name)
 {
+	pthread_mutex_lock(&texturesMutex);
+
 	Texture *texture = (Texture*)hashMapGetData(textures, &name);
 	if (texture)
 	{
-		if (--texture->refCount == 0)
-		{
-			LOG("Freeing texture (%s)...\n", name.string);
-
-			glDeleteTextures(1, &texture->id);
-			hashMapDelete(textures, &name);
-
-			LOG("Successfully freed texture (%s)\n", name.string);
-			LOG("Texture Count: %d\n", textures->count);
-		}
+		texture->refCount--;
 	}
+
+	pthread_mutex_unlock(&texturesMutex);
+}
+
+void freeTextureData(Texture *texture)
+{
+	LOG("Freeing texture (%s)...\n", texture->name.string);
+
+	pthread_mutex_lock(&devilMutex);
+	ilDeleteImages(1, &texture->devilID);
+	pthread_mutex_unlock(&devilMutex);
+
+	glDeleteTextures(1, &texture->id);
+
+	LOG("Successfully freed texture (%s)\n", texture->name.string);
 }

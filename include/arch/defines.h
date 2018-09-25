@@ -52,3 +52,6 @@ typedef union uuid_t
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
+
+#define EXIT_THREAD(returnValue) pthread_exit(returnValue); \
+								 return returnValue

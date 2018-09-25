@@ -1,26 +1,26 @@
 #include "defines.h"
 
+#include "asset_management/asset_manager.h"
+
+#include "audio/audio.h"
+
+#include "components/component_types.h"
+
 #include "core/log.h"
 #include "core/config.h"
 #include "core/window.h"
 #include "core/input.h"
 
-#include "asset_management/asset_manager.h"
+#include "data/data_types.h"
+#include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
 #include "file/utilities.h"
 
-#include "components/component_types.h"
-
 #include "systems.h"
-
-#include "data/data_types.h"
-#include "data/list.h"
-#include "data/hash_map.h"
-
-#include "audio/audio.h"
 
 #include <GL/glew.h>
 #include <GL/glu.h>
@@ -38,7 +38,6 @@
 #include <stdlib.h>
 
 extern Config config;
-extern bool assetsChanged;
 extern int32 viewportWidth;
 extern int32 viewportHeight;
 extern bool viewportUpdated;
@@ -70,6 +69,11 @@ int32 main(int32 argc, char *argv[])
 		remove(LOG_FILE_NAME);
 	}
 
+	remove(ASSET_LOG_FILE_NAME);
+	remove(config.logConfig.luaFile);
+
+	initializeAssetLog();
+
 	GLFWwindow *window = initWindow(
 		config.windowConfig.size.x,
 		config.windowConfig.size.y,
@@ -89,11 +93,22 @@ int32 main(int32 argc, char *argv[])
 		return err;
 	}
 
-	activeScenes = createList(sizeof(Scene *));
-	unloadedScenes = createList(sizeof(Scene *));
+	if (initAudio() == -1)
+	{
+		freeConfig();
+		freeWindow(window);
+		shutdownInput();
+		return -1;
+	}
+
+	activeScenes = createList(sizeof(Scene*));
+	unloadedScenes = createList(sizeof(Scene*));
 	savedScenes = createList(sizeof(char*));
 
-	initializeAssetManager();
+	// Fixed timestep
+	real64 dt = 1.0 / config.physicsConfig.fps;
+
+	initializeAssetManager(&dt);
 
 	dInitODE();
 
@@ -149,8 +164,6 @@ int32 main(int32 argc, char *argv[])
 
 	// total accumulated fixed timestep
 	real64 t = 0.0;
-	// Fixed timestep
-	real64 dt = 1.0 / config.physicsConfig.fps;
 
 	real64 currentTime = glfwGetTime();
 	real64 accumulator = 0.0;
@@ -253,14 +266,6 @@ int32 main(int32 argc, char *argv[])
 				update(dt, false);
 			}
 
-			if (assetsChanged)
-			{
-				assetsChanged = false;
-
-				update(dt, false);
-				update(dt, false);
-			}
-
 			// Integrate current state over t to dt (so, update)
 			t += dt;
 			accumulator -= dt;
@@ -291,11 +296,17 @@ int32 main(int32 argc, char *argv[])
 		lua_close(L);
 	}
 
+	listClear(&activeScenes);
+	listClear(&unloadedScenes);
+	listClear(&savedScenes);
+
 	freeSystems();
 	shutdownAssetManager();
 	dCloseODE();
 	shutdownInput();
+	shutdownAudio();
 	freeWindow(window);
+	shutdownAssetLog();
 	freeConfig();
 
 	return 0;
@@ -357,6 +368,10 @@ void update(real64 dt, bool skipLoadedThisFrame)
 			L = 0;
 		}
 	}
+
+	setUpdateAssetManagerFlag();
+	uploadAssets();
+	freeAssets();
 }
 
 void draw(GLFWwindow *window, real64 frameTime)

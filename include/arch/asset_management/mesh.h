@@ -5,5 +5,6 @@
 
 #include <stdio.h>
 
-int32 loadMesh(Mesh *mesh, FILE *file);
+void loadMesh(Mesh *mesh, FILE *file, const char *modelName);
+void uploadMeshToGPU(Mesh *mesh, const char *name);
 void freeMesh(Mesh *mesh);

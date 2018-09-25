@@ -52,7 +52,7 @@ void freeHashMap(HashMap *map)
 {
 	hashMapClear(*map);
 	free(*map);
-	*map = 0;
+	*map = NULL;
 }
 
 internal

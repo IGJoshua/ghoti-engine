@@ -3,6 +3,8 @@
 
 #include "renderer/renderer_types.h"
 
+#include <IL/il.h>
+
 #include <AL/al.h>
 
 #include <kazmath/vec2.h>
@@ -17,23 +19,6 @@
 
 #include <nuklear/nuklear.h>
 
-#define NUM_VERTEX_ATTRIBUTES 9
-#define NUM_BONES 4
-#define MAX_BONE_COUNT 128
-
-typedef struct vertex_t
-{
-	kmVec3 position;
-	kmVec4 color;
-	kmVec3 normal;
-	kmVec3 tangent;
-	kmVec3 bitangent;
-	kmVec2 materialUV;
-	kmVec2 maskUV;
-	uint32 bones[NUM_BONES];
-	real32 weights[NUM_BONES];
-} Vertex;
-
 typedef enum texture_format_e
 {
 	TEXTURE_FORMAT_RGBA8 = 0,
@@ -43,8 +28,10 @@ typedef enum texture_format_e
 typedef struct texture_t
 {
 	UUID name;
-	GLuint id;
 	uint32 refCount;
+	real64 lifetime;
+	GLuint id;
+	ILuint devilID;
 } Texture;
 
 typedef struct material_folder_t
@@ -57,6 +44,7 @@ typedef struct model_t
 {
 	UUID name;
 	uint32 refCount;
+	real64 lifetime;
 	UUID materialTexture;
 	UUID opacityTexture;
 	uint32 numSubsets;
@@ -69,17 +57,23 @@ typedef struct model_t
 typedef struct font_t
 {
 	UUID name;
+	real64 lifetime;
 	struct nk_font_atlas atlas;
 	struct nk_font *font;
 	struct nk_draw_null_texture null;
-	GLuint texture;
+	GLuint textureID;
+	const void *textureData;
+	int32 textureWidth;
+	int32 textureHeight;
 } Font;
 
 typedef struct image_t
 {
 	UUID name;
-	GLuint id;
 	uint32 refCount;
+	real64 lifetime;
+	GLuint id;
+	ILuint devilID;
 	GLsizei width;
 	GLsizei height;
 } Image;
@@ -87,10 +81,23 @@ typedef struct image_t
 typedef struct audio_file_t
 {
 	UUID name;
+	real64 lifetime;
 	ALuint id;
 	int32 channels;
 	int32 sample_rate;
 	int32 size;
-	int16 *output;
+	int16 *data;
 	ALenum format;
 } AudioFile;
+
+typedef struct particle_t
+{
+	UUID name;
+	real64 lifetime;
+	GLuint id;
+	GLsizei width;
+	GLsizei height;
+	uint32 numSprites;
+	GLsizei spriteWidth;
+	GLsizei spriteHeight;
+} Particle;

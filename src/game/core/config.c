@@ -54,7 +54,11 @@ int32 loadConfig(void)
 	if (physics)
 	{
 		cJSON *physicsFPS = cJSON_GetObjectItem(physics, "fps");
-		config.physicsConfig.fps = physicsFPS->valuedouble;
+
+		if (physicsFPS->valuedouble >= 5.0)
+		{
+			config.physicsConfig.fps = physicsFPS->valuedouble;
+		}
 	}
 
 	cJSON *graphics = cJSON_GetObjectItem(json, "graphics");
@@ -71,22 +75,82 @@ int32 loadConfig(void)
 			graphicsBackgroundColor->child->next->next->valuedouble);
 	}
 
-	cJSON *logging = cJSON_GetObjectItem(json, "logging");
+	cJSON *assets = cJSON_GetObjectItem(json, "assets");
 
-	if (logging)
+	if (assets)
+	{
+		cJSON *minAudioLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_audio_lifetime");
+		config.assetsConfig.minAudioLifetime =
+			minAudioLifetime->valuedouble;
+
+		cJSON *minFontLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_font_lifetime");
+		config.assetsConfig.minFontLifetime =
+			minFontLifetime->valuedouble;
+
+		cJSON *minImageLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_image_lifetime");
+		config.assetsConfig.minImageLifetime =
+			minImageLifetime->valuedouble;
+
+		cJSON *minTextureLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_texture_lifetime");
+		config.assetsConfig.minTextureLifetime =
+			minTextureLifetime->valuedouble;
+
+		cJSON *minModelLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_model_lifetime");
+		config.assetsConfig.minModelLifetime =
+			minModelLifetime->valuedouble;
+
+		cJSON *minParticleLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_particle_lifetime");
+		config.assetsConfig.minParticleLifetime =
+			minParticleLifetime->valuedouble;
+
+		cJSON *maxThreadCount = cJSON_GetObjectItem(
+			assets,
+			"maximum_thread_count");
+
+		if (maxThreadCount->valueint >= 1)
+		{
+			config.assetsConfig.maxThreadCount = maxThreadCount->valueint;
+		}
+	}
+
+	cJSON *log = cJSON_GetObjectItem(json, "log");
+
+	if (log)
 	{
 		free(config.logConfig.engineFile);
+		free(config.logConfig.assetManagerFile);
 		free(config.logConfig.luaFile);
 
-		cJSON *loggingEngineFile = cJSON_GetObjectItem(logging, "engine_file");
+		cJSON *engineFile = cJSON_GetObjectItem(log, "engine_file");
 		config.logConfig.engineFile = malloc(
-			strlen(loggingEngineFile->valuestring) + 1);
-		strcpy(config.logConfig.engineFile, loggingEngineFile->valuestring);
+			strlen(engineFile->valuestring) + 1);
+		strcpy(config.logConfig.engineFile, engineFile->valuestring);
 
-		cJSON *loggingLuaFile = cJSON_GetObjectItem(logging, "lua_file");
+		cJSON *assetManagerFile = cJSON_GetObjectItem(
+			log,
+			"asset_manager_file");
+		config.logConfig.assetManagerFile = malloc(
+			strlen(assetManagerFile->valuestring) + 1);
+		strcpy(
+			config.logConfig.assetManagerFile,
+			assetManagerFile->valuestring);
+
+		cJSON *luaFile = cJSON_GetObjectItem(log, "lua_file");
 		config.logConfig.luaFile = malloc(
-			strlen(loggingLuaFile->valuestring) + 1);
-		strcpy(config.logConfig.luaFile, loggingLuaFile->valuestring);
+			strlen(luaFile->valuestring) + 1);
+		strcpy(config.logConfig.luaFile, luaFile->valuestring);
 	}
 
 	cJSON *saves = cJSON_GetObjectItem(json, "saves");
@@ -121,6 +185,7 @@ void freeConfig(void)
 {
 	free(config.windowConfig.title);
 	free(config.logConfig.engineFile);
+	free(config.logConfig.assetManagerFile);
 	free(config.logConfig.luaFile);
 }
 
@@ -136,8 +201,18 @@ void initializeDefaultConfig(void)
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
 
+	config.assetsConfig.minAudioLifetime = 60.0;
+	config.assetsConfig.minFontLifetime = 60.0;
+	config.assetsConfig.minImageLifetime = 60.0;
+	config.assetsConfig.minTextureLifetime = 60.0;
+	config.assetsConfig.minModelLifetime = 60.0;
+	config.assetsConfig.minParticleLifetime = 60.0;
+	config.assetsConfig.maxThreadCount = 4;
+
 	config.logConfig.engineFile = malloc(11);
 	strcpy(config.logConfig.engineFile, "engine.log");
+	config.logConfig.assetManagerFile = malloc(18);
+	strcpy(config.logConfig.assetManagerFile, "asset_manager.log");
 	config.logConfig.luaFile = malloc(8);
 	strcpy(config.logConfig.luaFile, "lua.log");
 

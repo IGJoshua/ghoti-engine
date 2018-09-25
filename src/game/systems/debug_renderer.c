@@ -547,7 +547,7 @@ void drawPrimitives(
 
 		DebugVertexData *vertexData = hashMapIteratorGetValue(itr);
 		glDrawArrays(primitiveType, index, vertexData->numVertices);
-		logGLError(false, "Error when drawing debug %s", name);
+		logGLError(false, "Failed to draw debug %s", name);
 
 		glPointSize(pointSize);
 		glLineWidth(primitiveSize);

@@ -95,12 +95,6 @@ typedef struct animator_component_t
 	real64 transitionDuration;
 } AnimatorComponent;
 
-typedef struct audio_manager_component_t
-{
-	uint32 buffers;
-	uint32 sources;
-} AudioManagerComponent;
-
 typedef struct audio_source_component_t
 {
 	uint32 id;

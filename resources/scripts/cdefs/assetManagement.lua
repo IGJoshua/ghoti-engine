@@ -9,10 +9,7 @@ void swapMeshMaterial(
 
 int32 loadFont(const char *name, uint32 size);
 void* getFont(const char *name, uint32 size);
-void freeFont(void *font);
 
 int32 loadAudio(const char *name);
-
-void activateAssetsChangedFlag(void);
 
 ]]

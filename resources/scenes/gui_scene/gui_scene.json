@@ -40,6 +40,7 @@
 	{
 		"animation": 2048,
 		"animator": 2048,
+		"audio_source": 1024,
 		"ball_socket_joint": 256,
 		"ball_socket2_joint": 256,
 		"box": 1024,
@@ -66,17 +67,17 @@
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
+		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,
+		"slider": 1024,
 		"sphere": 1024,
 		"surface_information": 512,
+		"text_field": 1024,
 		"text": 1024,
 		"transform": 16384,
 		"widget": 1024,
-		"wireframe": 2048,
-		"text_field": 1024,
-		"progress_bar": 1024,
-		"slider": 1024
+		"wireframe": 2048
 	},
 
 	"active_camera": ",'-g3M4ODfK/oHKFMQuBDv+B)UGbJ-SY8AiZJ6%6V),tQO?wB^A>^XD:u%aP/3/",

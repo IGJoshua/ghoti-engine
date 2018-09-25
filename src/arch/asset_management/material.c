@@ -14,21 +14,26 @@
 #include "ECS/scene.h"
 
 #include <string.h>
+#include <pthread.h>
 
-extern HashMap textures;
 extern HashMap materialFolders;
+extern pthread_mutex_t materialFoldersMutex;
 
 internal const char materialComponentCharacters[] = {
 	'b', 'e', 'm', 'n', 'r'
 };
 
-int32 loadMaterial(Material *material, FILE *file)
+int32 loadMaterial(Material *material, FILE *file, const char *modelName)
 {
 	material->name = readStringAsUUID(file);
 
 	if (strlen(material->name.string) > 0)
 	{
-		LOG("Loading material (%s)...\n", material->name.string);
+		ASSET_LOG(
+			MODEL,
+			modelName,
+			"Loading material (%s)...\n",
+			material->name.string);
 
 		fread(&material->doubleSided, sizeof(bool), 1, file);
 
@@ -63,7 +68,11 @@ int32 loadMaterial(Material *material, FILE *file)
 			}
 		}
 
-		LOG("Successfully loaded material (%s)\n", material->name.string);
+		ASSET_LOG(
+			MODEL,
+			modelName,
+			"Successfully loaded material (%s)\n",
+			material->name.string);
 	}
 
 	return 0;
@@ -110,8 +119,11 @@ void freeMaterial(Material *material)
 
 void loadMaterialFolders(UUID name)
 {
+	pthread_mutex_lock(&materialFoldersMutex);
 	if (!hashMapGetData(materialFolders, &name))
 	{
+		pthread_mutex_unlock(&materialFoldersMutex);
+
 		List materialNames = createList(sizeof(UUID));
 
 		UUID fullMaterialName = name;
@@ -185,26 +197,29 @@ void loadMaterialFolders(UUID name)
 		listClear(&materialNames);
 		free(materialFolderPath);
 
+		pthread_mutex_lock(&materialFoldersMutex);
 		hashMapInsert(
 			materialFolders,
 			&fullMaterialName,
 			&materialFoldersList);
 	}
+
+	pthread_mutex_unlock(&materialFoldersMutex);
 }
 
 int32 loadMaterialComponentTexture(
 	UUID materialName,
 	MaterialComponentType materialComponentType,
-	UUID *textureName
-) {
+	UUID *textureName)
+{
 	memset(textureName, 0, sizeof(UUID));
 
-	List *materialFoldersList = (List*)hashMapGetData(
+	List materialFoldersList = *(List*)hashMapGetData(
 		materialFolders,
 		&materialName);
 
 	char *fullFilename = NULL;
-	for (ListIterator itr = listGetIterator(materialFoldersList);
+	for (ListIterator itr = listGetIterator(&materialFoldersList);
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
@@ -241,12 +256,7 @@ int32 loadMaterialComponentTexture(
 
 	if (fullFilename)
 	{
-		if (loadTexture(fullFilename, textureName->string) == -1)
-		{
-			free(fullFilename);
-			return -1;
-		}
-
+		loadTexture(fullFilename, textureName->string);
 		free(fullFilename);
 	}
 

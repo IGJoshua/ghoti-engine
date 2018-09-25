@@ -319,8 +319,8 @@ void drawCollisionPrimitives(
 			return;
 	}
 
-	Model *model = getModel(modelName);
-	if (!model)
+	Model model = getModel(modelName);
+	if (strlen(model.name.string) == 0)
 	{
 		return;
 	}
@@ -395,11 +395,16 @@ void drawCollisionPrimitives(
 		drawCollisionPrimitive(
 			&transform,
 			debugCollisionPrimitive,
-			model,
+			&model,
 			&color,
 			entity);
 
 		model = getModel(HEMISPHERE_MODEL_NAME);
+
+		if (strlen(model.name.string) == 0)
+		{
+			return;
+		}
 
 		kmVec3Fill(
 			&scale,
@@ -420,7 +425,7 @@ void drawCollisionPrimitives(
 		drawCollisionPrimitive(
 			&offsetTransform,
 			debugCollisionPrimitive,
-			model,
+			&model,
 			&color,
 			entity);
 
@@ -437,7 +442,7 @@ void drawCollisionPrimitives(
 	drawCollisionPrimitive(
 		&transform,
 		debugCollisionPrimitive,
-		model,
+		&model,
 		&color,
 		entity);
 }
@@ -483,7 +488,7 @@ void drawCollisionPrimitive(
 
 		logGLError(
 			false,
-			"Error when drawing collision primitive (%s), entity (%s)",
+			"Failed to draw collision primitive (%s), entity (%s)",
 			model->name.string,
 			entity.string);
 

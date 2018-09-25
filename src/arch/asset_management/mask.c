@@ -13,23 +13,20 @@
 #include <malloc.h>
 #include <string.h>
 
-extern HashMap textures;
-
-int32 loadMask(Mask *mask, FILE *file)
+void loadMask(Mask *mask, FILE *file, const char *modelName)
 {
-	LOG("Loading masks...\n");
+	ASSET_LOG(MODEL, modelName, "Loading masks...\n");
 
-	loadMaterial(&mask->collectionMaterial, file);
-	loadMaterial(&mask->grungeMaterial, file);
-	loadMaterial(&mask->wearMaterial, file);
+	loadMaterial(&mask->collectionMaterial, file, modelName);
+	loadMaterial(&mask->grungeMaterial, file, modelName);
+	loadMaterial(&mask->wearMaterial, file, modelName);
 	fread(&mask->opacity, sizeof(real32), 1, file);
 
-	LOG("Successfully loaded masks\n");
-
-	return 0;
+	ASSET_LOG(MODEL, modelName, "Successfully loaded masks\n");
 }
 
-int32 loadMaskTexture(const char *masksFolder,
+int32 loadMaskTexture(
+	const char *masksFolder,
 	Model *model,
 	char suffix,
 	UUID *textureName)
@@ -46,12 +43,7 @@ int32 loadMaskTexture(const char *masksFolder,
 
 	if (fullFilename)
 	{
-		if (loadTexture(fullFilename, textureName->string) == -1)
-		{
-			free(fullFilename);
-			return -1;
-		}
-
+		loadTexture(fullFilename, textureName->string);
 		free(fullFilename);
 	}
 

@@ -155,7 +155,7 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 			GL_UNSIGNED_SHORT,
 			offset);
 
-		logGLError(false, "Error when drawing GUI");
+		logGLError(false, "Failed to draw GUI");
 
 		offset += cmd->elem_count;
 	}

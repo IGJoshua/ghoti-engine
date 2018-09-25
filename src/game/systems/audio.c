@@ -4,6 +4,8 @@
 
 #include "asset_management/audio.h"
 
+#include "audio/audio.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -13,90 +15,40 @@
 #include "ECS/component.h"
 
 #include "components/component_types.h"
-#include "components/audio.h"
+#include "components/audio_source.h"
 
 #include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
-#include <AL/efx-creative.h>
-#include <AL/efx.h>
-#include <AL/efx-presets.h>
-
-#define AUDIO_BUCKET_COUNT 101
 
 internal UUID transformComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID audioManagerComponentID = {};
 internal UUID audioSourceComponentID = {};
 
-ALCdevice *device = NULL;
-ALCcontext *context = NULL;
-ALCboolean g_bEAX = 0;
+internal uint32 audioSystemRefCount = 0;
+
+#define PLAY_AUDIO_BUCKET_COUNT 1031
+
+HashMap playAudioQueue;
+
+extern Scene *listenerScene;
 extern ALuint *g_Buffers;
 extern ALuint *g_Sources;
-extern ALenum errorCode;
-extern uint64 freeBuffer;
-extern uint64 NUM_BUFF;
-extern uint64 NUM_SRC;
-uint32 audioSystemRefCount = 0;
 
-extern HashMap audioFiles;
-extern Scene *listenerScene;
+internal int32 ptrcmp(void *a, void *b)
+{
+	return *(uint64*)a != *(uint64*)b;
+}
 
 internal
 void initAudioSystem(Scene *scene)
 {
 	if (audioSystemRefCount == 0)
 	{
-		//Init
-		device = alcOpenDevice(NULL);
-
-		if (device)
-		{
-			context = alcCreateContext(device, NULL);
-
-			if (context)
-			{
-				alcMakeContextCurrent(context);
-			}
-			else
-			{
-				LOG("Could not create a context\n");
-				return;
-			}
-		}
-		else
-		{
-			LOG("Could not create device\n");
-			return;
-		}
-
-		//Check for EAX 2.0
-		g_bEAX = alIsExtensionPresent("EAX2.0");
-
-		//Create Buffers
-		alGetError();
-
-		g_Buffers = malloc(sizeof(ALuint)*NUM_BUFF);
-		alGenBuffers(NUM_BUFF, g_Buffers);
-
-		errorCode = alGetError();
-		if (errorCode != AL_NO_ERROR)
-		{
-			LOG("alGenBuffers has errored: %s\n", alGetString(errorCode));
-			return;
-		}
-
-		// Generate Sources
-		g_Sources = malloc(sizeof(ALuint)*NUM_SRC);
-		alGenSources(NUM_SRC, g_Sources);
-
-		errorCode = alGetError();
-		if (errorCode != AL_NO_ERROR)
-		{
-			LOG("alGenSources has errored : %s\n", alGetString(errorCode));
-			return;
-		}
+		playAudioQueue = createHashMap(
+			sizeof(AudioSourceComponent*),
+			sizeof(PlayAudioQueueData),
+			PLAY_AUDIO_BUCKET_COUNT,
+			(ComparisonOp)&ptrcmp);
 
 		if (!listenerScene)
 		{
@@ -147,12 +99,6 @@ void initAudioSystem(Scene *scene)
 			listenerVel[2] = camRigid->velocity.z;
 		}
 		alListenerfv(AL_VELOCITY,listenerVel);
-
-		audioFiles = createHashMap(
-			sizeof(UUID),
-			sizeof(AudioFile),
-			AUDIO_BUCKET_COUNT,
-			(ComparisonOp)&strcmp);
 	}
 
 	audioSystemRefCount++;
@@ -161,92 +107,133 @@ void initAudioSystem(Scene *scene)
 internal
 void beginAudioSystem(Scene *scene, real64 dt)
 {
-    if (audioSystemRefCount == 0 || !listenerScene)
-    {
-        return;
-    }
+	if (audioSystemRefCount == 0 || !listenerScene)
+	{
+		return;
+	}
 
-    AudioSourceComponent * sourceComp;
-    TransformComponent * transformComp;
-    RigidBodyComponent * rigidBodyComp;
+	for (HashMapIterator itr = hashMapGetIterator(playAudioQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		AudioSourceComponent *audioSource =
+			*(AudioSourceComponent**)hashMapIteratorGetKey(itr);
 
-    uint32 sourceID = 0;
-    for (ComponentDataTableIterator itr = cdtGetIterator(
+		PlayAudioQueueData *audio = hashMapIteratorGetValue(itr);
+		audio->timer -= dt;
+
+		bool remove = false;
+
+		AudioFile audioData = getAudio(audio->name.string);
+		if (strlen(audioData.name.string) > 0)
+		{
+			alSourceRewind(g_Sources[audioSource->id]);
+
+			alSourcei(
+				g_Sources[audioSource->id],
+				AL_BUFFER,
+				g_Buffers[audioData.id]);
+
+			alSourcePlay(g_Sources[audioSource->id]);
+
+			remove = true;
+		}
+		else if (audio->timer < 0.0)
+		{
+			remove = true;
+		}
+
+		if (remove)
+		{
+			hashMapMoveIterator(&itr);
+			hashMapDelete(playAudioQueue, &audioSource);
+		}
+		else
+		{
+			hashMapMoveIterator(&itr);
+		}
+	}
+
+	AudioSourceComponent * sourceComp;
+	TransformComponent * transformComp;
+	RigidBodyComponent * rigidBodyComp;
+
+	uint32 sourceID = 0;
+	for (ComponentDataTableIterator itr = cdtGetIterator(
 			 *(ComponentDataTable **)hashMapGetData(
 				 scene->componentTypes,
 				 &audioSourceComponentID));
-		 !cdtIteratorAtEnd(itr) && sourceID < NUM_SRC;
+		 !cdtIteratorAtEnd(itr) && sourceID < NUM_AUDIO_SRC;
 		 cdtMoveIterator(&itr), sourceID++)
-    {
-        UUID entityID = cdtIteratorGetUUID(itr);
+	{
+		UUID entityID = cdtIteratorGetUUID(itr);
 
-        sourceComp = (AudioSourceComponent *)cdtIteratorGetData(itr);
+		sourceComp = (AudioSourceComponent *)cdtIteratorGetData(itr);
 
-        sourceComp->id = sourceID;
+		sourceComp->id = sourceID;
 
-        alSourcef(g_Sources[sourceID], AL_PITCH, sourceComp->pitch);
-    	alSourcef(g_Sources[sourceID], AL_GAIN, sourceComp->gain);
+		alSourcef(g_Sources[sourceID], AL_PITCH, sourceComp->pitch);
+		alSourcef(g_Sources[sourceID], AL_GAIN, sourceComp->gain);
 
-        transformComp = sceneGetComponentFromEntity(
-            scene,
-            entityID,
-            transformComponentID);
+		transformComp = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
 
-        ALfloat sourcePos[3] = {};
+		ALfloat sourcePos[3] = {};
 
-        if (transformComp)
-        {
-            sourcePos[0] = transformComp->globalPosition.x;
-            sourcePos[1] = transformComp->globalPosition.y;
-            sourcePos[2] = transformComp->globalPosition.z;
-        }
+		if (transformComp)
+		{
+			sourcePos[0] = transformComp->globalPosition.x;
+			sourcePos[1] = transformComp->globalPosition.y;
+			sourcePos[2] = transformComp->globalPosition.z;
+		}
 
-        rigidBodyComp = sceneGetComponentFromEntity(
-            scene,
-            entityID,
-            rigidBodyComponentID);
+		rigidBodyComp = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			rigidBodyComponentID);
 
-        ALfloat sourceVel[3]={};
+		ALfloat sourceVel[3]={};
 
-        if (rigidBodyComp)
-        {
-            sourceVel[0] = rigidBodyComp->velocity.x;
-            sourceVel[1] = rigidBodyComp->velocity.y;
-            sourceVel[2] = rigidBodyComp->velocity.z;
-        }
+		if (rigidBodyComp)
+		{
+			sourceVel[0] = rigidBodyComp->velocity.x;
+			sourceVel[1] = rigidBodyComp->velocity.y;
+			sourceVel[2] = rigidBodyComp->velocity.z;
+		}
 
-        alSourcefv(g_Sources[sourceID], AL_POSITION, sourcePos);
-    	alSourcefv(g_Sources[sourceID], AL_VELOCITY, sourceVel);
-        alSourcei(g_Sources[sourceID], AL_LOOPING, AL_FALSE);
+		alSourcefv(g_Sources[sourceID], AL_POSITION, sourcePos);
+		alSourcefv(g_Sources[sourceID], AL_VELOCITY, sourceVel);
+		alSourcei(g_Sources[sourceID], AL_LOOPING, AL_FALSE);
 
-        if (!strcmp(entityID.string, listenerScene->mainCamera.string))
-        {
-            ALfloat	listenerOri[6]={0,0,0, 0,1,0};
+		if (!strcmp(entityID.string, listenerScene->mainCamera.string))
+		{
+			ALfloat	listenerOri[6]={0,0,0, 0,1,0};
 
-            if (transformComp)
-            {
-                kmVec3 atVec, upVec;
+			if (transformComp)
+			{
+				kmVec3 atVec, upVec;
 
-                kmQuaternionGetForwardVec3RH(
-                    &atVec,
-                    &transformComp->globalRotation);
+				kmQuaternionGetForwardVec3RH(
+					&atVec,
+					&transformComp->globalRotation);
 
-                kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
+				kmQuaternionGetUpVec3(&upVec, &transformComp->globalRotation);
 
-                listenerOri[0] = atVec.x;
-                listenerOri[1] = atVec.y;
-                listenerOri[2] = atVec.z;
+				listenerOri[0] = atVec.x;
+				listenerOri[1] = atVec.y;
+				listenerOri[2] = atVec.z;
 
-                listenerOri[3] = upVec.x;
-                listenerOri[4] = upVec.y;
-                listenerOri[5] = upVec.z;
-            }
+				listenerOri[3] = upVec.x;
+				listenerOri[4] = upVec.y;
+				listenerOri[5] = upVec.z;
+			}
 
-            alListenerfv(AL_POSITION,sourcePos);
-            alListenerfv(AL_ORIENTATION,listenerOri);
-            alListenerfv(AL_VELOCITY,sourceVel);
-        }
-    }
+			alListenerfv(AL_POSITION,sourcePos);
+			alListenerfv(AL_ORIENTATION,listenerOri);
+			alListenerfv(AL_VELOCITY,sourceVel);
+		}
+	}
 }
 
 internal
@@ -332,24 +319,8 @@ void shutdownAudioSystem(Scene *scene)
 {
 	if (--audioSystemRefCount == 0)
 	{
-		alSourceStopv(NUM_SRC, g_Sources);
-		alDeleteBuffers(NUM_BUFF, g_Buffers);
-		free(g_Buffers);
-		alDeleteSources(NUM_SRC, g_Sources);
-		free(g_Sources);
-		alcMakeContextCurrent(NULL);
-		alcDestroyContext(context);
-		alcCloseDevice(device);
-
-		for (HashMapIterator itr = hashMapGetIterator(audioFiles);
-			!hashMapIteratorAtEnd(itr);)
-		{
-			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
-			hashMapMoveIterator(&itr);
-			freeAudio(audio);
-		}
-
-		freeHashMap(&audioFiles);
+		stopAllAudio();
+		freeHashMap(&playAudioQueue);
 	}
 }
 

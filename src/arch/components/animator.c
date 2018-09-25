@@ -67,14 +67,13 @@ AnimationReference* setCurrentAnimationReference(
 		return NULL;
 	}
 
-	Model *model = getModel(modelComponent->name);
-	if (!model)
+	Model model = getModel(modelComponent->name);
+	if (strlen(model.name.string) == 0)
 	{
-		resetAnimator(animator, animationReference);
 		return NULL;
 	}
 
-	animationReference->currentAnimation = getAnimation(model, name);
+	animationReference->currentAnimation = getAnimation(&model, name);
 	if (!animationReference->currentAnimation)
 	{
 		resetAnimator(animator, animationReference);

@@ -21,123 +21,265 @@
 #define NK_IMPLEMENTATION
 #include <nuklear/nuklear.h>
 
+#include <pthread.h>
+
+typedef struct font_thread_args_t
+{
+	char *name;
+	real32 size;
+} FontThreadArgs;
+
+extern Config config;
+
 extern HashMap fonts;
+extern pthread_mutex_t fontsMutex;
+
+extern HashMap loadingFonts;
+extern pthread_mutex_t loadingFontsMutex;
+
+extern HashMap uploadFontsQueue;
+extern pthread_mutex_t uploadFontsMutex;
+
+extern uint32 assetThreadCount;
+extern pthread_mutex_t assetThreadsMutex;
+extern pthread_cond_t assetThreadsCondition;
 
 extern int32 viewportHeight;
+
+internal void* acquireFontThread(void *arg);
+internal void* loadFontThread(void *arg);
 
 internal uint32 getFontPixelSize(real32 size);
 internal UUID getFontName(const char *name, real32 size);
 
-int32 loadFont(const char *name, real32 size)
+void loadFont(const char *name, real32 size)
+{
+	FontThreadArgs *arg = malloc(sizeof(FontThreadArgs));
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	arg->size = size;
+
+	pthread_t acquisitionThread;
+	pthread_create(&acquisitionThread, NULL, &acquireFontThread, (void*)arg);
+	pthread_detach(acquisitionThread);
+}
+
+void* acquireFontThread(void *arg)
+{
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount == config.assetsConfig.maxThreadCount)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	assetThreadCount++;
+
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	pthread_t loadingThread;
+	pthread_create(&loadingThread, NULL, &loadFontThread, arg);
+	pthread_detach(loadingThread);
+
+	EXIT_THREAD(NULL);
+}
+
+void* loadFontThread(void *arg)
 {
 	int32 error = 0;
 
-	if (!getFont(name, size))
+	FontThreadArgs *threadArgs = arg;
+	char *name = threadArgs->name;
+	real32 size = threadArgs->size;
+
+	UUID fontName = getFontName(name, size);
+
+	pthread_mutex_lock(&fontsMutex);
+	Font *fontResource = hashMapGetData(fonts, &fontName);
+
+	if (!fontResource)
 	{
-		Font font = {};
+		pthread_mutex_unlock(&fontsMutex);
+		pthread_mutex_lock(&loadingFontsMutex);
 
-		UUID fullName = getFontName(name, size);
-
-		LOG("Loading font (%s)...\n", fullName.string);
-
-		font.name = fullName;
-
-		nk_font_atlas_init_default(&font.atlas);
-		nk_font_atlas_begin(&font.atlas);
-
-		char *filename = getFullFilePath(name, "ttf", "resources/fonts");
-
-		font.font = nk_font_atlas_add_from_file(
-			&font.atlas,
-			filename,
-			getFontPixelSize(size),
-			NULL);
-
-		free(filename);
-
-		if (!font.font)
+		if (hashMapGetData(loadingFonts, &fontName))
 		{
-			error = -1;
+			error = 1;
 		}
-		else
+
+		pthread_mutex_unlock(&loadingFontsMutex);
+
+		if (error != 1)
 		{
-			int32 width, height;
-			const void *image = nk_font_atlas_bake(
-				&font.atlas,
-				&width,
-				&height,
-				NK_FONT_ATLAS_RGBA32);
+			pthread_mutex_lock(&uploadFontsMutex);
 
-			glGenTextures(1, &font.texture);
-			glBindTexture(GL_TEXTURE_2D, font.texture);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				GL_RGBA,
-				width,
-				height,
-				0,
-				GL_RGBA,
-				GL_UNSIGNED_BYTE,
-				image);
-
-			error = logGLError(false, "Error while transferring font onto GPU");
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-
-			if (error != -1)
+			if (hashMapGetData(uploadFontsQueue, &fontName))
 			{
-				nk_font_atlas_end(
-					&font.atlas,
-					nk_handle_id(font.texture),
-					&font.null);
+				error = 1;
 			}
+
+			pthread_mutex_unlock(&uploadFontsMutex);
 		}
 
-		if (error != -1)
+		if (error != 1)
 		{
-			hashMapInsert(fonts, &font.name, &font);
+			bool loading = true;
+			pthread_mutex_lock(&loadingFontsMutex);
+			hashMapInsert(loadingFonts, &fontName, &loading);
+			pthread_mutex_unlock(&loadingFontsMutex);
 
-			LOG("Successfully loaded font (%s)\n", fullName.string);
-			LOG("Font Count: %d\n", fonts->count);
-		}
-		else
-		{
-			LOG("Failed to load font (%s)\n", fullName.string);
+			ASSET_LOG(
+				FONT,
+				fontName.string,
+				"Loading font (%s)...\n",
+				fontName.string);
+
+			Font font = {};
+
+			font.name = fontName;
+			font.lifetime = config.assetsConfig.minFontLifetime;
+
+			nk_font_atlas_init_default(&font.atlas);
+			nk_font_atlas_begin(&font.atlas);
+
+			char *filename = getFullFilePath(name, "ttf", "resources/fonts");
+
+			font.font = nk_font_atlas_add_from_file(
+				&font.atlas,
+				filename,
+				getFontPixelSize(size),
+				NULL);
+
+			free(filename);
+
+			if (!font.font)
+			{
+				error = -1;
+			}
+			else
+			{
+				font.textureData = nk_font_atlas_bake(
+					&font.atlas,
+					&font.textureWidth,
+					&font.textureHeight,
+					NK_FONT_ATLAS_RGBA32);
+			}
+
+			if (error != - 1)
+			{
+				pthread_mutex_lock(&uploadFontsMutex);
+				hashMapInsert(uploadFontsQueue, &fontName, &font);
+				pthread_mutex_unlock(&uploadFontsMutex);
+
+				pthread_mutex_lock(&loadingFontsMutex);
+				hashMapDelete(loadingFonts, &fontName);
+				pthread_mutex_unlock(&loadingFontsMutex);
+
+				ASSET_LOG(
+					FONT,
+					fontName.string,
+					"Successfully loaded font (%s)\n",
+					fontName.string);
+			}
+			else
+			{
+				ASSET_LOG(
+					FONT,
+					fontName.string,
+					"Failed to load font (%s)\n",
+					fontName.string);
+			}
+
+			ASSET_LOG_COMMIT(FONT, fontName.string);
 		}
 	}
+	else
+	{
+		pthread_mutex_unlock(&fontsMutex);
+	}
+
+	free(arg);
+	free(name);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+	assetThreadCount--;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	EXIT_THREAD(NULL);
+}
+
+int32 uploadFontToGPU(Font *font)
+{
+	LOG("Transferring font (%s) onto GPU...\n", font->name.string);
+
+	glGenTextures(1, &font->textureID);
+	glBindTexture(GL_TEXTURE_2D, font->textureID);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA,
+		font->textureWidth,
+		font->textureHeight,
+		0,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		font->textureData);
+
+	nk_font_atlas_end(
+		&font->atlas,
+		nk_handle_id(font->textureID),
+		&font->null);
+
+	int32 error = logGLError(false, "Failed to transfer font onto GPU");
+
+	if (error != -1)
+	{
+		LOG("Successfully transferred font (%s) onto GPU\n", font->name.string);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return error;
 }
 
-Font* getFont(const char *name, real32 size)
+Font getFont(const char *name, real32 size)
 {
-	Font *font = NULL;
+	Font font = {};
 	if (strlen(name) > 0)
 	{
-		UUID nameID = getFontName(name, size);
-		font = hashMapGetData(fonts, &nameID);
+		UUID fontName = getFontName(name, size);
+
+		pthread_mutex_lock(&fontsMutex);
+
+		Font *fontResource = hashMapGetData(fonts, &fontName);
+		if (fontResource)
+		{
+			fontResource->lifetime = config.assetsConfig.minFontLifetime;
+			font = *fontResource;
+		}
+
+		pthread_mutex_unlock(&fontsMutex);
 	}
 
 	return font;
 }
 
-void freeFont(Font *font)
+void freeFontData(Font *font)
 {
-	UUID name = font->name;
-
-	LOG("Freeing font (%s)...\n", name.string);
+	LOG("Freeing font (%s)...\n", font->name.string);
 
 	nk_font_atlas_clear(&font->atlas);
-	glDeleteTextures(1, &font->texture);
-	hashMapDelete(fonts, &name);
+	glDeleteTextures(1, &font->textureID);
 
-	LOG("Successfully freed font (%s)\n", name.string);
-	LOG("Font Count: %d\n", fonts->count);
+	LOG("Successfully freed font (%s)\n", font->name.string);
 }
 
 uint32 getFontPixelSize(real32 size)

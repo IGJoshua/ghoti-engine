@@ -224,8 +224,8 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		modelComponentID);
 
-	Model *model = getModel(modelComponent->name);
-	if (!model)
+	Model model = getModel(modelComponent->name);
+	if (strlen(model.name.string) == 0)
 	{
 		return;
 	}
@@ -298,7 +298,7 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			kmMat4Identity(&boneMatrices[i]);
 		}
 
-		Skeleton *skeleton = &model->skeleton;
+		Skeleton *skeleton = &model.skeleton;
 		for (uint32 i = 0; i < skeleton->numBoneOffsets; i++)
 		{
 			BoneOffset *boneOffset = &skeleton->boneOffsets[i];
@@ -332,9 +332,9 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			boneMatrices);
 	}
 
-	for (uint32 i = 0; i < model->numSubsets; i++)
+	for (uint32 i = 0; i < model.numSubsets; i++)
 	{
-		Subset *subset = &model->subsets[i];
+		Subset *subset = &model.subsets[i];
 		Mesh *mesh = &subset->mesh;
 		Material *material = &subset->material;
 		Mask *mask = &subset->mask;
@@ -349,8 +349,8 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		GLint textureIndex = 0;
 		activateMaterialTextures(material, &textureIndex);
-		activateTexture(model->materialTexture, &textureIndex);
-		activateTexture(model->opacityTexture, &textureIndex);
+		activateTexture(model.materialTexture, &textureIndex);
+		activateTexture(model.opacityTexture, &textureIndex);
 		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
 		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
 		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
@@ -388,8 +388,8 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		logGLError(
 			false,
-			"Error when drawing wireframe for model (%s), subset (%s)",
-			model->name.string,
+			"Failed to draw wireframe for model (%s), subset (%s)",
+			model.name.string,
 			subset->name.string);
 
 		glLineWidth(lineWidth);

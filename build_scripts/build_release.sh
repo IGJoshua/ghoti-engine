@@ -27,6 +27,7 @@ rm -rf release/resources/heightmaps/*
 rm -rf release/resources/images/*
 rm -rf release/resources/materials/*
 rm -rf release/resources/models/*
+rm -rf release/resources/particles/*
 rm -rf release/resources/saves/*
 rm -rf release/resources/scenes/*
 rm -rf release/resources/scripts/components/debug/

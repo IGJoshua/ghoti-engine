@@ -4,4 +4,4 @@ math.randomseed(os.time())
 
 local C = engine.C
 
-C.loadScene("gui_scene")
+C.loadScene("example_scene")

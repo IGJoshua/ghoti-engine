@@ -17,9 +17,21 @@
 		"background_color": [0.0, 0.0, 0.0]
 	},
 
-	"logging":
+	"assets":
+	{
+		"minimum_audio_lifetime": 60.0,
+		"minimum_font_lifetime": 60.0,
+		"minimum_image_lifetime": 60.0,
+		"minimum_texture_lifetime": 60.0,
+		"minimum_model_lifetime": 60.0,
+		"minimum_particle_lifetime": 60.0,
+		"maximum_thread_count": 4
+	},
+
+	"log":
 	{
 		"engine_file": "engine.log",
+		"asset_manager_file": "asset_manager.log",
 		"lua_file": "lua.log"
 	},
 

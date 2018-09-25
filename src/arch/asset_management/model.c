@@ -7,6 +7,7 @@
 #include "asset_management/texture.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "file/utilities.h"
 
@@ -15,187 +16,328 @@
 
 #include "ECS/scene.h"
 
+#include <pthread.h>
+
+extern Config config;
+
 extern HashMap models;
-extern HashMap textures;
+extern pthread_mutex_t modelsMutex;
 
-internal int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile);
-internal void freeSubset(Subset *subset);
+extern HashMap loadingModels;
+extern pthread_mutex_t loadingModelsMutex;
 
-internal void deleteModel(const char *name);
+extern HashMap uploadModelsQueue;
+extern pthread_mutex_t uploadModelsMutex;
 
-int32 loadModel(const char *name)
+extern uint32 assetThreadCount;
+extern pthread_mutex_t assetThreadsMutex;
+extern pthread_cond_t assetThreadsCondition;
+
+internal void* acquireModelThread(void *arg);
+internal void* loadModelThread(void *arg);
+
+internal int32 loadSubset(
+	Subset *subset,
+	FILE *assetFile,
+	FILE *meshFile,
+	const char *modelName);
+
+void loadModel(const char *name)
+{
+	char *modelName = calloc(1, strlen(name) + 1);
+	strcpy(modelName, name);
+
+	pthread_t acquisitionThread;
+	pthread_create(
+		&acquisitionThread,
+		NULL,
+		&acquireModelThread,
+		(void*)modelName);
+	pthread_detach(acquisitionThread);
+}
+
+void* acquireModelThread(void *arg)
+{
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount == config.assetsConfig.maxThreadCount)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	assetThreadCount++;
+
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	pthread_t loadingThread;
+	pthread_create(&loadingThread, NULL, &loadModelThread, arg);
+	pthread_detach(loadingThread);
+
+	EXIT_THREAD(NULL);
+}
+
+void* loadModelThread(void *arg)
 {
 	int32 error = 0;
 
-	Model *modelResource = getModel(name);
+	char *name = arg;
+
+	UUID modelName = idFromName(name);
+
+	pthread_mutex_lock(&modelsMutex);
+	Model *modelResource = hashMapGetData(models, &modelName);
+
 	if (!modelResource)
 	{
-		Model model = {};
+		pthread_mutex_unlock(&modelsMutex);
+		pthread_mutex_lock(&loadingModelsMutex);
 
-		LOG("Loading model (%s)...\n", name);
-
-		model.name = idFromName(name);
-		model.refCount = 1;
-
-		char *modelFolder = getFullFilePath(name, NULL, "resources/models");
-
-		char *assetFilename = getFullFilePath(name, "asset", modelFolder);
-		FILE *assetFile = fopen(assetFilename, "rb");
-
-		if (assetFile)
+		if (hashMapGetData(loadingModels, &modelName))
 		{
-			char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
-			FILE *meshFile = fopen(meshFilename, "rb");
+			error = 1;
+		}
 
-			if (meshFile)
+		pthread_mutex_unlock(&loadingModelsMutex);
+
+		if (error != 1)
+		{
+			pthread_mutex_lock(&uploadModelsMutex);
+
+			if (hashMapGetData(uploadModelsQueue, &modelName))
 			{
-				fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
-				model.subsets = calloc(model.numSubsets, sizeof(Subset));
+				error = 1;
+			}
 
-				for (uint32 i = 0; i < model.numSubsets; i++)
+			pthread_mutex_unlock(&uploadModelsMutex);
+		}
+
+		if (error != 1)
+		{
+			bool loading = true;
+			pthread_mutex_lock(&loadingModelsMutex);
+			hashMapInsert(loadingModels, &modelName, &loading);
+			pthread_mutex_unlock(&loadingModelsMutex);
+
+			Model model = {};
+
+			ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
+
+			model.name = modelName;
+			model.refCount = 1;
+
+			char *modelFolder = getFullFilePath(name, NULL, "resources/models");
+
+			char *assetFilename = getFullFilePath(name, "asset", modelFolder);
+			FILE *assetFile = fopen(assetFilename, "rb");
+
+			if (assetFile)
+			{
+				char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
+				FILE *meshFile = fopen(meshFilename, "rb");
+
+				if (meshFile)
 				{
-					model.subsets[i].name = readStringAsUUID(assetFile);
-				}
+					fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
+					model.subsets = calloc(model.numSubsets, sizeof(Subset));
 
-				char *masksFolder = getFullFilePath("masks", NULL, modelFolder);
+					for (uint32 i = 0; i < model.numSubsets; i++)
+					{
+						model.subsets[i].name = readStringAsUUID(assetFile);
+					}
 
-				error = loadMaskTexture(
-					masksFolder,
-					&model,
-					'm',
-					&model.materialTexture);
+					char *masksFolder = getFullFilePath(
+						"masks",
+						NULL,
+						modelFolder);
 
-				if (error != -1)
-				{
 					error = loadMaskTexture(
 						masksFolder,
 						&model,
-						'o',
-						&model.opacityTexture);
-				}
-
-				free(masksFolder);
-
-				if (error != -1)
-				{
-					for (uint32 i = 0; i < model.numSubsets; i++)
-					{
-						error = loadSubset(
-							&model.subsets[i],
-							assetFile,
-							meshFile);
-
-						if (error == -1)
-						{
-							break;
-						}
-					}
+						'm',
+						&model.materialTexture);
 
 					if (error != -1)
 					{
-						error = loadAnimations(
-							&model.numAnimations,
-							&model.animations,
-							&model.skeleton,
-							meshFile);
+						error = loadMaskTexture(
+							masksFolder,
+							&model,
+							'o',
+							&model.opacityTexture);
+					}
+
+					free(masksFolder);
+
+					if (error != -1)
+					{
+						for (uint32 i = 0; i < model.numSubsets; i++)
+						{
+							error = loadSubset(
+								&model.subsets[i],
+								assetFile,
+								meshFile,
+								name);
+
+							if (error == -1)
+							{
+								break;
+							}
+						}
+
+						if (error != -1)
+						{
+							error = loadAnimations(
+								&model.numAnimations,
+								&model.animations,
+								&model.skeleton,
+								meshFile);
+						}
 					}
 				}
+				else
+				{
+					ASSET_LOG(MODEL, name, "Failed to open %s\n", meshFilename);
+					error = -1;
+				}
+
+				if (meshFile)
+				{
+					fclose(meshFile);
+				}
+
+				free(meshFilename);
 			}
 			else
 			{
-				LOG("Failed to open %s\n", meshFilename);
+				ASSET_LOG(MODEL, name, "Failed to open %s\n", assetFilename);
 				error = -1;
 			}
 
-			if (meshFile)
+			if (assetFile)
 			{
-				fclose(meshFile);
+				fclose(assetFile);
 			}
 
-			free(meshFilename);
-		}
-		else
-		{
-			LOG("Failed to open %s\n", assetFilename);
-			error = -1;
-		}
+			free(assetFilename);
+			free(modelFolder);
 
-		if (assetFile)
-		{
-			fclose(assetFile);
-		}
+			if (error != -1)
+			{
+				pthread_mutex_lock(&uploadModelsMutex);
+				hashMapInsert(uploadModelsQueue, &modelName, &model);
+				pthread_mutex_unlock(&uploadModelsMutex);
 
-		free(assetFilename);
-		free(modelFolder);
+				pthread_mutex_lock(&loadingModelsMutex);
+				hashMapDelete(loadingModels, &modelName);
+				pthread_mutex_unlock(&loadingModelsMutex);
 
-		if (error != -1)
-		{
-			hashMapInsert(models, &model.name, &model);
+				ASSET_LOG(
+					MODEL,
+					name,
+					"Successfully loaded model (%s)\n",
+					name);
+			}
+			else
+			{
+				ASSET_LOG(MODEL, name, "Failed to load model (%s)\n", name);
+			}
 
-			LOG("Successfully loaded model (%s)\n", name);
-			LOG("Model Count: %d\n", models->count);
-		}
-		else
-		{
-			LOG("Failed to load model (%s)\n", name);
+			ASSET_LOG_COMMIT(MODEL, name);
 		}
 	}
 	else
 	{
 		modelResource->refCount++;
+		pthread_mutex_unlock(&modelsMutex);
 	}
 
-	return error;
+	free(name);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+	assetThreadCount--;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	EXIT_THREAD(NULL);
 }
 
-Model* getModel(const char *name)
+void uploadModelToGPU(Model *model)
 {
-	Model *model = NULL;
+	LOG("Transferring model (%s) onto GPU...\n", model->name.string);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		Subset *subset = &model->subsets[i];
+		uploadMeshToGPU(&subset->mesh, subset->name.string);
+	}
+
+	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
+}
+
+Model getModel(const char *name)
+{
+	Model model = {};
+
 	if (strlen(name) > 0)
 	{
-		UUID nameID = idFromName(name);
-		model = hashMapGetData(models, &nameID);
+		UUID modelName = idFromName(name);
+
+		pthread_mutex_lock(&modelsMutex);
+
+		Model *modelResource = hashMapGetData(models, &modelName);
+		if (modelResource)
+		{
+			model = *modelResource;
+		}
+
+		pthread_mutex_unlock(&modelsMutex);
 	}
 
 	return model;
 }
 
-void deleteModel(const char *name)
-{
-	UUID nameID = idFromName(name);
-	hashMapDelete(models, &nameID);
-}
-
 void freeModel(const char *name)
 {
-	Model *model = getModel(name);
+	UUID modelName = idFromName(name);
+
+	pthread_mutex_lock(&modelsMutex);
+
+	Model *model = hashMapGetData(models, &modelName);
 	if (model)
 	{
-		if (--model->refCount == 0)
+		freeTexture(model->materialTexture);
+		freeTexture(model->opacityTexture);
+
+		for (uint32 i = 0; i < model->numSubsets; i++)
 		{
-			LOG("Freeing model (%s)...\n", name);
-
-			freeTexture(model->materialTexture);
-			freeTexture(model->opacityTexture);
-
-			for (uint32 i = 0; i < model->numSubsets; i++)
-			{
-				freeSubset(&model->subsets[i]);
-			}
-
-			free(model->subsets);
-
-			freeAnimations(
-				model->numAnimations,
-				model->animations,
-				&model->skeleton);
-
-			deleteModel(name);
-
-			LOG("Successfully freed model (%s)\n", name);
-			LOG("Model Count: %d\n", models->count);
+			Subset *subset = &model->subsets[i];
+			freeMaterial(&subset->material);
+			freeMask(&subset->mask);
 		}
+
+		model->refCount--;
 	}
+
+	pthread_mutex_unlock(&modelsMutex);
+}
+
+void freeModelData(Model *model)
+{
+	LOG("Freeing model (%s)...\n", model->name.string);
+
+	for (uint32 i = 0; i < model->numSubsets; i++)
+	{
+		freeMesh(&model->subsets[i].mesh);
+	}
+
+	free(model->subsets);
+
+	freeAnimations(
+		model->numAnimations,
+		model->animations,
+		&model->skeleton);
+
+	LOG("Successfully freed model (%s)\n", model->name.string);
 }
 
 void swapMeshMaterial(
@@ -203,52 +345,56 @@ void swapMeshMaterial(
 	const char *meshName,
 	const char *materialName)
 {
-	Model *model = getModel(modelName);
-	if (!model)
-	{
-		return;
-	}
+	UUID name = idFromName(modelName);
 
-	for (uint32 i = 0; i < model->numSubsets; i++)
+	pthread_mutex_lock(&modelsMutex);
+	Model *model = hashMapGetData(models, &name);
+
+	if (model)
 	{
-		Subset *subset = &model->subsets[i];
-		if (!strcmp(subset->name.string, meshName))
+		for (uint32 i = 0; i < model->numSubsets; i++)
 		{
-			Material *material = &subset->material;
-			freeMaterial(material);
-			createMaterial(idFromName(materialName), material);
-			return;
+			Subset *subset = &model->subsets[i];
+			if (!strcmp(subset->name.string, meshName))
+			{
+				Material *material = &subset->material;
+				freeMaterial(material);
+				createMaterial(idFromName(materialName), material);
+
+				pthread_mutex_unlock(&modelsMutex);
+				return;
+			}
 		}
 	}
+
+	pthread_mutex_unlock(&modelsMutex);
 }
 
-int32 loadSubset(Subset *subset, FILE *assetFile, FILE *meshFile)
+int32 loadSubset(
+	Subset *subset,
+	FILE *assetFile,
+	FILE *meshFile,
+	const char *modelName)
 {
-	LOG("Loading subset (%s)...\n", subset->name.string);
+	ASSET_LOG(
+		MODEL,
+		modelName,
+		"Loading subset (%s)...\n",
+		subset->name.string);
 
-	if (loadMaterial(&subset->material, assetFile) == -1)
+	if (loadMaterial(&subset->material, assetFile, modelName) == -1)
 	{
 		return -1;
 	}
 
-	if (loadMask(&subset->mask, assetFile) == -1)
-	{
-		return -1;
-	}
+	loadMask(&subset->mask, assetFile, modelName);
+	loadMesh(&subset->mesh, meshFile, modelName);
 
-	if (loadMesh(&subset->mesh, meshFile) == -1)
-	{
-		return -1;
-	}
-
-	LOG("Successfully loaded subset (%s)\n", subset->name.string);
+	ASSET_LOG(
+		MODEL,
+		modelName,
+		"Successfully loaded subset (%s)\n",
+		subset->name.string);
 
 	return 0;
-}
-
-void freeSubset(Subset *subset)
-{
-	freeMesh(&subset->mesh);
-	freeMaterial(&subset->material);
-	freeMask(&subset->mask);
 }
