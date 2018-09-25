@@ -81,19 +81,20 @@ typedef struct image_t
 typedef struct audio_file_t
 {
 	UUID name;
+	real64 lifetime;
 	ALuint id;
 	int32 channels;
 	int32 sample_rate;
 	int32 size;
-	int16 *output;
+	int16 *data;
 	ALenum format;
 } AudioFile;
 
 typedef struct particle_t
 {
 	UUID name;
+	real64 lifetime;
 	GLuint id;
-	uint32 refCount;
 	GLsizei width;
 	GLsizei height;
 	uint32 numSprites;

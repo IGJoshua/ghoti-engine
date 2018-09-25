@@ -6,9 +6,6 @@
 void playSoundAtSource(
 	AudioSourceComponent *audioSource,
 	const char *soundName);
-void queueSoundAtSource(
-	AudioSourceComponent *audioSource,
-	const char *soundName);
 void pauseSoundAtSource(AudioSourceComponent *audioSource);
 void resumeSoundAtSource(AudioSourceComponent *audioSource);
 void stopSoundAtSource(AudioSourceComponent *audioSource);

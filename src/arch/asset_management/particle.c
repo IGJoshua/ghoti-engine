@@ -57,7 +57,6 @@ int32 loadParticle(
 			LOG("Loading particle (%s)...\n", particleName);
 
 			particle.name = idFromName(name);
-			particle.refCount = 1;
 			particle.numSprites = numSprites;
 			particle.spriteWidth = spriteWidth;
 			particle.spriteHeight = spriteHeight;
@@ -129,10 +128,6 @@ int32 loadParticle(
 
 		free(fullFilename);
 	}
-	else
-	{
-		particleResource->refCount++;
-	}
 
 	return error;
 }
@@ -160,16 +155,13 @@ void freeParticle(const char *name)
 	Particle *particle = getParticle(name);
 	if (particle)
 	{
-		if (--particle->refCount == 0)
-		{
-			LOG("Freeing particle (%s)...\n", name);
+		LOG("Freeing particle (%s)...\n", name);
 
-			glDeleteTextures(1, &particle->id);
-			deleteParticle(name);
+		glDeleteTextures(1, &particle->id);
+		deleteParticle(name);
 
-			LOG("Successfully freed particle (%s)\n", name);
-			LOG("Particle Count: %d\n", particles->count);
-		}
+		LOG("Successfully freed particle (%s)\n", name);
+		LOG("Particle Count: %d\n", particles->count);
 	}
 }
 

@@ -263,12 +263,12 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		updateDefaultFont = true;
 	}
 
+	defaultFont = getFont(
+		defaultFontComponent->name,
+		defaultFontComponent->size);
+
 	if (updateDefaultFont)
 	{
-		defaultFont = getFont(
-			defaultFontComponent->name,
-			defaultFontComponent->size);
-
 		if (strlen(defaultFont.name.string) > 0)
 		{
 			updateDefaultFont = false;

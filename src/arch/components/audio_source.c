@@ -27,10 +27,8 @@ void playSoundAtSource(
 {
 	loadAudio(soundName);
 
-	AudioFile *audioData;
-	audioData = getAudio(soundName);
-
-	if (!audioData)
+	AudioFile audioData = getAudio(soundName);
+	if (strlen(audioData.name.string) == 0)
 	{
 		LOG("%s.ogg was unable to be loaded\n", soundName);
 		return;
@@ -41,7 +39,7 @@ void playSoundAtSource(
 	alSourcei(
 		g_Sources[audioSource->id],
 		AL_BUFFER,
-		g_Buffers[audioData->id]);
+		g_Buffers[audioData.id]);
 
 	alSourcePlay(g_Sources[audioSource->id]);
 }
@@ -50,28 +48,25 @@ void queueSoundAtSource(
 	AudioSourceComponent *audioSource,
 	const char *soundName)
 {
-	loadAudio(soundName);
+	// loadAudio(soundName);
 
-	AudioFile *audioData;
-	audioData = getAudio(soundName);
+	// AudioFile audioData = getAudio(soundName);
+	// if (strlen(audioData.name.string) == 0)
+	// 	LOG("%s.ogg was unable to be loaded\n", soundName);
+	// 	return;
+	// }
 
-	if (!audioData)
-	{
-		LOG("%s.ogg was unable to be loaded\n", soundName);
-		return;
-	}
+	// alSourceQueueBuffers(
+	// 	g_Sources[audioSource->id],
+	// 	1,
+	// 	&g_Buffers[audioData.id]);
 
-	alSourceQueueBuffers(
-		g_Sources[audioSource->id],
-		1,
-		&g_Buffers[audioData->id]);
-
-	ALenum errorCode = alGetError();
-	if (errorCode != AL_NO_ERROR)
-	{
-		LOG("OpenAL ERROR: unable to queue : %s\n", alGetString(errorCode));
-		return;
-	}
+	// ALenum errorCode = alGetError();
+	// if (errorCode != AL_NO_ERROR)
+	// {
+	// 	LOG("OpenAL ERROR: unable to queue : %s\n", alGetString(errorCode));
+	// 	return;
+	// }
 }
 
 void pauseSoundAtSource(AudioSourceComponent *audioSource)

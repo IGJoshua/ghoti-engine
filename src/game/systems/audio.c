@@ -24,11 +24,10 @@ internal UUID rigidBodyComponentID = {};
 internal UUID audioManagerComponentID = {};
 internal UUID audioSourceComponentID = {};
 
-uint32 audioSystemRefCount = 0;
-
-extern ALuint *g_Sources;
+internal uint32 audioSystemRefCount = 0;
 
 extern Scene *listenerScene;
+extern ALuint *g_Sources;
 
 internal
 void initAudioSystem(Scene *scene)

@@ -354,6 +354,7 @@ char* getFullTextureFilename(const char *filename)
 void freeTexture(UUID name)
 {
 	pthread_mutex_lock(&texturesMutex);
+
 	Texture *texture = (Texture*)hashMapGetData(textures, &name);
 	if (texture)
 	{

@@ -2,11 +2,13 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/texture.h"
-#include "asset_management/image.h"
 #include "asset_management/font.h"
+#include "asset_management/image.h"
 #include "asset_management/audio.h"
+#include "asset_management/particle.h"
 
 #include "components/component_types.h"
+#include "components/audio_source.h"
 
 #include "core/log.h"
 
@@ -37,6 +39,8 @@ extern HashMap images;
 extern pthread_mutex_t imagesMutex;
 
 extern HashMap audioFiles;
+extern pthread_mutex_t audioMutex;
+
 extern HashMap particles;
 
 // Resource Loading HashMaps
@@ -53,6 +57,9 @@ extern pthread_mutex_t loadingFontsMutex;
 extern HashMap loadingImages;
 extern pthread_mutex_t loadingImagesMutex;
 
+extern HashMap loadingAudio;
+extern pthread_mutex_t loadingAudioMutex;
+
 // Resource Uploading HashMaps
 
 extern HashMap uploadModelsQueue;
@@ -67,6 +74,9 @@ extern pthread_mutex_t uploadFontsMutex;
 extern HashMap uploadImagesQueue;
 extern pthread_mutex_t uploadImagesMutex;
 
+extern HashMap uploadAudioQueue;
+extern pthread_mutex_t uploadAudioMutex;
+
 // Resource Freeing Lists
 
 internal List freeModelsQueue;
@@ -80,6 +90,9 @@ internal pthread_mutex_t freeFontsMutex;
 
 internal List freeImagesQueue;
 internal pthread_mutex_t freeImagesMutex;
+
+internal List freeAudioQueue;
+internal pthread_mutex_t freeAudioMutex;
 
 // Asset Management Globals
 
@@ -145,6 +158,8 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(AudioFile),
 		AUDIO_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&audioMutex, NULL);
+
 	particles = createHashMap(
 		sizeof(UUID),
 		sizeof(Particle),
@@ -181,6 +196,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&loadingImagesMutex, NULL);
 
+	loadingAudio = createHashMap(
+		sizeof(UUID),
+		sizeof(AudioFile),
+		LOADING_AUDIO_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingAudioMutex, NULL);
+
 	// Resource Uploading HashMaps
 
 	uploadModelsQueue = createHashMap(
@@ -211,6 +233,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&uploadImagesMutex, NULL);
 
+	uploadAudioQueue = createHashMap(
+		sizeof(UUID),
+		sizeof(AudioFile),
+		UPLOAD_AUDIO_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&uploadAudioMutex, NULL);
+
 	// Resource Freeing Lists
 
 	freeModelsQueue = createList(sizeof(Model));
@@ -224,6 +253,9 @@ void initializeAssetManager(real64 *dt) {
 
 	freeImagesQueue = createList(sizeof(Image));
 	pthread_mutex_init(&freeImagesMutex, NULL);
+
+	freeAudioQueue = createList(sizeof(AudioFile));
+	pthread_mutex_init(&freeAudioMutex, NULL);
 
 	// Asset Management Globals
 
@@ -374,6 +406,7 @@ void* updateAssetManager(void *arg)
 		{
 			Font *font = (Font*)hashMapIteratorGetValue(itr);
 			font->lifetime -= dt;
+
 			if (font->lifetime <= 0.0)
 			{
 				pthread_mutex_lock(&freeFontsMutex);
@@ -452,6 +485,47 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&imagesMutex);
+
+		// Free Audio
+
+		pthread_mutex_lock(&audioMutex);
+
+		for (HashMapIterator itr = hashMapGetIterator(audioFiles);
+			!hashMapIteratorAtEnd(itr);)
+		{
+			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
+			audio->lifetime -= dt;
+
+			if (audio->lifetime <= 0.0)
+			{
+				pthread_mutex_lock(&freeAudioMutex);
+				listPushBack(&freeAudioQueue, audio);
+				pthread_mutex_unlock(&freeAudioMutex);
+
+				UUID audioName = audio->name;
+
+				hashMapMoveIterator(&itr);
+				hashMapDelete(audioFiles, &audioName);
+
+				ASSET_LOG(
+					AUDIO,
+					audioName.string,
+					"Audio queued to be freed (%s)\n",
+					audioName.string);
+				ASSET_LOG(
+					AUDIO,
+					audioName.string,
+					"Audio Count: %d\n",
+					audioFiles->count);
+				ASSET_LOG_COMMIT(AUDIO, audioName.string);
+			}
+			else
+			{
+				hashMapMoveIterator(&itr);
+			}
+		}
+
+		pthread_mutex_unlock(&audioMutex);
 		pthread_mutex_lock(&updateAssetManagerMutex);
 
 		while (!updateAssetManagerFlag)
@@ -582,6 +656,34 @@ void uploadAssets(void)
 	}
 
 	pthread_mutex_unlock(&uploadImagesMutex);
+
+	// Upload Audio
+
+	pthread_mutex_lock(&uploadAudioMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(uploadAudioQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		AudioFile *audio = hashMapIteratorGetValue(itr);
+
+		pthread_mutex_unlock(&uploadAudioMutex);
+		uploadAudioToSoundCard(audio);
+		pthread_mutex_lock(&uploadAudioMutex);
+
+		UUID audioName = audio->name;
+
+		pthread_mutex_lock(&audioMutex);
+
+		hashMapInsert(audioFiles, &audioName, audio);
+		LOG("Audio Count: %d\n", audioFiles->count);
+
+		pthread_mutex_unlock(&audioMutex);
+
+		hashMapMoveIterator(&itr);
+		hashMapDelete(uploadAudioQueue, &audioName);
+	}
+
+	pthread_mutex_unlock(&uploadAudioMutex);
 }
 
 void freeAssets(void)
@@ -657,6 +759,24 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeImagesMutex);
+
+	// Free Audio
+
+	pthread_mutex_lock(&freeAudioMutex);
+
+	for (ListIterator listItr = listGetIterator(&freeAudioQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		AudioFile *audio = LIST_ITERATOR_GET_ELEMENT(AudioFile, listItr);
+
+		pthread_mutex_unlock(&freeAudioMutex);
+		freeAudioData(audio);
+		pthread_mutex_lock(&freeAudioMutex);
+
+		listRemove(&freeAudioQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeAudioMutex);
 }
 
 void shutdownAssetManager(void)
@@ -738,6 +858,17 @@ void shutdownAssetManager(void)
 	listClear(&freeImagesQueue);
 	pthread_mutex_destroy(&freeImagesMutex);
 
+	for (ListIterator listItr = listGetIterator(&freeAudioQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		AudioFile *audio = LIST_ITERATOR_GET_ELEMENT(AudioFile, listItr);
+		hashMapInsert(audioFiles, &audio->name, audio);
+	}
+
+	listClear(&freeAudioQueue);
+	pthread_mutex_destroy(&freeAudioMutex);
+
 	// Resource Uploading HashMaps
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
@@ -784,6 +915,17 @@ void shutdownAssetManager(void)
 	freeHashMap(&uploadImagesQueue);
 	pthread_mutex_destroy(&uploadImagesMutex);
 
+	for (HashMapIterator itr = hashMapGetIterator(uploadAudioQueue);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		AudioFile *audio = hashMapIteratorGetValue(itr);
+		hashMapInsert(audioFiles, &audio->name, audio);
+	}
+
+	freeHashMap(&uploadAudioQueue);
+	pthread_mutex_destroy(&uploadAudioMutex);
+
 	// Resource Loading HashMaps
 
 	freeHashMap(&loadingModels);
@@ -797,6 +939,9 @@ void shutdownAssetManager(void)
 
 	freeHashMap(&loadingImages);
 	pthread_mutex_destroy(&loadingImagesMutex);
+
+	freeHashMap(&loadingAudio);
+	pthread_mutex_destroy(&loadingAudioMutex);
 
 	// Resource HashMaps
 
@@ -857,11 +1002,10 @@ void shutdownAssetManager(void)
 	freeHashMap(&images);
 
 	for (HashMapIterator itr = hashMapGetIterator(audioFiles);
-		!hashMapIteratorAtEnd(itr);)
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
-		AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
-		hashMapMoveIterator(&itr);
-		freeAudio(audio);
+		freeAudioData(hashMapIteratorGetValue(itr));
 	}
 
 	freeHashMap(&audioFiles);

@@ -301,8 +301,8 @@ void freeModel(const char *name)
 	UUID modelName = idFromName(name);
 
 	pthread_mutex_lock(&modelsMutex);
-	Model *model = hashMapGetData(models, &modelName);
 
+	Model *model = hashMapGetData(models, &modelName);
 	if (model)
 	{
 		freeTexture(model->materialTexture);

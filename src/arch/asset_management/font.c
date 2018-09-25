@@ -140,6 +140,7 @@ void* loadFontThread(void *arg)
 			Font font = {};
 
 			font.name = fontName;
+			font.lifetime = config.assetsConfig.minFontLifetime;
 
 			nk_font_atlas_init_default(&font.atlas);
 			nk_font_atlas_begin(&font.atlas);
@@ -181,6 +182,14 @@ void* loadFontThread(void *arg)
 					FONT,
 					fontName.string,
 					"Successfully loaded font (%s)\n",
+					fontName.string);
+			}
+			else
+			{
+				ASSET_LOG(
+					FONT,
+					fontName.string,
+					"Failed to load font (%s)\n",
 					fontName.string);
 			}
 

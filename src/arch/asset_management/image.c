@@ -268,6 +268,7 @@ void freeImage(const char *name)
 	UUID imageName = idFromName(name);
 
 	pthread_mutex_lock(&imagesMutex);
+
 	Image *image = (Image*)hashMapGetData(images, &imageName);
 	if (image)
 	{
