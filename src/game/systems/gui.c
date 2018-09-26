@@ -771,7 +771,7 @@ void addProgressBar(
 	nk_layout_space_push(&ctx, widgetRect);
 	nk_image_color(
 		&ctx,
-		nk_image_id(widgetBackground->id),
+		nk_image_id(widgetBackground.id),
 		getColor(&progressBar->backgroundColor));
 
 	GUITransformComponent progressBarTransform = *guiTransform;
@@ -791,7 +791,7 @@ void addProgressBar(
 	nk_layout_space_push(&ctx, rect);
 	nk_image_color(
 		&ctx,
-		nk_image_id(widgetBackground->id),
+		nk_image_id(widgetBackground.id),
 		getColor(&progressBar->color));
 }
 
