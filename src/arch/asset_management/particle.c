@@ -22,7 +22,7 @@ extern pthread_mutex_t devilMutex;
 internal void deleteParticle(const char *name);
 internal char* getFullParticleFilename(const char *name);
 
-int32 loadParticle(
+void loadParticle(
 	const char *name,
 	uint32 numSprites,
 	int32 spriteWidth,
@@ -63,55 +63,21 @@ int32 loadParticle(
 
 			pthread_mutex_lock(&devilMutex);
 
-			ILuint devilID;
-			// TODO: Change to ASSET_LOG_TYPE_PARTICLE
 			error = loadTextureData(
-				ASSET_LOG_TYPE_NONE,
+				ASSET_LOG_TYPE_PARTICLE,
 				"particle",
-				NULL,
+				name,
 				fullFilename,
 				TEXTURE_FORMAT_RGBA8,
-				&devilID);
+				&particle.devilID);
+			ilBindImage(0);
+
+			pthread_mutex_unlock(&devilMutex);
 
 			if (error != -1)
 			{
-				glGenTextures(1, &particle.id);
-				glBindTexture(GL_TEXTURE_2D, particle.id);
-
-				particle.width = ilGetInteger(IL_IMAGE_WIDTH);
-				particle.height = ilGetInteger(IL_IMAGE_HEIGHT);
-
-				glTexStorage2D(
-					GL_TEXTURE_2D,
-					1,
-					GL_RGBA8,
-					particle.width,
-					particle.height);
-
-				const GLvoid *particleData = ilGetData();
-				glTexSubImage2D(
-					GL_TEXTURE_2D,
-					0,
-					0,
-					0,
-					particle.width,
-					particle.height,
-					GL_RGBA,
-					GL_UNSIGNED_BYTE,
-					particleData);
-
-				error = logGLError(
-					false,
-					"Failed to transfer particle onto GPU");
-
-				if (error != -1)
-				{
-					glBindTexture(GL_TEXTURE_2D, 0);
-					ilDeleteImages(1, &devilID);
-				}
+				uploadParticleToGPU(&particle);
 			}
-
-			pthread_mutex_unlock(&devilMutex);
 		}
 
 		if (error != - 1)
@@ -128,6 +94,67 @@ int32 loadParticle(
 
 		free(fullFilename);
 	}
+
+	return;
+}
+
+int32 uploadParticleToGPU(Particle *particle)
+{
+	LOG("Transferring particle (%s) onto GPU...\n", particle->name.string);
+
+	pthread_mutex_lock(&devilMutex);
+
+	ilBindImage(particle->devilID);
+
+	glGenTextures(1, &particle->id);
+	glBindTexture(GL_TEXTURE_2D, particle->id);
+
+	particle->width = ilGetInteger(IL_IMAGE_WIDTH);
+	particle->height = ilGetInteger(IL_IMAGE_HEIGHT);
+
+	glTexStorage2D(
+		GL_TEXTURE_2D,
+		1,
+		GL_RGBA8,
+		particle->width,
+		particle->height);
+
+	const GLvoid *spriteSheetData = ilGetData();
+	glTexSubImage2D(
+		GL_TEXTURE_2D,
+		0,
+		0,
+		0,
+		particle->width,
+		particle->height,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		spriteSheetData);
+
+	ilDeleteImages(1, &particle->devilID);
+	ilBindImage(0);
+
+	pthread_mutex_unlock(&devilMutex);
+
+	int32 error = logGLError(false, "Failed to transfer particle onto GPU");
+
+	if (error != -1)
+	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MAG_FILTER,
+			GL_LINEAR);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR_MIPMAP_LINEAR);
+
+		LOG("Successfully transferred particle (%s) onto GPU\n",
+			particle->name.string);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return error;
 }

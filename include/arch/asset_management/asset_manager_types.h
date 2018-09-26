@@ -95,6 +95,7 @@ typedef struct particle_t
 	UUID name;
 	real64 lifetime;
 	GLuint id;
+	ILuint devilID;
 	GLsizei width;
 	GLsizei height;
 	uint32 numSprites;

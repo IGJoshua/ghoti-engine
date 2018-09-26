@@ -11,7 +11,7 @@ local component = engine.components:register("font", "FontComponent")
 
 local C = engine.C
 
-function component:changeFont(name, size)
+function component:swap(name, size)
   self.name = name
   self.size = size
   C.loadFont(name, size)

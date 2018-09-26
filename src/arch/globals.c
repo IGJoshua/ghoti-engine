@@ -35,6 +35,7 @@ HashMap audioFiles;
 pthread_mutex_t audioMutex;
 
 HashMap particles;
+pthread_mutex_t particlesMutex;
 
 // Resource Loading HashMaps
 
@@ -53,6 +54,9 @@ pthread_mutex_t loadingImagesMutex;
 HashMap loadingAudio;
 pthread_mutex_t loadingAudioMutex;
 
+HashMap loadingParticles;
+pthread_mutex_t loadingParticlesMutex;
+
 // Resource Uploading HashMaps
 
 HashMap uploadModelsQueue;
@@ -69,6 +73,9 @@ pthread_mutex_t uploadImagesMutex;
 
 HashMap uploadAudioQueue;
 pthread_mutex_t uploadAudioMutex;
+
+HashMap uploadParticlesQueue;
+pthread_mutex_t uploadParticlesMutex;
 
 // Asset Management Globals
 
