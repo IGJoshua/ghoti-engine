@@ -15,11 +15,34 @@
 
 #include <pthread.h>
 
+typedef struct particle_thread_args_t
+{
+	char *name;
+	uint32 numSprites;
+	int32 spriteWidth;
+	int32 spriteHeight;
+} ParticleThreadArgs;
+
+extern Config config;
+
 extern HashMap particles;
+extern pthread_mutex_t particlesMutex;
+
+extern HashMap loadingParticles;
+extern pthread_mutex_t loadingParticlesMutex;
+
+extern HashMap uploadParticlesQueue;
+extern pthread_mutex_t uploadParticlesMutex;
+
+extern uint32 assetThreadCount;
+extern pthread_mutex_t assetThreadsMutex;
+extern pthread_cond_t assetThreadsCondition;
 
 extern pthread_mutex_t devilMutex;
 
-internal void deleteParticle(const char *name);
+internal void* acquireParticleThread(void *arg);
+internal void* loadParticleThread(void *arg);
+
 internal char* getFullParticleFilename(const char *name);
 
 void loadParticle(
@@ -28,74 +51,172 @@ void loadParticle(
 	int32 spriteWidth,
 	int32 spriteHeight)
 {
+	ParticleThreadArgs *arg = malloc(sizeof(ParticleThreadArgs));
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	arg->numSprites = numSprites;
+	arg->spriteWidth = spriteWidth;
+	arg->spriteHeight = spriteHeight;
+
+	pthread_t acquisitionThread;
+	pthread_create(
+		&acquisitionThread,
+		NULL,
+		&acquireParticleThread,
+		(void*)arg);
+	pthread_detach(acquisitionThread);
+}
+
+void* acquireParticleThread(void *arg)
+{
+	pthread_mutex_lock(&assetThreadsMutex);
+
+	while (assetThreadCount == config.assetsConfig.maxThreadCount)
+	{
+		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+	}
+
+	assetThreadCount++;
+
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	pthread_t loadingThread;
+	pthread_create(&loadingThread, NULL, &loadParticleThread, arg);
+	pthread_detach(loadingThread);
+
+	EXIT_THREAD(NULL);
+}
+
+void* loadParticleThread(void *arg)
+{
 	int32 error = 0;
 
-	Particle *particleResource = getParticle(name);
+	ParticleThreadArgs *threadArgs = arg;
+	char *name = threadArgs->name;
+	uint32 numSprites = threadArgs->numSprites;
+	int32 spriteWidth = threadArgs->spriteWidth;
+	int32 spriteHeight = threadArgs->spriteHeight;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&particlesMutex);
+	Particle *particleResource = hashMapGetData(particles, &nameID);
+
 	if (!particleResource)
 	{
-		Particle particle = {};
-		const char *particleName = name;
+		pthread_mutex_unlock(&particlesMutex);
+		pthread_mutex_lock(&loadingParticlesMutex);
 
-		char *fullFilename = getFullParticleFilename(name);
-
-		if (!fullFilename)
+		if (hashMapGetData(loadingParticles, &nameID))
 		{
-			error = -1;
+			error = 1;
 		}
-		else
+
+		pthread_mutex_unlock(&loadingParticlesMutex);
+
+		if (error != 1)
 		{
-			particleName = strrchr(fullFilename, '/');
-			if (!particleName)
+			pthread_mutex_lock(&uploadParticlesMutex);
+
+			if (hashMapGetData(uploadParticlesQueue, &nameID))
 			{
-				particleName = fullFilename;
+				error = 1;
+			}
+
+			pthread_mutex_unlock(&uploadParticlesMutex);
+		}
+
+		if (error != 1)
+		{
+			bool loading = true;
+			pthread_mutex_lock(&loadingParticlesMutex);
+			hashMapInsert(loadingParticles, &nameID, &loading);
+			pthread_mutex_unlock(&loadingParticlesMutex);
+
+			char *fullFilename = getFullParticleFilename(name);
+			if (!fullFilename)
+			{
+				error = -1;
 			}
 			else
 			{
-				particleName += 1;
+				const char *particleName = strrchr(fullFilename, '/');
+				if (!particleName)
+				{
+					particleName = fullFilename;
+				}
+				else
+				{
+					particleName += 1;
+				}
+
+				ASSET_LOG(
+					PARTICLE,
+					name,
+					"Loading particle (%s)...\n",
+					particleName);
+
+				Particle particle = {};
+
+				particle.name = idFromName(name);
+				particle.lifetime = config.assetsConfig.minParticleLifetime;
+				particle.numSprites = numSprites;
+				particle.spriteWidth = spriteWidth;
+				particle.spriteHeight = spriteHeight;
+
+				pthread_mutex_lock(&devilMutex);
+
+				error = loadTextureData(
+					ASSET_LOG_TYPE_PARTICLE,
+					"particle",
+					name,
+					fullFilename,
+					TEXTURE_FORMAT_RGBA8,
+					&particle.devilID);
+				ilBindImage(0);
+
+				pthread_mutex_unlock(&devilMutex);
+
+				if (error != - 1)
+				{
+					pthread_mutex_lock(&uploadParticlesMutex);
+					hashMapInsert(uploadParticlesQueue, &nameID, &particle);
+					pthread_mutex_unlock(&uploadParticlesMutex);
+
+					pthread_mutex_lock(&loadingParticlesMutex);
+					hashMapDelete(loadingParticles, &nameID);
+					pthread_mutex_unlock(&loadingParticlesMutex);
+
+					ASSET_LOG(
+						PARTICLE,
+						name,
+						"Successfully loaded particle (%s)\n",
+						particleName);
+				}
+
+				ASSET_LOG_COMMIT(PARTICLE, name);
 			}
 
-			LOG("Loading particle (%s)...\n", particleName);
-
-			particle.name = idFromName(name);
-			particle.numSprites = numSprites;
-			particle.spriteWidth = spriteWidth;
-			particle.spriteHeight = spriteHeight;
-
-			pthread_mutex_lock(&devilMutex);
-
-			error = loadTextureData(
-				ASSET_LOG_TYPE_PARTICLE,
-				"particle",
-				name,
-				fullFilename,
-				TEXTURE_FORMAT_RGBA8,
-				&particle.devilID);
-			ilBindImage(0);
-
-			pthread_mutex_unlock(&devilMutex);
-
-			if (error != -1)
-			{
-				uploadParticleToGPU(&particle);
-			}
+			free(fullFilename);
 		}
-
-		if (error != - 1)
-		{
-			hashMapInsert(particles, &particle.name, &particle);
-
-			LOG("Successfully loaded particle (%s)\n", particleName);
-			LOG("Particle Count: %d\n", particles->count);
-		}
-		else
-		{
-			LOG("Failed to load particle (%s)\n", particleName);
-		}
-
-		free(fullFilename);
+	}
+	else
+	{
+		pthread_mutex_unlock(&particlesMutex);
 	}
 
-	return;
+	free(arg);
+	free(name);
+
+	pthread_mutex_lock(&assetThreadsMutex);
+	assetThreadCount--;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_cond_broadcast(&assetThreadsCondition);
+
+	EXIT_THREAD(NULL);
 }
 
 int32 uploadParticleToGPU(Particle *particle)
@@ -159,37 +280,41 @@ int32 uploadParticleToGPU(Particle *particle)
 	return error;
 }
 
-Particle* getParticle(const char *name)
+Particle getParticle(const char *name)
 {
-	Particle *particle = NULL;
+	Particle particle = {};
+
 	if (strlen(name) > 0)
 	{
 		UUID particleName = idFromName(name);
-		particle = hashMapGetData(particles, &particleName);
+
+		pthread_mutex_lock(&particlesMutex);
+
+		Particle *particleResource = hashMapGetData(particles, &particleName);
+		if (particleResource)
+		{
+			particleResource->lifetime =
+				config.assetsConfig.minParticleLifetime;
+			particle = *particleResource;
+		}
+
+		pthread_mutex_unlock(&particlesMutex);
 	}
 
 	return particle;
 }
 
-void deleteParticle(const char *name)
+void freeParticleData(Particle *particle)
 {
-	UUID particleName = idFromName(name);
-	hashMapDelete(particles, &particleName);
-}
+	LOG("Freeing particle (%s)...\n", particle->name.string);
 
-void freeParticle(const char *name)
-{
-	Particle *particle = getParticle(name);
-	if (particle)
-	{
-		LOG("Freeing particle (%s)...\n", name);
+	pthread_mutex_lock(&devilMutex);
+	ilDeleteImages(1, &particle->devilID);
+	pthread_mutex_unlock(&devilMutex);
 
-		glDeleteTextures(1, &particle->id);
-		deleteParticle(name);
+	glDeleteTextures(1, &particle->id);
 
-		LOG("Successfully freed particle (%s)\n", name);
-		LOG("Particle Count: %d\n", particles->count);
-	}
+	LOG("Successfully freed particle (%s)\n", particle->name.string);
 }
 
 char* getFullParticleFilename(const char *name)

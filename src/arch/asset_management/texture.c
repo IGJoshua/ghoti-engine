@@ -355,7 +355,7 @@ void freeTexture(UUID name)
 {
 	pthread_mutex_lock(&texturesMutex);
 
-	Texture *texture = (Texture*)hashMapGetData(textures, &name);
+	Texture *texture = hashMapGetData(textures, &name);
 	if (texture)
 	{
 		texture->refCount--;

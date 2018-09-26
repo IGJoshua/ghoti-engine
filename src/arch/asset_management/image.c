@@ -269,7 +269,7 @@ void freeImage(const char *name)
 
 	pthread_mutex_lock(&imagesMutex);
 
-	Image *image = (Image*)hashMapGetData(images, &imageName);
+	Image *image = hashMapGetData(images, &imageName);
 	if (image)
 	{
 		image->refCount--;

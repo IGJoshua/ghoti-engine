@@ -9,5 +9,5 @@ void loadParticle(
 	int32 spriteWidth,
 	int32 spriteHeight);
 int32 uploadParticleToGPU(Particle *particle);
-Particle* getParticle(const char *name);
-void freeParticle(const char *name);
+Particle getParticle(const char *name);
+void freeParticleData(Particle *particle);
