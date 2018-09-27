@@ -54,4 +54,17 @@ void resumeSoundAtSource(AudioSourceComponent *audioSource);
 void stopSoundAtSource(AudioSourceComponent *audioSource);
 bool isSourceActive(AudioSourceComponent *audioSource);
 
+void emitParticles(
+	ParticleEmitterComponent *particleEmitter,
+	bool stopAtCapacity,
+	const char *particleName,
+	uint32 numSprites,
+	int32 spriteWidth,
+	int32 spriteHeight,
+	int32 initialSprite,
+	bool randomSprite,
+	real32 animationFPS,
+	bool loop);
+void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset);
+
 ]]

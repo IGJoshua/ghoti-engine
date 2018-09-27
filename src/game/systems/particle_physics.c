@@ -73,43 +73,52 @@ internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
 		addParticle(particleList, particleEmitter, transform);
 	}
 
-	particleEmitter->particleCounter += particleEmitter->spawnRate * dt;
-	while (particleEmitter->particleCounter >= 1.0)
+	if (!particleEmitter->paused)
 	{
-		addParticle(particleList, particleEmitter, transform);
-		particleEmitter->particleCounter -= 1.0;
-	}
-
-	for (ListIterator listItr = listGetIterator(&particleList->particles);
-		 !listIteratorAtEnd(listItr);)
-	{
-		ParticleObject *particle = LIST_ITERATOR_GET_ELEMENT(
-			ParticleObject,
-			listItr);
-
-		if (particle->lifetime <= 0.0)
+		particleEmitter->particleCounter += particleEmitter->spawnRate * dt;
+		while (particleEmitter->particleCounter >= 1.0)
 		{
-			listMoveIterator(&listItr);
-			continue;
+			addParticle(particleList, particleEmitter, transform);
+			particleEmitter->particleCounter -= 1.0;
 		}
 
-		particle->lifetime -= dt;
-		if (particle->lifetime <= 0.0)
+		for (ListIterator listItr = listGetIterator(&particleList->particles);
+			!listIteratorAtEnd(listItr);)
 		{
-			removeParticle(particleList, &listItr);
-		}
-		else
-		{
-			if (particle->lifetime <= particleEmitter->fadeTime)
+			ParticleObject *particle = LIST_ITERATOR_GET_ELEMENT(
+				ParticleObject,
+				listItr);
+
+			if (particle->lifetime <= 0.0)
 			{
-				particle->fadeTimer += dt;
-				particle->color.w = kmLerp(
-					particleEmitter->alpha,
-					0.0f,
-					particle->fadeTimer / particleEmitter->fadeTime);
+				listMoveIterator(&listItr);
+				continue;
 			}
 
-			listMoveIterator(&listItr);
+			particle->lifetime -= dt;
+			if (particle->lifetime <= 0.0)
+			{
+				if (removeParticle(
+					particleEmitter,
+					particleList,
+					&listItr) == -1)
+				{
+					return;
+				}
+			}
+			else
+			{
+				if (particle->lifetime <= particleEmitter->fadeTime)
+				{
+					particle->fadeTimer += dt;
+					particle->color.w = kmLerp(
+						particleEmitter->alpha,
+						0.0f,
+						particle->fadeTimer / particleEmitter->fadeTime);
+				}
+
+				listMoveIterator(&listItr);
+			}
 		}
 	}
 
@@ -121,6 +130,11 @@ internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
 			ParticleObject,
 			listItr);
 		kmVec3Assign(&particle->previousPosition, &particle->position);
+	}
+
+	if (particleEmitter->paused)
+	{
+		return;
 	}
 
 	for (ListIterator listItr = listGetIterator(&particleList->particles);

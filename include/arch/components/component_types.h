@@ -322,10 +322,13 @@ typedef struct panel_component_t
 typedef struct particle_emitter_component_t
 {
 	bool active;
+	bool paused;
+	bool stopping;
 	char currentParticle[64];
 	real64 particleCounter;
 	uint32 spawnRate;
 	uint32 maxNumParticles;
+	bool stopAtCapacity;
 	real64 lifetime;
 	real64 fadeTime;
 	kmVec3 initialVelocity;

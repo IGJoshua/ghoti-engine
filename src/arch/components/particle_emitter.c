@@ -1,5 +1,8 @@
 #include "components/particle_emitter.h"
 
+#include "asset_management/asset_manager_types.h"
+#include "asset_management/particle.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
@@ -10,28 +13,22 @@ HashMap particleEmitters = NULL;
 
 internal real32 randomFloat(real32 min, real32 max);
 
-void removeParticleEmitter(ParticleEmitterComponent *particleEmitter)
-{
-	if (particleEmitters)
-	{
-		ParticleList *particleList = hashMapGetData(
-			particleEmitters,
-			&particleEmitter);
-
-		if (particleList)
-		{
-			listClear(&particleList->particles);
-			hashMapDelete(particleEmitters, &particleEmitter);
-		}
-	}
-}
-
 void addParticle(
 	ParticleList *particleList,
 	ParticleEmitterComponent *particleEmitter,
 	TransformComponent *transform)
 {
 	if (particleList->numParticles + 1 > particleEmitter->maxNumParticles)
+	{
+		if (particleEmitter->stopAtCapacity)
+		{
+			particleEmitter->stopping = true;
+		}
+
+		return;
+	}
+
+	if (particleEmitter->stopping)
 	{
 		return;
 	}
@@ -82,12 +79,85 @@ void addParticle(
 
 	listPushBack(&particleList->particles, &particle);
 	particleList->numParticles++;
+
+	return;
 }
 
-void removeParticle(ParticleList *particleList, ListIterator *itr)
+int32 removeParticle(
+	ParticleEmitterComponent *particleEmitter,
+	ParticleList *particleList,
+	ListIterator *itr)
 {
 	listRemove(&particleList->particles, itr);
 	particleList->numParticles--;
+
+	if (particleEmitter->stopping && particleList->numParticles == 0)
+	{
+		stopParticleEmitter(particleEmitter, true);
+		return -1;
+	}
+
+	return 0;
+}
+
+void emitParticles(
+	ParticleEmitterComponent *particleEmitter,
+	bool stopAtCapacity,
+	const char *particleName,
+	uint32 numSprites,
+	int32 spriteWidth,
+	int32 spriteHeight,
+	int32 initialSprite,
+	bool randomSprite,
+	real32 animationFPS,
+	bool loop)
+{
+	stopParticleEmitter(
+		particleEmitter,
+		strcmp(particleName, particleEmitter->currentParticle));
+
+	if (strlen(particleName) > 0)
+	{
+		loadParticle(particleName, numSprites, spriteWidth, spriteHeight);
+	}
+
+	particleEmitter->stopAtCapacity = stopAtCapacity;
+	strcpy(particleEmitter->currentParticle, particleName);
+	particleEmitter->active = true;
+	particleEmitter->initialSprite = initialSprite;
+	particleEmitter->randomSprite = randomSprite;
+	particleEmitter->animationFPS = animationFPS;
+	particleEmitter->loop = loop;
+}
+
+void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset)
+{
+	if (reset)
+	{
+		removeParticleEmitter(particleEmitter);
+	}
+
+	particleEmitter->active = false;
+	particleEmitter->paused = false;
+	particleEmitter->stopping = false;
+	strcpy(particleEmitter->currentParticle, "");
+	particleEmitter->particleCounter = 0.0;
+}
+
+void removeParticleEmitter(ParticleEmitterComponent *particleEmitter)
+{
+	if (particleEmitters)
+	{
+		ParticleList *particleList = hashMapGetData(
+			particleEmitters,
+			&particleEmitter);
+
+		if (particleList)
+		{
+			listClear(&particleList->particles);
+			hashMapDelete(particleEmitters, &particleEmitter);
+		}
+	}
 }
 
 real32 randomFloat(real32 min, real32 max)

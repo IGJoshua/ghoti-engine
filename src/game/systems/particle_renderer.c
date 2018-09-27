@@ -213,7 +213,6 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 		}
 		else
 		{
-			loadParticle(particleEmitter->currentParticle, 1, 1, 1);
 			if (strlen(particleEmitter->currentParticle) > 0)
 			{
 				continue;
