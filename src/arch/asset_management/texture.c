@@ -266,21 +266,14 @@ int32 uploadTextureToGPU(Texture *texture)
 	GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
 	GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
 
-	glTexStorage2D(
-		GL_TEXTURE_2D,
-		1,
-		GL_RGBA8,
-		textureWidth,
-		textureHeight);
-
 	const GLvoid *textureData = ilGetData();
-	glTexSubImage2D(
+	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
-		0,
-		0,
+		GL_RGBA,
 		textureWidth,
 		textureHeight,
+		0,
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
 		textureData);

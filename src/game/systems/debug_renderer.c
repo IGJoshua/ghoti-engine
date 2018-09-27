@@ -331,8 +331,8 @@ void initializeVertexBuffer(DebugVertexBuffer *vertexBuffer)
 void clearVertexBuffer(DebugVertexBuffer *vertexBuffer)
 {
 	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		clearVertices((DebugVertexData*)hashMapIteratorGetValue(itr));
 	}
@@ -351,8 +351,7 @@ void clearVertices(DebugVertexData *vertexData)
 
 void addVertex(DebugVertexBuffer *vertexBuffer, DebugVertex vertex, real32 size)
 {
-	if (vertexBuffer->numVertices + 1
-		< MAX_DEBUG_VERTEX_COUNT)
+	if (vertexBuffer->numVertices + 1 < MAX_DEBUG_VERTEX_COUNT)
 	{
 		DebugVertexData *vertexData = hashMapGetData(
 			vertexBuffer->vertexData,
@@ -514,8 +513,8 @@ void drawPrimitives(
 
 	uint32 index = 0;
 	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		DebugVertexData *vertexData = hashMapIteratorGetValue(itr);
 		uint32 size = sizeof(DebugVertex) * vertexData->numVertices;
@@ -532,8 +531,8 @@ void drawPrimitives(
 
 	index = 0;
 	for (HashMapIterator itr = hashMapGetIterator(vertexBuffer->vertexData);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		real32 primitiveSize = *(real32*)hashMapIteratorGetKey(itr);
 

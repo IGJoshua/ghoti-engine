@@ -334,7 +334,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&modelsMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(models);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Model *model = (Model*)hashMapIteratorGetValue(itr);
 			if (model->refCount == 0)
@@ -382,7 +382,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&texturesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(textures);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
 			if (texture->refCount == 0)
@@ -430,7 +430,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&fontsMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(fonts);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Font *font = (Font*)hashMapIteratorGetValue(itr);
 			font->lifetime -= dt;
@@ -471,7 +471,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&imagesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(images);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Image *image = (Image*)hashMapIteratorGetValue(itr);
 			if (image->refCount == 0)
@@ -519,7 +519,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&audioMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(audioFiles);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
 			audio->lifetime -= dt;
@@ -560,7 +560,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&particlesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(particles);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Particle *particle = (Particle*)hashMapIteratorGetValue(itr);
 			particle->lifetime -= dt;

@@ -205,21 +205,14 @@ int32 uploadImageToGPU(Image *image)
 	image->width = ilGetInteger(IL_IMAGE_WIDTH);
 	image->height = ilGetInteger(IL_IMAGE_HEIGHT);
 
-	glTexStorage2D(
-		GL_TEXTURE_2D,
-		1,
-		GL_RGBA8,
-		image->width,
-		image->height);
-
 	const GLvoid *imageData = ilGetData();
-	glTexSubImage2D(
+	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
-		0,
-		0,
+		GL_RGBA,
 		image->width,
 		image->height,
+		0,
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
 		imageData);

@@ -340,8 +340,8 @@ void freeSceneSkeletons(Scene *scene)
 {
 	HashMap *skeletons = hashMapGetData(skeletonsMap, &scene);
 	for (HashMapIterator itr = hashMapGetIterator(*skeletons);
-		!hashMapIteratorAtEnd(itr);
-		hashMapMoveIterator(&itr))
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
 	{
 		freeHashMap(hashMapIteratorGetValue(itr));
 	}

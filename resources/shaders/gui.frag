@@ -1,6 +1,5 @@
 #version 420 core
 
-in vec2 fragPosition;
 in vec2 fragUV;
 in vec4 fragColor;
 

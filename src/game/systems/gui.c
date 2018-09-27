@@ -284,6 +284,11 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 	previousViewportWidth = viewportWidth;
 	previousViewportHeight = viewportHeight;
 
+	if (strlen(widgetBackground.name.string) == 0)
+	{
+		widgetBackground = getImage(WIDGET_BACKGROUND);
+	}
+
 	glBindVertexArray(vertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 

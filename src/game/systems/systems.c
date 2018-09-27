@@ -22,6 +22,7 @@ SYSTEM(CleanGlobalTransforms);
 SYSTEM(ApplyParentTransforms);
 SYSTEM(SimulateRigidbodies);
 SYSTEM(JointInformation);
+SYSTEM(ParticlePhysics);
 SYSTEM(GUI);
 SYSTEM(Audio);
 
@@ -30,6 +31,7 @@ SYSTEM(Renderer);
 SYSTEM(WireframeRenderer);
 SYSTEM(DebugRenderer);
 SYSTEM(CollisionPrimitiveRenderer);
+SYSTEM(ParticleRenderer);
 SYSTEM(GUIRenderer);
 
 extern HashMap systemRegistry;
@@ -51,6 +53,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
+	REGISTER_SYSTEM(ParticlePhysics, "particle_physics");
 	REGISTER_SYSTEM(GUI, "gui");
 	REGISTER_SYSTEM(Audio, "audio");
 
@@ -59,6 +62,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");
 	REGISTER_SYSTEM(DebugRenderer, "debug_renderer");
 	REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
+	REGISTER_SYSTEM(ParticleRenderer, "particle_renderer");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
 }
 

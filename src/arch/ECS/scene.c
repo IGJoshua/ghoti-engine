@@ -16,6 +16,7 @@
 #include "components/widget.h"
 #include "components/collision.h"
 #include "components/collision_tree_node.h"
+#include "components/particle_emitter.h"
 
 #include "asset_management/model.h"
 #include "asset_management/font.h"
@@ -638,9 +639,9 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	if (error != -1)
 	{
 		for (HashMapIterator itr =
-				hashMapGetIterator((*scene)->componentDefinitions);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+				 hashMapGetIterator((*scene)->componentDefinitions);
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			ComponentDefinition *componentDefintion =
 				(ComponentDefinition*)hashMapIteratorGetValue(itr);
@@ -786,8 +787,8 @@ void freeScene(Scene **scene)
 
 	if ((*scene)->entities) {
 		for (HashMapIterator itr = hashMapGetIterator((*scene)->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			UUID entity = *(UUID*)hashMapIteratorGetKey(itr);
 			sceneRemoveEntityComponents(*scene, entity);
@@ -796,9 +797,9 @@ void freeScene(Scene **scene)
 
 	if ((*scene)->componentTypes) {
 		for (HashMapIterator itr =
-			hashMapGetIterator((*scene)->componentTypes);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+				 hashMapGetIterator((*scene)->componentTypes);
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			sceneRemoveComponentType(
 				*scene,
@@ -808,9 +809,9 @@ void freeScene(Scene **scene)
 
 	if ((*scene)->componentDefinitions) {
 		for (HashMapIterator itr =
-				hashMapGetIterator((*scene)->componentDefinitions);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+				 hashMapGetIterator((*scene)->componentDefinitions);
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			freeComponentDefinition(
 				(ComponentDefinition*)hashMapIteratorGetValue(itr));
@@ -1498,8 +1499,8 @@ void exportSceneSnapshot(Scene *scene, const char *filename)
 	for (uint32 i = 0; i < scene->numComponentLimitNames; i++)
 	{
 		for (HashMapIterator itr = hashMapGetIterator(scene->componentTypes);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			UUID *componentUUID = (UUID*)hashMapIteratorGetKey(itr);
 			if (!strcmp(scene->componentLimitNames[i], componentUUID->string))
@@ -1954,7 +1955,11 @@ void sceneRemoveComponentFromEntity(
 	{
 		removeWidget(s, entity);
 	}
-
+	else if (!strcmp(componentType.string, "particle_emitter"))
+	{
+		removeParticleEmitter(
+			(ParticleEmitterComponent*)cdtGet(*table, entity));
+	}
 	cdtRemove(*table, entity);
 
 	List *componentTypeList = hashMapGetData(s->entities, &entity);
