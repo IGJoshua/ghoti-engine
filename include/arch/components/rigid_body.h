@@ -12,17 +12,25 @@ void createCollisionGeoms(
 	TransformComponent *bodyTrans,
 	RigidBodyComponent *body,
 	CollisionComponent *coll);
-void destroyRigidBody(RigidBodyComponent *body);
 
-void updateRigidBodyPosition(
-	Scene *scene,
-	CollisionComponent *coll,
-	RigidBodyComponent *body,
-	TransformComponent *trans);
+void addForce(RigidBodyComponent *body, kmVec3 *force, kmVec3 *position);
+void addTorque(RigidBodyComponent *body, kmVec3 *torque);
+
+void setForce(RigidBodyComponent *body, kmVec3 *force);
+void setTorque(RigidBodyComponent *body, kmVec3 *torque);
+
+kmVec3 getForce(RigidBodyComponent *body);
+kmVec3 getTorque(RigidBodyComponent *body);
+
 void updateRigidBody(
 	Scene *scene,
 	CollisionComponent *coll,
 	RigidBodyComponent *body,
 	TransformComponent *trans);
+void updateRigidBodyPosition(
+	Scene *scene,
+	CollisionComponent *coll,
+	RigidBodyComponent *body,
+	TransformComponent *trans);
 
-void freeRigidBody(UUID componentID, ComponentDataEntry *entry);
+void destroyRigidBody(RigidBodyComponent *body);

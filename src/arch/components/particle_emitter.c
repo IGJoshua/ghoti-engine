@@ -6,7 +6,7 @@
 
 #include "ECS/scene.h"
 
-extern HashMap particleEmitters;
+HashMap particleEmitters = NULL;
 
 internal real32 randomFloat(real32 min, real32 max);
 

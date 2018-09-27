@@ -20,7 +20,7 @@ internal UUID rigidBodyComponentID = {};
 
 #define PARTICLE_EMITTERS_BUCKET_COUNT 127
 
-HashMap particleEmitters = NULL;
+extern HashMap particleEmitters;
 
 internal int32 ptrcmp(void *a, void *b)
 {

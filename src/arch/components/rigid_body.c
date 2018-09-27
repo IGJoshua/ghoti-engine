@@ -5,6 +5,40 @@
 
 #include <ode/ode.h>
 
+void registerRigidBody(Scene *scene, UUID entity)
+{
+	RigidBodyComponent *body = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("rigid_body"));
+	CollisionComponent *coll = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("collision"));
+	TransformComponent *trans = sceneGetComponentFromEntity(
+		scene,
+		entity,
+		idFromName("transform"));
+
+	if (kmQuaternionLengthSq(&trans->globalRotation) == 0.0f)
+	{
+		LOG("ERROR: Rotation with a magnitude of 0 on entity: %s\n",
+			entity.string);
+		ASSERT(false);
+	}
+
+	body->bodyID = dBodyCreate(scene->physicsWorld);
+	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
+
+	if (coll)
+	{
+		createCollisionGeoms(scene, trans, body, coll);
+	}
+
+	// update all the other information about the rigidbody
+	updateRigidBody(scene, coll, body, trans);
+}
+
 internal
 void updateCollisionGeom(
 	Scene *scene,
@@ -75,6 +109,7 @@ void updateCollisionGeom(
 	}
 }
 
+internal
 void updateCollisionGeoms(
 	Scene *scene,
 	TransformComponent *bodyTrans,
@@ -211,82 +246,51 @@ void createCollisionGeoms(
 	}
 }
 
-void registerRigidBody(Scene *scene, UUID entity)
+void addForce(RigidBodyComponent *body, kmVec3 *force, kmVec3 *position)
 {
-	RigidBodyComponent *body = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		idFromName("rigid_body"));
-	CollisionComponent *coll = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		idFromName("collision"));
-	TransformComponent *trans = sceneGetComponentFromEntity(
-		scene,
-		entity,
-		idFromName("transform"));
-
-	if (kmQuaternionLengthSq(&trans->globalRotation) == 0.0f)
-	{
-		LOG("ERROR: Rotation with a magnitude of 0 on entity: %s\n",
-			entity.string);
-		ASSERT(false);
-	}
-
-	body->bodyID = dBodyCreate(scene->physicsWorld);
-	body->spaceID = dSimpleSpaceCreate(scene->physicsSpace);
-
-	if (coll)
-	{
-		createCollisionGeoms(scene, trans, body, coll);
-	}
-
-	// update all the other information about the rigidbody
-	updateRigidBody(scene, coll, body, trans);
+	dBodyAddForceAtRelPos(
+		body->bodyID,
+		force->x,
+		force->y,
+		force->z,
+		position->x,
+		position->y,
+		position->z);
 }
 
-void destroyRigidBody(RigidBodyComponent *body)
+void addTorque(RigidBodyComponent *body, kmVec3 *torque)
 {
-	dSpaceDestroy(body->spaceID);
-	dBodyDestroy(body->bodyID);
+	dBodyAddTorque(body->bodyID, torque->x, torque->y, torque->z);
 }
 
-void updateRigidBodyPosition(
-	Scene *scene,
-	CollisionComponent *coll,
-	RigidBodyComponent *body,
-	TransformComponent *trans)
+void setForce(RigidBodyComponent *body, kmVec3 *force)
 {
-	dBodySetAngularVel(
-		body->bodyID,
-		body->angularVel.x,
-		body->angularVel.y,
-		body->angularVel.z);
+	dBodySetForce(body->bodyID, force->x, force->y, force->z);
+}
 
-	dBodySetLinearVel(
-		body->bodyID,
-		body->velocity.x,
-		body->velocity.y,
-		body->velocity.z);
+void setTorque(RigidBodyComponent *body, kmVec3 *torque)
+{
+	dBodySetTorque(body->bodyID, torque->x, torque->y, torque->z);
+}
 
-	dBodySetPosition(
-		body->bodyID,
-		trans->globalPosition.x,
-		trans->globalPosition.y,
-		trans->globalPosition.z);
+kmVec3 getForce(RigidBodyComponent *body)
+{
+	const dReal *forceValues = dBodyGetForce(body->bodyID);
 
-	dQuaternion rot = {};
-	rot[0] = trans->globalRotation.w;
-	rot[1] = trans->globalRotation.x;
-	rot[2] = trans->globalRotation.y;
-	rot[3] = trans->globalRotation.z;
+	kmVec3 force;
+	kmVec3Fill(&force, forceValues[0], forceValues[1], forceValues[2]);
 
-	dBodySetQuaternion(body->bodyID, rot);
+	return force;
+}
 
-	if (coll)
-	{
-		updateCollisionGeoms(scene, trans, coll);
-	}
+kmVec3 getTorque(RigidBodyComponent *body)
+{
+	const dReal *torqueValues = dBodyGetTorque(body->bodyID);
+
+	kmVec3 torque;
+	kmVec3Fill(&torque, torqueValues[0], torqueValues[1], torqueValues[2]);
+
+	return torque;
 }
 
 void updateRigidBody(
@@ -403,4 +407,48 @@ void updateRigidBody(
 	{
 		dBodyDisable(body->bodyID);
 	}
+}
+
+void updateRigidBodyPosition(
+	Scene *scene,
+	CollisionComponent *coll,
+	RigidBodyComponent *body,
+	TransformComponent *trans)
+{
+	dBodySetAngularVel(
+		body->bodyID,
+		body->angularVel.x,
+		body->angularVel.y,
+		body->angularVel.z);
+
+	dBodySetLinearVel(
+		body->bodyID,
+		body->velocity.x,
+		body->velocity.y,
+		body->velocity.z);
+
+	dBodySetPosition(
+		body->bodyID,
+		trans->globalPosition.x,
+		trans->globalPosition.y,
+		trans->globalPosition.z);
+
+	dQuaternion rot = {};
+	rot[0] = trans->globalRotation.w;
+	rot[1] = trans->globalRotation.x;
+	rot[2] = trans->globalRotation.y;
+	rot[3] = trans->globalRotation.z;
+
+	dBodySetQuaternion(body->bodyID, rot);
+
+	if (coll)
+	{
+		updateCollisionGeoms(scene, trans, coll);
+	}
+}
+
+void destroyRigidBody(RigidBodyComponent *body)
+{
+	dSpaceDestroy(body->spaceID);
+	dBodyDestroy(body->bodyID);
 }
