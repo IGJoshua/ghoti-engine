@@ -1,5 +1,8 @@
 #include "defines.h"
 
+#include "asset_management/asset_manager_types.h"
+#include "asset_management/particle.h"
+
 #include "components/component_types.h"
 #include "components/particle_emitter.h"
 
@@ -167,6 +170,147 @@ internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 		kmVec3 displacement;
 		kmVec3Scale(&displacement, &particle->velocity, dt);
 		kmVec3Add(&particle->position, &particle->position, &displacement);
+
+		Particle particleTexture = getParticle(
+			particleEmitter->currentParticle);
+		if (strlen(particleTexture.name.string) > 0)
+		{
+			uint32 lastSprite = particleTexture.numSprites - 1;
+
+			if (particle->sprite == -1)
+			{
+				if (particleEmitter->randomSprite)
+				{
+					particle->sprite = randomInteger(0, lastSprite);
+				}
+				else
+				{
+					particle->sprite = particleEmitter->initialSprite;
+					if (particle->sprite == -1)
+					{
+						switch (particleEmitter->animationMode)
+						{
+							case PARTICLE_ANIMATION_FORWARD:
+							case PARTICLE_ANIMATION_LOOP_FORWARD:
+							case PARTICLE_ANIMATION_BOUNCING_FORWARD:
+								particle->sprite = 0;
+								break;
+							case PARTICLE_ANIMATION_BACKWARD:
+							case PARTICLE_ANIMATION_LOOP_BACKWARD:
+							case PARTICLE_ANIMATION_BOUNCING_BACKWARD:
+								particle->sprite = lastSprite;
+								break;
+							default:
+								break;
+						}
+					}
+				}
+
+				switch (particleEmitter->animationMode)
+				{
+					case PARTICLE_ANIMATION_BOUNCING_FORWARD:
+						particle->animationDirection = 1;
+						break;
+					case PARTICLE_ANIMATION_BOUNCING_BACKWARD:
+						particle->animationDirection = -1;
+						break;
+					default:
+						break;
+				}
+			}
+
+			switch (particleEmitter->animationMode)
+			{
+				case PARTICLE_ANIMATION_FORWARD:
+				case PARTICLE_ANIMATION_LOOP_FORWARD:
+					particle->animationDirection = 1;
+					break;
+				case PARTICLE_ANIMATION_BACKWARD:
+				case PARTICLE_ANIMATION_LOOP_BACKWARD:
+					particle->animationDirection = -1;
+					break;
+				default:
+					break;
+			}
+
+			particle->animationTime += particleEmitter->animationFPS * dt;
+			while (particle->animationTime >= 1.0)
+			{
+				int32 nextSprite =
+					particle->sprite + particle->animationDirection;
+
+				switch (particleEmitter->animationMode)
+				{
+					case PARTICLE_ANIMATION_FORWARD:
+						if (particle->sprite != particleEmitter->finalSprite)
+						{
+							particle->sprite = nextSprite %
+								particleTexture.numSprites;
+						}
+
+						break;
+					case PARTICLE_ANIMATION_BACKWARD:
+						if (particle->sprite != particleEmitter->finalSprite)
+						{
+							if (nextSprite == -1)
+							{
+								particle->sprite = lastSprite;
+							}
+							else
+							{
+								particle->sprite = nextSprite;
+							}
+						}
+
+						break;
+					case PARTICLE_ANIMATION_LOOP_FORWARD:
+						particle->sprite = nextSprite %
+							particleTexture.numSprites;
+						break;
+					case PARTICLE_ANIMATION_LOOP_BACKWARD:
+						if (nextSprite == -1)
+						{
+							particle->sprite = lastSprite;
+						}
+						else
+						{
+							particle->sprite = nextSprite;
+						}
+
+						break;
+					case PARTICLE_ANIMATION_BOUNCING_FORWARD:
+					case PARTICLE_ANIMATION_BOUNCING_BACKWARD:
+						if (particle->animationDirection == 1)
+						{
+							if (nextSprite == particleTexture.numSprites)
+							{
+								particle->animationDirection = -1;
+								nextSprite = particle->sprite - 1;
+							}
+						}
+						else
+						{
+							if (nextSprite == -1)
+							{
+								particle->animationDirection = 1;
+								nextSprite = particle->sprite + 1;
+							}
+						}
+
+						particle->sprite = nextSprite;
+
+						break;
+					default:
+						break;
+				}
+
+				particle->animationTime -= 1.0;
+			}
+
+			kmVec2Assign(
+				&particle->uv,
+				&particleTexture.spriteUVs[particle->sprite]);
+		}
 	}
 }
 

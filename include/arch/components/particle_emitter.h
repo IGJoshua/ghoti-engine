@@ -8,10 +8,14 @@ typedef struct particle_object_t
 	real64 lifetime;
 	real64 fadeTimer;
 	real64 fadeTime;
+	int32 sprite;
+	real64 animationTime;
+	int8 animationDirection;
 	kmVec3 position;
 	kmVec3 previousPosition;
 	kmVec3 velocity;
 	kmVec2 size;
+	kmVec2 uv;
 	kmVec4 color;
 	real32 alpha;
 } ParticleObject;
@@ -36,12 +40,13 @@ void emitParticles(
 	bool stopAtCapacity,
 	const char *particleName,
 	uint32 numSprites,
-	int32 spriteWidth,
-	int32 spriteHeight,
+	uint32 rows,
+	uint32 columns,
 	int32 initialSprite,
 	bool randomSprite,
 	real32 animationFPS,
-	bool loop);
+	ParticleAnimation animationMode,
+	uint32 finalSprite);
 void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset);
 
 void removeParticleEmitter(ParticleEmitterComponent *particleEmitter);

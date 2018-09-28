@@ -18,12 +18,14 @@
 
 #include "renderer/renderer_utilities.h"
 
-#define NUM_PARTICLE_VERTEX_ATTRIBUTES 4
+#define NUM_PARTICLE_VERTEX_ATTRIBUTES 6
 
 typedef struct particle_vertex_t
 {
 	kmVec3 position;
 	kmVec2 size;
+	kmVec2 uv;
+	kmVec2 spriteSize;
 	kmVec4 color;
 	int32 texture;
 } ParticleVertex;
@@ -60,6 +62,8 @@ extern HashMap particleEmitters;
 internal void addVertex(
 	kmVec3 *position,
 	kmVec2 *size,
+	kmVec2 *uv,
+	kmVec2 *spriteSize,
 	kmVec4 *color,
 	int32 texture);
 internal void quickSortVertices(
@@ -111,6 +115,22 @@ internal void initParticleRendererSystem(Scene *scene)
 			GL_FALSE,
 			sizeof(ParticleVertex),
 			(GLvoid*)offsetof(ParticleVertex, size));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(ParticleVertex),
+			(GLvoid*)offsetof(ParticleVertex, uv));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(ParticleVertex),
+			(GLvoid*)offsetof(ParticleVertex, spriteSize));
 
 		glVertexAttribPointer(
 			bufferIndex++,
@@ -228,6 +248,11 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 				ParticleObject,
 				listItr);
 
+			if (particle->sprite == -1)
+			{
+				continue;
+			}
+
 			kmVec3 position;
 			kmVec3Lerp(
 				&position,
@@ -238,6 +263,8 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 			addVertex(
 				&position,
 				&particle->size,
+				&particle->uv,
+				&particleTexture.spriteSize,
 				&particle->color,
 				texture);
 		}
@@ -365,13 +392,21 @@ System createParticleRendererSystem(void)
 	return system;
 }
 
-void addVertex(kmVec3 *position, kmVec2 *size, kmVec4 *color, int32 texture)
+void addVertex(
+	kmVec3 *position,
+	kmVec2 *size,
+	kmVec2 *uv,
+	kmVec2 *spriteSize,
+	kmVec4 *color,
+	int32 texture)
 {
 	if (numVertices + 1 < MAX_PARTICLE_COUNT)
 	{
 		ParticleVertex *vertex = &vertices[numVertices];
 		kmVec3Assign(&vertex->position, position);
 		kmVec2Assign(&vertex->size, size);
+		kmVec2Assign(&vertex->uv, uv);
+		kmVec2Assign(&vertex->spriteSize, spriteSize);
 		kmVec4Assign(&vertex->color, color);
 		vertex->texture = texture;
 		numVertices++;

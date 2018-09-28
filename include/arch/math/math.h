@@ -11,3 +11,4 @@ kmQuaternion* quaternionSlerp(
 	kmScalar t);
 
 real64 randomRealNumber(real64 min, real64 max);
+int32 randomInteger(int32 min, int32 max);

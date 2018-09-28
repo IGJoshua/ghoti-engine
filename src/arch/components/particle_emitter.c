@@ -42,6 +42,8 @@ void addParticle(
 	kmVec3Assign(&particle.position, &transform->globalPosition);
 	kmVec3Assign(&particle.velocity, &particleEmitter->initialVelocity);
 
+	particle.sprite = -1;
+
 	kmVec3 randomVelocity;
 	kmVec3Fill(
 		&randomVelocity,
@@ -132,12 +134,13 @@ void emitParticles(
 	bool stopAtCapacity,
 	const char *particleName,
 	uint32 numSprites,
-	int32 spriteWidth,
-	int32 spriteHeight,
+	uint32 rows,
+	uint32 columns,
 	int32 initialSprite,
 	bool randomSprite,
 	real32 animationFPS,
-	bool loop)
+	ParticleAnimation animationMode,
+	uint32 finalSprite)
 {
 	stopParticleEmitter(
 		particleEmitter,
@@ -145,7 +148,7 @@ void emitParticles(
 
 	if (strlen(particleName) > 0)
 	{
-		loadParticle(particleName, numSprites, spriteWidth, spriteHeight);
+		loadParticle(particleName, numSprites, rows, columns);
 	}
 
 	particleEmitter->stopAtCapacity = stopAtCapacity;
@@ -154,7 +157,8 @@ void emitParticles(
 	particleEmitter->initialSprite = initialSprite;
 	particleEmitter->randomSprite = randomSprite;
 	particleEmitter->animationFPS = animationFPS;
-	particleEmitter->loop = loop;
+	particleEmitter->animationMode = animationMode;
+	particleEmitter->finalSprite = finalSprite;
 }
 
 void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset)

@@ -19,8 +19,8 @@ typedef struct particle_thread_args_t
 {
 	char *name;
 	uint32 numSprites;
-	int32 spriteWidth;
-	int32 spriteHeight;
+	uint32 rows;
+	uint32 columns;
 } ParticleThreadArgs;
 
 extern Config config;
@@ -48,8 +48,8 @@ internal char* getFullParticleFilename(const char *name);
 void loadParticle(
 	const char *name,
 	uint32 numSprites,
-	int32 spriteWidth,
-	int32 spriteHeight)
+	uint32 rows,
+	uint32 columns)
 {
 	ParticleThreadArgs *arg = malloc(sizeof(ParticleThreadArgs));
 
@@ -57,8 +57,8 @@ void loadParticle(
 	strcpy(arg->name, name);
 
 	arg->numSprites = numSprites;
-	arg->spriteWidth = spriteWidth;
-	arg->spriteHeight = spriteHeight;
+	arg->rows = rows;
+	arg->columns = columns;
 
 	pthread_t acquisitionThread;
 	pthread_create(
@@ -97,8 +97,8 @@ void* loadParticleThread(void *arg)
 	ParticleThreadArgs *threadArgs = arg;
 	char *name = threadArgs->name;
 	uint32 numSprites = threadArgs->numSprites;
-	int32 spriteWidth = threadArgs->spriteWidth;
-	int32 spriteHeight = threadArgs->spriteHeight;
+	uint32 rows = threadArgs->rows;
+	uint32 columns = threadArgs->columns;
 
 	UUID nameID = idFromName(name);
 
@@ -163,9 +163,8 @@ void* loadParticleThread(void *arg)
 
 				particle.name = idFromName(name);
 				particle.lifetime = config.assetsConfig.minParticleLifetime;
-				particle.numSprites = numSprites;
-				particle.spriteWidth = spriteWidth;
-				particle.spriteHeight = spriteHeight;
+				particle.numSprites = numSprites == 0 ? 1 : numSprites;
+				particle.spriteUVs = malloc(numSprites * sizeof(kmVec2));
 
 				pthread_mutex_lock(&devilMutex);
 
@@ -182,6 +181,37 @@ void* loadParticleThread(void *arg)
 
 				if (error != - 1)
 				{
+					kmVec2Fill(
+						&particle.spriteSize,
+						1.0f / columns,
+						1.0f / rows);
+
+					uint32 spriteUVIndex = 0;
+					for (real32 v = 0.0f;
+						 v < 1.0;
+						 v += particle.spriteSize.y)
+					{
+						for (real32 u = 0.0f;
+							 u < 1.0f;
+							 u += particle.spriteSize.x)
+						{
+							kmVec2Fill(
+								&particle.spriteUVs[spriteUVIndex++],
+								u,
+								v);
+
+							if (spriteUVIndex == particle.numSprites)
+							{
+								break;
+							}
+						}
+
+						if (spriteUVIndex == particle.numSprites)
+						{
+							break;
+						}
+					}
+
 					pthread_mutex_lock(&uploadParticlesMutex);
 					hashMapInsert(uploadParticlesQueue, &nameID, &particle);
 					pthread_mutex_unlock(&uploadParticlesMutex);
@@ -230,16 +260,16 @@ int32 uploadParticleToGPU(Particle *particle)
 	glGenTextures(1, &particle->id);
 	glBindTexture(GL_TEXTURE_2D, particle->id);
 
-	particle->width = ilGetInteger(IL_IMAGE_WIDTH);
-	particle->height = ilGetInteger(IL_IMAGE_HEIGHT);
+	GLsizei particleWidth = ilGetInteger(IL_IMAGE_WIDTH);
+	GLsizei particleHeight = ilGetInteger(IL_IMAGE_HEIGHT);
 
 	const GLvoid *spriteSheetData = ilGetData();
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
 		GL_RGBA,
-		particle->width,
-		particle->height,
+		particleWidth,
+		particleHeight,
 		0,
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
@@ -309,6 +339,8 @@ void freeParticleData(Particle *particle)
 	pthread_mutex_unlock(&devilMutex);
 
 	glDeleteTextures(1, &particle->id);
+
+	free(particle->spriteUVs);
 
 	LOG("Successfully freed particle (%s)\n", particle->name.string);
 }

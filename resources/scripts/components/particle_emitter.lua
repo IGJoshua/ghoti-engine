@@ -1,4 +1,14 @@
 ffi.cdef[[
+typedef enum particle_animation_e
+{
+	PARTICLE_ANIMATION_FORWARD,
+	PARTICLE_ANIMATION_BACKWARD,
+	PARTICLE_ANIMATION_LOOP_FORWARD,
+	PARTICLE_ANIMATION_LOOP_BACKWARD,
+	PARTICLE_ANIMATION_BOUNCING_FORWARD,
+	PARTICLE_ANIMATION_BOUNCING_BACKWARD
+} ParticleAnimation;
+
 typedef struct particle_emitter_component_t
 {
 	bool active;
@@ -25,7 +35,8 @@ typedef struct particle_emitter_component_t
 	int32 initialSprite;
 	bool randomSprite;
 	real32 animationFPS;
-	bool loop;
+	ParticleAnimation animationMode;
+	int32 finalSprite;
 } ParticleEmitterComponent;
 ]]
 
@@ -33,18 +44,19 @@ local component = engine.components:register("particle_emitter", "ParticleEmitte
 
 local C = engine.C
 
-function component:emit(stopAtCapacity, particle, numSprites, spriteWidth, spriteHeight, initialSprite, randomSprite, animationFPS, loop)
+function component:emit(stopAtCapacity, particle, numSprites, rows, columns, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
   stopAtCapacity = stopAtCapacity or false
   particle = particle or ""
   numSprites = numSprites or 1
-  spriteWidth = spriteWidth or -1
-  spriteHeight = spriteHeight or -1
-  initialSprite = initialSprite or 0
-  randomSprite = randomSprite or false
-  animationFPS = animationFPS or 24
-  loop = loop or false
+  rows = rows or 1
+  columns = columns or 1
+  initialSprite = initialSprite or self.initialSprite
+  randomSprite = randomSprite or self.randomSprite
+  animationFPS = animationFPS or self.animationFPS
+  animationMode = animationMode or self.animationMode
+  finalSprite = finalSprite or self.finalSprite
 
-  C.emitParticles(self, stopAtCapacity, particle, numSprites, spriteWidth, spriteHeight, initialSprite, randomSprite, animationFPS, loop)
+  C.emitParticles(self, stopAtCapacity, particle, numSprites, rows, columns, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
 end
 
 function component:pause()

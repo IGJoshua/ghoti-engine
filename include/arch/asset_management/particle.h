@@ -6,8 +6,8 @@
 void loadParticle(
 	const char *name,
 	uint32 numSprites,
-	int32 spriteWidth,
-	int32 spriteHeight);
+	uint32 rows,
+	uint32 columns);
 int32 uploadParticleToGPU(Particle *particle);
 Particle getParticle(const char *name);
 void freeParticleData(Particle *particle);

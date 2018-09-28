@@ -17,7 +17,7 @@ void loadAudio(const char *name);
 void loadParticle(
 	const char *name,
 	uint32 numSprites,
-	int32 spriteWidth,
-	int32 spriteHeight);
+	uint32 rows,
+	uint32 columns);
 
 ]]

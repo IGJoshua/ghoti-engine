@@ -4,6 +4,8 @@ layout(points) in;
 layout(triangle_strip, max_vertices=4) out;
 
 in vec2 geomSize[];
+in vec2 geomUV[];
+in vec2 geomSpriteSize[];
 in vec4 geomColor[];
 flat in int geomTexture[];
 
@@ -20,7 +22,7 @@ void main (void)
 
 	// Bottom Left
 
-	fragUV = vec2(0.0, 1.0);
+	fragUV = vec2(geomUV[0].x, geomUV[0].y + geomSpriteSize[0].y);
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 
@@ -31,7 +33,9 @@ void main (void)
 
 	// Bottom Right
 
-	fragUV = vec2(1.0, 1.0);
+	fragUV = vec2(
+		geomUV[0].x + geomSpriteSize[0].x,
+		geomUV[0].y + geomSpriteSize[0].y);
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 
@@ -42,7 +46,7 @@ void main (void)
 
 	// Top Left
 
-	fragUV = vec2(0.0, 0.0);
+	fragUV = vec2(geomUV[0].x, geomUV[0].y);
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 
@@ -53,7 +57,7 @@ void main (void)
 
 	// Top Right
 
-	fragUV = vec2(1.0, 0.0);
+	fragUV = vec2(geomUV[0].x + geomSpriteSize[0].x, geomUV[0].y);
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 

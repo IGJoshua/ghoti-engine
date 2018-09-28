@@ -96,9 +96,7 @@ typedef struct particle_t
 	real64 lifetime;
 	GLuint id;
 	ILuint devilID;
-	GLsizei width;
-	GLsizei height;
 	uint32 numSprites;
-	GLsizei spriteWidth;
-	GLsizei spriteHeight;
+	kmVec2 spriteSize;
+	kmVec2 *spriteUVs;
 } Particle;
