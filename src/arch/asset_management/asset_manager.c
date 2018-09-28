@@ -333,40 +333,33 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			Model *model = (Model*)hashMapIteratorGetValue(itr);
-			if (model->refCount == 0)
+
+			model->lifetime -= dt;
+			if (model->lifetime <= 0.0)
 			{
-				model->lifetime -= dt;
-				if (model->lifetime <= 0.0)
-				{
-					pthread_mutex_lock(&freeModelsMutex);
-					listPushBack(&freeModelsQueue, model);
-					pthread_mutex_unlock(&freeModelsMutex);
+				pthread_mutex_lock(&freeModelsMutex);
+				listPushBack(&freeModelsQueue, model);
+				pthread_mutex_unlock(&freeModelsMutex);
 
-					UUID modelName = model->name;
+				UUID modelName = model->name;
 
-					hashMapMoveIterator(&itr);
-					hashMapDelete(models, &modelName);
+				hashMapMoveIterator(&itr);
+				hashMapDelete(models, &modelName);
 
-					ASSET_LOG(
-						MODEL,
-						modelName.string,
-						"Model queued to be freed (%s)\n",
-						modelName.string);
-					ASSET_LOG(
-						MODEL,
-						modelName.string,
-						"Model Count: %d\n",
-						models->count);
-					ASSET_LOG_COMMIT(MODEL, modelName.string);
-				}
-				else
-				{
-					hashMapMoveIterator(&itr);
-				}
+				ASSET_LOG(
+					MODEL,
+					modelName.string,
+					"Model queued to be freed (%s)\n",
+					modelName.string);
+				ASSET_LOG(
+					MODEL,
+					modelName.string,
+					"Model Count: %d\n",
+					models->count);
+				ASSET_LOG_COMMIT(MODEL, modelName.string);
 			}
 			else
 			{
-				model->lifetime = config.assetsConfig.minModelLifetime;
 				hashMapMoveIterator(&itr);
 			}
 		}
@@ -381,40 +374,33 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
-			if (texture->refCount == 0)
+
+			texture->lifetime -= dt;
+			if (texture->lifetime <= 0.0)
 			{
-				texture->lifetime -= dt;
-				if (texture->lifetime <= 0.0)
-				{
-					pthread_mutex_lock(&freeTexturesMutex);
-					listPushBack(&freeTexturesQueue, texture);
-					pthread_mutex_unlock(&freeTexturesMutex);
+				pthread_mutex_lock(&freeTexturesMutex);
+				listPushBack(&freeTexturesQueue, texture);
+				pthread_mutex_unlock(&freeTexturesMutex);
 
-					UUID textureName = texture->name;
+				UUID textureName = texture->name;
 
-					hashMapMoveIterator(&itr);
-					hashMapDelete(textures, &textureName);
+				hashMapMoveIterator(&itr);
+				hashMapDelete(textures, &textureName);
 
-					ASSET_LOG(
-						TEXTURE,
-						textureName.string,
-						"Texture queued to be freed (%s)\n",
-						textureName.string);
-					ASSET_LOG(
-						TEXTURE,
-						textureName.string,
-						"Texture Count: %d\n",
-						textures->count);
-					ASSET_LOG_COMMIT(TEXTURE, textureName.string);
-				}
-				else
-				{
-					hashMapMoveIterator(&itr);
-				}
+				ASSET_LOG(
+					TEXTURE,
+					textureName.string,
+					"Texture queued to be freed (%s)\n",
+					textureName.string);
+				ASSET_LOG(
+					TEXTURE,
+					textureName.string,
+					"Texture Count: %d\n",
+					textures->count);
+				ASSET_LOG_COMMIT(TEXTURE, textureName.string);
 			}
 			else
 			{
-				texture->lifetime = config.assetsConfig.minTextureLifetime;
 				hashMapMoveIterator(&itr);
 			}
 		}
@@ -429,8 +415,8 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			Font *font = (Font*)hashMapIteratorGetValue(itr);
-			font->lifetime -= dt;
 
+			font->lifetime -= dt;
 			if (font->lifetime <= 0.0)
 			{
 				pthread_mutex_lock(&freeFontsMutex);
@@ -470,40 +456,33 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			Image *image = (Image*)hashMapIteratorGetValue(itr);
-			if (image->refCount == 0)
+
+			image->lifetime -= dt;
+			if (image->lifetime <= 0.0)
 			{
-				image->lifetime -= dt;
-				if (image->lifetime <= 0.0)
-				{
-					pthread_mutex_lock(&freeImagesMutex);
-					listPushBack(&freeImagesQueue, image);
-					pthread_mutex_unlock(&freeImagesMutex);
+				pthread_mutex_lock(&freeImagesMutex);
+				listPushBack(&freeImagesQueue, image);
+				pthread_mutex_unlock(&freeImagesMutex);
 
-					UUID imageName = image->name;
+				UUID imageName = image->name;
 
-					hashMapMoveIterator(&itr);
-					hashMapDelete(images, &imageName);
+				hashMapMoveIterator(&itr);
+				hashMapDelete(images, &imageName);
 
-					ASSET_LOG(
-						IMAGE,
-						imageName.string,
-						"Image queued to be freed (%s)\n",
-						imageName.string);
-					ASSET_LOG(
-						IMAGE,
-						imageName.string,
-						"Image Count: %d\n",
-						images->count);
-					ASSET_LOG_COMMIT(IMAGE, imageName.string);
-				}
-				else
-				{
-					hashMapMoveIterator(&itr);
-				}
+				ASSET_LOG(
+					IMAGE,
+					imageName.string,
+					"Image queued to be freed (%s)\n",
+					imageName.string);
+				ASSET_LOG(
+					IMAGE,
+					imageName.string,
+					"Image Count: %d\n",
+					images->count);
+				ASSET_LOG_COMMIT(IMAGE, imageName.string);
 			}
 			else
 			{
-				image->lifetime = config.assetsConfig.minImageLifetime;
 				hashMapMoveIterator(&itr);
 			}
 		}
@@ -518,8 +497,8 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
-			audio->lifetime -= dt;
 
+			audio->lifetime -= dt;
 			if (audio->lifetime <= 0.0)
 			{
 				pthread_mutex_lock(&freeAudioMutex);
@@ -559,8 +538,8 @@ void* updateAssetManager(void *arg)
 			 !hashMapIteratorAtEnd(itr);)
 		{
 			Particle *particle = (Particle*)hashMapIteratorGetValue(itr);
-			particle->lifetime -= dt;
 
+			particle->lifetime -= dt;
 			if (particle->lifetime <= 0.0)
 			{
 				pthread_mutex_lock(&freeParticleMutex);

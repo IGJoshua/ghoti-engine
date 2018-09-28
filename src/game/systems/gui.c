@@ -361,8 +361,6 @@ internal void shutdownGUISystem(Scene *scene)
 	{
 		LOG("Shutting down GUI...\n");
 
-		freeImage(WIDGET_BACKGROUND);
-
 		nk_free(&ctx);
 		nk_buffer_free(&cmds);
 

@@ -584,9 +584,6 @@ void shutdownRenderHeightmapSystem(Scene *scene)
 
 		glDeleteVertexArrays(1, &m->vertexArray);
 
-		// Delete the material used for this heightmap
-		freeMaterial(&hm->material);
-
 		free(dGeomGetData(heightmap->heightfieldGeom));
 		dHeightfieldDataID heightfieldData = dGeomHeightfieldGetHeightfieldData(
 			heightmap->heightfieldGeom);

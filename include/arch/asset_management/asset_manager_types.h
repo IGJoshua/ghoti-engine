@@ -28,7 +28,6 @@ typedef struct texture_data_t
 typedef struct texture_t
 {
 	UUID name;
-	uint32 refCount;
 	real64 lifetime;
 	GLuint id;
 	TextureData data;
@@ -43,7 +42,6 @@ typedef struct material_folder_t
 typedef struct model_t
 {
 	UUID name;
-	uint32 refCount;
 	real64 lifetime;
 	UUID materialTexture;
 	UUID opacityTexture;
@@ -71,7 +69,6 @@ typedef struct font_t
 typedef struct image_t
 {
 	UUID name;
-	uint32 refCount;
 	real64 lifetime;
 	GLuint id;
 	TextureData data;

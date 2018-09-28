@@ -109,14 +109,6 @@ int32 createMaterial(UUID name, Material *material)
 	return 0;
 }
 
-void freeMaterial(Material *material)
-{
-	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		freeTexture(material->components[i].texture);
-	}
-}
-
 void loadMaterialFolders(UUID name)
 {
 	pthread_mutex_lock(&materialFoldersMutex);

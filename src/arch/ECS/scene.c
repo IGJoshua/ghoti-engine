@@ -1921,17 +1921,9 @@ void sceneRemoveComponentFromEntity(
 			ASSERT(false);
 		}
 	}
-	else if (!strcmp(componentType.string, "model"))
-	{
-		freeModel(((ModelComponent*)cdtGet(*table, entity))->name);
-	}
 	else if (!strcmp(componentType.string, "animator"))
 	{
 		removeAnimator((AnimatorComponent*)cdtGet(*table, entity));
-	}
-	else if (!strcmp(componentType.string, "image"))
-	{
-		freeImage(((ImageComponent*)cdtGet(*table, entity))->name);
 	}
 	else if (!strcmp(componentType.string, "rigid_body"))
 	{

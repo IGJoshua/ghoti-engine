@@ -12,4 +12,3 @@ int32 loadMaterialComponentTexture(
 	UUID materialName,
 	MaterialComponentType materialComponentType,
 	UUID *textureName);
-void freeMaterial(Material *material);

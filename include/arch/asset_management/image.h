@@ -5,5 +5,4 @@
 
 void loadImage(const char *name, bool textureFiltering);
 Image getImage(const char *name);
-void freeImage(const char *name);
 void freeImageData(Image *image);

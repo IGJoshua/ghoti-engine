@@ -209,11 +209,6 @@ void shutdownCollisionPrimitiveRendererSystem(Scene *scene)
 	{
 		LOG("Shutting down collision primitive renderer...\n");
 
-		freeModel(BOX_MODEL_NAME);
-		freeModel(SPHERE_MODEL_NAME);
-		freeModel(CYLINDER_MODEL_NAME);
-		freeModel(HEMISPHERE_MODEL_NAME);
-
 		glDeleteProgram(shaderProgram);
 
 		LOG("Successfully shut down collision primitive renderer\n");

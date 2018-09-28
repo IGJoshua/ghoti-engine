@@ -143,7 +143,7 @@ void* loadImageThread(void *arg)
 				Image image = {};
 
 				image.name = idFromName(name);
-				image.refCount = 1;
+				image.lifetime = config.assetsConfig.minImageLifetime;
 				image.textureFiltering = textureFiltering;
 
 				error = loadTextureData(
@@ -179,7 +179,6 @@ void* loadImageThread(void *arg)
 	}
 	else
 	{
-		imageResource->refCount++;
 		pthread_mutex_unlock(&imagesMutex);
 	}
 
@@ -206,6 +205,7 @@ Image getImage(const char *name)
 		Image *imageResource = hashMapGetData(images, &imageName);
 		if (imageResource)
 		{
+			imageResource->lifetime = config.assetsConfig.minImageLifetime;
 			image = *imageResource;
 		}
 
@@ -213,21 +213,6 @@ Image getImage(const char *name)
 	}
 
 	return image;
-}
-
-void freeImage(const char *name)
-{
-	UUID imageName = idFromName(name);
-
-	pthread_mutex_lock(&imagesMutex);
-
-	Image *image = hashMapGetData(images, &imageName);
-	if (image)
-	{
-		image->refCount--;
-	}
-
-	pthread_mutex_unlock(&imagesMutex);
 }
 
 void freeImageData(Image *image)

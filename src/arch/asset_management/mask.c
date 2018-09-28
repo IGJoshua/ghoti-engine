@@ -49,10 +49,3 @@ int32 loadMaskTexture(
 
 	return 0;
 }
-
-void freeMask(Mask *mask)
-{
-	freeMaterial(&mask->collectionMaterial);
-	freeMaterial(&mask->grungeMaterial);
-	freeMaterial(&mask->wearMaterial);
-}

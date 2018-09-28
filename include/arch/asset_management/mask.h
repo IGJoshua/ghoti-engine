@@ -12,4 +12,3 @@ int32 loadMaskTexture(
 	Model *model,
 	char suffix,
 	UUID *textureName);
-void freeMask(Mask *mask);

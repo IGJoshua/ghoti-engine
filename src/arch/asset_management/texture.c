@@ -146,7 +146,7 @@ void* loadTextureThread(void *arg)
 			Texture texture = {};
 
 			texture.name = nameID;
-			texture.refCount = 1;
+			texture.lifetime = config.assetsConfig.minTextureLifetime;
 
 			error = loadTextureData(
 				ASSET_LOG_TYPE_TEXTURE,
@@ -178,7 +178,6 @@ void* loadTextureThread(void *arg)
 	}
 	else
 	{
-		textureResource->refCount++;
 		pthread_mutex_unlock(&texturesMutex);
 	}
 
@@ -310,6 +309,7 @@ Texture getTexture(const char *name)
 		Texture *textureResource = hashMapGetData(textures, &textureName);
 		if (textureResource)
 		{
+			textureResource->lifetime = config.assetsConfig.minTextureLifetime;
 			texture = *textureResource;
 		}
 
@@ -334,19 +334,6 @@ char* getFullTextureFilename(const char *filename)
 	free(fullFilename);
 
 	return NULL;
-}
-
-void freeTexture(UUID name)
-{
-	pthread_mutex_lock(&texturesMutex);
-
-	Texture *texture = hashMapGetData(textures, &name);
-	if (texture)
-	{
-		texture->refCount--;
-	}
-
-	pthread_mutex_unlock(&texturesMutex);
 }
 
 void freeTextureData(Texture *texture)

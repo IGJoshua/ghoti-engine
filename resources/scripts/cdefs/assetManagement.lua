@@ -1,7 +1,6 @@
 ffi.cdef[[
 
 void loadModel(const char *name);
-void freeModel(const char *name);
 void swapMeshMaterial(
 	const char *modelName,
 	const char *meshName,
@@ -10,7 +9,6 @@ void swapMeshMaterial(
 void loadFont(const char *name, uint32 size, bool autoScaling);
 
 void loadImage(const char *name, bool textureFiltering);
-void freeImage(const char *name);
 
 void loadAudio(const char *name);
 

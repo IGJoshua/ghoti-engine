@@ -124,7 +124,7 @@ void* loadModelThread(void *arg)
 			ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
 
 			model.name = modelName;
-			model.refCount = 1;
+			model.lifetime = config.assetsConfig.minModelLifetime;
 
 			char *modelFolder = getFullFilePath(name, NULL, "resources/models");
 
@@ -247,7 +247,6 @@ void* loadModelThread(void *arg)
 	}
 	else
 	{
-		modelResource->refCount++;
 		pthread_mutex_unlock(&modelsMutex);
 	}
 
@@ -287,6 +286,7 @@ Model getModel(const char *name)
 		Model *modelResource = hashMapGetData(models, &modelName);
 		if (modelResource)
 		{
+			modelResource->lifetime = config.assetsConfig.minModelLifetime;
 			model = *modelResource;
 		}
 
@@ -294,31 +294,6 @@ Model getModel(const char *name)
 	}
 
 	return model;
-}
-
-void freeModel(const char *name)
-{
-	UUID modelName = idFromName(name);
-
-	pthread_mutex_lock(&modelsMutex);
-
-	Model *model = hashMapGetData(models, &modelName);
-	if (model)
-	{
-		freeTexture(model->materialTexture);
-		freeTexture(model->opacityTexture);
-
-		for (uint32 i = 0; i < model->numSubsets; i++)
-		{
-			Subset *subset = &model->subsets[i];
-			freeMaterial(&subset->material);
-			freeMask(&subset->mask);
-		}
-
-		model->refCount--;
-	}
-
-	pthread_mutex_unlock(&modelsMutex);
 }
 
 void freeModelData(Model *model)
@@ -358,7 +333,6 @@ void swapMeshMaterial(
 			if (!strcmp(subset->name.string, meshName))
 			{
 				Material *material = &subset->material;
-				freeMaterial(material);
 				createMaterial(idFromName(materialName), material);
 
 				pthread_mutex_unlock(&modelsMutex);
