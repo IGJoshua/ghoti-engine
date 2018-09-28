@@ -319,6 +319,7 @@ void update(real64 dt, bool skipLoadedThisFrame)
 	int32 luaError = 0;
 
 	inputHandleEvents();
+	clearGUIInput();
 
 	for (ListIterator itr = listGetIterator(&activeScenes);
 		 !listIteratorAtEnd(itr);
@@ -370,6 +371,8 @@ void update(real64 dt, bool skipLoadedThisFrame)
 			L = 0;
 		}
 	}
+
+	handleGUIInput(dt);
 
 	setUpdateAssetManagerFlag();
 	uploadAssets();

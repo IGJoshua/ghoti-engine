@@ -2,11 +2,6 @@
 #include "core/log.h"
 #include "core/window.h"
 
-#include <GL/glew.h>
-#include <GL/glu.h>
-
-#include <GLFW/glfw3.h>
-
 #include <luajit-2.0/lua.h>
 
 #include <kazmath/vec2.h>
@@ -27,7 +22,11 @@ SDL_GameController *controller;
 
 extern uint32 guiRefCount;
 extern struct nk_context ctx;
-extern int8 nkKeys[NK_KEY_MAX];
+
+#define KEY_REPEAT_DELAY 0.03
+
+internal int8 nkKeys[NK_KEY_MAX];
+internal real64 keyRepeatTimer;
 
 internal
 void keyCallback(
@@ -635,10 +634,13 @@ int32 initInput(GLFWwindow *window)
 	SDL_GameControllerEventState(SDL_ENABLE);
 	controller = SDL_GameControllerOpen(0);
 
+	memset(nkKeys, 0, NK_KEY_MAX * sizeof(int8));
+	keyRepeatTimer = KEY_REPEAT_DELAY;
+
 	return 0;
 }
 
-void shutdownInput()
+void shutdownInput(void)
 {
 	if (controller)
 	{
@@ -649,8 +651,41 @@ void shutdownInput()
 	SDL_Quit();
 }
 
-void inputHandleEvents()
+void inputHandleEvents(void)
 {
 	glfwPollEvents();
 	handleSDLEvents();
+}
+
+void clearGUIInput(void)
+{
+	if (guiRefCount > 0)
+	{
+		nk_input_end(&ctx);
+		nk_clear(&ctx);
+	}
+}
+void handleGUIInput(real64 dt)
+{
+	if (guiRefCount > 0)
+	{
+		nk_input_begin(&ctx);
+
+		keyRepeatTimer -= dt;
+
+		for (uint32 i = 0; i < NK_KEY_MAX; i++)
+		{
+			if (nkKeys[i] == GLFW_REPEAT && keyRepeatTimer <= 0.0)
+			{
+				nk_input_key(&ctx, i, false);
+			}
+
+			nk_input_key(&ctx, i, nkKeys[i]);
+		}
+
+		if (keyRepeatTimer <= 0.0)
+		{
+			keyRepeatTimer = KEY_REPEAT_DELAY;
+		}
+	}
 }

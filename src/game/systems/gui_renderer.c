@@ -33,9 +33,9 @@ extern int32 viewportHeight;
 
 #define NUM_GUI_VERTEX_ATTRIBUTES 3
 
-extern GLuint vertexBuffer;
-extern GLuint vertexArray;
-extern GLuint indexBuffer;
+extern GLuint guiVertexBuffer;
+extern GLuint guiVertexArray;
+extern GLuint guiIndexBuffer;
 
 #define VERTEX_SHADER_FILE "resources/shaders/gui.vert"
 #define FRAGMENT_SHADER_FILE "resources/shaders/gui.frag"
@@ -104,9 +104,9 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 	GLint textureIndex = 0;
 	setUniform(fontUniform, 1, &textureIndex);
 
-	glBindVertexArray(vertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+	glBindVertexArray(guiVertexArray);
+	glBindBuffer(GL_ARRAY_BUFFER, guiVertexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, guiIndexBuffer);
 
 	for (uint8 i = 0; i < NUM_GUI_VERTEX_ATTRIBUTES; i++)
 	{

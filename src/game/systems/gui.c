@@ -44,11 +44,6 @@ extern uint32 guiRefCount;
 extern struct nk_context ctx;
 struct nk_buffer cmds;
 
-#define KEY_REPEAT_DELAY 0.03
-
-int8 nkKeys[NK_KEY_MAX];
-internal real64 keyRepeatTimer;
-
 #define DEFAULT_FONT "default_font"
 #define DEFAULT_FONT_SIZE 18
 
@@ -102,9 +97,9 @@ const struct nk_draw_vertex_layout_element vertex_layout[] = {
 	{ NK_VERTEX_LAYOUT_END }
 };
 
-GLuint vertexBuffer;
-GLuint vertexArray;
-GLuint indexBuffer;
+GLuint guiVertexBuffer;
+GLuint guiVertexArray;
+GLuint guiIndexBuffer;
 
 internal Font getEntityFont(
 	Scene *scene,
@@ -159,14 +154,6 @@ internal void initGUISystem(Scene *scene)
 		{
 			nk_buffer_init_default(&cmds);
 
-			memset(nkKeys, 0, NK_KEY_MAX * sizeof(int8));
-			keyRepeatTimer = KEY_REPEAT_DELAY;
-
-			defaultFontComponent = sceneGetComponentFromEntity(
-				scene,
-				idFromName("default_font"),
-				fontComponentID);
-
 			updateDefaultFont = true;
 
 			loadImage(WIDGET_BACKGROUND, false);
@@ -193,13 +180,13 @@ internal void initGUISystem(Scene *scene)
 
 			nk_button_set_behavior(&ctx, NK_BUTTON_REPEATER);
 
-			glGenBuffers(1, &vertexBuffer);
-			glGenVertexArrays(1, &vertexArray);
+			glGenBuffers(1, &guiVertexBuffer);
+			glGenVertexArrays(1, &guiVertexArray);
 
 			uint32 bufferIndex = 0;
 
-			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-			glBindVertexArray(vertexArray);
+			glBindBuffer(GL_ARRAY_BUFFER, guiVertexBuffer);
+			glBindVertexArray(guiVertexArray);
 
 			glVertexAttribPointer(
 				bufferIndex++,
@@ -226,7 +213,7 @@ internal void initGUISystem(Scene *scene)
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 
-			glGenBuffers(1, &indexBuffer);
+			glGenBuffers(1, &guiIndexBuffer);
 
 			LOG("Successfully initialized GUI\n");
 		}
@@ -237,9 +224,6 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
-	nk_input_end(&ctx);
-	nk_clear(&ctx);
-
 	if (viewportWidth != previousViewportWidth ||
 		viewportHeight != previousViewportHeight)
 	{
@@ -268,6 +252,11 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		updateDefaultFont = true;
 	}
 
+	defaultFontComponent = sceneGetComponentFromEntity(
+		scene,
+		idFromName("default_font"),
+		fontComponentID);
+
 	defaultFont = getFont(
 		defaultFontComponent->name,
 		defaultFontComponent->size,
@@ -295,8 +284,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		widgetBackground = getImage(WIDGET_BACKGROUND);
 	}
 
-	glBindVertexArray(vertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBindVertexArray(guiVertexArray);
+	glBindBuffer(GL_ARRAY_BUFFER, guiVertexBuffer);
 
 	glBufferData(
 		GL_ARRAY_BUFFER,
@@ -304,7 +293,7 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		NULL,
 		GL_STREAM_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, guiIndexBuffer);
 
 	glBufferData(
 		GL_ELEMENT_ARRAY_BUFFER,
@@ -364,25 +353,6 @@ internal void endGUISystem(Scene *scene, real64 dt)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
-
-	nk_input_begin(&ctx);
-
-	keyRepeatTimer -= dt;
-
-	for (uint32 i = 0; i < NK_KEY_MAX; i++)
-	{
-		if (nkKeys[i] == GLFW_REPEAT && keyRepeatTimer <= 0.0)
-		{
-			nk_input_key(&ctx, i, false);
-		}
-
-		nk_input_key(&ctx, i, nkKeys[i]);
-	}
-
-	if (keyRepeatTimer <= 0.0)
-	{
-		keyRepeatTimer = KEY_REPEAT_DELAY;
-	}
 }
 
 internal void shutdownGUISystem(Scene *scene)
@@ -396,12 +366,12 @@ internal void shutdownGUISystem(Scene *scene)
 		nk_free(&ctx);
 		nk_buffer_free(&cmds);
 
-		glBindVertexArray(vertexArray);
-		glDeleteBuffers(1, &vertexBuffer);
-		glDeleteBuffers(1, &indexBuffer);
+		glBindVertexArray(guiVertexArray);
+		glDeleteBuffers(1, &guiVertexBuffer);
+		glDeleteBuffers(1, &guiIndexBuffer);
 		glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &vertexArray);
+		glDeleteVertexArrays(1, &guiVertexArray);
 
 		LOG("Successfully shut down GUI\n");
 	}
@@ -852,23 +822,23 @@ void fillCommandBuffer(void)
 	void *vertices = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	void *indices = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-	struct nk_buffer vertexBufferData;
+	struct nk_buffer guiVertexBufferData;
 	nk_buffer_init_fixed(
-		&vertexBufferData,
+		&guiVertexBufferData,
 		vertices,
 		sizeof(GUIVertex) * MAX_GUI_VERTEX_COUNT);
 
-	struct nk_buffer indexBufferData;
+	struct nk_buffer guiIndexBufferData;
 	nk_buffer_init_fixed(
-		&indexBufferData,
+		&guiIndexBufferData,
 		indices,
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT);
 
 	if (nk_convert(
 		&ctx,
 		&cmds,
-		&vertexBufferData,
-		&indexBufferData,
+		&guiVertexBufferData,
+		&guiIndexBufferData,
 		&nkConfig) != NK_CONVERT_SUCCESS)
 	{
 		LOG("Failed to fill GUI command buffer\n");
@@ -877,6 +847,6 @@ void fillCommandBuffer(void)
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
-	nk_buffer_free(&vertexBufferData);
-	nk_buffer_free(&indexBufferData);
+	nk_buffer_free(&guiVertexBufferData);
+	nk_buffer_free(&guiIndexBufferData);
 }
