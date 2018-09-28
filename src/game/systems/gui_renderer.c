@@ -45,7 +45,10 @@ internal GLuint shaderProgram;
 internal Uniform projectionUniform;
 internal Uniform fontUniform;
 
+internal GLboolean glBlendValue;
 internal GLint glBlendEquationValue;
+internal GLint glSrcBlendFuncValue;
+internal GLint glDstBlendFuncValue;
 internal GLboolean glCullFaceValue;
 internal GLboolean glDepthTestValue;
 internal GLboolean glScissorTestValue;
@@ -113,12 +116,17 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 		glEnableVertexAttribArray(i);
 	}
 
+	glGetBooleanv(GL_BLEND, &glBlendValue);
 	glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &glBlendEquationValue);
+	glGetIntegerv(GL_BLEND_SRC_ALPHA, &glSrcBlendFuncValue);
+	glGetIntegerv(GL_BLEND_DST_ALPHA, &glDstBlendFuncValue);
 	glGetBooleanv(GL_CULL_FACE, &glCullFaceValue);
 	glGetBooleanv(GL_DEPTH_TEST, &glDepthTestValue);
 	glGetBooleanv(GL_SCISSOR_TEST, &glScissorTestValue);
 
+	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_SCISSOR_TEST);
@@ -155,7 +163,9 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 
 internal void endGUIRendererSystem(Scene *scene, real64 dt)
 {
+	glBlendValue ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
 	glBlendEquation(glBlendEquationValue);
+	glBlendFunc(glSrcBlendFuncValue, glDstBlendFuncValue);
 	glCullFaceValue ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
 	glDepthTestValue ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
 	glScissorTestValue ? glEnable(GL_SCISSOR_TEST) : glDisable(GL_SCISSOR_TEST);

@@ -60,6 +60,11 @@ internal UUID cameraComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
+internal GLboolean glBlendValue;
+internal GLint glSrcBlendFuncValue;
+internal GLint glDstBlendFuncValue;
+internal GLboolean glDepthMaskValue;
+
 extern real64 alpha;
 extern HashMap particleEmitters;
 
@@ -329,12 +334,17 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 	textureIndex = 0;
 	activateTextures(numTextures, textures, &textureIndex);
 
+	glGetBooleanv(GL_BLEND, &glBlendValue);
+	glGetIntegerv(GL_BLEND_SRC_ALPHA, &glSrcBlendFuncValue);
+	glGetIntegerv(GL_BLEND_DST_ALPHA, &glDstBlendFuncValue);
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &glDepthMaskValue);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_FALSE);
 
 	glDrawArrays(GL_POINTS, 0, numVertices);
 	logGLError(false, "Failed to draw particle");
-
-	glDepthMask(GL_TRUE);
 }
 
 internal void endParticleRendererSystem(Scene *scene, real64 dt)
@@ -348,6 +358,10 @@ internal void endParticleRendererSystem(Scene *scene, real64 dt)
 	{
 		return;
 	}
+
+	glBlendValue ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
+	glBlendFunc(glSrcBlendFuncValue, glDstBlendFuncValue);
+	glDepthMaskValue ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
 
 	for (uint8 j = 0; j < numTextures; j++)
 	{
