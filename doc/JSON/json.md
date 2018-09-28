@@ -774,7 +774,9 @@ This utility generates a template for a scene by creating a folder containing fi
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",
 				"joint_information",
-				"gui"
+				"particle_simulator",
+				"gui",
+				"audio"
 			]
 		},
 
@@ -792,6 +794,7 @@ This utility generates a template for a scene by creating a folder containing fi
 				"wireframe_renderer",
 				"debug_renderer",
 				"collision_primitive_renderer",
+				"particle_renderer",
 				"gui_renderer"
 			]
 		}
@@ -801,6 +804,7 @@ This utility generates a template for a scene by creating a folder containing fi
 	{
 		"animation": 2048,
 		"animator": 2048,
+		"audio_source": 1024,
 		"ball_socket_joint": 256,
 		"ball_socket2_joint": 256,
 		"box": 1024,
@@ -827,10 +831,14 @@ This utility generates a template for a scene by creating a folder containing fi
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
+		"particle_emitter": 128,
+		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,
+		"slider": 1024,
 		"sphere": 1024,
 		"surface_information": 512,
+		"text_field": 1024,
 		"text": 1024,
 		"transform": 16384,
 		"widget": 1024,
@@ -1001,7 +1009,9 @@ This utility exports JSON scene files to binary scene files that can be used in 
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",
 				"joint_information",
-				"gui"
+				"particle_simulator",
+				"gui",
+				"audio"
 			]
 		},
 
@@ -1019,6 +1029,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 				"wireframe_renderer",
 				"debug_renderer",
 				"collision_primitive_renderer",
+				"particle_renderer",
 				"gui_renderer"
 			]
 		}
@@ -1028,6 +1039,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 	{
 		"animation": 2048,
 		"animator": 2048,
+		"audio_source": 1024,
 		"ball_socket_joint": 256,
 		"ball_socket2_joint": 256,
 		"box": 1024,
@@ -1054,10 +1066,14 @@ This utility exports JSON scene files to binary scene files that can be used in 
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
+		"particle_emitter": 128,
+		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,
+		"slider": 1024,
 		"sphere": 1024,
 		"surface_information": 512,
+		"text_field": 1024,
 		"text": 1024,
 		"transform": 16384,
 		"widget": 1024,
