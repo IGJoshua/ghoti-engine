@@ -44,6 +44,16 @@ typedef enum moment_of_inertia_e
 	MOMENT_OF_INERTIA_CAPSULE
 } MomentOfInertia;
 
+typedef enum particle_animation_e
+{
+	PARTICLE_ANIMATION_FORWARD,
+	PARTICLE_ANIMATION_BACKWARD,
+	PARTICLE_ANIMATION_LOOP_FORWARD,
+	PARTICLE_ANIMATION_LOOP_BACKWARD,
+	PARTICLE_ANIMATION_BOUNCING_FORWARD,
+	PARTICLE_ANIMATION_BOUNCING_BACKWARD
+} ParticleAnimation;
+
 typedef enum pivot_e
 {
 	PIVOT_TOP_LEFT,
@@ -258,6 +268,7 @@ typedef struct hit_list_component_t
 typedef struct image_component_t
 {
 	char name[64];
+	bool textureFiltering;
 	kmVec4 color;
 	kmVec2 position;
 	kmVec2 scale;
@@ -318,6 +329,36 @@ typedef struct panel_component_t
 	kmVec4 color;
 	UUID firstWidget;
 } PanelComponent;
+
+typedef struct particle_emitter_component_t
+{
+	bool active;
+	bool paused;
+	bool stopping;
+	char currentParticle[64];
+	real64 particleCounter;
+	real32 currentSpawnRate;
+	real32 spawnRate[2];
+	uint32 maxNumParticles;
+	bool stopAtCapacity;
+	real64 lifetime[2];
+	real32 fadeTime;
+	kmVec3 initialVelocity;
+	kmVec3 minRandomVelocity;
+	kmVec3 maxRandomVelocity;
+	kmVec3 acceleration;
+	kmVec2 minSize;
+	kmVec2 maxSize;
+	bool preserveAspectRatio;
+	kmVec4 color;
+	kmVec4 minRandomColor;
+	kmVec4 maxRandomColor;
+	int32 initialSprite;
+	bool randomSprite;
+	real32 animationFPS;
+	ParticleAnimation animationMode;
+	int32 finalSprite;
+} ParticleEmitterComponent;
 
 typedef struct progress_bar_component_t
 {

@@ -10,3 +10,11 @@ typedef struct image_component_t
 ]]
 
 local component = engine.components:register("image", "ImageComponent")
+
+local C = engine.C
+
+function component:swap(name)
+  C.freeImage(self.name)
+  self.name = name
+  C.loadImage(name)
+end

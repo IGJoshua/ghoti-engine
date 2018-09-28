@@ -1,5 +1,7 @@
 #include "math/math.h"
 
+#include <stdlib.h>
+
 kmQuaternion* quaternionSlerp(
 	kmQuaternion* pOut,
 	const kmQuaternion* q1,
@@ -16,4 +18,14 @@ kmQuaternion* quaternionSlerp(
 	}
 
 	return kmQuaternionSlerp(pOut, &a, &b, t);
+}
+
+real64 randomRealNumber(real64 min, real64 max)
+{
+	return min + (rand() / (RAND_MAX / (max - min)));
+}
+
+int32 randomInteger(int32 min, int32 max)
+{
+	return min + (rand() % (max - min + 1));
 }

@@ -28,7 +28,8 @@ typedef enum asset_log_type_e
 	ASSET_LOG_TYPE_TEXTURE,
 	ASSET_LOG_TYPE_FONT,
 	ASSET_LOG_TYPE_IMAGE,
-	ASSET_LOG_TYPE_AUDIO
+	ASSET_LOG_TYPE_AUDIO,
+	ASSET_LOG_TYPE_PARTICLE
 } AssetLogType;
 
 #define ASSET_LOG_FILE_NAME config.logConfig.assetManagerFile

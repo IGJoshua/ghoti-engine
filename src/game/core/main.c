@@ -115,6 +115,8 @@ int32 main(int32 argc, char *argv[])
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(
 		config.graphicsConfig.backgroundColor.x,
@@ -319,8 +321,8 @@ void update(real64 dt, bool skipLoadedThisFrame)
 	inputHandleEvents();
 
 	for (ListIterator itr = listGetIterator(&activeScenes);
-			!listIteratorAtEnd(itr);
-			listMoveIterator(&itr))
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 
@@ -387,8 +389,8 @@ void draw(GLFWwindow *window, real64 frameTime)
 	real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
 
 	for (ListIterator itr = listGetIterator(&activeScenes);
-			!listIteratorAtEnd(itr);
-			listMoveIterator(&itr))
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		Scene *scene = *LIST_ITERATOR_GET_ELEMENT(Scene *, itr);
 

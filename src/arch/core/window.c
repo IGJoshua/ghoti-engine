@@ -142,6 +142,12 @@ void setFullscreenMode(bool fullscreen)
 	isFullscreen = fullscreen;
 }
 
+void getViewportSize(int32 *width, int32 *height)
+{
+	*width = viewportWidth;
+	*height = viewportHeight;
+}
+
 int32 closeWindow(void)
 {
 	glfwSetWindowShouldClose(wnd, 1);

@@ -152,8 +152,8 @@ int32 exportSave(void *data, uint32 size, uint32 slot)
 
 		uint32 entityNumber = 0;
 		for (HashMapIterator itr = hashMapGetIterator(scene->entities);
-			!hashMapIteratorAtEnd(itr);
-			hashMapMoveIterator(&itr))
+			 !hashMapIteratorAtEnd(itr);
+			 hashMapMoveIterator(&itr))
 		{
 			char *entityName = malloc(128);
 			sprintf(entityName, "entity_%d", entityNumber++);

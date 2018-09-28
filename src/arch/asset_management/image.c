@@ -16,6 +16,12 @@
 
 #include <pthread.h>
 
+typedef struct image_thread_args_t
+{
+	char *name;
+	bool textureFiltering;
+} ImageThreadArgs;
+
 extern Config config;
 
 extern HashMap images;
@@ -38,17 +44,17 @@ internal void* loadImageThread(void *arg);
 
 internal char* getFullImageFilename(const char *name);
 
-void loadImage(const char *name)
+void loadImage(const char *name, bool textureFiltering)
 {
-	char *imageName = calloc(1, strlen(name) + 1);
-	strcpy(imageName, name);
+	ImageThreadArgs *arg = malloc(sizeof(ImageThreadArgs));
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	arg->textureFiltering = textureFiltering;
 
 	pthread_t acquisitionThread;
-	pthread_create(
-		&acquisitionThread,
-		NULL,
-		&acquireImageThread,
-		(void*)imageName);
+	pthread_create(&acquisitionThread, NULL, &acquireImageThread, (void*)arg);
 	pthread_detach(acquisitionThread);
 }
 
@@ -77,7 +83,9 @@ void* loadImageThread(void *arg)
 {
 	int32 error = 0;
 
-	char *name = arg;
+	ImageThreadArgs *threadArgs = arg;
+	char *name = threadArgs->name;
+	bool textureFiltering = threadArgs->textureFiltering;
 
 	UUID nameID = idFromName(name);
 
@@ -138,6 +146,7 @@ void* loadImageThread(void *arg)
 
 				image.name = idFromName(name);
 				image.refCount = 1;
+				image.textureFiltering = textureFiltering;
 
 				pthread_mutex_lock(&devilMutex);
 
@@ -181,6 +190,7 @@ void* loadImageThread(void *arg)
 		pthread_mutex_unlock(&imagesMutex);
 	}
 
+	free(arg);
 	free(name);
 
 	pthread_mutex_lock(&assetThreadsMutex);
@@ -205,21 +215,14 @@ int32 uploadImageToGPU(Image *image)
 	image->width = ilGetInteger(IL_IMAGE_WIDTH);
 	image->height = ilGetInteger(IL_IMAGE_HEIGHT);
 
-	glTexStorage2D(
-		GL_TEXTURE_2D,
-		1,
-		GL_RGBA8,
-		image->width,
-		image->height);
-
 	const GLvoid *imageData = ilGetData();
-	glTexSubImage2D(
+	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
-		0,
-		0,
+		GL_RGBA,
 		image->width,
 		image->height,
+		0,
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
 		imageData);
@@ -233,6 +236,16 @@ int32 uploadImageToGPU(Image *image)
 
 	if (error != -1)
 	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MAG_FILTER,
+			image->textureFiltering ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MIN_FILTER,
+			image->textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+
 		LOG("Successfully transferred image (%s) onto GPU\n",
 			image->name.string);
 	}
@@ -269,7 +282,7 @@ void freeImage(const char *name)
 
 	pthread_mutex_lock(&imagesMutex);
 
-	Image *image = (Image*)hashMapGetData(images, &imageName);
+	Image *image = hashMapGetData(images, &imageName);
 	if (image)
 	{
 		image->refCount--;

@@ -1,15 +1,23 @@
 ffi.cdef[[
 
-int32 loadModel(const char *name);
+void loadModel(const char *name);
 void freeModel(const char *name);
 void swapMeshMaterial(
 	const char *modelName,
 	const char *meshName,
 	const char *materialName);
 
-int32 loadFont(const char *name, uint32 size);
-void* getFont(const char *name, uint32 size);
+void loadFont(const char *name, uint32 size);
 
-int32 loadAudio(const char *name);
+void loadImage(const char *name);
+void freeImage(const char *name);
+
+void loadAudio(const char *name);
+
+void loadParticle(
+	const char *name,
+	uint32 numSprites,
+	uint32 rows,
+	uint32 columns);
 
 ]]

@@ -101,8 +101,8 @@ void *hashMapGetData(HashMap map, void *key)
 	uint32 bucketIndex = keyHash % map->bucketCount;
 
 	for (ListIterator itr = listGetIterator(&map->buckets[bucketIndex]);
-			!listIteratorAtEnd(itr);
-			listMoveIterator(&itr))
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
 		if (!map->comparison(
 				LIST_ITERATOR_GET_ELEMENT(HashMapStorage, itr)->data,

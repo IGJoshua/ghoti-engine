@@ -18,7 +18,7 @@
 
 #include <AL/al.h>
 
-HashMap playAudioQueue;
+HashMap playAudioQueue = NULL;
 
 extern ALuint *g_Buffers;
 extern ALuint *g_Sources;

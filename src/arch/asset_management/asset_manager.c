@@ -42,6 +42,7 @@ extern HashMap audioFiles;
 extern pthread_mutex_t audioMutex;
 
 extern HashMap particles;
+extern pthread_mutex_t particlesMutex;
 
 // Resource Loading HashMaps
 
@@ -60,6 +61,9 @@ extern pthread_mutex_t loadingImagesMutex;
 extern HashMap loadingAudio;
 extern pthread_mutex_t loadingAudioMutex;
 
+extern HashMap loadingParticles;
+extern pthread_mutex_t loadingParticlesMutex;
+
 // Resource Uploading HashMaps
 
 extern HashMap uploadModelsQueue;
@@ -77,6 +81,9 @@ extern pthread_mutex_t uploadImagesMutex;
 extern HashMap uploadAudioQueue;
 extern pthread_mutex_t uploadAudioMutex;
 
+extern HashMap uploadParticlesQueue;
+extern pthread_mutex_t uploadParticlesMutex;
+
 // Resource Freeing Lists
 
 internal List freeModelsQueue;
@@ -93,6 +100,9 @@ internal pthread_mutex_t freeImagesMutex;
 
 internal List freeAudioQueue;
 internal pthread_mutex_t freeAudioMutex;
+
+internal List freeParticleQueue;
+internal pthread_mutex_t freeParticleMutex;
 
 // Asset Management Globals
 
@@ -165,6 +175,7 @@ void initializeAssetManager(real64 *dt) {
 		sizeof(Particle),
 		PARTICLES_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&particlesMutex, NULL);
 
 	// Resource Uploading HashMaps
 
@@ -203,6 +214,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&loadingAudioMutex, NULL);
 
+	loadingParticles = createHashMap(
+		sizeof(UUID),
+		sizeof(Particle),
+		LOADING_PARTICLES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&loadingParticlesMutex, NULL);
+
 	// Resource Uploading HashMaps
 
 	uploadModelsQueue = createHashMap(
@@ -240,6 +258,13 @@ void initializeAssetManager(real64 *dt) {
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&uploadAudioMutex, NULL);
 
+	uploadParticlesQueue = createHashMap(
+		sizeof(UUID),
+		sizeof(Particle),
+		UPLOAD_PARTICLES_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&uploadParticlesMutex, NULL);
+
 	// Resource Freeing Lists
 
 	freeModelsQueue = createList(sizeof(Model));
@@ -256,6 +281,9 @@ void initializeAssetManager(real64 *dt) {
 
 	freeAudioQueue = createList(sizeof(AudioFile));
 	pthread_mutex_init(&freeAudioMutex, NULL);
+
+	freeParticleQueue = createList(sizeof(Particle));
+	pthread_mutex_init(&freeParticleMutex, NULL);
 
 	// Asset Management Globals
 
@@ -306,7 +334,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&modelsMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(models);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Model *model = (Model*)hashMapIteratorGetValue(itr);
 			if (model->refCount == 0)
@@ -354,7 +382,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&texturesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(textures);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Texture *texture = (Texture*)hashMapIteratorGetValue(itr);
 			if (texture->refCount == 0)
@@ -402,7 +430,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&fontsMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(fonts);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Font *font = (Font*)hashMapIteratorGetValue(itr);
 			font->lifetime -= dt;
@@ -443,7 +471,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&imagesMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(images);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			Image *image = (Image*)hashMapIteratorGetValue(itr);
 			if (image->refCount == 0)
@@ -491,7 +519,7 @@ void* updateAssetManager(void *arg)
 		pthread_mutex_lock(&audioMutex);
 
 		for (HashMapIterator itr = hashMapGetIterator(audioFiles);
-			!hashMapIteratorAtEnd(itr);)
+			 !hashMapIteratorAtEnd(itr);)
 		{
 			AudioFile *audio = (AudioFile*)hashMapIteratorGetValue(itr);
 			audio->lifetime -= dt;
@@ -526,6 +554,47 @@ void* updateAssetManager(void *arg)
 		}
 
 		pthread_mutex_unlock(&audioMutex);
+
+		// Free Particles
+
+		pthread_mutex_lock(&particlesMutex);
+
+		for (HashMapIterator itr = hashMapGetIterator(particles);
+			 !hashMapIteratorAtEnd(itr);)
+		{
+			Particle *particle = (Particle*)hashMapIteratorGetValue(itr);
+			particle->lifetime -= dt;
+
+			if (particle->lifetime <= 0.0)
+			{
+				pthread_mutex_lock(&freeParticleMutex);
+				listPushBack(&freeParticleQueue, particle);
+				pthread_mutex_unlock(&freeParticleMutex);
+
+				UUID particleName = particle->name;
+
+				hashMapMoveIterator(&itr);
+				hashMapDelete(particles, &particleName);
+
+				ASSET_LOG(
+					PARTICLE,
+					particleName.string,
+					"Particle queued to be freed (%s)\n",
+					particleName.string);
+				ASSET_LOG(
+					PARTICLE,
+					particleName.string,
+					"Particle Count: %d\n",
+					particles->count);
+				ASSET_LOG_COMMIT(PARTICLE, particleName.string);
+			}
+			else
+			{
+				hashMapMoveIterator(&itr);
+			}
+		}
+
+		pthread_mutex_unlock(&particlesMutex);
 		pthread_mutex_lock(&updateAssetManagerMutex);
 
 		while (!updateAssetManagerFlag)
@@ -684,6 +753,34 @@ void uploadAssets(void)
 	}
 
 	pthread_mutex_unlock(&uploadAudioMutex);
+
+	// Upload Particles
+
+	pthread_mutex_lock(&uploadParticlesMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(uploadParticlesQueue);
+		 !hashMapIteratorAtEnd(itr);)
+	{
+		Particle *particle = hashMapIteratorGetValue(itr);
+
+		pthread_mutex_unlock(&uploadParticlesMutex);
+		uploadParticleToGPU(particle);
+		pthread_mutex_lock(&uploadParticlesMutex);
+
+		UUID particleName = particle->name;
+
+		pthread_mutex_lock(&particlesMutex);
+
+		hashMapInsert(particles, &particleName, particle);
+		LOG("Particle Count: %d\n", particles->count);
+
+		pthread_mutex_unlock(&particlesMutex);
+
+		hashMapMoveIterator(&itr);
+		hashMapDelete(uploadParticlesQueue, &particleName);
+	}
+
+	pthread_mutex_unlock(&uploadParticlesMutex);
 }
 
 void freeAssets(void)
@@ -777,6 +874,24 @@ void freeAssets(void)
 	}
 
 	pthread_mutex_unlock(&freeAudioMutex);
+
+	// Free Particles
+
+	pthread_mutex_lock(&freeParticleMutex);
+
+	for (ListIterator listItr = listGetIterator(&freeParticleQueue);
+		 !listIteratorAtEnd(listItr);)
+	{
+		Particle *particle = LIST_ITERATOR_GET_ELEMENT(Particle, listItr);
+
+		pthread_mutex_unlock(&freeParticleMutex);
+		freeParticleData(particle);
+		pthread_mutex_lock(&freeParticleMutex);
+
+		listRemove(&freeParticleQueue, &listItr);
+	}
+
+	pthread_mutex_unlock(&freeParticleMutex);
 }
 
 void shutdownAssetManager(void)
@@ -869,6 +984,17 @@ void shutdownAssetManager(void)
 	listClear(&freeAudioQueue);
 	pthread_mutex_destroy(&freeAudioMutex);
 
+	for (ListIterator listItr = listGetIterator(&freeParticleQueue);
+		 !listIteratorAtEnd(listItr);
+		 listMoveIterator(&listItr))
+	{
+		Particle *particle = LIST_ITERATOR_GET_ELEMENT(Particle, listItr);
+		hashMapInsert(particles, &particle->name, particle);
+	}
+
+	listClear(&freeParticleQueue);
+	pthread_mutex_destroy(&freeParticleMutex);
+
 	// Resource Uploading HashMaps
 
 	for (HashMapIterator itr = hashMapGetIterator(uploadModelsQueue);
@@ -926,6 +1052,17 @@ void shutdownAssetManager(void)
 	freeHashMap(&uploadAudioQueue);
 	pthread_mutex_destroy(&uploadAudioMutex);
 
+	for (HashMapIterator itr = hashMapGetIterator(uploadParticlesQueue);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		Particle *particle = hashMapIteratorGetValue(itr);
+		hashMapInsert(particles, &particle->name, particle);
+	}
+
+	freeHashMap(&uploadParticlesQueue);
+	pthread_mutex_destroy(&uploadParticlesMutex);
+
 	// Resource Loading HashMaps
 
 	freeHashMap(&loadingModels);
@@ -942,6 +1079,9 @@ void shutdownAssetManager(void)
 
 	freeHashMap(&loadingAudio);
 	pthread_mutex_destroy(&loadingAudioMutex);
+
+	freeHashMap(&loadingParticles);
+	pthread_mutex_destroy(&loadingParticlesMutex);
 
 	// Resource HashMaps
 
@@ -991,6 +1131,7 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&fonts);
+	pthread_mutex_destroy(&fontsMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(images);
 		 !hashMapIteratorAtEnd(itr);
@@ -1000,6 +1141,7 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&images);
+	pthread_mutex_destroy(&imagesMutex);
 
 	for (HashMapIterator itr = hashMapGetIterator(audioFiles);
 		 !hashMapIteratorAtEnd(itr);
@@ -1009,5 +1151,15 @@ void shutdownAssetManager(void)
 	}
 
 	freeHashMap(&audioFiles);
+	pthread_mutex_destroy(&audioMutex);
+
+	for (HashMapIterator itr = hashMapGetIterator(particles);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		freeParticleData(hashMapIteratorGetValue(itr));
+	}
+
 	freeHashMap(&particles);
+	pthread_mutex_destroy(&particlesMutex);
 }

@@ -28,33 +28,41 @@ int32 logGLError(bool logNoError, const char *message, ...)
 		error = -1;
 	}
 
-	if (logNoError || error == -1)
+	bool logError = error == -1 || (error == 0 && logNoError);
+	if (logError)
 	{
-		LOG("%s: %s\n", messageBuffer, gluErrorString(glError));
+		LOG("%s: %s", messageBuffer, gluErrorString(glError));
 	}
 
 	free(messageBuffer);
+
+	do
+	{
+		glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			LOG(", %s", gluErrorString(glError));
+		}
+		else
+		{
+			break;
+		}
+	} while (true);
+
+	if (logError)
+	{
+		LOG("\n");
+	}
 
 	return error;
 }
 
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)
 {
-	GLint materialTextureIndices[MATERIAL_COMPONENT_TYPE_COUNT];
-	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		materialTextureIndices[i] = (*textureIndex)++;
-	}
-
-	if (setUniform(
-		*uniform,
+	return setTextureArrayUniform(
+		uniform,
 		MATERIAL_COMPONENT_TYPE_COUNT,
-		materialTextureIndices) == -1)
-	{
-		return -1;
-	}
-
-	return 0;
+		textureIndex);
 }
 
 int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
@@ -76,12 +84,45 @@ int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
 	return 0;
 }
 
+int32 setTextureArrayUniform(
+	Uniform *uniform,
+	uint32 numTextures,
+	GLint *textureIndex)
+{
+	GLint textureIndices[numTextures];
+	for (uint8 i = 0; i < numTextures; i++)
+	{
+		textureIndices[i] = (*textureIndex)++;
+	}
+
+	if (setUniform(*uniform, numTextures, textureIndices) == -1)
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
 void activateMaterialTextures(Material *material, GLint *textureIndex)
 {
 	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
 	{
 		activateTexture(material->components[i].texture, textureIndex);
 	}
+}
+
+void activateTextures(
+	uint32 numTextures,
+	GLuint *textures,
+	GLint *textureIndex)
+{
+	for (uint8 i = 0; i < numTextures; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + *textureIndex);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+	}
+
+	(*textureIndex)++;
 }
 
 void activateTexture(UUID name, GLint *textureIndex)

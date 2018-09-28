@@ -6,7 +6,15 @@ void createCollisionGeoms(
 	TransformComponent *bodyTrans,
 	RigidBodyComponent *body,
 	CollisionComponent *coll);
-void destroyRigidBody(RigidBodyComponent *body);
+
+void addForce(RigidBodyComponent *body, kmVec3 *force, kmVec3 *position);
+void addTorque(RigidBodyComponent *body, kmVec3 *torque);
+
+void setForce(RigidBodyComponent *body, kmVec3 *force);
+void setTorque(RigidBodyComponent *body, kmVec3 *torque);
+
+kmVec3 getForce(RigidBodyComponent *body);
+kmVec3 getTorque(RigidBodyComponent *body);
 
 void updateRigidBodyPosition(
 	Scene *scene,
@@ -18,6 +26,8 @@ void updateRigidBody(
 	CollisionComponent *coll,
 	RigidBodyComponent *body,
 	TransformComponent *trans);
+
+void destroyRigidBody(RigidBodyComponent *body);
 
 void playAnimation(
 	ModelComponent *modelComponent,
@@ -43,5 +53,20 @@ void pauseSoundAtSource(AudioSourceComponent *audioSource);
 void resumeSoundAtSource(AudioSourceComponent *audioSource);
 void stopSoundAtSource(AudioSourceComponent *audioSource);
 bool isSourceActive(AudioSourceComponent *audioSource);
+
+void emitParticles(
+	ParticleEmitterComponent *particleEmitter,
+	bool stopAtCapacity,
+	const char *particleName,
+	uint32 numSprites,
+	uint32 rows,
+	uint32 columns,
+	bool textureFiltering,
+	int32 initialSprite,
+	bool randomSprite,
+	real32 animationFPS,
+	ParticleAnimation animationMode,
+	uint32 finalSprite);
+void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset);
 
 ]]

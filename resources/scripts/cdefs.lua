@@ -80,6 +80,8 @@ bool getFullscreenMode(void);
 void switchFullscreenMode(void);
 void setFullscreenMode(bool fullscreen);
 
+void getViewportSize(int32 *width, int32 *height);
+
 int32 closeWindow();
 
 typedef enum data_type_e {
