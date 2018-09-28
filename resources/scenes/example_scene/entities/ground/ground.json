@@ -222,7 +222,7 @@
 		[
 			{
 				"name": "visible",
-				"bool": true
+				"bool": false
 			},
 
 			{

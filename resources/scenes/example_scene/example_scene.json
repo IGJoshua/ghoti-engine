@@ -6,7 +6,8 @@
 			"external":
 			[
 				"basic_input",
-				"debug/orbital_camera"
+				"debug/orbital_camera",
+				"debug/particle_emitter"
 			],
 
 			"internal":
@@ -18,6 +19,7 @@
 				"apply_parent_transforms",
 				"simulate_rigid_bodies",
 				"joint_information",
+				"particle_simulator",
 				"gui",
 				"audio"
 			]
@@ -37,6 +39,7 @@
 				"wireframe_renderer",
 				"debug_renderer",
 				"collision_primitive_renderer",
+				"particle_renderer",
 				"gui_renderer"
 			]
 		}
@@ -73,6 +76,7 @@
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
+		"particle_emitter": 128,
 		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,

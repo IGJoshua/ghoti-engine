@@ -166,7 +166,7 @@ internal void initGUISystem(Scene *scene)
 
 			updateDefaultFont = true;
 
-			loadImage(WIDGET_BACKGROUND);
+			loadImage(WIDGET_BACKGROUND, false);
 			widgetBackground = getImage(WIDGET_BACKGROUND);
 
 			memset(&nkConfig, 0, sizeof(struct nk_convert_config));

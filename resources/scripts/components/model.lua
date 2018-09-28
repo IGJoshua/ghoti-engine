@@ -15,8 +15,6 @@ function component:swap(name, staticModel, scene, uuid, removeSkeleton, skeleton
   self.name = name
   C.loadModel(name)
 
-  staticModel = staticModel or false
-
   if scene then
 	if staticModel then
 	  if removeSkeleton then

@@ -268,6 +268,7 @@ typedef struct hit_list_component_t
 typedef struct image_component_t
 {
 	char name[64];
+	bool textureFiltering;
 	kmVec4 color;
 	kmVec2 position;
 	kmVec2 scale;

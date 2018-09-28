@@ -1861,7 +1861,8 @@ int32 sceneAddComponentToEntity(
 	}
 	else if (!strcmp(componentType.string, "image"))
 	{
-		loadImage(((ImageComponent*)componentData)->name);
+		ImageComponent *imageComponent = (ImageComponent*)componentData;
+		loadImage(imageComponent->name, imageComponent->textureFiltering);
 	}
 
 	// Add the component to the data table

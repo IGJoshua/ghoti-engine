@@ -42,6 +42,7 @@ void emitParticles(
 	uint32 numSprites,
 	uint32 rows,
 	uint32 columns,
+	bool textureFiltering,
 	int32 initialSprite,
 	bool randomSprite,
 	real32 animationFPS,

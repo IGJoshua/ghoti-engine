@@ -80,7 +80,7 @@
 
 			{
 				"name": "visible",
-				"bool": true
+				"bool": false
 			}
 		],
 
@@ -194,7 +194,7 @@
 		[
 			{
 				"name": "visible",
-				"bool": true
+				"bool": false
 			},
 
 			{

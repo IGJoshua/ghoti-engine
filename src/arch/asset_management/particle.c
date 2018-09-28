@@ -21,6 +21,7 @@ typedef struct particle_thread_args_t
 	uint32 numSprites;
 	uint32 rows;
 	uint32 columns;
+	bool textureFiltering;
 } ParticleThreadArgs;
 
 extern Config config;
@@ -49,7 +50,8 @@ void loadParticle(
 	const char *name,
 	uint32 numSprites,
 	uint32 rows,
-	uint32 columns)
+	uint32 columns,
+	bool textureFiltering)
 {
 	ParticleThreadArgs *arg = malloc(sizeof(ParticleThreadArgs));
 
@@ -59,6 +61,7 @@ void loadParticle(
 	arg->numSprites = numSprites;
 	arg->rows = rows;
 	arg->columns = columns;
+	arg->textureFiltering = textureFiltering;
 
 	pthread_t acquisitionThread;
 	pthread_create(
@@ -99,6 +102,7 @@ void* loadParticleThread(void *arg)
 	uint32 numSprites = threadArgs->numSprites;
 	uint32 rows = threadArgs->rows;
 	uint32 columns = threadArgs->columns;
+	bool textureFiltering = threadArgs->textureFiltering;
 
 	UUID nameID = idFromName(name);
 
@@ -163,6 +167,7 @@ void* loadParticleThread(void *arg)
 
 				particle.name = idFromName(name);
 				particle.lifetime = config.assetsConfig.minParticleLifetime;
+				particle.textureFiltering = textureFiltering;
 				particle.numSprites = numSprites == 0 ? 1 : numSprites;
 				particle.spriteUVs = malloc(numSprites * sizeof(kmVec2));
 
@@ -181,19 +186,19 @@ void* loadParticleThread(void *arg)
 
 				if (error != - 1)
 				{
+					real64 spriteSize[2];
+					spriteSize[0] = 1.0 / columns;
+					spriteSize[1] = 1.0 / rows;
+
 					kmVec2Fill(
 						&particle.spriteSize,
-						1.0f / columns,
-						1.0f / rows);
+						spriteSize[0],
+						spriteSize[1]);
 
 					uint32 spriteUVIndex = 0;
-					for (real32 v = 0.0f;
-						 v < 1.0;
-						 v += particle.spriteSize.y)
+					for (real64 v = 0.0; v < 1.0; v += spriteSize[1])
 					{
-						for (real32 u = 0.0f;
-							 u < 1.0f;
-							 u += particle.spriteSize.x)
+						for (real64 u = 0.0; u < 1.0; u += spriteSize[0])
 						{
 							kmVec2Fill(
 								&particle.spriteUVs[spriteUVIndex++],
@@ -288,14 +293,14 @@ int32 uploadParticleToGPU(Particle *particle)
 		glTexParameteri(
 			GL_TEXTURE_2D,
 			GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
+			particle->textureFiltering ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(
 			GL_TEXTURE_2D,
 			GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR_MIPMAP_LINEAR);
+			particle->textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		LOG("Successfully transferred particle (%s) onto GPU\n",
 			particle->name.string);

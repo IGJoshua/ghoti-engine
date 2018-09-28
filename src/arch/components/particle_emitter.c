@@ -136,6 +136,7 @@ void emitParticles(
 	uint32 numSprites,
 	uint32 rows,
 	uint32 columns,
+	bool textureFiltering,
 	int32 initialSprite,
 	bool randomSprite,
 	real32 animationFPS,
@@ -148,7 +149,7 @@ void emitParticles(
 
 	if (strlen(particleName) > 0)
 	{
-		loadParticle(particleName, numSprites, rows, columns);
+		loadParticle(particleName, numSprites, rows, columns, textureFiltering);
 	}
 
 	particleEmitter->stopAtCapacity = stopAtCapacity;

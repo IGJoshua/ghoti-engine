@@ -74,6 +74,7 @@ typedef struct image_t
 	real64 lifetime;
 	GLuint id;
 	ILuint devilID;
+	bool textureFiltering;
 	GLsizei width;
 	GLsizei height;
 } Image;
@@ -96,6 +97,7 @@ typedef struct particle_t
 	real64 lifetime;
 	GLuint id;
 	ILuint devilID;
+	bool textureFiltering;
 	uint32 numSprites;
 	kmVec2 spriteSize;
 	kmVec2 *spriteUVs;
