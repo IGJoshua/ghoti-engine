@@ -1857,7 +1857,10 @@ int32 sceneAddComponentToEntity(
 	else if (!strcmp(componentType.string, "font"))
 	{
 		FontComponent *fontComponent = (FontComponent*)componentData;
-		loadFont(fontComponent->name, fontComponent->size);
+		loadFont(
+			fontComponent->name,
+			fontComponent->size,
+			fontComponent->autoScaling);
 	}
 	else if (!strcmp(componentType.string, "image"))
 	{

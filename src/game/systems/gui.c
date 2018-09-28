@@ -255,9 +255,13 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 			FontComponent *fontComponent = cdtIteratorGetData(itr);
 			if (strlen(getFont(
 					fontComponent->name,
-					fontComponent->size).name.string) == 0)
+					fontComponent->size,
+					fontComponent->autoScaling).name.string) == 0)
 			{
-				loadFont(fontComponent->name, fontComponent->size);
+				loadFont(
+					fontComponent->name,
+					fontComponent->size,
+					fontComponent->autoScaling);
 			}
 		}
 
@@ -266,7 +270,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 
 	defaultFont = getFont(
 		defaultFontComponent->name,
-		defaultFontComponent->size);
+		defaultFontComponent->size,
+		defaultFontComponent->autoScaling);
 
 	if (updateDefaultFont)
 	{
@@ -458,7 +463,8 @@ Font getEntityFont(
 	{
 		Font font = getFont(
 			entityFontComponent->name,
-			entityFontComponent->size);
+			entityFontComponent->size,
+			entityFontComponent->autoScaling);
 
 		if (strlen(font.name.string) > 0)
 		{

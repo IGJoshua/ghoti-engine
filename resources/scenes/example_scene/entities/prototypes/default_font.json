@@ -16,6 +16,11 @@
 			},
 
 			{
+				"name": "automatic scaling",
+				"bool": true
+			},
+
+			{
 				"name": "color",
 				"float32": [1.0, 1.0, 1.0, 1.0]
 			}

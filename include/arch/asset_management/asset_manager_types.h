@@ -58,6 +58,7 @@ typedef struct font_t
 {
 	UUID name;
 	real64 lifetime;
+	bool autoScaling;
 	struct nk_font_atlas atlas;
 	struct nk_font *font;
 	struct nk_draw_null_texture null;

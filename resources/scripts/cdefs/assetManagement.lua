@@ -7,9 +7,9 @@ void swapMeshMaterial(
 	const char *meshName,
 	const char *materialName);
 
-void loadFont(const char *name, uint32 size);
+void loadFont(const char *name, uint32 size, bool autoScaling);
 
-void loadImage(const char *name);
+void loadImage(const char *name, bool textureFiltering);
 void freeImage(const char *name);
 
 void loadAudio(const char *name);
@@ -18,6 +18,7 @@ void loadParticle(
 	const char *name,
 	uint32 numSprites,
 	uint32 rows,
-	uint32 columns);
+	uint32 columns,
+	bool textureFiltering);
 
 ]]

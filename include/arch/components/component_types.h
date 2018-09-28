@@ -217,6 +217,7 @@ typedef struct font_component_t
 {
 	char name[64];
 	real32 size;
+	bool autoScaling;
 	kmVec4 color;
 } FontComponent;
 

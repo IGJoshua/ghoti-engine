@@ -27,6 +27,7 @@ typedef struct font_thread_args_t
 {
 	char *name;
 	real32 size;
+	bool autoScaling;
 } FontThreadArgs;
 
 extern Config config;
@@ -49,10 +50,10 @@ extern int32 viewportHeight;
 internal void* acquireFontThread(void *arg);
 internal void* loadFontThread(void *arg);
 
-internal uint32 getFontPixelSize(real32 size);
-internal UUID getFontName(const char *name, real32 size);
+internal uint32 getFontPixelSize(real32 size, bool autoScaling);
+internal UUID getFontName(const char *name, real32 size, bool autoScaling);
 
-void loadFont(const char *name, real32 size)
+void loadFont(const char *name, real32 size, bool autoScaling)
 {
 	FontThreadArgs *arg = malloc(sizeof(FontThreadArgs));
 
@@ -60,6 +61,7 @@ void loadFont(const char *name, real32 size)
 	strcpy(arg->name, name);
 
 	arg->size = size;
+	arg->autoScaling = autoScaling;
 
 	pthread_t acquisitionThread;
 	pthread_create(&acquisitionThread, NULL, &acquireFontThread, (void*)arg);
@@ -94,8 +96,9 @@ void* loadFontThread(void *arg)
 	FontThreadArgs *threadArgs = arg;
 	char *name = threadArgs->name;
 	real32 size = threadArgs->size;
+	bool autoScaling = threadArgs->autoScaling;
 
-	UUID fontName = getFontName(name, size);
+	UUID fontName = getFontName(name, size, autoScaling);
 
 	pthread_mutex_lock(&fontsMutex);
 	Font *fontResource = hashMapGetData(fonts, &fontName);
@@ -150,7 +153,7 @@ void* loadFontThread(void *arg)
 			font.font = nk_font_atlas_add_from_file(
 				&font.atlas,
 				filename,
-				getFontPixelSize(size),
+				getFontPixelSize(size, autoScaling),
 				NULL);
 
 			free(filename);
@@ -250,12 +253,12 @@ int32 uploadFontToGPU(Font *font)
 	return error;
 }
 
-Font getFont(const char *name, real32 size)
+Font getFont(const char *name, real32 size, bool autoScaling)
 {
 	Font font = {};
 	if (strlen(name) > 0)
 	{
-		UUID fontName = getFontName(name, size);
+		UUID fontName = getFontName(name, size, autoScaling);
 
 		pthread_mutex_lock(&fontsMutex);
 
@@ -282,9 +285,9 @@ void freeFontData(Font *font)
 	LOG("Successfully freed font (%s)\n", font->name.string);
 }
 
-uint32 getFontPixelSize(real32 size)
+uint32 getFontPixelSize(real32 size, bool autoScaling)
 {
-	int32 pixelSize = size * viewportHeight;
+	int32 pixelSize = size * (autoScaling ? viewportHeight : 1.0f);
 	if (pixelSize < 1)
 	{
 		pixelSize = 1;
@@ -293,9 +296,13 @@ uint32 getFontPixelSize(real32 size)
 	return pixelSize;
 }
 
-UUID getFontName(const char *name, real32 size)
+UUID getFontName(const char *name, real32 size, bool autoScaling)
 {
 	UUID fullName = {};
-	sprintf(fullName.string, "%s_%dpx", name, getFontPixelSize(size));
+	sprintf(
+		fullName.string,
+		"%s_%dpx",
+		name,
+		getFontPixelSize(size, autoScaling));
 	return fullName;
 }
