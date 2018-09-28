@@ -22,7 +22,7 @@ SYSTEM(CleanGlobalTransforms);
 SYSTEM(ApplyParentTransforms);
 SYSTEM(SimulateRigidbodies);
 SYSTEM(JointInformation);
-SYSTEM(ParticlePhysics);
+SYSTEM(ParticleSimulator);
 SYSTEM(GUI);
 SYSTEM(Audio);
 
@@ -53,7 +53,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(ApplyParentTransforms, "apply_parent_transforms");
 	REGISTER_SYSTEM(SimulateRigidbodies, "simulate_rigid_bodies");
 	REGISTER_SYSTEM(JointInformation, "joint_information");
-	REGISTER_SYSTEM(ParticlePhysics, "particle_physics");
+	REGISTER_SYSTEM(ParticleSimulator, "particle_simulator");
 	REGISTER_SYSTEM(GUI, "gui");
 	REGISTER_SYSTEM(Audio, "audio");
 

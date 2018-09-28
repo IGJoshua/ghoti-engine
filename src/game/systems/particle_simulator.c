@@ -10,9 +10,11 @@
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
 
+#include "math/math.h"
+
 #include <malloc.h>
 
-internal uint32 particlePhysicsSystemRefCount = 0;
+internal uint32 particleSimulatorSystemRefCount = 0;
 
 internal UUID transformComponentID = {};
 internal UUID particleEmitterComponentID = {};
@@ -27,9 +29,9 @@ internal int32 ptrcmp(void *a, void *b)
 	return *(uint64*)a != *(uint64*)b;
 }
 
-internal void initParticlePhysicsSystem(Scene *scene)
+internal void initParticleSimulatorSystem(Scene *scene)
 {
-	if (particlePhysicsSystemRefCount == 0)
+	if (particleSimulatorSystemRefCount == 0)
 	{
 		particleEmitters = createHashMap(
 			sizeof(ParticleEmitterComponent*),
@@ -38,10 +40,10 @@ internal void initParticlePhysicsSystem(Scene *scene)
 			(ComparisonOp)&ptrcmp);
 	}
 
-	particlePhysicsSystemRefCount++;
+	particleSimulatorSystemRefCount++;
 }
 
-internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
+internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 {
 	ParticleEmitterComponent *particleEmitter = sceneGetComponentFromEntity(
 		scene,
@@ -70,12 +72,25 @@ internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
 		hashMapInsert(particleEmitters, &particleEmitter, &newParticleList);
 		particleList = hashMapGetData(particleEmitters, &particleEmitter);
 
+		particleEmitter->currentSpawnRate = randomRealNumber(
+			particleEmitter->spawnRate[0],
+			particleEmitter->spawnRate[1]);
+
 		addParticle(particleList, particleEmitter, transform);
 	}
 
 	if (!particleEmitter->paused)
 	{
-		particleEmitter->particleCounter += particleEmitter->spawnRate * dt;
+		particleEmitter->particleCounter +=
+			particleEmitter->currentSpawnRate * dt;
+
+		if (particleEmitter->particleCounter >= 1.0)
+		{
+			particleEmitter->currentSpawnRate = randomRealNumber(
+				particleEmitter->spawnRate[0],
+				particleEmitter->spawnRate[1]);
+		}
+
 		while (particleEmitter->particleCounter >= 1.0)
 		{
 			addParticle(particleList, particleEmitter, transform);
@@ -108,13 +123,13 @@ internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
 			}
 			else
 			{
-				if (particle->lifetime <= particleEmitter->fadeTime)
+				if (particle->lifetime <= particle->fadeTime)
 				{
 					particle->fadeTimer += dt;
 					particle->color.w = kmLerp(
-						particleEmitter->alpha,
+						particle->alpha,
 						0.0f,
-						particle->fadeTimer / particleEmitter->fadeTime);
+						particle->fadeTimer / particle->fadeTime);
 				}
 
 				listMoveIterator(&listItr);
@@ -155,9 +170,9 @@ internal void runParticlePhysicsSystem(Scene *scene, UUID entityID, real64 dt)
 	}
 }
 
-internal void shutdownParticlePhysicsSystem(Scene *scene)
+internal void shutdownParticleSimulatorSystem(Scene *scene)
 {
-	if (--particlePhysicsSystemRefCount == 0)
+	if (--particleSimulatorSystemRefCount == 0)
 	{
 		for (HashMapIterator itr = hashMapGetIterator(particleEmitters);
 			 !hashMapIteratorAtEnd(itr);
@@ -171,7 +186,7 @@ internal void shutdownParticlePhysicsSystem(Scene *scene)
 	}
 }
 
-System createParticlePhysicsSystem(void)
+System createParticleSimulatorSystem(void)
 {
 	System system = {};
 
@@ -183,9 +198,9 @@ System createParticlePhysicsSystem(void)
 	listPushFront(&system.componentTypes, &transformComponentID);
 	listPushFront(&system.componentTypes, &particleEmitterComponentID);
 
-	system.init = &initParticlePhysicsSystem;
-	system.run = &runParticlePhysicsSystem;
-	system.shutdown = &shutdownParticlePhysicsSystem;
+	system.init = &initParticleSimulatorSystem;
+	system.run = &runParticleSimulatorSystem;
+	system.shutdown = &shutdownParticleSimulatorSystem;
 
 	return system;
 }

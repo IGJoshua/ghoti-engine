@@ -7,10 +7,13 @@ typedef struct particle_object_t
 {
 	real64 lifetime;
 	real64 fadeTimer;
+	real64 fadeTime;
 	kmVec3 position;
 	kmVec3 previousPosition;
 	kmVec3 velocity;
+	kmVec2 size;
 	kmVec4 color;
+	real32 alpha;
 } ParticleObject;
 
 typedef struct emitted_particles_t

@@ -9,9 +9,9 @@
 
 #include "ECS/scene.h"
 
-HashMap particleEmitters = NULL;
+#include "math/math.h"
 
-internal real32 randomFloat(real32 min, real32 max);
+HashMap particleEmitters = NULL;
 
 void addParticle(
 	ParticleList *particleList,
@@ -35,47 +35,74 @@ void addParticle(
 
 	ParticleObject particle = {};
 
-	particle.lifetime = particleEmitter->lifetime;
+	particle.lifetime = randomRealNumber(
+		particleEmitter->lifetime[0],
+		particleEmitter->lifetime[1]);
+	particle.fadeTime = particleEmitter->fadeTime * particle.lifetime;
 	kmVec3Assign(&particle.position, &transform->globalPosition);
 	kmVec3Assign(&particle.velocity, &particleEmitter->initialVelocity);
 
 	kmVec3 randomVelocity;
 	kmVec3Fill(
 		&randomVelocity,
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomVelocity.x,
 			particleEmitter->maxRandomVelocity.x),
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomVelocity.y,
 			particleEmitter->maxRandomVelocity.y),
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomVelocity.z,
 			particleEmitter->maxRandomVelocity.z));
 
 	kmVec3Add(&particle.velocity, &particle.velocity, &randomVelocity);
+
+	if (particleEmitter->preserveAspectRatio)
+	{
+		real32 sizeRatio = randomRealNumber(0.0f, 1.0f);
+		kmVec2Lerp(
+			&particle.size,
+			&particleEmitter->minSize,
+			&particleEmitter->maxSize,
+			sizeRatio);
+	}
+	else
+	{
+		kmVec2Fill(
+			&particle.size,
+			randomRealNumber(
+				particleEmitter->minSize.x,
+				particleEmitter->maxSize.x),
+			randomRealNumber(
+				particleEmitter->minSize.y,
+				particleEmitter->maxSize.y));
+	}
 
 	kmVec4Fill(
 		&particle.color,
 		particleEmitter->color.x,
 		particleEmitter->color.y,
 		particleEmitter->color.z,
-		particleEmitter->alpha);
+		particleEmitter->color.w);
 
 	kmVec4 randomColor;
 	kmVec4Fill(
 		&randomColor,
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomColor.x,
 			particleEmitter->maxRandomColor.x),
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomColor.y,
 			particleEmitter->maxRandomColor.y),
-		randomFloat(
+		randomRealNumber(
 			particleEmitter->minRandomColor.z,
 			particleEmitter->maxRandomColor.z),
-		1.0f);
+		randomRealNumber(
+			particleEmitter->minRandomColor.w,
+			particleEmitter->maxRandomColor.w));
 
 	kmVec4Mul(&particle.color, &particle.color, &randomColor);
+	particle.alpha = particle.color.w;
 
 	listPushBack(&particleList->particles, &particle);
 	particleList->numParticles++;
@@ -158,9 +185,4 @@ void removeParticleEmitter(ParticleEmitterComponent *particleEmitter)
 			hashMapDelete(particleEmitters, &particleEmitter);
 		}
 	}
-}
-
-real32 randomFloat(real32 min, real32 max)
-{
-    return min + (rand() / (RAND_MAX / (max - min)));
 }

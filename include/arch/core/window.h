@@ -11,5 +11,7 @@ bool getFullscreenMode(void);
 void switchFullscreenMode(void);
 void setFullscreenMode(bool fullscreen);
 
+void getViewportSize(int32 *width, int32 *height);
+
 int32 closeWindow(void);
 int32 freeWindow(struct GLFWwindow *window);

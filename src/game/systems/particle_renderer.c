@@ -237,7 +237,7 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 
 			addVertex(
 				&position,
-				&particleEmitter->size,
+				&particle->size,
 				&particle->color,
 				texture);
 		}

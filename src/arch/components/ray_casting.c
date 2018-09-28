@@ -66,6 +66,7 @@ RayCollision rayCast(
 {
     RayCollision rayInfo = {};
     rayInfo.minDist = minDist;
+	rayInfo.distance = length;
 
     dGeomID ray = dCreateRay(scene->physicsSpace, length);
     dGeomRaySet(ray, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
