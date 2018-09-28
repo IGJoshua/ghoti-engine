@@ -30,6 +30,10 @@ function system.init(scene)
 end
 
 function system.begin(scene, dt)
+  if cameraTransform == nil then
+    do return end
+  end
+
   local deltaMouse = ffi.new("kmVec2")
   deltaMouse.x = mouse.x - previousMouse.x
   deltaMouse.y = mouse.y - previousMouse.y

@@ -64,6 +64,9 @@ internal UUID animationComponentID = {};
 internal UUID animatorComponentID = {};
 internal UUID cameraComponentID = {};
 
+internal CameraComponent *camera;
+internal TransformComponent *cameraTransform;
+
 extern real64 alpha;
 
 extern uint32 animationSystemRefCount;
@@ -172,15 +175,24 @@ void initRendererSystem(Scene *scene)
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
-	glUseProgram(shaderProgram);
-
-	if (cameraSetUniforms(
+	camera = sceneGetComponentFromEntity(
 		scene,
-		viewUniform,
-		projectionUniform) == -1)
+		scene->mainCamera,
+		cameraComponentID);
+
+	cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
+
+	glUseProgram(shaderProgram);
+
+	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	GLint textureIndex = 0;
 	setMaterialUniform(&materialUniform, &textureIndex);
@@ -201,10 +213,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	if (!sceneGetComponentFromEntity(
-		scene,
-		scene->mainCamera,
-		cameraComponentID))
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -384,6 +393,11 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
+	if (!camera || !cameraTransform)
+	{
+		return;
+	}
+
 	glUseProgram(0);
 }
 

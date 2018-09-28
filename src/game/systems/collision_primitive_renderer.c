@@ -56,6 +56,9 @@ internal UUID boxComponentID = {};
 internal UUID sphereComponentID = {};
 internal UUID capsuleComponentID = {};
 
+internal CameraComponent *camera;
+internal TransformComponent *cameraTransform;
+
 extern real64 alpha;
 
 internal void drawCollisionPrimitives(
@@ -132,24 +135,30 @@ void initCollisionPrimitiveRendererSystem(Scene *scene)
 internal
 void beginCollisionPrimitiveRendererSystem(Scene *scene, real64 dt)
 {
-	glUseProgram(shaderProgram);
-
-	if (cameraSetUniforms(
+	camera = sceneGetComponentFromEntity(
 		scene,
-		viewUniform,
-		projectionUniform) == -1)
+		scene->mainCamera,
+		cameraComponentID);
+
+	cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
+
+	glUseProgram(shaderProgram);
+
+	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 }
 
 internal
 void runCollisionPrimitiveRendererSystem(Scene *scene, UUID entity, real64 dt)
 {
-	if (!sceneGetComponentFromEntity(
-		scene,
-		scene->mainCamera,
-		cameraComponentID))
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -185,6 +194,11 @@ void runCollisionPrimitiveRendererSystem(Scene *scene, UUID entity, real64 dt)
 internal
 void endCollisionPrimitiveRendererSystem(Scene *scene, real64 dt)
 {
+	if (!camera || !cameraTransform)
+	{
+		return;
+	}
+
 	glUseProgram(0);
 }
 

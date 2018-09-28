@@ -55,6 +55,10 @@ internal uint32 numTextures;
 internal uint32 particleRendererSystemRefCount = 0;
 
 internal UUID transformComponentID = {};
+internal UUID cameraComponentID = {};
+
+internal CameraComponent *camera;
+internal TransformComponent *cameraTransform;
 
 extern real64 alpha;
 extern HashMap particleEmitters;
@@ -179,12 +183,17 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 		return;
 	}
 
-	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
+	camera = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID);
+
+	cameraTransform = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
 		transformComponentID);
 
-	if (!cameraTransform)
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -297,13 +306,7 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 
 	glUseProgram(shaderProgram);
 
-	if (cameraSetUniforms(
-		scene,
-		viewUniform,
-		projectionUniform) == -1)
-	{
-		return;
-	}
+	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	GLint textureIndex = 0;
 	setTextureArrayUniform(
@@ -336,6 +339,11 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 
 internal void endParticleRendererSystem(Scene *scene, real64 dt)
 {
+	if (!camera || !cameraTransform)
+	{
+		return;
+	}
+
 	if (!particleEmitters || numVertices == 0)
 	{
 		return;
@@ -381,6 +389,7 @@ System createParticleRendererSystem(void)
 	System system = {};
 
 	transformComponentID = idFromName("transform");
+	cameraComponentID = idFromName("camera");
 
 	system.componentTypes = createList(sizeof(UUID));
 

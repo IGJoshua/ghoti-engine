@@ -40,6 +40,9 @@ internal UUID heightmapComponentID = {};
 internal UUID cameraComponentID = {};
 internal UUID transformComponentID = {};
 
+internal CameraComponent *camera;
+internal TransformComponent *cameraTransform;
+
 internal uint32 rendererRefCount = 0;
 
 internal HashMap heightmapModels = NULL;
@@ -454,15 +457,24 @@ extern real64 alpha;
 internal
 void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 {
-	glUseProgram(shaderProgram);
-
-	if (cameraSetUniforms(
+	camera = sceneGetComponentFromEntity(
 		scene,
-		viewUniform,
-		projectionUniform) == -1)
+		scene->mainCamera,
+		cameraComponentID);
+
+	cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
+
+	glUseProgram(shaderProgram);
+
+	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	GLint textureIndex = 0;
 	setMaterialUniform(&materialUniform, &textureIndex);
@@ -471,10 +483,7 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 internal
 void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	if (!sceneGetComponentFromEntity(
-		scene,
-		scene->mainCamera,
-		cameraComponentID))
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -549,6 +558,11 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRenderHeightmapSystem(Scene *scene, real64 dt)
 {
+	if (!camera || !cameraTransform)
+	{
+		return;
+	}
+
 	glUseProgram(0);
 }
 

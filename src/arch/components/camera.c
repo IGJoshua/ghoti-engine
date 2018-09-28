@@ -1,6 +1,5 @@
-#include "components/camera.h"
-
 #include "components/component_types.h"
+#include "components/camera.h"
 #include "components/transform.h"
 
 #include "core/log.h"
@@ -14,27 +13,13 @@
 
 extern real64 alpha;
 
-int32 cameraSetUniforms(
-	Scene *scene,
+void cameraSetUniforms(
+	CameraComponent *camera,
+	TransformComponent *transform,
 	Uniform viewUniform,
 	Uniform projectionUniform)
 {
-	CameraComponent *camera = sceneGetComponentFromEntity(
-		scene,
-		scene->mainCamera,
-		idFromName("camera"));
-
-	if (!camera)
-	{
-		return -1;
-	}
-
-	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
-		scene,
-		scene->mainCamera,
-		idFromName("transform"));
-
-	kmMat4 view = tGetInterpolatedTransformMatrix(cameraTransform, alpha);
+	kmMat4 view = tGetInterpolatedTransformMatrix(transform, alpha);
 	kmMat4Inverse(&view, &view);
 
 	kmMat4 projection = {};
@@ -48,6 +33,4 @@ int32 cameraSetUniforms(
 
 	setUniform(viewUniform, 1, &view);
 	setUniform(projectionUniform, 1, &projection);
-
-	return 0;
 }

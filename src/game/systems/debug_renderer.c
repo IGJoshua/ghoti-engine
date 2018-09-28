@@ -66,6 +66,9 @@ internal UUID debugPointComponentID = {};
 internal UUID debugLineComponentID = {};
 internal UUID debugTransformComponentID = {};
 
+internal CameraComponent *camera;
+internal TransformComponent *cameraTransform;
+
 extern real64 alpha;
 
 internal void initializeVertexBuffer(DebugVertexBuffer *vertexBuffer);
@@ -214,15 +217,24 @@ internal void runDebugRendererSystem(Scene *scene, UUID entity, real64 dt)
 
 internal void endDebugRendererSystem(Scene *scene, real64 dt)
 {
-	glUseProgram(shaderProgram);
-
-	if (cameraSetUniforms(
+	camera = sceneGetComponentFromEntity(
 		scene,
-		viewUniform,
-		projectionUniform) == -1)
+		scene->mainCamera,
+		cameraComponentID);
+
+	cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
+
+	glUseProgram(shaderProgram);
+
+	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	drawPrimitives(&pointVertexBuffer, GL_POINTS, "points");
 	drawPrimitives(&lineVertexBuffer, GL_LINES, "lines");

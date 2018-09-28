@@ -5,7 +5,8 @@
 
 #include "renderer/renderer_types.h"
 
-int32 cameraSetUniforms(
-	Scene *scene,
+void cameraSetUniforms(
+	CameraComponent *camera,
+	TransformComponent *transform,
 	Uniform viewUniform,
 	Uniform projectionUniform);
