@@ -196,9 +196,13 @@ void* loadParticleThread(void *arg)
 						spriteSize[1]);
 
 					uint32 spriteUVIndex = 0;
-					for (real64 v = 0.0; v < 1.0; v += spriteSize[1])
+					for (real64 v = 0.0;
+						 v < 1.0 - spriteSize[1] / 2;
+						 v += spriteSize[1])
 					{
-						for (real64 u = 0.0; u < 1.0; u += spriteSize[0])
+						for (real64 u = 0.0;
+							 u < 1.0 - spriteSize[0] / 2;
+							 u += spriteSize[0])
 						{
 							kmVec2Fill(
 								&particle.spriteUVs[spriteUVIndex++],
