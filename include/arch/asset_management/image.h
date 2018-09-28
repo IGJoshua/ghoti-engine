@@ -4,7 +4,6 @@
 #include "asset_management/asset_manager_types.h"
 
 void loadImage(const char *name, bool textureFiltering);
-int32 uploadImageToGPU(Image *image);
 Image getImage(const char *name);
 void freeImage(const char *name);
 void freeImageData(Image *image);

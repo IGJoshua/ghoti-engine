@@ -83,8 +83,6 @@ uint32 assetThreadCount;
 pthread_mutex_t assetThreadsMutex;
 pthread_cond_t assetThreadsCondition;
 
-pthread_mutex_t devilMutex;
-
 // NOTE(Joshua): Globals for ECS
 
 // Lua

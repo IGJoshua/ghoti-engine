@@ -5,17 +5,21 @@
 
 #include "core/log.h"
 
-#include <IL/il.h>
-
 void loadTexture(const char *filename, const char *name);
 int32 loadTextureData(
 	AssetLogType type,
 	const char *typeName,
 	const char *name,
 	const char *filename,
-	TextureFormat format,
-	ILuint *devilID);
-int32 uploadTextureToGPU(Texture *texture);
+	int32 numComponents,
+	TextureData *data);
+int32 uploadTextureToGPU(
+	const char *name,
+	const char *type,
+	GLuint *id,
+	TextureData *data,
+	bool textureFiltering,
+	bool transparent);
 Texture getTexture(const char *name);
 char* getFullTextureFilename(const char *filename);
 void freeTexture(UUID name);

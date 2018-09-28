@@ -6,9 +6,6 @@
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
-#include <IL/il.h>
-#include <IL/ilu.h>
-
 #include <stdio.h>
 
 internal GLFWwindow *wnd;
@@ -74,9 +71,6 @@ GLFWwindow *initWindow(
 	{
 		LOG("Error: %s\n", glewGetErrorString(glewError));
 	}
-
-	ilInit();
-	iluInit();
 
 	return window;
 }
@@ -157,8 +151,6 @@ int32 closeWindow(void)
 int32 freeWindow(
 	GLFWwindow *window)
 {
-	ilShutDown();
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 

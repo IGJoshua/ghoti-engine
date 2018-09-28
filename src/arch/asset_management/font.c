@@ -222,9 +222,6 @@ int32 uploadFontToGPU(Font *font)
 	glGenTextures(1, &font->textureID);
 	glBindTexture(GL_TEXTURE_2D, font->textureID);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
@@ -235,6 +232,9 @@ int32 uploadFontToGPU(Font *font)
 		GL_RGBA,
 		GL_UNSIGNED_BYTE,
 		font->textureData);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	nk_font_atlas_end(
 		&font->atlas,

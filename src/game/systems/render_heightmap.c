@@ -65,8 +65,6 @@ typedef struct heightmap_model_t
 	Material material;
 } HeightmapModel;
 
-extern pthread_mutex_t devilMutex;
-
 internal
 int32 ptrEq(void *thing1, void *thing2)
 {
@@ -151,31 +149,27 @@ void initRenderHeightmapSystem(Scene *scene)
 		char *fullHeightmapFilename = getFullTextureFilename(heightmapFilename);
 		free(heightmapFilename);
 
-		pthread_mutex_lock(&devilMutex);
-
-		ILuint imageID;
+		TextureData heightmapTextureData;
 		if (loadTextureData(
 				ASSET_LOG_TYPE_NONE,
 				"heightmap",
 				NULL,
 				fullHeightmapFilename,
-				TEXTURE_FORMAT_R8,
-				&imageID) == -1)
+				1,
+				&heightmapTextureData) == -1)
 		{
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);
 			free(fullHeightmapFilename);
 
-			pthread_mutex_unlock(&devilMutex);
 			continue;
 		}
 
 		free(fullHeightmapFilename);
 
-		ilBindImage(imageID);
-		uint32 imageWidth = ilGetInteger(IL_IMAGE_WIDTH);
-		uint32 imageHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-		uint8 *imageData = ilGetData();
+		uint32 imageWidth = heightmapTextureData.width;
+		uint32 imageHeight = heightmapTextureData.height;
+		uint8 *imageData = heightmapTextureData.data;
 
 		// create grid for size of heightmap
 		uint32 numVerts = (heightmap->sizeX + 1) * (heightmap->sizeZ + 1);
@@ -307,8 +301,7 @@ void initRenderHeightmapSystem(Scene *scene)
 			kmVec3Fill(&vert->normal, 0.0f, 1.0f, 0.0f);
 		}
 
-		ilDeleteImage(imageID);
-		pthread_mutex_unlock(&devilMutex);
+		free(imageData);
 
 		// Create the index buffer
 		uint32 numIndices = (heightmap->sizeX * heightmap->sizeZ) * 6;

@@ -9,6 +9,5 @@ void loadParticle(
 	uint32 rows,
 	uint32 columns,
 	bool textureFiltering);
-int32 uploadParticleToGPU(Particle *particle);
 Particle getParticle(const char *name);
 void freeParticleData(Particle *particle);

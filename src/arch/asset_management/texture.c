@@ -10,16 +10,21 @@
 
 #include "renderer/renderer_utilities.h"
 
-#include <IL/il.h>
-#include <IL/ilu.h>
+#define STBI_NO_HDR
+#define STBI_NO_PIC
+#define STBI_NO_PNM
+#define STBI_NO_LINEAR
+#define STB_IMAGE_IMPLEMENTATION
+
+#include <stb/stb_image.h>
 
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 
-#define NUM_TEXTURE_FILE_FORMATS 7
+#define NUM_TEXTURE_FILE_FORMATS 6
 internal const char* textureFileFormats[NUM_TEXTURE_FILE_FORMATS] = {
-	"tga", "png", "jpg", "dds", "bmp", "gif", "hdr"
+	"tga", "png", "jpg", "bmp", "gif", "psd"
 };
 
 typedef struct texture_thread_args_t
@@ -42,8 +47,6 @@ extern pthread_mutex_t uploadTexturesMutex;
 extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
-
-extern pthread_mutex_t devilMutex;
 
 internal void* acquireTextureThread(void *arg);
 internal void* loadTextureThread(void *arg);
@@ -145,18 +148,13 @@ void* loadTextureThread(void *arg)
 			texture.name = nameID;
 			texture.refCount = 1;
 
-			pthread_mutex_lock(&devilMutex);
-
 			error = loadTextureData(
 				ASSET_LOG_TYPE_TEXTURE,
 				"texture",
 				name,
 				filename,
-				TEXTURE_FORMAT_RGBA8,
-				&texture.devilID);
-			ilBindImage(0);
-
-			pthread_mutex_unlock(&devilMutex);
+				0,
+				&texture.data);
 
 			if (error != - 1)
 			{
@@ -201,89 +199,78 @@ int32 loadTextureData(
 	const char *typeName,
 	const char *name,
 	const char *filename,
-	TextureFormat format,
-	ILuint *devilID)
+	int32 numComponents,
+	TextureData *data)
 {
-	ilGenImages(1, devilID);
-	ilBindImage(*devilID);
+	data->data = stbi_load(
+		filename,
+		&data->width,
+		&data->height,
+		&data->numComponents,
+		0);
 
-	ilLoadImage(filename);
-
-	ILenum ilError = ilGetError();
-	if (ilError != IL_NO_ERROR)
+	if (!data->data)
 	{
 		if (name)
 		{
 			ASSET_LOG_FULL_TYPE(
 				type,
 				name,
-				"Failed to load %s: %s\n",
-				typeName,
-				iluErrorString(ilError));
+				"Failed to load %s\n",
+				typeName);
 		}
 		else
 		{
-			LOG("Failed to load %s: %s\n",
-				typeName,
-				iluErrorString(ilError));
+			LOG("Failed to load %s\n", typeName);
 		}
 
 		return -1;
 	}
 
-	ILenum ilColorFormat = IL_RGBA;
-	ILenum ilByteFormat = IL_UNSIGNED_BYTE;
-
-	switch (format)
-	{
-		case TEXTURE_FORMAT_R8:
-			ilColorFormat = IL_LUMINANCE;
-			ilByteFormat = IL_UNSIGNED_BYTE;
-			break;
-		case TEXTURE_FORMAT_RGBA8:
-		default:
-			ilColorFormat = IL_RGBA;
-			ilByteFormat = IL_UNSIGNED_BYTE;
-			break;
-	}
-
-	ilConvertImage(ilColorFormat, ilByteFormat);
-
 	return 0;
 }
 
-int32 uploadTextureToGPU(Texture *texture)
+int32 uploadTextureToGPU(
+	const char *name,
+	const char *type,
+	GLuint *id,
+	TextureData *data,
+	bool textureFiltering,
+	bool transparent)
 {
-	LOG("Transferring texture (%s) onto GPU...\n", texture->name.string);
+	LOG("Transferring %s (%s) onto GPU...\n", type, name);
 
-	pthread_mutex_lock(&devilMutex);
+	glGenTextures(1, id);
+	glBindTexture(GL_TEXTURE_2D, *id);
 
-	ilBindImage(texture->devilID);
+	GLint format = GL_RGBA;
+	switch (data->numComponents)
+	{
+		case 1:
+			format = GL_R;
+			break;
+		case 2:
+			format = GL_RG;
+			break;
+		case 3:
+			format = GL_RGB;
+			break;
+		default:
+			break;
+	}
 
-	glGenTextures(1, &texture->id);
-	glBindTexture(GL_TEXTURE_2D, texture->id);
-
-	GLsizei textureWidth = ilGetInteger(IL_IMAGE_WIDTH);
-	GLsizei textureHeight = ilGetInteger(IL_IMAGE_HEIGHT);
-
-	const GLvoid *textureData = ilGetData();
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
-		GL_RGBA,
-		textureWidth,
-		textureHeight,
+		format,
+		data->width,
+		data->height,
 		0,
-		GL_RGBA,
+		format,
 		GL_UNSIGNED_BYTE,
-		textureData);
+		data->data);
 
-	ilDeleteImages(1, &texture->devilID);
-	ilBindImage(0);
-
-	pthread_mutex_unlock(&devilMutex);
-
-	int32 error = logGLError(false, "Failed to transfer texture onto GPU");
+	int32 error = logGLError(false, "Failed to transfer %s onto GPU", type);
 
 	if (error != -1)
 	{
@@ -291,14 +278,19 @@ int32 uploadTextureToGPU(Texture *texture)
 		glTexParameteri(
 			GL_TEXTURE_2D,
 			GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
+			textureFiltering ? GL_LINEAR : GL_NEAREST);
 		glTexParameteri(
 			GL_TEXTURE_2D,
 			GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR_MIPMAP_LINEAR);
+			textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 
-		LOG("Successfully transferred texture (%s) onto GPU\n",
-			texture->name.string);
+		if (transparent)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+
+		LOG("Successfully transferred %s (%s) onto GPU\n", type, name);
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -361,10 +353,7 @@ void freeTextureData(Texture *texture)
 {
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
-	pthread_mutex_lock(&devilMutex);
-	ilDeleteImages(1, &texture->devilID);
-	pthread_mutex_unlock(&devilMutex);
-
+	free(texture->data.data);
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

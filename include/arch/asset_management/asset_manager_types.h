@@ -3,8 +3,6 @@
 
 #include "renderer/renderer_types.h"
 
-#include <IL/il.h>
-
 #include <AL/al.h>
 
 #include <kazmath/vec2.h>
@@ -19,11 +17,13 @@
 
 #include <nuklear/nuklear.h>
 
-typedef enum texture_format_e
+typedef struct texture_data_t
 {
-	TEXTURE_FORMAT_RGBA8 = 0,
-	TEXTURE_FORMAT_R8
-} TextureFormat;
+	int32 width;
+	int32 height;
+	int32 numComponents;
+	uint8 *data;
+} TextureData;
 
 typedef struct texture_t
 {
@@ -31,7 +31,7 @@ typedef struct texture_t
 	uint32 refCount;
 	real64 lifetime;
 	GLuint id;
-	ILuint devilID;
+	TextureData data;
 } Texture;
 
 typedef struct material_folder_t
@@ -74,10 +74,8 @@ typedef struct image_t
 	uint32 refCount;
 	real64 lifetime;
 	GLuint id;
-	ILuint devilID;
+	TextureData data;
 	bool textureFiltering;
-	GLsizei width;
-	GLsizei height;
 } Image;
 
 typedef struct audio_file_t
@@ -97,7 +95,7 @@ typedef struct particle_t
 	UUID name;
 	real64 lifetime;
 	GLuint id;
-	ILuint devilID;
+	TextureData data;
 	bool textureFiltering;
 	uint32 numSprites;
 	kmVec2 spriteSize;

@@ -37,8 +37,6 @@ extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
 
-extern pthread_mutex_t devilMutex;
-
 internal void* acquireImageThread(void *arg);
 internal void* loadImageThread(void *arg);
 
@@ -148,18 +146,13 @@ void* loadImageThread(void *arg)
 				image.refCount = 1;
 				image.textureFiltering = textureFiltering;
 
-				pthread_mutex_lock(&devilMutex);
-
 				error = loadTextureData(
 					ASSET_LOG_TYPE_IMAGE,
 					"image",
 					name,
 					fullFilename,
-					TEXTURE_FORMAT_RGBA8,
-					&image.devilID);
-				ilBindImage(0);
-
-				pthread_mutex_unlock(&devilMutex);
+					0,
+					&image.data);
 
 				if (error != - 1)
 				{
@@ -199,60 +192,6 @@ void* loadImageThread(void *arg)
 	pthread_cond_broadcast(&assetThreadsCondition);
 
 	EXIT_THREAD(NULL);
-}
-
-int32 uploadImageToGPU(Image *image)
-{
-	LOG("Transferring image (%s) onto GPU...\n", image->name.string);
-
-	pthread_mutex_lock(&devilMutex);
-
-	ilBindImage(image->devilID);
-
-	glGenTextures(1, &image->id);
-	glBindTexture(GL_TEXTURE_2D, image->id);
-
-	image->width = ilGetInteger(IL_IMAGE_WIDTH);
-	image->height = ilGetInteger(IL_IMAGE_HEIGHT);
-
-	const GLvoid *imageData = ilGetData();
-	glTexImage2D(
-		GL_TEXTURE_2D,
-		0,
-		GL_RGBA,
-		image->width,
-		image->height,
-		0,
-		GL_RGBA,
-		GL_UNSIGNED_BYTE,
-		imageData);
-
-	ilDeleteImages(1, &image->devilID);
-	ilBindImage(0);
-
-	pthread_mutex_unlock(&devilMutex);
-
-	int32 error = logGLError(false, "Failed to transfer image onto GPU");
-
-	if (error != -1)
-	{
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glTexParameteri(
-			GL_TEXTURE_2D,
-			GL_TEXTURE_MAG_FILTER,
-			image->textureFiltering ? GL_LINEAR : GL_NEAREST);
-		glTexParameteri(
-			GL_TEXTURE_2D,
-			GL_TEXTURE_MIN_FILTER,
-			image->textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
-
-		LOG("Successfully transferred image (%s) onto GPU\n",
-			image->name.string);
-	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	return error;
 }
 
 Image getImage(const char *name)
@@ -295,10 +234,7 @@ void freeImageData(Image *image)
 {
 	LOG("Freeing image (%s)...\n", image->name.string);
 
-	pthread_mutex_lock(&devilMutex);
-	ilDeleteImages(1, &image->devilID);
-	pthread_mutex_unlock(&devilMutex);
-
+	free(image->data.data);
 	glDeleteTextures(1, &image->id);
 
 	LOG("Successfully freed image (%s)\n", image->name.string);

@@ -691,8 +691,9 @@ void addImage(
 
 	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
 
-	real32 width = (image.width / widgetRect.w) * imageComponent->scale.x;
-	real32 height = (image.height / widgetRect.h) * imageComponent->scale.x;
+	real32 width = (image.data.width / widgetRect.w) * imageComponent->scale.x;
+	real32 height =
+		(image.data.height / widgetRect.h) * imageComponent->scale.x;
 
 	if (width > 1.0f)
 	{

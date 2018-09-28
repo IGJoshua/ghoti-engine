@@ -110,8 +110,6 @@ extern uint32 assetThreadCount;
 extern pthread_mutex_t assetThreadsMutex;
 extern pthread_cond_t assetThreadsCondition;
 
-extern pthread_mutex_t devilMutex;
-
 // Asset Management Locals
 
 internal pthread_t assetManagerThread;
@@ -290,8 +288,6 @@ void initializeAssetManager(real64 *dt) {
 	assetThreadCount = 0;
 	pthread_mutex_init(&assetThreadsMutex, NULL);
 	pthread_cond_init(&assetThreadsCondition, NULL);
-
-	pthread_mutex_init(&devilMutex, NULL);
 
 	// Asset Management Locals
 
@@ -652,7 +648,13 @@ void uploadAssets(void)
 		Texture *texture = hashMapIteratorGetValue(itr);
 
 		pthread_mutex_unlock(&uploadTexturesMutex);
-		uploadTextureToGPU(texture);
+		uploadTextureToGPU(
+			texture->name.string,
+			"texture",
+			&texture->id,
+			&texture->data,
+			true,
+			false);
 		pthread_mutex_lock(&uploadTexturesMutex);
 
 		UUID textureName = texture->name;
@@ -708,7 +710,13 @@ void uploadAssets(void)
 		Image *image = hashMapIteratorGetValue(itr);
 
 		pthread_mutex_unlock(&uploadImagesMutex);
-		uploadImageToGPU(image);
+		uploadTextureToGPU(
+			image->name.string,
+			"image",
+			&image->id,
+			&image->data,
+			image->textureFiltering,
+			true);
 		pthread_mutex_lock(&uploadImagesMutex);
 
 		UUID imageName = image->name;
@@ -764,7 +772,13 @@ void uploadAssets(void)
 		Particle *particle = hashMapIteratorGetValue(itr);
 
 		pthread_mutex_unlock(&uploadParticlesMutex);
-		uploadParticleToGPU(particle);
+		uploadTextureToGPU(
+			particle->name.string,
+			"particle",
+			&particle->id,
+			&particle->data,
+			particle->textureFiltering,
+			true);
 		pthread_mutex_lock(&uploadParticlesMutex);
 
 		UUID particleName = particle->name;
@@ -924,8 +938,6 @@ void shutdownAssetManager(void)
 
 	pthread_mutex_destroy(&assetThreadsMutex);
 	pthread_cond_destroy(&assetThreadsCondition);
-
-	pthread_mutex_destroy(&devilMutex);
 
 	// Resource Freeing Lists
 
