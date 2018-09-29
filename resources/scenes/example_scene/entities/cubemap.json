@@ -1,0 +1,19 @@
+{
+	"uuid": "@+@t<)uO7A+b%qnXdG(1Vlr2v1tAp,.-rwFyrs.:$n4sZiU(nS`TbZTsPVNS`FP",
+
+	"components":
+	{
+		"cubemap":
+		[
+			{
+				"name": "name",
+				"char(64)": "skybox"
+			},
+
+			{
+				"name": "swap front and back",
+				"bool": true
+			}
+		]
+	}
+}

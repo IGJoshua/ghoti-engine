@@ -139,9 +139,21 @@ void* loadCubemapThread(void *arg)
 
 			for (uint8 i = 0; i < 6; i++)
 			{
+				char *faceName = concatenateStrings(
+					cubemapFaceNames[i],
+					" ",
+					"face");
+
 				char *fullFilename = fullFilenames[i];
 				if (!fullFilename)
 				{
+					ASSET_LOG(
+						CUBEMAP,
+						name,
+						"Failed to load %s: Texture not found\n",
+						faceName);
+					free(faceName);
+
 					continue;
 				}
 
@@ -154,11 +166,6 @@ void* loadCubemapThread(void *arg)
 				{
 					fullName += 1;
 				}
-
-				char *faceName = concatenateStrings(
-					cubemapFaceNames[i],
-					" ",
-					"face");
 
 				ASSET_LOG(
 					CUBEMAP,
