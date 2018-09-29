@@ -3,7 +3,7 @@
 
 #include "asset_management/asset_manager_types.h"
 
-void loadCubemap(const char *name);
+void loadCubemap(const char *name, bool swapFrontAndBack);
 int32 uploadCubemapToGPU(Cubemap *cubemap);
 Cubemap getCubemap(const char *name);
 void freeCubemapData(Cubemap *cubemap);

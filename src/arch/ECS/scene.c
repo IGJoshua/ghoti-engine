@@ -1870,7 +1870,8 @@ int32 sceneAddComponentToEntity(
 	}
 	else if (!strcmp(componentType.string, "cubemap"))
 	{
-		loadCubemap(((CubemapComponent*)componentData)->name);
+		CubemapComponent *cubemapComponent = (CubemapComponent*)componentData;
+		loadCubemap(cubemapComponent->name, cubemapComponent->swapFrontAndBack);
 	}
 
 	// Add the component to the data table

@@ -20,9 +20,15 @@ internal const char* cubemapFaceNames[6] = {
 	"left",
 	"top",
 	"bottom",
-	"front",
-	"back"
+	"back",
+	"front"
 };
+
+typedef struct cubemap_thread_args_t
+{
+	char *name;
+	bool swapFrontAndBack;
+} CubemapThreadArgs;
 
 extern Config config;
 
@@ -44,17 +50,17 @@ internal void* loadCubemapThread(void *arg);
 
 internal void getFullCubemapFilenames(const char *name, char **filenames);
 
-void loadCubemap(const char *name)
+void loadCubemap(const char *name, bool swapFrontAndBack)
 {
-	char *cubemapName = calloc(1, strlen(name) + 1);
-	strcpy(cubemapName, name);
+	CubemapThreadArgs *arg = malloc(sizeof(CubemapThreadArgs));
+
+	arg->name = calloc(1, strlen(name) + 1);
+	strcpy(arg->name, name);
+
+	arg->swapFrontAndBack = swapFrontAndBack;
 
 	pthread_t acquisitionThread;
-	pthread_create(
-		&acquisitionThread,
-		NULL,
-		&acquireCubemapThread,
-		(void*)cubemapName);
+	pthread_create(&acquisitionThread, NULL, &acquireCubemapThread, (void*)arg);
 	pthread_detach(acquisitionThread);
 }
 
@@ -83,7 +89,9 @@ void* loadCubemapThread(void *arg)
 {
 	int32 error = 0;
 
-	char *name = arg;
+	CubemapThreadArgs *threadArgs = arg;
+	char *name = threadArgs->name;
+	bool swapFrontAndBack = threadArgs->swapFrontAndBack;
 
 	UUID cubemapName = idFromName(name);
 
@@ -190,6 +198,13 @@ void* loadCubemapThread(void *arg)
 
 			if (error != - 1)
 			{
+				if (swapFrontAndBack)
+				{
+					TextureData data = cubemap.data[4];
+					cubemap.data[4] = cubemap.data[5];
+					cubemap.data[5] = data;
+				}
+
 				pthread_mutex_lock(&uploadCubemapsMutex);
 				hashMapInsert(uploadCubemapsQueue, &cubemapName, &cubemap);
 				pthread_mutex_unlock(&uploadCubemapsMutex);
