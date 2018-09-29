@@ -24,6 +24,7 @@
 #include <kazmath/mat4.h>
 
 internal uint32 guiRendererRefCount = 0;
+extern uint32 guiRefCount;
 
 extern struct nk_context ctx;
 extern struct nk_buffer cmds;
@@ -88,6 +89,11 @@ internal void initGUIRendererSystem(Scene *scene)
 
 internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 {
+	if (guiRefCount == 0)
+	{
+		return;
+	}
+
 	kmMat4 projectionMatrix;
 	kmMat4OrthographicProjection(
 		&projectionMatrix,
@@ -163,6 +169,11 @@ internal void beginGUIRendererSystem(Scene *scene, real64 dt)
 
 internal void endGUIRendererSystem(Scene *scene, real64 dt)
 {
+	if (guiRefCount == 0)
+	{
+		return;
+	}
+
 	glBlendValue ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
 	glBlendEquation(glBlendEquationValue);
 	glBlendFunc(glSrcBlendFuncValue, glDstBlendFuncValue);
