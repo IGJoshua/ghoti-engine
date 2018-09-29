@@ -789,6 +789,7 @@ This utility generates a template for a scene by creating a folder containing fi
 
 			"internal":
 			[
+				"cubemap_renderer",
 				"render_heightmap",
 				"renderer",
 				"wireframe_renderer",
@@ -813,6 +814,7 @@ This utility generates a template for a scene by creating a folder containing fi
 		"capsule": 1024,
 		"collision_tree_node": 4096,
 		"collision": 1024,
+		"cubemap": 1,
 		"debug_collision_primitive": 2048,
 		"debug_line": 2048,
 		"debug_point": 4096,
@@ -1024,6 +1026,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 
 			"internal":
 			[
+				"cubemap_renderer",
 				"render_heightmap",
 				"renderer",
 				"wireframe_renderer",
@@ -1048,6 +1051,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 		"capsule": 1024,
 		"collision_tree_node": 4096,
 		"collision": 1024,
+		"cubemap": 1,
 		"debug_collision_primitive": 2048,
 		"debug_line": 2048,
 		"debug_point": 4096,
