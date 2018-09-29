@@ -48,6 +48,7 @@ extern HashMap systemRegistry;
 extern List activeScenes;
 extern bool changeScene;
 extern bool reloadingScene;
+extern bool reloadingAssets;
 extern List unloadedScenes;
 
 internal ComponentDefinition getComponentDefinition(
@@ -893,19 +894,20 @@ int32 loadScene(const char *name)
 	return -1;
 }
 
-int32 reloadScene(const char *name)
+int32 reloadScene(const char *name, bool reloadAssets)
 {
 	int32 error = unloadScene(name);
 
 	if (error != -1)
 	{
 		reloadingScene = true;
+		reloadingAssets = reloadAssets;
 	}
 
 	return error;
 }
 
-int32 reloadAllScenes(void)
+int32 reloadAllScenes(bool reloadAssets)
 {
 	int32 error = 0;
 
@@ -913,7 +915,9 @@ int32 reloadAllScenes(void)
 		 !listIteratorAtEnd(itr);
 		 listMoveIterator(&itr))
 	{
-		error = reloadScene((*LIST_ITERATOR_GET_ELEMENT(Scene*, itr))->name);
+		error = reloadScene(
+			(*LIST_ITERATOR_GET_ELEMENT(Scene*, itr))->name,
+			reloadAssets);
 
 		if (error == -1)
 		{

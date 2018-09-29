@@ -59,6 +59,7 @@ List activeScenes;
 
 bool changeScene;
 bool reloadingScene;
+bool reloadingAssets;
 List unloadedScenes;
 bool loadingSave;
 List savedScenes;

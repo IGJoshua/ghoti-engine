@@ -17,8 +17,8 @@ Scene *getScene(const char *name);
 void freeScene(Scene **scene);
 
 int32 loadScene(const char *name);
-int32 reloadScene(const char *name);
-int32 reloadAllScenes(void);
+int32 reloadScene(const char *name, bool reloadAssets);
+int32 reloadAllScenes(bool reloadAssets);
 int32 unloadScene(const char *name);
 int32 shutdownScene(Scene **scene);
 int32 deactivateScene(Scene *scene);

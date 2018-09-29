@@ -46,6 +46,7 @@ extern real64 alpha;
 extern List activeScenes;
 extern bool changeScene;
 extern bool reloadingScene;
+extern bool reloadingAssets;
 extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
@@ -254,6 +255,12 @@ int32 main(int32 argc, char *argv[])
 
 					if (reloadingScene)
 					{
+						if (reloadingAssets)
+						{
+							shutdownAssetManager();
+							initializeAssetManager(&dt);
+						}
+
 						loadScene(name);
 						free(name);
 					}

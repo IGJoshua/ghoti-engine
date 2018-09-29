@@ -38,8 +38,6 @@ extern pthread_mutex_t materialFoldersMutex;
 
 EXTERN_ASSET_MANAGER_VARIABLES;
 
-// Asset Management Locals
-
 internal pthread_t assetManagerThread;
 
 internal bool exitAssetManagerThread;
