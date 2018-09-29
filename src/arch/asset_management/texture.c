@@ -239,7 +239,7 @@ int32 uploadTextureToGPU(
 	glGenTextures(1, id);
 	glBindTexture(GL_TEXTURE_2D, *id);
 
-	GLint format = GL_RGBA;
+	GLenum format = GL_RGBA;
 	switch (data->numComponents)
 	{
 		case 1:
@@ -282,11 +282,15 @@ int32 uploadTextureToGPU(
 			GL_TEXTURE_MIN_FILTER,
 			textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 
+		GLint wrapMode = GL_REPEAT;
+
 		if (transparent)
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			wrapMode = GL_CLAMP_TO_EDGE;
 		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
 
 		LOG("Successfully transferred %s (%s) onto GPU\n", type, name);
 	}

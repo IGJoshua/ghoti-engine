@@ -20,8 +20,8 @@ internal const char* cubemapFaceNames[6] = {
 	"left",
 	"top",
 	"bottom",
-	"back",
-	"front"
+	"front",
+	"back"
 };
 
 extern Config config;
@@ -230,7 +230,7 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 	LOG("Transferring cubemap (%s) onto GPU...\n", cubemap->name.string);
 
 	glGenTextures(1, &cubemap->id);
-	glBindTexture(GL_TEXTURE_2D, cubemap->id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->id);
 
 	for (uint8 i = 0; i < 6; i++)
 	{

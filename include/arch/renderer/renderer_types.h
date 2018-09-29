@@ -145,6 +145,7 @@ typedef enum uniform_type_e
 	UNIFORM_VEC3,
 	UNIFORM_BOOL,
 	UNIFORM_TEXTURE_2D,
+	UNIFORM_TEXTURE_CUBE_MAP,
 	UNIFORM_COUNT
 } UniformType;
 

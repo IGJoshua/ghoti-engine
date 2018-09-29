@@ -11,6 +11,5 @@ uniform mat4 projection;
 void main()
 {
 	fragColor = vec4(color, 1.0);
-
 	gl_Position = projection * view * vec4(position, 1);
 }

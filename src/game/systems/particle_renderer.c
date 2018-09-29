@@ -361,7 +361,7 @@ internal void endParticleRendererSystem(Scene *scene, real64 dt)
 
 	glBlendValue ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
 	glBlendFunc(glSrcBlendFuncValue, glDstBlendFuncValue);
-	glDepthMaskValue ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
+	glDepthMask(glDepthMaskValue);
 
 	for (uint8 j = 0; j < numTextures; j++)
 	{

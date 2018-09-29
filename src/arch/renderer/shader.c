@@ -207,6 +207,7 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 				glUniform1iv(uniform.location, count, &boolData);
 				break;
 			case UNIFORM_TEXTURE_2D:
+			case UNIFORM_TEXTURE_CUBE_MAP:
 				glUniform1iv(uniform.location, count, data);
 				break;
 			default:

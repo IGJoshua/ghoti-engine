@@ -26,6 +26,7 @@ SYSTEM(ParticleSimulator);
 SYSTEM(GUI);
 SYSTEM(Audio);
 
+SYSTEM(CubemapRenderer);
 SYSTEM(RenderHeightmap);
 SYSTEM(Renderer);
 SYSTEM(WireframeRenderer);
@@ -57,6 +58,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(GUI, "gui");
 	REGISTER_SYSTEM(Audio, "audio");
 
+	REGISTER_SYSTEM(CubemapRenderer, "cubemap_renderer");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(Renderer, "renderer");
 	REGISTER_SYSTEM(WireframeRenderer, "wireframe_renderer");
