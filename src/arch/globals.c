@@ -14,79 +14,26 @@
 
 Config config;
 
-// Resource HashMaps
+#define CREATE_ASSET(assets, Assets) \
+HashMap assets; \
+pthread_mutex_t assets ## Mutex; \
+\
+HashMap loading ## Assets; \
+pthread_mutex_t loading ## Assets ## Mutex; \
+\
+HashMap upload ## Assets ## Queue; \
+pthread_mutex_t upload ## Assets ## Mutex
 
-HashMap models;
-pthread_mutex_t modelsMutex;
-
-HashMap textures;
-pthread_mutex_t texturesMutex;
+CREATE_ASSET(models, Models);
+CREATE_ASSET(textures, Textures);
+CREATE_ASSET(fonts, Fonts);
+CREATE_ASSET(images, Images);
+CREATE_ASSET(audioFiles, Audio);
+CREATE_ASSET(particles, Particles);
+CREATE_ASSET(cubemaps, Cubemaps);
 
 HashMap materialFolders;
 pthread_mutex_t materialFoldersMutex;
-
-HashMap fonts;
-pthread_mutex_t fontsMutex;
-
-HashMap images;
-pthread_mutex_t imagesMutex;
-
-HashMap audioFiles;
-pthread_mutex_t audioMutex;
-
-HashMap particles;
-pthread_mutex_t particlesMutex;
-
-HashMap cubemaps;
-pthread_mutex_t cubemapsMutex;
-
-// Resource Loading HashMaps
-
-HashMap loadingModels;
-pthread_mutex_t loadingModelsMutex;
-
-HashMap loadingTextures;
-pthread_mutex_t loadingTexturesMutex;
-
-HashMap loadingFonts;
-pthread_mutex_t loadingFontsMutex;
-
-HashMap loadingImages;
-pthread_mutex_t loadingImagesMutex;
-
-HashMap loadingAudio;
-pthread_mutex_t loadingAudioMutex;
-
-HashMap loadingParticles;
-pthread_mutex_t loadingParticlesMutex;
-
-HashMap loadingCubemaps;
-pthread_mutex_t loadingCubemapsMutex;
-
-// Resource Uploading HashMaps
-
-HashMap uploadModelsQueue;
-pthread_mutex_t uploadModelsMutex;
-
-HashMap uploadTexturesQueue;
-pthread_mutex_t uploadTexturesMutex;
-
-HashMap uploadFontsQueue;
-pthread_mutex_t uploadFontsMutex;
-
-HashMap uploadImagesQueue;
-pthread_mutex_t uploadImagesMutex;
-
-HashMap uploadAudioQueue;
-pthread_mutex_t uploadAudioMutex;
-
-HashMap uploadParticlesQueue;
-pthread_mutex_t uploadParticlesMutex;
-
-HashMap uploadCubemapsQueue;
-pthread_mutex_t uploadCubemapsMutex;
-
-// Asset Management Globals
 
 uint32 assetThreadCount;
 pthread_mutex_t assetThreadsMutex;

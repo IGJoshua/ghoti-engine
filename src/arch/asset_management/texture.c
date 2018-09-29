@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/texture.h"
 
 #include "core/config.h"
@@ -34,21 +35,10 @@ typedef struct texture_thread_args_t
 
 extern Config config;
 
-extern HashMap textures;
-extern pthread_mutex_t texturesMutex;
+EXTERN_ASSET_VARIABLES(textures, Textures);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern HashMap loadingTextures;
-extern pthread_mutex_t loadingTexturesMutex;
-
-extern HashMap uploadTexturesQueue;
-extern pthread_mutex_t uploadTexturesMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
-
-internal void* acquireTextureThread(void *arg);
-internal void* loadTextureThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Texture);
 
 void loadTexture(const char *filename, const char *name)
 {
@@ -60,31 +50,10 @@ void loadTexture(const char *filename, const char *name)
 	arg->name = calloc(1, strlen(name) + 1);
 	strcpy(arg->name, name);
 
-	pthread_t acquisitionThread;
-	pthread_create(&acquisitionThread, NULL, &acquireTextureThread, (void*)arg);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Texture, arg);
 }
 
-void* acquireTextureThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadTextureThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Texture);
 
 void* loadTextureThread(void *arg)
 {
@@ -182,12 +151,7 @@ void* loadTextureThread(void *arg)
 	free(filename);
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
 int32 loadTextureData(
@@ -300,27 +264,12 @@ int32 uploadTextureToGPU(
 	return error;
 }
 
-Texture getTexture(const char *name)
-{
-	Texture texture = {};
-	if (strlen(name) > 0)
-	{
-		UUID textureName = idFromName(name);
-
-		pthread_mutex_lock(&texturesMutex);
-
-		Texture *textureResource = hashMapGetData(textures, &textureName);
-		if (textureResource)
-		{
-			textureResource->lifetime = config.assetsConfig.minTextureLifetime;
-			texture = *textureResource;
-		}
-
-		pthread_mutex_unlock(&texturesMutex);
-	}
-
-	return texture;
-}
+GET_ASSET_FUNCTION(
+	texture,
+	textures,
+	Texture,
+	getTexture(const char *name),
+	idFromName(name));
 
 char* getFullTextureFilename(const char *filename)
 {

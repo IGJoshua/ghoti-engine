@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/image.h"
 #include "asset_management/texture.h"
 
@@ -23,21 +24,10 @@ typedef struct image_thread_args_t
 
 extern Config config;
 
-extern HashMap images;
-extern pthread_mutex_t imagesMutex;
+EXTERN_ASSET_VARIABLES(images, Images);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern HashMap loadingImages;
-extern pthread_mutex_t loadingImagesMutex;
-
-extern HashMap uploadImagesQueue;
-extern pthread_mutex_t uploadImagesMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
-
-internal void* acquireImageThread(void *arg);
-internal void* loadImageThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Image);
 
 internal char* getFullImageFilename(const char *name);
 
@@ -50,31 +40,10 @@ void loadImage(const char *name, bool textureFiltering)
 
 	arg->textureFiltering = textureFiltering;
 
-	pthread_t acquisitionThread;
-	pthread_create(&acquisitionThread, NULL, &acquireImageThread, (void*)arg);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Image, arg);
 }
 
-void* acquireImageThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadImageThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Image);
 
 void* loadImageThread(void *arg)
 {
@@ -182,35 +151,15 @@ void* loadImageThread(void *arg)
 	free(arg);
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
-Image getImage(const char *name)
-{
-	Image image = {};
-	if (strlen(name) > 0)
-	{
-		UUID imageName = idFromName(name);
-
-		pthread_mutex_lock(&imagesMutex);
-
-		Image *imageResource = hashMapGetData(images, &imageName);
-		if (imageResource)
-		{
-			imageResource->lifetime = config.assetsConfig.minImageLifetime;
-			image = *imageResource;
-		}
-
-		pthread_mutex_unlock(&imagesMutex);
-	}
-
-	return image;
-}
+GET_ASSET_FUNCTION(
+	image,
+	images,
+	Image,
+	getImage(const char *name),
+	idFromName(name));
 
 void freeImageData(Image *image)
 {

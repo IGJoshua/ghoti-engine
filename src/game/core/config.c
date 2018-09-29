@@ -79,11 +79,11 @@ int32 loadConfig(void)
 
 	if (assets)
 	{
-		cJSON *minAudioLifetime = cJSON_GetObjectItem(
+		cJSON *minAudioFileLifetime = cJSON_GetObjectItem(
 			assets,
 			"minimum_audio_lifetime");
-		config.assetsConfig.minAudioLifetime =
-			minAudioLifetime->valuedouble;
+		config.assetsConfig.minAudioFileLifetime =
+			minAudioFileLifetime->valuedouble;
 
 		cJSON *minFontLifetime = cJSON_GetObjectItem(
 			assets,
@@ -207,7 +207,7 @@ void initializeDefaultConfig(void)
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
 
-	config.assetsConfig.minAudioLifetime = 60.0;
+	config.assetsConfig.minAudioFileLifetime = 60.0;
 	config.assetsConfig.minFontLifetime = 60.0;
 	config.assetsConfig.minImageLifetime = 60.0;
 	config.assetsConfig.minTextureLifetime = 60.0;

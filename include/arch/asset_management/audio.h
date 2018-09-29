@@ -6,4 +6,4 @@
 void loadAudio(const char *name);
 int32 uploadAudioToSoundCard(AudioFile *audio);
 AudioFile getAudio(const char *name);
-void freeAudioData(AudioFile *audio);
+void freeAudioFileData(AudioFile *audio);

@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/audio.h"
 
 #include "audio/audio.h"
@@ -20,18 +21,8 @@
 
 extern Config config;
 
-extern HashMap audioFiles;
-extern pthread_mutex_t audioMutex;
-
-extern HashMap loadingAudio;
-extern pthread_mutex_t loadingAudioMutex;
-
-extern HashMap uploadAudioQueue;
-extern pthread_mutex_t uploadAudioMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
+EXTERN_ASSET_VARIABLES(audioFiles, Audio);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
 extern HashMap audioFiles;
 extern ALuint *g_Buffers;
@@ -39,43 +30,17 @@ extern ALuint *g_Buffers;
 internal ALenum errorCode = 0;
 internal uint64 freeBuffer = 0;
 
-internal void* acquireAudioThread(void *arg);
-internal void* loadAudioThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Audio);
 
 void loadAudio(const char *name)
 {
 	char *audioName = calloc(1, strlen(name) + 1);
 	strcpy(audioName, name);
 
-	pthread_t acquisitionThread;
-	pthread_create(
-		&acquisitionThread,
-		NULL,
-		&acquireAudioThread,
-		(void*)audioName);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Audio, audioName);
 }
 
-void* acquireAudioThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadAudioThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Audio);
 
 void* loadAudioThread(void *arg)
 {
@@ -85,12 +50,12 @@ void* loadAudioThread(void *arg)
 
 	UUID audioName = idFromName(name);
 
-	pthread_mutex_lock(&audioMutex);
+	pthread_mutex_lock(&audioFilesMutex);
 	AudioFile *audioResource = hashMapGetData(audioFiles, &audioName);
 
 	if (!audioResource)
 	{
-		pthread_mutex_unlock(&audioMutex);
+		pthread_mutex_unlock(&audioFilesMutex);
 		pthread_mutex_lock(&loadingAudioMutex);
 
 		if (hashMapGetData(loadingAudio, &audioName))
@@ -135,7 +100,7 @@ void* loadAudioThread(void *arg)
 				AudioFile audio = {};
 
 				audio.name = audioName;
-				audio.lifetime = config.assetsConfig.minAudioLifetime;
+				audio.lifetime = config.assetsConfig.minAudioFileLifetime;
 
 				char *filename = getFullFilePath(
 					name,
@@ -192,17 +157,12 @@ void* loadAudioThread(void *arg)
 	}
 	else
 	{
-		pthread_mutex_unlock(&audioMutex);
+		pthread_mutex_unlock(&audioFilesMutex);
 	}
 
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
 int32 uploadAudioToSoundCard(AudioFile *audio)
@@ -237,30 +197,14 @@ int32 uploadAudioToSoundCard(AudioFile *audio)
 	return errorCode;
 }
 
-AudioFile getAudio(const char *name)
-{
-	AudioFile audio = {};
+GET_ASSET_FUNCTION(
+	audio,
+	audioFiles,
+	AudioFile,
+	getAudio(const char *name),
+	idFromName(name));
 
-	if (strlen(name) > 0)
-	{
-		UUID audioName = idFromName(name);
-
-		pthread_mutex_lock(&audioMutex);
-
-		AudioFile *audioResource = hashMapGetData(audioFiles, &audioName);
-		if (audioResource)
-		{
-			audioResource->lifetime = config.assetsConfig.minAudioLifetime;
-			audio = *audioResource;
-		}
-
-		pthread_mutex_unlock(&audioMutex);
-	}
-
-	return audio;
-}
-
-void freeAudioData(AudioFile *audio)
+void freeAudioFileData(AudioFile *audio)
 {
 	LOG("Freeing audio (%s)...\n", audio->name.string);
 

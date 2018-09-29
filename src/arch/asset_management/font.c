@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/font.h"
 
 #include "core/log.h"
@@ -31,23 +32,12 @@ typedef struct font_thread_args_t
 
 extern Config config;
 
-extern HashMap fonts;
-extern pthread_mutex_t fontsMutex;
-
-extern HashMap loadingFonts;
-extern pthread_mutex_t loadingFontsMutex;
-
-extern HashMap uploadFontsQueue;
-extern pthread_mutex_t uploadFontsMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
+EXTERN_ASSET_VARIABLES(fonts, Fonts);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
 extern int32 viewportHeight;
 
-internal void* acquireFontThread(void *arg);
-internal void* loadFontThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Font);
 
 internal uint32 getFontPixelSize(real32 size, bool autoScaling);
 internal UUID getFontName(const char *name, real32 size, bool autoScaling);
@@ -62,31 +52,10 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 	arg->size = size;
 	arg->autoScaling = autoScaling;
 
-	pthread_t acquisitionThread;
-	pthread_create(&acquisitionThread, NULL, &acquireFontThread, (void*)arg);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Font, arg);
 }
 
-void* acquireFontThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadFontThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Font);
 
 void* loadFontThread(void *arg)
 {
@@ -204,12 +173,7 @@ void* loadFontThread(void *arg)
 	free(arg);
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
 int32 uploadFontToGPU(Font *font)
@@ -250,27 +214,12 @@ int32 uploadFontToGPU(Font *font)
 	return error;
 }
 
-Font getFont(const char *name, real32 size, bool autoScaling)
-{
-	Font font = {};
-	if (strlen(name) > 0)
-	{
-		UUID fontName = getFontName(name, size, autoScaling);
-
-		pthread_mutex_lock(&fontsMutex);
-
-		Font *fontResource = hashMapGetData(fonts, &fontName);
-		if (fontResource)
-		{
-			fontResource->lifetime = config.assetsConfig.minFontLifetime;
-			font = *fontResource;
-		}
-
-		pthread_mutex_unlock(&fontsMutex);
-	}
-
-	return font;
-}
+GET_ASSET_FUNCTION(
+	font,
+	fonts,
+	Font,
+	getFont(const char *name, real32 size, bool autoScaling),
+	getFontName(name, size, autoScaling));
 
 void freeFontData(Font *font)
 {

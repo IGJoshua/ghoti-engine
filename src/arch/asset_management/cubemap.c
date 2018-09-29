@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/cubemap.h"
 #include "asset_management/texture.h"
 
@@ -32,21 +33,10 @@ typedef struct cubemap_thread_args_t
 
 extern Config config;
 
-extern HashMap cubemaps;
-extern pthread_mutex_t cubemapsMutex;
+EXTERN_ASSET_VARIABLES(cubemaps, Cubemaps);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern HashMap loadingCubemaps;
-extern pthread_mutex_t loadingCubemapsMutex;
-
-extern HashMap uploadCubemapsQueue;
-extern pthread_mutex_t uploadCubemapsMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
-
-internal void* acquireCubemapThread(void *arg);
-internal void* loadCubemapThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Cubemap);
 
 internal void getFullCubemapFilenames(const char *name, char **filenames);
 
@@ -59,31 +49,10 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 
 	arg->swapFrontAndBack = swapFrontAndBack;
 
-	pthread_t acquisitionThread;
-	pthread_create(&acquisitionThread, NULL, &acquireCubemapThread, (void*)arg);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Cubemap, arg);
 }
 
-void* acquireCubemapThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadCubemapThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Cubemap);
 
 void* loadCubemapThread(void *arg)
 {
@@ -235,14 +204,10 @@ void* loadCubemapThread(void *arg)
 		pthread_mutex_unlock(&cubemapsMutex);
 	}
 
+	free(arg);
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
 int32 uploadCubemapToGPU(Cubemap *cubemap)
@@ -313,28 +278,12 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 	return error;
 }
 
-Cubemap getCubemap(const char *name)
-{
-	Cubemap cubemap = {};
-
-	if (strlen(name) > 0)
-	{
-		UUID cubemapName = idFromName(name);
-
-		pthread_mutex_lock(&cubemapsMutex);
-
-		Cubemap *cubemapResource = hashMapGetData(cubemaps, &cubemapName);
-		if (cubemapResource)
-		{
-			cubemapResource->lifetime = config.assetsConfig.minCubemapLifetime;
-			cubemap = *cubemapResource;
-		}
-
-		pthread_mutex_unlock(&cubemapsMutex);
-	}
-
-	return cubemap;
-}
+GET_ASSET_FUNCTION(
+	cubemap,
+	cubemaps,
+	Cubemap,
+	getCubemap(const char *name),
+	idFromName(name));
 
 void freeCubemapData(Cubemap *cubemap)
 {

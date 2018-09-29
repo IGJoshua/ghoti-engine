@@ -26,7 +26,7 @@ typedef struct graphics_config_t
 
 typedef struct assets_config_t
 {
-	real64 minAudioLifetime;
+	real64 minAudioFileLifetime;
 	real64 minFontLifetime;
 	real64 minImageLifetime;
 	real64 minTextureLifetime;

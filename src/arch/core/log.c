@@ -11,6 +11,30 @@
 #include <string.h>
 #include <pthread.h>
 
+#define CREATE_ASSET_LOG(asset) \
+internal HashMap asset ## Log; \
+internal pthread_mutex_t asset ## LogMutex
+
+CREATE_ASSET_LOG(models);
+CREATE_ASSET_LOG(textures);
+CREATE_ASSET_LOG(fonts);
+CREATE_ASSET_LOG(images);
+CREATE_ASSET_LOG(audio);
+CREATE_ASSET_LOG(particles);
+CREATE_ASSET_LOG(cubemaps);
+
+#define INITIALIZE_ASSET_LOG(asset, ASSET) \
+asset ## Log = createHashMap( \
+	sizeof(UUID), \
+	sizeof(char*), \
+	ASSET ## _LOG_BUCKET_COUNT, \
+	(ComparisonOp)&strcmp); \
+pthread_mutex_init(&asset ## LogMutex, NULL)
+
+#define FREE_ASSET_LOG(asset) \
+freeHashMap(&asset ## Log); \
+pthread_mutex_destroy(&asset ## LogMutex)
+
 #define MODELS_LOG_BUCKET_COUNT 521
 #define TEXTURES_LOG_BUCKET_COUNT 2503
 #define FONTS_LOG_BUCKET_COUNT 127
@@ -18,27 +42,6 @@
 #define AUDIO_LOG_BUCKET_COUNT 127
 #define PARTICLES_LOG_BUCKET_COUNT 521
 #define CUBEMAPS_LOG_BUCKET_COUNT 5
-
-internal HashMap modelsLog;
-internal pthread_mutex_t modelsLogMutex;
-
-internal HashMap texturesLog;
-internal pthread_mutex_t texturesLogMutex;
-
-internal HashMap fontsLog;
-internal pthread_mutex_t fontsLogMutex;
-
-internal HashMap imagesLog;
-internal pthread_mutex_t imagesLogMutex;
-
-internal HashMap audioLog;
-internal pthread_mutex_t audioLogMutex;
-
-internal HashMap particlesLog;
-internal pthread_mutex_t particlesLogMutex;
-
-internal HashMap cubemapsLog;
-internal pthread_mutex_t cubemapsLogMutex;
 
 internal pthread_mutex_t assetLogMutex;
 
@@ -56,54 +59,13 @@ internal void removeAssetLogBuffer(AssetLogType type, const char *name);
 
 void initializeAssetLog(void)
 {
-	modelsLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		MODELS_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&modelsLogMutex, NULL);
-
-	texturesLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		TEXTURES_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&texturesLogMutex, NULL);
-
-	fontsLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		FONTS_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&fontsLogMutex, NULL);
-
-	imagesLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		IMAGES_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&imagesLogMutex, NULL);
-
-	audioLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		AUDIO_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&audioLogMutex, NULL);
-
-	particlesLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		PARTICLES_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&particlesLogMutex, NULL);
-
-	cubemapsLog = createHashMap(
-		sizeof(UUID),
-		sizeof(char*),
-		CUBEMAPS_LOG_BUCKET_COUNT,
-		(ComparisonOp)&strcmp);
-	pthread_mutex_init(&cubemapsLogMutex, NULL);
+	INITIALIZE_ASSET_LOG(models, MODELS);
+	INITIALIZE_ASSET_LOG(textures, TEXTURES);
+	INITIALIZE_ASSET_LOG(fonts, FONTS);
+	INITIALIZE_ASSET_LOG(images, IMAGES);
+	INITIALIZE_ASSET_LOG(audio, AUDIO);
+	INITIALIZE_ASSET_LOG(particles, PARTICLES);
+	INITIALIZE_ASSET_LOG(cubemaps, CUBEMAPS);
 
 	pthread_mutex_init(&assetLogMutex, NULL);
 }
@@ -182,26 +144,13 @@ void assetLogCommit(AssetLogType type, const char *name)
 
 void shutdownAssetLog(void)
 {
-	freeHashMap(&modelsLog);
-	pthread_mutex_destroy(&modelsLogMutex);
-
-	freeHashMap(&texturesLog);
-	pthread_mutex_destroy(&texturesLogMutex);
-
-	freeHashMap(&fontsLog);
-	pthread_mutex_destroy(&fontsLogMutex);
-
-	freeHashMap(&imagesLog);
-	pthread_mutex_destroy(&imagesLogMutex);
-
-	freeHashMap(&audioLog);
-	pthread_mutex_destroy(&audioLogMutex);
-
-	freeHashMap(&particlesLog);
-	pthread_mutex_destroy(&particlesLogMutex);
-
-	freeHashMap(&cubemapsLog);
-	pthread_mutex_destroy(&cubemapsLogMutex);
+	FREE_ASSET_LOG(models);
+	FREE_ASSET_LOG(textures);
+	FREE_ASSET_LOG(fonts);
+	FREE_ASSET_LOG(images);
+	FREE_ASSET_LOG(audio);
+	FREE_ASSET_LOG(particles);
+	FREE_ASSET_LOG(cubemaps);
 
 	pthread_mutex_destroy(&assetLogMutex);
 }

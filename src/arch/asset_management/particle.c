@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/particle.h"
 #include "asset_management/texture.h"
 
@@ -25,21 +26,10 @@ typedef struct particle_thread_args_t
 
 extern Config config;
 
-extern HashMap particles;
-extern pthread_mutex_t particlesMutex;
+EXTERN_ASSET_VARIABLES(particles, Particles);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern HashMap loadingParticles;
-extern pthread_mutex_t loadingParticlesMutex;
-
-extern HashMap uploadParticlesQueue;
-extern pthread_mutex_t uploadParticlesMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
-
-internal void* acquireParticleThread(void *arg);
-internal void* loadParticleThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Particle);
 
 internal char* getFullParticleFilename(const char *name);
 
@@ -60,35 +50,10 @@ void loadParticle(
 	arg->columns = columns;
 	arg->textureFiltering = textureFiltering;
 
-	pthread_t acquisitionThread;
-	pthread_create(
-		&acquisitionThread,
-		NULL,
-		&acquireParticleThread,
-		(void*)arg);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Particle, arg);
 }
 
-void* acquireParticleThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadParticleThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Particle);
 
 void* loadParticleThread(void *arg)
 {
@@ -240,37 +205,15 @@ void* loadParticleThread(void *arg)
 	free(arg);
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
-Particle getParticle(const char *name)
-{
-	Particle particle = {};
-
-	if (strlen(name) > 0)
-	{
-		UUID particleName = idFromName(name);
-
-		pthread_mutex_lock(&particlesMutex);
-
-		Particle *particleResource = hashMapGetData(particles, &particleName);
-		if (particleResource)
-		{
-			particleResource->lifetime =
-				config.assetsConfig.minParticleLifetime;
-			particle = *particleResource;
-		}
-
-		pthread_mutex_unlock(&particlesMutex);
-	}
-
-	return particle;
-}
+GET_ASSET_FUNCTION(
+	particle,
+	particles,
+	Particle,
+	getParticle(const char *name),
+	idFromName(name));
 
 void freeParticleData(Particle *particle)
 {

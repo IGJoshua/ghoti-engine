@@ -1,3 +1,4 @@
+#include "asset_management/asset_manager.h"
 #include "asset_management/model.h"
 #include "asset_management/material.h"
 #include "asset_management/mask.h"
@@ -19,21 +20,10 @@
 
 extern Config config;
 
-extern HashMap models;
-extern pthread_mutex_t modelsMutex;
+EXTERN_ASSET_VARIABLES(models, Models);
+EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern HashMap loadingModels;
-extern pthread_mutex_t loadingModelsMutex;
-
-extern HashMap uploadModelsQueue;
-extern pthread_mutex_t uploadModelsMutex;
-
-extern uint32 assetThreadCount;
-extern pthread_mutex_t assetThreadsMutex;
-extern pthread_cond_t assetThreadsCondition;
-
-internal void* acquireModelThread(void *arg);
-internal void* loadModelThread(void *arg);
+INTERNAL_ASSET_THREAD_VARIABLES(Model);
 
 internal int32 loadSubset(
 	Subset *subset,
@@ -46,35 +36,10 @@ void loadModel(const char *name)
 	char *modelName = calloc(1, strlen(name) + 1);
 	strcpy(modelName, name);
 
-	pthread_t acquisitionThread;
-	pthread_create(
-		&acquisitionThread,
-		NULL,
-		&acquireModelThread,
-		(void*)modelName);
-	pthread_detach(acquisitionThread);
+	START_ACQUISITION_THREAD(Model, modelName);
 }
 
-void* acquireModelThread(void *arg)
-{
-	pthread_mutex_lock(&assetThreadsMutex);
-
-	while (assetThreadCount == config.assetsConfig.maxThreadCount)
-	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
-	}
-
-	assetThreadCount++;
-
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	pthread_t loadingThread;
-	pthread_create(&loadingThread, NULL, &loadModelThread, arg);
-	pthread_detach(loadingThread);
-
-	EXIT_THREAD(NULL);
-}
+ACQUISITION_THREAD(Model);
 
 void* loadModelThread(void *arg)
 {
@@ -249,12 +214,7 @@ void* loadModelThread(void *arg)
 
 	free(name);
 
-	pthread_mutex_lock(&assetThreadsMutex);
-	assetThreadCount--;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	pthread_cond_broadcast(&assetThreadsCondition);
-
-	EXIT_THREAD(NULL);
+	EXIT_LOADING_THREAD;
 }
 
 void uploadModelToGPU(Model *model)
@@ -270,28 +230,12 @@ void uploadModelToGPU(Model *model)
 	LOG("Successfully transferred model (%s) onto GPU\n", model->name.string);
 }
 
-Model getModel(const char *name)
-{
-	Model model = {};
-
-	if (strlen(name) > 0)
-	{
-		UUID modelName = idFromName(name);
-
-		pthread_mutex_lock(&modelsMutex);
-
-		Model *modelResource = hashMapGetData(models, &modelName);
-		if (modelResource)
-		{
-			modelResource->lifetime = config.assetsConfig.minModelLifetime;
-			model = *modelResource;
-		}
-
-		pthread_mutex_unlock(&modelsMutex);
-	}
-
-	return model;
-}
+GET_ASSET_FUNCTION(
+	model,
+	models,
+	Model,
+	getModel(const char *name),
+	idFromName(name));
 
 void freeModelData(Model *model)
 {
