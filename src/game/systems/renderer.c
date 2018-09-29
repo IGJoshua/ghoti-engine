@@ -54,7 +54,7 @@ internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
 
-internal HashMap skeletons;
+internal HashMap *skeletons;
 
 internal uint32 rendererRefCount = 0;
 
@@ -206,7 +206,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 
 	if (animationSystemRefCount > 0)
 	{
-		skeletons = *(HashMap*)hashMapGetData(skeletonsMap, &scene);
+		skeletons = (HashMap*)hashMapGetData(skeletonsMap, &scene);
 	}
 }
 
@@ -242,7 +242,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	AnimationReference *animationReference = NULL;
 	HashMap *skeletonTransforms = NULL;
 
-	if (animationSystemRefCount > 0 && animationComponent)
+	if (animationSystemRefCount > 0 && animationComponent && skeletons)
 	{
 		AnimatorComponent *animator = sceneGetComponentFromEntity(
 			scene,
@@ -255,7 +255,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		skeletonTransforms = hashMapGetData(
-			skeletons,
+			*skeletons,
 			&animationComponent->skeleton);
 	}
 
