@@ -50,8 +50,6 @@ function component:swap(name, staticModel, scene, uuid, removeSkeleton, skeleton
         animation = ffi.new("AnimationComponent")
       end
 
-      removeSkeleton = removeSkeleton or false
-
 	  if removeSkeleton and animationComponent then
 		animation:removeSkeleton(scene)
       end
