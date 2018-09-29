@@ -115,6 +115,12 @@ int32 loadConfig(void)
 		config.assetsConfig.minParticleLifetime =
 			minParticleLifetime->valuedouble;
 
+		cJSON *minCubemapLifetime = cJSON_GetObjectItem(
+			assets,
+			"minimum_cubemap_lifetime");
+		config.assetsConfig.minCubemapLifetime =
+			minCubemapLifetime->valuedouble;
+
 		cJSON *maxThreadCount = cJSON_GetObjectItem(
 			assets,
 			"maximum_thread_count");
@@ -207,6 +213,7 @@ void initializeDefaultConfig(void)
 	config.assetsConfig.minTextureLifetime = 60.0;
 	config.assetsConfig.minModelLifetime = 60.0;
 	config.assetsConfig.minParticleLifetime = 60.0;
+	config.assetsConfig.minCubemapLifetime = 60.0;
 	config.assetsConfig.maxThreadCount = 4;
 
 	config.logConfig.engineFile = malloc(11);

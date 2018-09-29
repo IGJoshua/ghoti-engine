@@ -9,18 +9,19 @@
 #include "data/list.h"
 
 #include "components/component_types.h"
-#include "components/transform.h"
 #include "components/animator.h"
-#include "components/rigid_body.h"
-#include "components/panel.h"
-#include "components/widget.h"
-#include "components/collision.h"
 #include "components/collision_tree_node.h"
+#include "components/collision.h"
+#include "components/panel.h"
 #include "components/particle_emitter.h"
+#include "components/rigid_body.h"
+#include "components/transform.h"
+#include "components/widget.h"
 
-#include "asset_management/model.h"
+#include "asset_management/cubemap.h"
 #include "asset_management/font.h"
 #include "asset_management/image.h"
+#include "asset_management/model.h"
 
 #include "file/utilities.h"
 
@@ -1866,6 +1867,10 @@ int32 sceneAddComponentToEntity(
 	{
 		ImageComponent *imageComponent = (ImageComponent*)componentData;
 		loadImage(imageComponent->name, imageComponent->textureFiltering);
+	}
+	else if (!strcmp(componentType.string, "cubemap"))
+	{
+		loadCubemap(((CubemapComponent*)componentData)->name);
 	}
 
 	// Add the component to the data table

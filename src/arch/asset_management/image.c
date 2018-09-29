@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/image.h"
 #include "asset_management/texture.h"
 
@@ -88,9 +87,7 @@ void* loadImageThread(void *arg)
 	UUID nameID = idFromName(name);
 
 	pthread_mutex_lock(&imagesMutex);
-	Model *imageResource = hashMapGetData(images, &nameID);
-
-	if (!imageResource)
+	if (!hashMapGetData(images, &nameID))
 	{
 		pthread_mutex_unlock(&imagesMutex);
 		pthread_mutex_lock(&loadingImagesMutex);
@@ -160,10 +157,6 @@ void* loadImageThread(void *arg)
 					hashMapInsert(uploadImagesQueue, &nameID, &image);
 					pthread_mutex_unlock(&uploadImagesMutex);
 
-					pthread_mutex_lock(&loadingImagesMutex);
-					hashMapDelete(loadingImages, &nameID);
-					pthread_mutex_unlock(&loadingImagesMutex);
-
 					ASSET_LOG(
 						IMAGE,
 						name,
@@ -172,6 +165,10 @@ void* loadImageThread(void *arg)
 				}
 
 				ASSET_LOG_COMMIT(IMAGE, name);
+
+				pthread_mutex_lock(&loadingImagesMutex);
+				hashMapDelete(loadingImages, &nameID);
+				pthread_mutex_unlock(&loadingImagesMutex);
 			}
 
 			free(fullFilename);
@@ -219,7 +216,6 @@ void freeImageData(Image *image)
 {
 	LOG("Freeing image (%s)...\n", image->name.string);
 
-	free(image->data.data);
 	glDeleteTextures(1, &image->id);
 
 	LOG("Successfully freed image (%s)\n", image->name.string);

@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/audio.h"
 
 #include "audio/audio.h"
@@ -176,10 +175,6 @@ void* loadAudioThread(void *arg)
 					hashMapInsert(uploadAudioQueue, &audioName, &audio);
 					pthread_mutex_unlock(&uploadAudioMutex);
 
-					pthread_mutex_lock(&loadingAudioMutex);
-					hashMapDelete(loadingAudio, &audioName);
-					pthread_mutex_unlock(&loadingAudioMutex);
-
 					ASSET_LOG(
 						AUDIO,
 						name,
@@ -189,6 +184,10 @@ void* loadAudioThread(void *arg)
 			}
 
 			ASSET_LOG_COMMIT(AUDIO, name);
+
+			pthread_mutex_lock(&loadingAudioMutex);
+			hashMapDelete(loadingAudio, &audioName);
+			pthread_mutex_unlock(&loadingAudioMutex);
 		}
 	}
 	else

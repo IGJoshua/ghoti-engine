@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/texture.h"
 
 #include "core/config.h"
@@ -98,9 +97,7 @@ void* loadTextureThread(void *arg)
 	UUID nameID = idFromName(name);
 
 	pthread_mutex_lock(&texturesMutex);
-	Texture *textureResource = hashMapGetData(textures, &nameID);
-
-	if (!textureResource)
+	if (!hashMapGetData(textures, &nameID))
 	{
 		pthread_mutex_unlock(&texturesMutex);
 		pthread_mutex_lock(&loadingTexturesMutex);
@@ -162,10 +159,6 @@ void* loadTextureThread(void *arg)
 				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
 				pthread_mutex_unlock(&uploadTexturesMutex);
 
-				pthread_mutex_lock(&loadingTexturesMutex);
-				hashMapDelete(loadingTextures, &nameID);
-				pthread_mutex_unlock(&loadingTexturesMutex);
-
 				ASSET_LOG(
 					TEXTURE,
 					name,
@@ -174,6 +167,10 @@ void* loadTextureThread(void *arg)
 			}
 
 			ASSET_LOG_COMMIT(TEXTURE, name);
+
+			pthread_mutex_lock(&loadingTexturesMutex);
+			hashMapDelete(loadingTextures, &nameID);
+			pthread_mutex_unlock(&loadingTexturesMutex);
 		}
 	}
 	else
@@ -269,6 +266,8 @@ int32 uploadTextureToGPU(
 		GL_UNSIGNED_BYTE,
 		data->data);
 
+	free(data->data);
+
 	int32 error = logGLError(false, "Failed to transfer %s onto GPU", type);
 
 	if (error != -1)
@@ -340,7 +339,6 @@ void freeTextureData(Texture *texture)
 {
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
-	free(texture->data.data);
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

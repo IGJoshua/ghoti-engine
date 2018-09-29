@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/font.h"
 
 #include "core/log.h"
@@ -101,9 +100,7 @@ void* loadFontThread(void *arg)
 	UUID fontName = getFontName(name, size, autoScaling);
 
 	pthread_mutex_lock(&fontsMutex);
-	Font *fontResource = hashMapGetData(fonts, &fontName);
-
-	if (!fontResource)
+	if (!hashMapGetData(fonts, &fontName))
 	{
 		pthread_mutex_unlock(&fontsMutex);
 		pthread_mutex_lock(&loadingFontsMutex);
@@ -177,10 +174,6 @@ void* loadFontThread(void *arg)
 				hashMapInsert(uploadFontsQueue, &fontName, &font);
 				pthread_mutex_unlock(&uploadFontsMutex);
 
-				pthread_mutex_lock(&loadingFontsMutex);
-				hashMapDelete(loadingFonts, &fontName);
-				pthread_mutex_unlock(&loadingFontsMutex);
-
 				ASSET_LOG(
 					FONT,
 					fontName.string,
@@ -197,6 +190,10 @@ void* loadFontThread(void *arg)
 			}
 
 			ASSET_LOG_COMMIT(FONT, fontName.string);
+
+			pthread_mutex_lock(&loadingFontsMutex);
+			hashMapDelete(loadingFonts, &fontName);
+			pthread_mutex_unlock(&loadingFontsMutex);
 		}
 	}
 	else

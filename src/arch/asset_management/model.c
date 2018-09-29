@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/material.h"
 #include "asset_management/mask.h"
@@ -86,9 +85,7 @@ void* loadModelThread(void *arg)
 	UUID modelName = idFromName(name);
 
 	pthread_mutex_lock(&modelsMutex);
-	Model *modelResource = hashMapGetData(models, &modelName);
-
-	if (!modelResource)
+	if (!hashMapGetData(models, &modelName))
 	{
 		pthread_mutex_unlock(&modelsMutex);
 		pthread_mutex_lock(&loadingModelsMutex);
@@ -227,10 +224,6 @@ void* loadModelThread(void *arg)
 				hashMapInsert(uploadModelsQueue, &modelName, &model);
 				pthread_mutex_unlock(&uploadModelsMutex);
 
-				pthread_mutex_lock(&loadingModelsMutex);
-				hashMapDelete(loadingModels, &modelName);
-				pthread_mutex_unlock(&loadingModelsMutex);
-
 				ASSET_LOG(
 					MODEL,
 					name,
@@ -243,6 +236,10 @@ void* loadModelThread(void *arg)
 			}
 
 			ASSET_LOG_COMMIT(MODEL, name);
+
+			pthread_mutex_lock(&loadingModelsMutex);
+			hashMapDelete(loadingModels, &modelName);
+			pthread_mutex_unlock(&loadingModelsMutex);
 		}
 	}
 	else

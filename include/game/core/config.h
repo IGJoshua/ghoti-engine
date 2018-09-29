@@ -32,6 +32,7 @@ typedef struct assets_config_t
 	real64 minTextureLifetime;
 	real64 minModelLifetime;
 	real64 minParticleLifetime;
+	real64 minCubemapLifetime;
 	uint32 maxThreadCount;
 } AssetsConfig;
 

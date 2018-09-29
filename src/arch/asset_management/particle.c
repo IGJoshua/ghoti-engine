@@ -1,4 +1,3 @@
-#include "asset_management/asset_manager_types.h"
 #include "asset_management/particle.h"
 #include "asset_management/texture.h"
 
@@ -105,9 +104,7 @@ void* loadParticleThread(void *arg)
 	UUID nameID = idFromName(name);
 
 	pthread_mutex_lock(&particlesMutex);
-	Particle *particleResource = hashMapGetData(particles, &nameID);
-
-	if (!particleResource)
+	if (!hashMapGetData(particles, &nameID))
 	{
 		pthread_mutex_unlock(&particlesMutex);
 		pthread_mutex_lock(&loadingParticlesMutex);
@@ -218,10 +215,6 @@ void* loadParticleThread(void *arg)
 					hashMapInsert(uploadParticlesQueue, &nameID, &particle);
 					pthread_mutex_unlock(&uploadParticlesMutex);
 
-					pthread_mutex_lock(&loadingParticlesMutex);
-					hashMapDelete(loadingParticles, &nameID);
-					pthread_mutex_unlock(&loadingParticlesMutex);
-
 					ASSET_LOG(
 						PARTICLE,
 						name,
@@ -230,6 +223,10 @@ void* loadParticleThread(void *arg)
 				}
 
 				ASSET_LOG_COMMIT(PARTICLE, name);
+
+				pthread_mutex_lock(&loadingParticlesMutex);
+				hashMapDelete(loadingParticles, &nameID);
+				pthread_mutex_unlock(&loadingParticlesMutex);
 			}
 
 			free(fullFilename);
@@ -280,8 +277,6 @@ void freeParticleData(Particle *particle)
 	LOG("Freeing particle (%s)...\n", particle->name.string);
 
 	free(particle->spriteUVs);
-	free(particle->data.data);
-
 	glDeleteTextures(1, &particle->id);
 
 	LOG("Successfully freed particle (%s)\n", particle->name.string);

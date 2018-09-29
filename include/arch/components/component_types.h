@@ -171,6 +171,11 @@ typedef struct collision_component_t
 	UUID lastHitList;
 } CollisionComponent;
 
+typedef struct cubemap_component_t
+{
+	char name[64];
+} CubemapComponent;
+
 typedef struct debug_collision_primitive_component_t
 {
 	bool visible;

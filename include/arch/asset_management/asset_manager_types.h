@@ -98,3 +98,11 @@ typedef struct particle_t
 	kmVec2 spriteSize;
 	kmVec2 *spriteUVs;
 } Particle;
+
+typedef struct cubemap_t
+{
+	UUID name;
+	real64 lifetime;
+	GLuint id;
+	TextureData data[6];
+} Cubemap;

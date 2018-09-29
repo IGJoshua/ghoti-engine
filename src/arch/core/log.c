@@ -17,6 +17,7 @@
 #define IMAGES_LOG_BUCKET_COUNT 521
 #define AUDIO_LOG_BUCKET_COUNT 127
 #define PARTICLES_LOG_BUCKET_COUNT 521
+#define CUBEMAPS_LOG_BUCKET_COUNT 5
 
 internal HashMap modelsLog;
 internal pthread_mutex_t modelsLogMutex;
@@ -35,6 +36,9 @@ internal pthread_mutex_t audioLogMutex;
 
 internal HashMap particlesLog;
 internal pthread_mutex_t particlesLogMutex;
+
+internal HashMap cubemapsLog;
+internal pthread_mutex_t cubemapsLogMutex;
 
 internal pthread_mutex_t assetLogMutex;
 
@@ -93,6 +97,13 @@ void initializeAssetLog(void)
 		PARTICLES_LOG_BUCKET_COUNT,
 		(ComparisonOp)&strcmp);
 	pthread_mutex_init(&particlesLogMutex, NULL);
+
+	cubemapsLog = createHashMap(
+		sizeof(UUID),
+		sizeof(char*),
+		CUBEMAPS_LOG_BUCKET_COUNT,
+		(ComparisonOp)&strcmp);
+	pthread_mutex_init(&cubemapsLogMutex, NULL);
 
 	pthread_mutex_init(&assetLogMutex, NULL);
 }
@@ -189,6 +200,9 @@ void shutdownAssetLog(void)
 	freeHashMap(&particlesLog);
 	pthread_mutex_destroy(&particlesLogMutex);
 
+	freeHashMap(&cubemapsLog);
+	pthread_mutex_destroy(&cubemapsLogMutex);
+
 	pthread_mutex_destroy(&assetLogMutex);
 }
 
@@ -208,6 +222,8 @@ HashMap getAssetLog(AssetLogType type)
 			return audioLog;
 		case ASSET_LOG_TYPE_PARTICLE:
 			return particlesLog;
+		case ASSET_LOG_TYPE_CUBEMAP:
+			return cubemapsLog;
 		default:
 			break;
 	}
@@ -231,6 +247,8 @@ pthread_mutex_t* getAssetLogMutex(AssetLogType type)
 			return &audioLogMutex;
 		case ASSET_LOG_TYPE_PARTICLE:
 			return &particlesLogMutex;
+		case ASSET_LOG_TYPE_CUBEMAP:
+			return &cubemapsLogMutex;
 		default:
 			break;
 	}

@@ -25,7 +25,8 @@
 		"minimum_texture_lifetime": 60.0,
 		"minimum_model_lifetime": 60.0,
 		"minimum_particle_lifetime": 60.0,
-		"maximum_thread_count": 4
+		"minimum_cubemap_lifetime": 60.0,
+		"maximum_thread_count": 16
 	},
 
 	"log":

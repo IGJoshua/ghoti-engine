@@ -5,13 +5,26 @@ A structure that represents a scene and all of the entities in it.
 ```c
 typedef struct scene_t
 {
-  HashMap componentTypes;
-  HashMap entities;
-  UUID mainCamera;
-  List physicsFrameSystems;
-  List renderFrameSystems;
-  List luaPhysicsFrameSystemNames;
-  List luaRenderFrameSystemNames;
+	char *name;
+	// Maps component UUIDs to pointers to component data tables
+	HashMap componentTypes;
+	// Maps entity UUIDs to lists of component UUIDs
+	HashMap entities;
+	UUID mainCamera;
+	UUID player;
+	List physicsFrameSystems;
+	List renderFrameSystems;
+	List luaPhysicsFrameSystemNames;
+	List luaRenderFrameSystemNames;
+	uint32 numComponentLimitNames;
+	char **componentLimitNames;
+	// Maps component UUIDs to component definitions
+	HashMap componentDefinitions;
+	bool loadedThisFrame;
+	dWorldID physicsWorld;
+	dSpaceID physicsSpace;
+	dJointGroupID contactGroup;
+	real32 gravity;
 } Scene;
 ```
 

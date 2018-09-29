@@ -22,6 +22,7 @@ rm -rf release/resources/temp/**/*.fbx
 rm -rf release/resources/temp/**/*.json
 
 rm -rf release/resources/audio/*
+rm -rf release/resources/cubemaps/*
 rm -rf release/resources/fonts/*
 rm -rf release/resources/heightmaps/*
 rm -rf release/resources/images/*
