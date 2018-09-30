@@ -184,7 +184,7 @@ int32 getUniform(
 		return -1;
 	}
 
-	LOG("Get Uniform (%s): %d\n", name, uniform->location);
+	// LOG("Get Uniform (%s): %d\n", name, uniform->location);
 
 	return 0;
 }
@@ -199,12 +199,21 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 			case UNIFORM_MAT4:
 				glUniformMatrix4fv(uniform.location, count, GL_FALSE, data);
 				break;
+			case UNIFORM_VEC2:
+				glUniform2fv(uniform.location, count, data);
+				break;
 			case UNIFORM_VEC3:
 				glUniform3fv(uniform.location, count, data);
 				break;
 			case UNIFORM_BOOL:
 				boolData = *(bool*)data ? true : false;
 				glUniform1iv(uniform.location, count, &boolData);
+				break;
+			case UNIFORM_FLOAT:
+				glUniform1fv(uniform.location, count, data);
+				break;
+			case UNIFORM_UINT:
+				glUniform1uiv(uniform.location, count, data);
 				break;
 			case UNIFORM_TEXTURE_2D:
 			case UNIFORM_TEXTURE_CUBE_MAP:

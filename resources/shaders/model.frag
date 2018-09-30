@@ -8,6 +8,9 @@ const uint METALLIC_COMPONENT = 2;
 const uint NORMAL_COMPONENT = 3;
 const uint ROUGHNESS_COMPONENT = 4;
 
+#define MAX_NUM_POINT_LIGHTS 256
+#define MAX_NUM_SPOTLIGHTS 256
+
 in vec4 fragColor;
 in vec3 fragPosition;
 in vec3 fragNormal;
@@ -29,6 +32,41 @@ uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
 uniform vec3 customColor;
+
+struct DirectionalLight
+{
+	vec3 color;
+	vec3 ambient;
+	vec3 direction;
+};
+
+struct PointLight
+{
+	vec3 color;
+	vec3 ambient;
+	vec3 position;
+	float constantAttenuation;
+	float linearAttenuation;
+	float quadraticAttenuation;
+};
+
+struct Spotlight
+{
+	vec3 color;
+	vec3 ambient;
+	vec3 position;
+	vec3 direction;
+	vec2 size;
+};
+
+uniform uint numDirectionalLights;
+uniform DirectionalLight directionalLight;
+
+uniform uint numPointLights;
+uniform PointLight pointLights[MAX_NUM_POINT_LIGHTS];
+
+uniform uint numSpotlights;
+uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
 const vec3 lightDirection = normalize(vec3(0.25, -0.5, -0.25));
 

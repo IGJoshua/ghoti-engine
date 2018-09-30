@@ -1,18 +1,9 @@
 #include "defines.h"
 
-#include "core/log.h"
-
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
 #include "asset_management/texture.h"
-
-#include "renderer/renderer_types.h"
-#include "renderer/renderer_utilities.h"
-#include "renderer/shader.h"
-
-#include "ECS/ecs_types.h"
-#include "ECS/scene.h"
 
 #include "components/component_types.h"
 #include "components/transform.h"
@@ -21,9 +12,20 @@
 #include "components/animator.h"
 #include "components/light.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
+
+#include "ECS/ecs_types.h"
+#include "ECS/scene.h"
+
+#include "math/math.h"
+
+#include "renderer/renderer_types.h"
+#include "renderer/renderer_utilities.h"
+#include "renderer/shader.h"
 
 #include <kazmath/mat4.h>
 #include <kazmath/mat3.h>
@@ -54,6 +56,23 @@ internal Uniform wearMaterialUniform;
 internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
+
+#define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
+#define NUM_POINT_LIGHT_ATTRIBUTES 6
+#define NUM_SPOTLIGHT_ATTRIBUTES 5
+
+internal Uniform numDirectionalLightsUniform;
+internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
+
+internal Uniform numPointLightsUniform;
+internal Uniform pointLightsUniforms
+	[MAX_NUM_POINT_LIGHTS]
+	[NUM_POINT_LIGHT_ATTRIBUTES];
+
+internal Uniform numSpotlightsUniform;
+internal Uniform spotlightsUniforms
+	[MAX_NUM_SPOTLIGHTS]
+	[NUM_SPOTLIGHT_ATTRIBUTES];
 
 internal HashMap *skeletons;
 
@@ -176,6 +195,130 @@ void initRendererSystem(Scene *scene)
 			UNIFORM_BOOL,
 			&useCustomColorUniform);
 
+		getUniform(
+			shaderProgram,
+			"numDirectionalLights",
+			UNIFORM_UINT,
+			&numDirectionalLightsUniform);
+
+		uint8 attribute = 0;
+		getUniform(
+			shaderProgram,
+			"directionalLight.color",
+			UNIFORM_VEC3,
+			&directionalLightUniforms[attribute++]);
+		getUniform(
+			shaderProgram,
+			"directionalLight.ambient",
+			UNIFORM_VEC3,
+			&directionalLightUniforms[attribute++]);
+		getUniform(
+			shaderProgram,
+			"directionalLight.direction",
+			UNIFORM_VEC3,
+			&directionalLightUniforms[attribute++]);
+
+		getUniform(
+			shaderProgram,
+			"numPointLights",
+			UNIFORM_UINT,
+			&numPointLightsUniform);
+
+		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+		{
+			char uniformName[1024];
+			attribute = 0;
+
+			sprintf(uniformName, "pointLights[%d].color", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&pointLightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "pointLights[%d].ambient", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&pointLightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "pointLights[%d].position", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&pointLightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "pointLights[%d].constantAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&pointLightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "pointLights[%d].linearAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&pointLightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "pointLights[%d].quadraticAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&pointLightsUniforms[i][attribute++]);
+		}
+
+		getUniform(
+			shaderProgram,
+			"numSpotlights",
+			UNIFORM_UINT,
+			&numSpotlightsUniform);
+
+		for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
+		{
+			char uniformName[1024];
+			attribute = 0;
+
+			sprintf(uniformName, "spotlights[%d].color", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].ambient", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].position", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].direction", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC3,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].size", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_VEC2,
+				&spotlightsUniforms[i][attribute++]);
+		}
+
 		LOG("Successfully initialized renderer\n");
 	}
 
@@ -213,6 +356,127 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
 	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
 	setMaterialUniform(&wearMaterialUniform, &textureIndex);
+
+	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
+
+	uint8 attribute = 0;
+	if (numDirectionalLights == 1)
+	{
+		setUniform(
+			directionalLightUniforms[attribute++],
+			1,
+			&directionalLight.color);
+		setUniform(
+			directionalLightUniforms[attribute++],
+			1,
+			&directionalLight.ambient);
+
+		kmQuaternion directionalLightQuaternion;
+		quaternionSlerp(
+			&directionalLightQuaternion,
+			&directionalLight.previousDirection,
+			&directionalLight.direction,
+			alpha);
+		kmVec3 directionalLightDirection;
+		kmQuaternionGetForwardVec3RH(
+			&directionalLightDirection,
+			&directionalLightQuaternion);
+
+		setUniform(
+			directionalLightUniforms[attribute++],
+			1,
+			&directionalLightDirection);
+	}
+
+	setUniform(numPointLightsUniform, 1, &numPointLights);
+
+	for (uint32 i = 0; i < numPointLights; i++)
+	{
+		PointLight *pointLight = &pointLights[i];
+		attribute = 0;
+
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->color);
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->ambient);
+
+		kmVec3 pointLightPosition;
+		kmVec3Lerp(
+			&pointLightPosition,
+			&pointLight->previousPosition,
+			&pointLight->position,
+			alpha);
+
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLightPosition);
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->constantAttenuation);
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->linearAttenuation);
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->quadraticAttenuation);
+	}
+
+	setUniform(numSpotlightsUniform, 1, &numSpotlights);
+
+	for (uint32 i = 0; i < numSpotlights; i++)
+	{
+		Spotlight *spotlight = &spotlights[i];
+		attribute = 0;
+
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->color);
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->ambient);
+
+		kmVec3 spotlightPosition;
+		kmVec3Lerp(
+			&spotlightPosition,
+			&spotlight->previousPosition,
+			&spotlight->position,
+			alpha);
+
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlightPosition);
+
+		kmQuaternion spotlightQuaternion;
+		quaternionSlerp(
+			&spotlightQuaternion,
+			&spotlight->previousDirection,
+			&spotlight->direction,
+			alpha);
+		kmVec3 spotlightDirection;
+		kmQuaternionGetForwardVec3RH(
+			&spotlightDirection,
+			&spotlightQuaternion);
+
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlightDirection);
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->size);
+	}
 
 	if (animationSystemRefCount > 0)
 	{
