@@ -158,5 +158,9 @@ void addSpotlight(
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&spotlight->direction, &transform->globalRotation);
 
+	spotlight->constantAttenuation = light->constantAttenuation;
+	spotlight->linearAttenuation = light->linearAttenuation;
+	spotlight->quadraticAttenuation = light->quadraticAttenuation;
+
 	kmVec2Assign(&spotlight->size, &light->size);
 }

@@ -3,8 +3,8 @@
 
 #include "components/component_types.h"
 
-#define MAX_NUM_POINT_LIGHTS 256
-#define MAX_NUM_SPOTLIGHTS 256
+#define MAX_NUM_POINT_LIGHTS 64
+#define MAX_NUM_SPOTLIGHTS 64
 
 typedef struct directional_light_t
 {
@@ -33,5 +33,8 @@ typedef struct spotlight_t
 	kmVec3 position;
 	kmQuaternion previousDirection;
 	kmQuaternion direction;
+	real32 constantAttenuation;
+    real32 linearAttenuation;
+    real32 quadraticAttenuation;
 	kmVec2 size;
 } Spotlight;

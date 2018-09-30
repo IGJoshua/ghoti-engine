@@ -59,7 +59,7 @@ internal Uniform useCustomColorUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
 #define NUM_POINT_LIGHT_ATTRIBUTES 6
-#define NUM_SPOTLIGHT_ATTRIBUTES 5
+#define NUM_SPOTLIGHT_ATTRIBUTES 8
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -311,6 +311,27 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			sprintf(uniformName, "spotlights[%d].constantAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].linearAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&spotlightsUniforms[i][attribute++]);
+
+			sprintf(uniformName, "spotlights[%d].quadraticAttenuation", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_FLOAT,
+				&spotlightsUniforms[i][attribute++]);
+
 			sprintf(uniformName, "spotlights[%d].size", i);
 			getUniform(
 				shaderProgram,
@@ -472,6 +493,18 @@ void beginRendererSystem(Scene *scene, real64 dt)
 			spotlightsUniforms[i][attribute++],
 			1,
 			&spotlightDirection);
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->constantAttenuation);
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->linearAttenuation);
+		setUniform(
+			spotlightsUniforms[i][attribute++],
+			1,
+			&spotlight->quadraticAttenuation);
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
