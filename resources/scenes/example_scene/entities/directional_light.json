@@ -1,0 +1,112 @@
+{
+	"uuid": "light",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [-0.383, 0, 0, 0.924]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"light":
+		[
+			{
+				"name": "type",
+				"enum": 0
+			},
+
+			{
+				"name": "color",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "ambient",
+				"float32": [0.5, 0.5, 0.5]
+			},
+
+			{
+				"name": "constant attenuation",
+				"float32": 0
+			},
+
+			{
+				"name": "linear attenuation",
+				"float32": 0
+			},
+
+			{
+				"name": "quadratic attenuation",
+				"float32": 0
+			},
+
+			{
+				"name": "size",
+				"float32": [1, 1]
+			}
+		]
+	}
+}

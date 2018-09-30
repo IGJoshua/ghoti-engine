@@ -76,6 +76,7 @@
 		"joint_information": 256,
 		"joint_list": 512,
 		"joint": 8192,
+		"light": 128,
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
@@ -90,8 +91,7 @@
 		"text": 1024,
 		"transform": 16384,
 		"widget": 1024,
-		"wireframe": 2048,
-		"light": 512
+		"wireframe": 2048
 	},
 
 	"active_camera": "vrvVp;T2joog>bV9F.sA_GBgH6(q$f)w^tLT5&trPa/05ES96juZ*Zx>`o7Lm50",
