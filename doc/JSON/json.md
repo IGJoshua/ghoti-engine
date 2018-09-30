@@ -448,8 +448,17 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 	"animation":
 	{
 		"skeleton": "/gbr$uH^kuj50UJ;;tNi)E9j@e4qQWa^DANE5t)&gh8uC_.RYBXtYH:<Q)b._FG",
-		"names": ["Idle", "Walk", "Run", "Jump", "Attack", "Block"],
-		"entity": "3B%k)#WG;M99(SRB4veHpi;W=b+WA;vC%u<Q:Lstb2q<Y2ENtj<cLT8^<@;Q0sK"
+		"entity": "3B%k)#WG;M99(SRB4veHpi;W=b+WA;vC%u<Q:Lstb2q<Y2ENtj<cLT8^<@;Q0sK",
+
+		"names":
+		{
+			"Idle": 20.0,
+			"Walk": 4.0,
+			"Run": 3.0,
+			"Jump": 2.5,
+			"Attack": 2.0,
+			"Block": 1.5
+		}
 	}
 }
 ```
