@@ -21,7 +21,8 @@
 				"joint_information",
 				"particle_simulator",
 				"gui",
-				"audio"
+				"audio",
+				"lights"
 			]
 		},
 
@@ -89,7 +90,8 @@
 		"text": 1024,
 		"transform": 16384,
 		"widget": 1024,
-		"wireframe": 2048
+		"wireframe": 2048,
+		"light": 512
 	},
 
 	"active_camera": "vrvVp;T2joog>bV9F.sA_GBgH6(q$f)w^tLT5&trPa/05ES96juZ*Zx>`o7Lm50",

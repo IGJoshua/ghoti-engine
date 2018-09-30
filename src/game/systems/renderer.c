@@ -19,6 +19,7 @@
 #include "components/camera.h"
 #include "components/animation.h"
 #include "components/animator.h"
+#include "components/light.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -73,6 +74,15 @@ extern uint32 animationSystemRefCount;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
+
+extern uint32 numDirectionalLights;
+extern DirectionalLight directionalLight;
+
+extern uint32 numPointLights;
+extern PointLight pointLights[MAX_NUM_POINT_LIGHTS];
+
+extern uint32 numSpotlights;
+extern Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
 internal
 void initRendererSystem(Scene *scene)

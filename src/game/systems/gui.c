@@ -28,6 +28,8 @@
 
 #include <GLFW/glfw3.h>
 
+internal UUID defaultFontEntityID = {};
+
 internal UUID guiTransformComponentID = {};
 internal UUID panelComponentID = {};
 internal UUID widgetComponentID = {};
@@ -254,7 +256,7 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 
 	defaultFontComponent = sceneGetComponentFromEntity(
 		scene,
-		idFromName("default_font"),
+		defaultFontEntityID,
 		fontComponentID);
 
 	defaultFont = getFont(
@@ -377,6 +379,8 @@ internal void shutdownGUISystem(Scene *scene)
 
 System createGUISystem(void)
 {
+	defaultFontEntityID = idFromName("default_font");
+
 	guiTransformComponentID = idFromName("gui_transform");
 	panelComponentID = idFromName("panel");
 	widgetComponentID = idFromName("widget");

@@ -35,6 +35,13 @@ typedef enum joint_type_e
 	JOINT_TYPE_BALL_SOCKET2
 } JointType;
 
+typedef enum light_type_e
+{
+	LIGHT_TYPE_DIRECTIONAL,
+	LIGHT_TYPE_POINT,
+	LIGHT_TYPE_SPOT
+} LightType;
+
 typedef enum moment_of_inertia_e
 {
 	MOMENT_OF_INERTIA_USER = -1,
@@ -315,6 +322,17 @@ typedef struct joint_component_t
 {
 	char name[64];
 } JointComponent;
+
+typedef struct light_component_t
+{
+	LightType type;
+	kmVec3 color;
+	kmVec3 ambient;
+	real32 constantAttenuation;
+    real32 linearAttenuation;
+    real32 quadraticAttenuation;
+	kmVec2 size;
+} LightComponent;
 
 typedef struct model_component_t
 {
