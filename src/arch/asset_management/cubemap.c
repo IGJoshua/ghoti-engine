@@ -159,17 +159,18 @@ void* loadCubemapThread(void *arg)
 						"Successfully loaded %s (%s)\n",
 						faceName,
 						fullName);
-
-					free(fullFilename);
 					free(faceName);
 				}
 				else
 				{
-					free(fullFilename);
 					free(faceName);
-
 					break;
 				}
+			}
+
+			for (uint8 i = 0; i < 6; i++)
+			{
+				free(fullFilenames[i]);
 			}
 
 			if (error != - 1)
@@ -239,17 +240,20 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 			GL_UNSIGNED_BYTE,
 			data->data);
 
-		free(data->data);
-
 		error = logGLError(
 			false,
-			"Failed to transfer the cubemap's %s face onto GPU",
+			"Failed to transfer cubemap's %s face onto GPU",
 			cubemapFaceNames[i]);
 
 		if (error == -1)
 		{
 			break;
 		}
+	}
+
+	for (uint8 i = 0; i < 6; i++)
+	{
+		free(cubemap->data[i].data);
 	}
 
 	if (error != -1)
@@ -273,7 +277,7 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 			cubemap->name.string);
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 	return error;
 }
