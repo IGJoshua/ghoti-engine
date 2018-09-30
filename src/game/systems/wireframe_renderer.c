@@ -273,8 +273,6 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 	{
 		Subset *subset = &model.subsets[i];
 		Mesh *mesh = &subset->mesh;
-		Material *material = &subset->material;
-		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
