@@ -1,6 +1,6 @@
 #version 420 core
 
-#define MAX_PARTICLE_EMITTER_COUNT 128
+#define MAX_PARTICLE_EMITTER_COUNT 32
 
 in vec2 fragUV;
 in vec4 fragColor;

@@ -22,7 +22,9 @@ void main (void)
 
 	// Bottom Left
 
-	fragUV = vec2(geomUV[0].x, geomUV[0].y + geomSpriteSize[0].y);
+	fragUV = vec2(
+		geomUV[0].x,
+		clamp(geomUV[0].y + geomSpriteSize[0].y, 0.0, 1.0));
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 
@@ -34,8 +36,8 @@ void main (void)
 	// Bottom Right
 
 	fragUV = vec2(
-		geomUV[0].x + geomSpriteSize[0].x,
-		geomUV[0].y + geomSpriteSize[0].y);
+		clamp(geomUV[0].x + geomSpriteSize[0].x, 0.0, 1.0),
+		clamp(geomUV[0].y + geomSpriteSize[0].y, 0.0, 1.0));
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 
@@ -57,7 +59,9 @@ void main (void)
 
 	// Top Right
 
-	fragUV = vec2(geomUV[0].x + geomSpriteSize[0].x, geomUV[0].y);
+	fragUV = vec2(
+		clamp(geomUV[0].x + geomSpriteSize[0].x, 0.0, 1.0),
+		geomUV[0].y);
 	fragColor = geomColor[0];
 	fragTexture = geomTexture[0];
 

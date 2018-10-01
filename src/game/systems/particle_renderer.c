@@ -47,7 +47,7 @@ internal GLuint shaderProgram;
 internal Uniform viewUniform;
 internal Uniform projectionUniform;
 
-#define MAX_PARTICLE_EMITTER_COUNT 128
+#define MAX_PARTICLE_EMITTER_COUNT 32
 
 internal Uniform particleTexturesUniform;
 internal uint32 numTextures;

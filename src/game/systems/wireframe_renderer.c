@@ -1,18 +1,9 @@
 #include "defines.h"
 
-#include "core/log.h"
-
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
 #include "asset_management/texture.h"
-
-#include "renderer/renderer_types.h"
-#include "renderer/renderer_utilities.h"
-#include "renderer/shader.h"
-
-#include "ECS/ecs_types.h"
-#include "ECS/scene.h"
 
 #include "components/component_types.h"
 #include "components/transform.h"
@@ -20,9 +11,18 @@
 #include "components/animation.h"
 #include "components/animator.h"
 
+#include "core/log.h"
+
 #include "data/data_types.h"
 #include "data/hash_map.h"
 #include "data/list.h"
+
+#include "ECS/ecs_types.h"
+#include "ECS/scene.h"
+
+#include "renderer/renderer_types.h"
+#include "renderer/renderer_utilities.h"
+#include "renderer/shader.h"
 
 #include <kazmath/mat4.h>
 #include <kazmath/mat3.h>

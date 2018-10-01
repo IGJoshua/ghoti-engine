@@ -50,6 +50,8 @@ extern bool reloadingAssets;
 extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
+extern uint32 postProcessingSystemRefCount;
+extern GLuint screenFramebuffer;
 
 internal void update(real64 dt, bool skipLoadedThisFrame);
 internal void draw(GLFWwindow *window, real64 frameTime);
@@ -395,6 +397,12 @@ void draw(GLFWwindow *window, real64 frameTime)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
+
+	if (postProcessingSystemRefCount > 0)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebuffer);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 
 	for (ListIterator itr = listGetIterator(&activeScenes);
 		 !listIteratorAtEnd(itr);

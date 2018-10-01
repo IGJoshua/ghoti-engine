@@ -35,6 +35,7 @@ SYSTEM(DebugRenderer);
 SYSTEM(CollisionPrimitiveRenderer);
 SYSTEM(ParticleRenderer);
 SYSTEM(GUIRenderer);
+SYSTEM(PostProcessing);
 
 extern HashMap systemRegistry;
 
@@ -68,6 +69,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(CollisionPrimitiveRenderer, "collision_primitive_renderer");
 	REGISTER_SYSTEM(ParticleRenderer, "particle_renderer");
 	REGISTER_SYSTEM(GUIRenderer, "gui_renderer");
+	REGISTER_SYSTEM(PostProcessing, "post_processing");
 }
 
 void freeSystems(void)
