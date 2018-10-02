@@ -36,7 +36,44 @@ void loadModel(const char *name)
 	char *modelName = calloc(1, strlen(name) + 1);
 	strcpy(modelName, name);
 
-	START_ACQUISITION_THREAD(Model, modelName);
+	bool skip = false;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&modelsMutex);
+	if (!hashMapGetData(models, &nameID))
+	{
+		pthread_mutex_unlock(&modelsMutex);
+		pthread_mutex_lock(&loadingModelsMutex);
+
+		if (hashMapGetData(loadingModels, &nameID))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingModelsMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadModelsMutex);
+
+			if (hashMapGetData(uploadModelsQueue, &nameID))
+			{
+				skip = 1;
+			}
+
+			pthread_mutex_unlock(&uploadModelsMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(Model, modelName);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&modelsMutex);
+	}
 }
 
 ACQUISITION_THREAD(Model);
@@ -49,168 +86,135 @@ void* loadModelThread(void *arg)
 
 	UUID modelName = idFromName(name);
 
-	pthread_mutex_lock(&modelsMutex);
-	if (!hashMapGetData(models, &modelName))
+	bool loading = true;
+	pthread_mutex_lock(&loadingModelsMutex);
+	hashMapInsert(loadingModels, &modelName, &loading);
+	pthread_mutex_unlock(&loadingModelsMutex);
+
+	Model model = {};
+
+	ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
+
+	model.name = modelName;
+	model.lifetime = config.assetsConfig.minModelLifetime;
+
+	char *modelFolder = getFullFilePath(name, NULL, "resources/models");
+
+	char *assetFilename = getFullFilePath(name, "asset", modelFolder);
+	FILE *assetFile = fopen(assetFilename, "rb");
+
+	if (assetFile)
 	{
-		pthread_mutex_unlock(&modelsMutex);
-		pthread_mutex_lock(&loadingModelsMutex);
+		char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
+		FILE *meshFile = fopen(meshFilename, "rb");
 
-		if (hashMapGetData(loadingModels, &modelName))
+		if (meshFile)
 		{
-			error = 1;
-		}
+			fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
+			model.subsets = calloc(model.numSubsets, sizeof(Subset));
 
-		pthread_mutex_unlock(&loadingModelsMutex);
-
-		if (error != 1)
-		{
-			pthread_mutex_lock(&uploadModelsMutex);
-
-			if (hashMapGetData(uploadModelsQueue, &modelName))
+			for (uint32 i = 0; i < model.numSubsets; i++)
 			{
-				error = 1;
+				model.subsets[i].name = readStringAsUUID(assetFile);
 			}
 
-			pthread_mutex_unlock(&uploadModelsMutex);
-		}
+			char *masksFolder = getFullFilePath(
+				"masks",
+				NULL,
+				modelFolder);
 
-		if (error != 1)
-		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingModelsMutex);
-			hashMapInsert(loadingModels, &modelName, &loading);
-			pthread_mutex_unlock(&loadingModelsMutex);
-
-			Model model = {};
-
-			ASSET_LOG(MODEL, name, "Loading model (%s)...\n", name);
-
-			model.name = modelName;
-			model.lifetime = config.assetsConfig.minModelLifetime;
-
-			char *modelFolder = getFullFilePath(name, NULL, "resources/models");
-
-			char *assetFilename = getFullFilePath(name, "asset", modelFolder);
-			FILE *assetFile = fopen(assetFilename, "rb");
-
-			if (assetFile)
-			{
-				char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
-				FILE *meshFile = fopen(meshFilename, "rb");
-
-				if (meshFile)
-				{
-					fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
-					model.subsets = calloc(model.numSubsets, sizeof(Subset));
-
-					for (uint32 i = 0; i < model.numSubsets; i++)
-					{
-						model.subsets[i].name = readStringAsUUID(assetFile);
-					}
-
-					char *masksFolder = getFullFilePath(
-						"masks",
-						NULL,
-						modelFolder);
-
-					error = loadMaskTexture(
-						masksFolder,
-						&model,
-						'm',
-						&model.materialTexture);
-
-					if (error != -1)
-					{
-						error = loadMaskTexture(
-							masksFolder,
-							&model,
-							'o',
-							&model.opacityTexture);
-					}
-
-					free(masksFolder);
-
-					if (error != -1)
-					{
-						for (uint32 i = 0; i < model.numSubsets; i++)
-						{
-							error = loadSubset(
-								&model.subsets[i],
-								assetFile,
-								meshFile,
-								name);
-
-							if (error == -1)
-							{
-								break;
-							}
-						}
-
-						if (error != -1)
-						{
-							error = loadAnimations(
-								&model.numAnimations,
-								&model.animations,
-								&model.skeleton,
-								meshFile);
-						}
-					}
-				}
-				else
-				{
-					ASSET_LOG(MODEL, name, "Failed to open %s\n", meshFilename);
-					error = -1;
-				}
-
-				if (meshFile)
-				{
-					fclose(meshFile);
-				}
-
-				free(meshFilename);
-			}
-			else
-			{
-				ASSET_LOG(MODEL, name, "Failed to open %s\n", assetFilename);
-				error = -1;
-			}
-
-			if (assetFile)
-			{
-				fclose(assetFile);
-			}
-
-			free(assetFilename);
-			free(modelFolder);
+			error = loadMaskTexture(
+				masksFolder,
+				&model,
+				'm',
+				&model.materialTexture);
 
 			if (error != -1)
 			{
-				pthread_mutex_lock(&uploadModelsMutex);
-				hashMapInsert(uploadModelsQueue, &modelName, &model);
-				pthread_mutex_unlock(&uploadModelsMutex);
-
-				ASSET_LOG(
-					MODEL,
-					name,
-					"Successfully loaded model (%s)\n",
-					name);
+				error = loadMaskTexture(
+					masksFolder,
+					&model,
+					'o',
+					&model.opacityTexture);
 			}
-			else
+
+			free(masksFolder);
+
+			if (error != -1)
 			{
-				ASSET_LOG(MODEL, name, "Failed to load model (%s)\n", name);
+				for (uint32 i = 0; i < model.numSubsets; i++)
+				{
+					error = loadSubset(
+						&model.subsets[i],
+						assetFile,
+						meshFile,
+						name);
+
+					if (error == -1)
+					{
+						break;
+					}
+				}
+
+				if (error != -1)
+				{
+					error = loadAnimations(
+						&model.numAnimations,
+						&model.animations,
+						&model.skeleton,
+						meshFile);
+				}
 			}
-
-			ASSET_LOG_COMMIT(MODEL, name);
-
-			pthread_mutex_lock(&loadingModelsMutex);
-			hashMapDelete(loadingModels, &modelName);
-			pthread_mutex_unlock(&loadingModelsMutex);
 		}
+		else
+		{
+			ASSET_LOG(MODEL, name, "Failed to open %s\n", meshFilename);
+			error = -1;
+		}
+
+		if (meshFile)
+		{
+			fclose(meshFile);
+		}
+
+		free(meshFilename);
 	}
 	else
 	{
-		pthread_mutex_unlock(&modelsMutex);
+		ASSET_LOG(MODEL, name, "Failed to open %s\n", assetFilename);
+		error = -1;
 	}
+
+	if (assetFile)
+	{
+		fclose(assetFile);
+	}
+
+	free(assetFilename);
+	free(modelFolder);
+
+	if (error != -1)
+	{
+		pthread_mutex_lock(&uploadModelsMutex);
+		hashMapInsert(uploadModelsQueue, &modelName, &model);
+		pthread_mutex_unlock(&uploadModelsMutex);
+
+		ASSET_LOG(
+			MODEL,
+			name,
+			"Successfully loaded model (%s)\n",
+			name);
+	}
+	else
+	{
+		ASSET_LOG(MODEL, name, "Failed to load model (%s)\n", name);
+	}
+
+	ASSET_LOG_COMMIT(MODEL, name);
+
+	pthread_mutex_lock(&loadingModelsMutex);
+	hashMapDelete(loadingModels, &modelName);
+	pthread_mutex_unlock(&loadingModelsMutex);
 
 	free(name);
 

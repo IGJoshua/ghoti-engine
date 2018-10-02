@@ -49,7 +49,44 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 
 	arg->swapFrontAndBack = swapFrontAndBack;
 
-	START_ACQUISITION_THREAD(Cubemap, arg);
+	bool skip = false;
+
+	UUID cubemapName = idFromName(name);
+
+	pthread_mutex_lock(&cubemapsMutex);
+	if (!hashMapGetData(cubemaps, &cubemapName))
+	{
+		pthread_mutex_unlock(&cubemapsMutex);
+		pthread_mutex_lock(&loadingCubemapsMutex);
+
+		if (hashMapGetData(loadingCubemaps, &cubemapName))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingCubemapsMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadCubemapsMutex);
+
+			if (hashMapGetData(uploadCubemapsQueue, &cubemapName))
+			{
+				skip = true;
+			}
+
+			pthread_mutex_unlock(&uploadCubemapsMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(Cubemap, arg);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&cubemapsMutex);
+	}
 }
 
 ACQUISITION_THREAD(Cubemap);
@@ -64,146 +101,113 @@ void* loadCubemapThread(void *arg)
 
 	UUID cubemapName = idFromName(name);
 
-	pthread_mutex_lock(&cubemapsMutex);
-	if (!hashMapGetData(cubemaps, &cubemapName))
+	bool loading = true;
+	pthread_mutex_lock(&loadingCubemapsMutex);
+	hashMapInsert(loadingCubemaps, &cubemapName, &loading);
+	pthread_mutex_unlock(&loadingCubemapsMutex);
+
+	char *fullFilenames[6];
+	getFullCubemapFilenames(name, fullFilenames);
+
+	ASSET_LOG(CUBEMAP, name, "Loading cubemap (%s)...\n", name);
+
+	Cubemap cubemap = {};
+
+	cubemap.name = idFromName(name);
+	cubemap.lifetime = config.assetsConfig.minCubemapLifetime;
+
+	for (uint8 i = 0; i < 6; i++)
 	{
-		pthread_mutex_unlock(&cubemapsMutex);
-		pthread_mutex_lock(&loadingCubemapsMutex);
+		char *faceName = concatenateStrings(
+			cubemapFaceNames[i],
+			" ",
+			"face");
 
-		if (hashMapGetData(loadingCubemaps, &cubemapName))
+		char *fullFilename = fullFilenames[i];
+		if (!fullFilename)
 		{
-			error = 1;
+			ASSET_LOG(
+				CUBEMAP,
+				name,
+				"Failed to load %s: Texture not found\n",
+				faceName);
+			free(faceName);
+
+			continue;
 		}
 
-		pthread_mutex_unlock(&loadingCubemapsMutex);
-
-		if (error != 1)
+		const char *fullName = strrchr(fullFilename, '/');
+		if (!fullName)
 		{
-			pthread_mutex_lock(&uploadCubemapsMutex);
-
-			if (hashMapGetData(uploadCubemapsQueue, &cubemapName))
-			{
-				error = 1;
-			}
-
-			pthread_mutex_unlock(&uploadCubemapsMutex);
+			fullName = fullFilename;
+		}
+		else
+		{
+			fullName += 1;
 		}
 
-		if (error != 1)
+		ASSET_LOG(
+			CUBEMAP,
+			name,
+			"Loading %s (%s)...\n",
+			faceName,
+			fullName);
+
+		error = loadTextureData(
+			ASSET_LOG_TYPE_CUBEMAP,
+			faceName,
+			name,
+			fullFilename,
+			3,
+			&cubemap.data[i]);
+
+		if (error != -1)
 		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingCubemapsMutex);
-			hashMapInsert(loadingCubemaps, &cubemapName, &loading);
-			pthread_mutex_unlock(&loadingCubemapsMutex);
-
-			char *fullFilenames[6];
-			getFullCubemapFilenames(name, fullFilenames);
-
-			ASSET_LOG(CUBEMAP, name, "Loading cubemap (%s)...\n", name);
-
-			Cubemap cubemap = {};
-
-			cubemap.name = idFromName(name);
-			cubemap.lifetime = config.assetsConfig.minCubemapLifetime;
-
-			for (uint8 i = 0; i < 6; i++)
-			{
-				char *faceName = concatenateStrings(
-					cubemapFaceNames[i],
-					" ",
-					"face");
-
-				char *fullFilename = fullFilenames[i];
-				if (!fullFilename)
-				{
-					ASSET_LOG(
-						CUBEMAP,
-						name,
-						"Failed to load %s: Texture not found\n",
-						faceName);
-					free(faceName);
-
-					continue;
-				}
-
-				const char *fullName = strrchr(fullFilename, '/');
-				if (!fullName)
-				{
-					fullName = fullFilename;
-				}
-				else
-				{
-					fullName += 1;
-				}
-
-				ASSET_LOG(
-					CUBEMAP,
-					name,
-					"Loading %s (%s)...\n",
-					faceName,
-					fullName);
-
-				error = loadTextureData(
-					ASSET_LOG_TYPE_CUBEMAP,
-					faceName,
-					name,
-					fullFilename,
-					3,
-					&cubemap.data[i]);
-
-				if (error != -1)
-				{
-					ASSET_LOG(
-						CUBEMAP,
-						name,
-						"Successfully loaded %s (%s)\n",
-						faceName,
-						fullName);
-					free(faceName);
-				}
-				else
-				{
-					free(faceName);
-					break;
-				}
-			}
-
-			for (uint8 i = 0; i < 6; i++)
-			{
-				free(fullFilenames[i]);
-			}
-
-			if (error != - 1)
-			{
-				if (swapFrontAndBack)
-				{
-					TextureData data = cubemap.data[4];
-					cubemap.data[4] = cubemap.data[5];
-					cubemap.data[5] = data;
-				}
-
-				pthread_mutex_lock(&uploadCubemapsMutex);
-				hashMapInsert(uploadCubemapsQueue, &cubemapName, &cubemap);
-				pthread_mutex_unlock(&uploadCubemapsMutex);
-
-				ASSET_LOG(
-					CUBEMAP,
-					name,
-					"Successfully loaded cubemap (%s)\n",
-					name);
-			}
-
-			ASSET_LOG_COMMIT(CUBEMAP, name);
-
-			pthread_mutex_lock(&loadingCubemapsMutex);
-			hashMapDelete(loadingCubemaps, &cubemapName);
-			pthread_mutex_unlock(&loadingCubemapsMutex);
+			ASSET_LOG(
+				CUBEMAP,
+				name,
+				"Successfully loaded %s (%s)\n",
+				faceName,
+				fullName);
+			free(faceName);
+		}
+		else
+		{
+			free(faceName);
+			break;
 		}
 	}
-	else
+
+	for (uint8 i = 0; i < 6; i++)
 	{
-		pthread_mutex_unlock(&cubemapsMutex);
+		free(fullFilenames[i]);
 	}
+
+	if (error != - 1)
+	{
+		if (swapFrontAndBack)
+		{
+			TextureData data = cubemap.data[4];
+			cubemap.data[4] = cubemap.data[5];
+			cubemap.data[5] = data;
+		}
+
+		pthread_mutex_lock(&uploadCubemapsMutex);
+		hashMapInsert(uploadCubemapsQueue, &cubemapName, &cubemap);
+		pthread_mutex_unlock(&uploadCubemapsMutex);
+
+		ASSET_LOG(
+			CUBEMAP,
+			name,
+			"Successfully loaded cubemap (%s)\n",
+			name);
+	}
+
+	ASSET_LOG_COMMIT(CUBEMAP, name);
+
+	pthread_mutex_lock(&loadingCubemapsMutex);
+	hashMapDelete(loadingCubemaps, &cubemapName);
+	pthread_mutex_unlock(&loadingCubemapsMutex);
 
 	free(arg);
 	free(name);

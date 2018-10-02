@@ -50,7 +50,44 @@ void loadParticle(
 	arg->columns = columns;
 	arg->textureFiltering = textureFiltering;
 
-	START_ACQUISITION_THREAD(Particle, arg);
+	bool skip = false;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&particlesMutex);
+	if (!hashMapGetData(particles, &nameID))
+	{
+		pthread_mutex_unlock(&particlesMutex);
+		pthread_mutex_lock(&loadingParticlesMutex);
+
+		if (hashMapGetData(loadingParticles, &nameID))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingParticlesMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadParticlesMutex);
+
+			if (hashMapGetData(uploadParticlesQueue, &nameID))
+			{
+				skip = true;
+			}
+
+			pthread_mutex_unlock(&uploadParticlesMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(Particle, arg);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&particlesMutex);
+	}
 }
 
 ACQUISITION_THREAD(Particle);
@@ -68,139 +105,106 @@ void* loadParticleThread(void *arg)
 
 	UUID nameID = idFromName(name);
 
-	pthread_mutex_lock(&particlesMutex);
-	if (!hashMapGetData(particles, &nameID))
+	bool loading = true;
+	pthread_mutex_lock(&loadingParticlesMutex);
+	hashMapInsert(loadingParticles, &nameID, &loading);
+	pthread_mutex_unlock(&loadingParticlesMutex);
+
+	char *fullFilename = getFullParticleFilename(name);
+	if (!fullFilename)
 	{
-		pthread_mutex_unlock(&particlesMutex);
-		pthread_mutex_lock(&loadingParticlesMutex);
-
-		if (hashMapGetData(loadingParticles, &nameID))
-		{
-			error = 1;
-		}
-
-		pthread_mutex_unlock(&loadingParticlesMutex);
-
-		if (error != 1)
-		{
-			pthread_mutex_lock(&uploadParticlesMutex);
-
-			if (hashMapGetData(uploadParticlesQueue, &nameID))
-			{
-				error = 1;
-			}
-
-			pthread_mutex_unlock(&uploadParticlesMutex);
-		}
-
-		if (error != 1)
-		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingParticlesMutex);
-			hashMapInsert(loadingParticles, &nameID, &loading);
-			pthread_mutex_unlock(&loadingParticlesMutex);
-
-			char *fullFilename = getFullParticleFilename(name);
-			if (!fullFilename)
-			{
-				error = -1;
-			}
-			else
-			{
-				const char *particleName = strrchr(fullFilename, '/');
-				if (!particleName)
-				{
-					particleName = fullFilename;
-				}
-				else
-				{
-					particleName += 1;
-				}
-
-				ASSET_LOG(
-					PARTICLE,
-					name,
-					"Loading particle (%s)...\n",
-					particleName);
-
-				Particle particle = {};
-
-				particle.name = idFromName(name);
-				particle.lifetime = config.assetsConfig.minParticleLifetime;
-				particle.textureFiltering = textureFiltering;
-				particle.numSprites = numSprites == 0 ? 1 : numSprites;
-				particle.spriteUVs = malloc(numSprites * sizeof(kmVec2));
-
-				error = loadTextureData(
-					ASSET_LOG_TYPE_PARTICLE,
-					"particle",
-					name,
-					fullFilename,
-					0,
-					&particle.data);
-
-				if (error != - 1)
-				{
-					real64 spriteSize[2];
-					spriteSize[0] = 1.0 / columns;
-					spriteSize[1] = 1.0 / rows;
-
-					kmVec2Fill(
-						&particle.spriteSize,
-						spriteSize[0],
-						spriteSize[1]);
-
-					uint32 spriteUVIndex = 0;
-					for (real64 v = 0.0;
-						 v < 1.0 - spriteSize[1] / 2;
-						 v += spriteSize[1])
-					{
-						for (real64 u = 0.0;
-							 u < 1.0 - spriteSize[0] / 2;
-							 u += spriteSize[0])
-						{
-							kmVec2Fill(
-								&particle.spriteUVs[spriteUVIndex++],
-								u,
-								v);
-
-							if (spriteUVIndex == particle.numSprites)
-							{
-								break;
-							}
-						}
-
-						if (spriteUVIndex == particle.numSprites)
-						{
-							break;
-						}
-					}
-
-					pthread_mutex_lock(&uploadParticlesMutex);
-					hashMapInsert(uploadParticlesQueue, &nameID, &particle);
-					pthread_mutex_unlock(&uploadParticlesMutex);
-
-					ASSET_LOG(
-						PARTICLE,
-						name,
-						"Successfully loaded particle (%s)\n",
-						particleName);
-				}
-
-				ASSET_LOG_COMMIT(PARTICLE, name);
-
-				pthread_mutex_lock(&loadingParticlesMutex);
-				hashMapDelete(loadingParticles, &nameID);
-				pthread_mutex_unlock(&loadingParticlesMutex);
-			}
-
-			free(fullFilename);
-		}
+		error = -1;
 	}
 	else
 	{
-		pthread_mutex_unlock(&particlesMutex);
+		const char *particleName = strrchr(fullFilename, '/');
+		if (!particleName)
+		{
+			particleName = fullFilename;
+		}
+		else
+		{
+			particleName += 1;
+		}
+
+		ASSET_LOG(
+			PARTICLE,
+			name,
+			"Loading particle (%s)...\n",
+			particleName);
+
+		Particle particle = {};
+
+		particle.name = idFromName(name);
+		particle.lifetime = config.assetsConfig.minParticleLifetime;
+		particle.textureFiltering = textureFiltering;
+		particle.numSprites = numSprites == 0 ? 1 : numSprites;
+		particle.spriteUVs = malloc(numSprites * sizeof(kmVec2));
+
+		error = loadTextureData(
+			ASSET_LOG_TYPE_PARTICLE,
+			"particle",
+			name,
+			fullFilename,
+			0,
+			&particle.data);
+
+		if (error != - 1)
+		{
+			real64 spriteSize[2];
+			spriteSize[0] = 1.0 / columns;
+			spriteSize[1] = 1.0 / rows;
+
+			kmVec2Fill(
+				&particle.spriteSize,
+				spriteSize[0],
+				spriteSize[1]);
+
+			uint32 spriteUVIndex = 0;
+			for (real64 v = 0.0;
+					v < 1.0 - spriteSize[1] / 2;
+					v += spriteSize[1])
+			{
+				for (real64 u = 0.0;
+						u < 1.0 - spriteSize[0] / 2;
+						u += spriteSize[0])
+				{
+					kmVec2Fill(
+						&particle.spriteUVs[spriteUVIndex++],
+						u,
+						v);
+
+					if (spriteUVIndex == particle.numSprites)
+					{
+						break;
+					}
+				}
+
+				if (spriteUVIndex == particle.numSprites)
+				{
+					break;
+				}
+			}
+
+			pthread_mutex_lock(&uploadParticlesMutex);
+			hashMapInsert(uploadParticlesQueue, &nameID, &particle);
+			pthread_mutex_unlock(&uploadParticlesMutex);
+
+			ASSET_LOG(
+				PARTICLE,
+				name,
+				"Successfully loaded particle (%s)\n",
+				particleName);
+		}
+
+		ASSET_LOG_COMMIT(PARTICLE, name);
+
+		pthread_mutex_lock(&loadingParticlesMutex);
+		hashMapDelete(loadingParticles, &nameID);
+		pthread_mutex_unlock(&loadingParticlesMutex);
 	}
+
+	free(fullFilename);
 
 	free(arg);
 	free(name);

@@ -52,7 +52,44 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 	arg->size = size;
 	arg->autoScaling = autoScaling;
 
-	START_ACQUISITION_THREAD(Font, arg);
+	bool skip = false;
+
+	UUID fontName = getFontName(name, size, autoScaling);
+
+	pthread_mutex_lock(&fontsMutex);
+	if (!hashMapGetData(fonts, &fontName))
+	{
+		pthread_mutex_unlock(&fontsMutex);
+		pthread_mutex_lock(&loadingFontsMutex);
+
+		if (hashMapGetData(loadingFonts, &fontName))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingFontsMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadFontsMutex);
+
+			if (hashMapGetData(uploadFontsQueue, &fontName))
+			{
+				skip = true;
+			}
+
+			pthread_mutex_unlock(&uploadFontsMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(Font, arg);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&fontsMutex);
+	}
 }
 
 ACQUISITION_THREAD(Font);
@@ -68,107 +105,74 @@ void* loadFontThread(void *arg)
 
 	UUID fontName = getFontName(name, size, autoScaling);
 
-	pthread_mutex_lock(&fontsMutex);
-	if (!hashMapGetData(fonts, &fontName))
+	bool loading = true;
+	pthread_mutex_lock(&loadingFontsMutex);
+	hashMapInsert(loadingFonts, &fontName, &loading);
+	pthread_mutex_unlock(&loadingFontsMutex);
+
+	ASSET_LOG(
+		FONT,
+		fontName.string,
+		"Loading font (%s)...\n",
+		fontName.string);
+
+	Font font = {};
+
+	font.name = fontName;
+	font.lifetime = config.assetsConfig.minFontLifetime;
+
+	nk_font_atlas_init_default(&font.atlas);
+	nk_font_atlas_begin(&font.atlas);
+
+	char *filename = getFullFilePath(name, "ttf", "resources/fonts");
+
+	font.font = nk_font_atlas_add_from_file(
+		&font.atlas,
+		filename,
+		getFontPixelSize(size, autoScaling),
+		NULL);
+
+	free(filename);
+
+	if (!font.font)
 	{
-		pthread_mutex_unlock(&fontsMutex);
-		pthread_mutex_lock(&loadingFontsMutex);
-
-		if (hashMapGetData(loadingFonts, &fontName))
-		{
-			error = 1;
-		}
-
-		pthread_mutex_unlock(&loadingFontsMutex);
-
-		if (error != 1)
-		{
-			pthread_mutex_lock(&uploadFontsMutex);
-
-			if (hashMapGetData(uploadFontsQueue, &fontName))
-			{
-				error = 1;
-			}
-
-			pthread_mutex_unlock(&uploadFontsMutex);
-		}
-
-		if (error != 1)
-		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingFontsMutex);
-			hashMapInsert(loadingFonts, &fontName, &loading);
-			pthread_mutex_unlock(&loadingFontsMutex);
-
-			ASSET_LOG(
-				FONT,
-				fontName.string,
-				"Loading font (%s)...\n",
-				fontName.string);
-
-			Font font = {};
-
-			font.name = fontName;
-			font.lifetime = config.assetsConfig.minFontLifetime;
-
-			nk_font_atlas_init_default(&font.atlas);
-			nk_font_atlas_begin(&font.atlas);
-
-			char *filename = getFullFilePath(name, "ttf", "resources/fonts");
-
-			font.font = nk_font_atlas_add_from_file(
-				&font.atlas,
-				filename,
-				getFontPixelSize(size, autoScaling),
-				NULL);
-
-			free(filename);
-
-			if (!font.font)
-			{
-				error = -1;
-			}
-			else
-			{
-				font.textureData = nk_font_atlas_bake(
-					&font.atlas,
-					&font.textureWidth,
-					&font.textureHeight,
-					NK_FONT_ATLAS_RGBA32);
-			}
-
-			if (error != - 1)
-			{
-				pthread_mutex_lock(&uploadFontsMutex);
-				hashMapInsert(uploadFontsQueue, &fontName, &font);
-				pthread_mutex_unlock(&uploadFontsMutex);
-
-				ASSET_LOG(
-					FONT,
-					fontName.string,
-					"Successfully loaded font (%s)\n",
-					fontName.string);
-			}
-			else
-			{
-				ASSET_LOG(
-					FONT,
-					fontName.string,
-					"Failed to load font (%s)\n",
-					fontName.string);
-			}
-
-			ASSET_LOG_COMMIT(FONT, fontName.string);
-
-			pthread_mutex_lock(&loadingFontsMutex);
-			hashMapDelete(loadingFonts, &fontName);
-			pthread_mutex_unlock(&loadingFontsMutex);
-		}
+		error = -1;
 	}
 	else
 	{
-		pthread_mutex_unlock(&fontsMutex);
+		font.textureData = nk_font_atlas_bake(
+			&font.atlas,
+			&font.textureWidth,
+			&font.textureHeight,
+			NK_FONT_ATLAS_RGBA32);
 	}
+
+	if (error != - 1)
+	{
+		pthread_mutex_lock(&uploadFontsMutex);
+		hashMapInsert(uploadFontsQueue, &fontName, &font);
+		pthread_mutex_unlock(&uploadFontsMutex);
+
+		ASSET_LOG(
+			FONT,
+			fontName.string,
+			"Successfully loaded font (%s)\n",
+			fontName.string);
+	}
+	else
+	{
+		ASSET_LOG(
+			FONT,
+			fontName.string,
+			"Failed to load font (%s)\n",
+			fontName.string);
+	}
+
+	ASSET_LOG_COMMIT(FONT, fontName.string);
+
+	pthread_mutex_lock(&loadingFontsMutex);
+	hashMapDelete(loadingFonts, &fontName);
+	pthread_mutex_unlock(&loadingFontsMutex);
 
 	free(arg);
 	free(name);
