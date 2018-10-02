@@ -3,8 +3,8 @@
 
 #include "components/component_types.h"
 
-#define MAX_NUM_POINT_LIGHTS 64
-#define MAX_NUM_SPOTLIGHTS 64
+#define MAX_NUM_POINT_LIGHTS 8
+#define MAX_NUM_SPOTLIGHTS 8
 
 typedef struct directional_light_t
 {

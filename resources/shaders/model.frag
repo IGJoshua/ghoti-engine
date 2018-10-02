@@ -8,8 +8,8 @@ const uint METALLIC_COMPONENT = 2;
 const uint NORMAL_COMPONENT = 3;
 const uint ROUGHNESS_COMPONENT = 4;
 
-#define MAX_NUM_POINT_LIGHTS 64
-#define MAX_NUM_SPOTLIGHTS 64
+#define MAX_NUM_POINT_LIGHTS 8
+#define MAX_NUM_SPOTLIGHTS 8
 
 in vec4 fragColor;
 in vec3 fragPosition;
