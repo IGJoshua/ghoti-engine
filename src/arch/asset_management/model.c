@@ -76,7 +76,7 @@ void loadModel(const char *name)
 	}
 }
 
-ACQUISITION_THREAD(Model);
+ACQUISITION_THREAD(model, Model, Models, arg);
 
 void* loadModelThread(void *arg)
 {
@@ -85,11 +85,6 @@ void* loadModelThread(void *arg)
 	char *name = arg;
 
 	UUID modelName = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingModelsMutex);
-	hashMapInsert(loadingModels, &modelName, &loading);
-	pthread_mutex_unlock(&loadingModelsMutex);
 
 	Model model = {};
 

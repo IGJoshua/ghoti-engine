@@ -92,7 +92,7 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 	}
 }
 
-ACQUISITION_THREAD(Font);
+ACQUISITION_THREAD(font, Font, Fonts, ((FontThreadArgs*)arg)->name);
 
 void* loadFontThread(void *arg)
 {
@@ -104,11 +104,6 @@ void* loadFontThread(void *arg)
 	bool autoScaling = threadArgs->autoScaling;
 
 	UUID fontName = getFontName(name, size, autoScaling);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingFontsMutex);
-	hashMapInsert(loadingFonts, &fontName, &loading);
-	pthread_mutex_unlock(&loadingFontsMutex);
 
 	ASSET_LOG(
 		FONT,

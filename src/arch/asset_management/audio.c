@@ -79,7 +79,7 @@ void loadAudio(const char *name)
 	}
 }
 
-ACQUISITION_THREAD(Audio);
+ACQUISITION_THREAD(audio, Audio, Audio, arg);
 
 void* loadAudioThread(void *arg)
 {
@@ -88,11 +88,6 @@ void* loadAudioThread(void *arg)
 	char *name = arg;
 
 	UUID audioName = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingAudioMutex);
-	hashMapInsert(loadingAudio, &audioName, &loading);
-	pthread_mutex_unlock(&loadingAudioMutex);
 
 	if (freeBuffer >= NUM_AUDIO_BUFF)
 	{

@@ -89,7 +89,7 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 	}
 }
 
-ACQUISITION_THREAD(Cubemap);
+ACQUISITION_THREAD(cubemap, Cubemap, Cubemaps, ((CubemapThreadArgs*)arg)->name);
 
 void* loadCubemapThread(void *arg)
 {
@@ -100,11 +100,6 @@ void* loadCubemapThread(void *arg)
 	bool swapFrontAndBack = threadArgs->swapFrontAndBack;
 
 	UUID cubemapName = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingCubemapsMutex);
-	hashMapInsert(loadingCubemaps, &cubemapName, &loading);
-	pthread_mutex_unlock(&loadingCubemapsMutex);
 
 	char *fullFilenames[6];
 	getFullCubemapFilenames(name, fullFilenames);

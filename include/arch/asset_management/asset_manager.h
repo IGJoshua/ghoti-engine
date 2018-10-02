@@ -44,7 +44,7 @@ pthread_create( \
 	(void*)arg); \
 pthread_detach(acquisitionThread)
 
-#define ACQUISITION_THREAD(Asset) \
+#define ACQUISITION_THREAD(asset, Asset, Assets, name) \
 void* acquire ## Asset ## Thread(void *arg) \
 { \
 	pthread_mutex_lock(&assetThreadsMutex); \
@@ -58,6 +58,13 @@ void* acquire ## Asset ## Thread(void *arg) \
 \
 	pthread_mutex_unlock(&assetThreadsMutex); \
 	pthread_cond_broadcast(&assetThreadsCondition); \
+\
+	UUID asset ## Name = idFromName(name); \
+\
+	bool loading = true; \
+	pthread_mutex_lock(&loading ## Assets ## Mutex); \
+	hashMapInsert(loading ## Assets, &asset ## Name, &loading); \
+	pthread_mutex_unlock(&loading ## Assets ## Mutex); \
 \
 	pthread_t loadingThread; \
 	pthread_create(&loadingThread, NULL, &load ## Asset ## Thread, arg); \

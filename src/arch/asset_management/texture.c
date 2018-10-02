@@ -90,7 +90,7 @@ void loadTexture(const char *filename, const char *name)
 	}
 }
 
-ACQUISITION_THREAD(Texture);
+ACQUISITION_THREAD(texture, Texture, Textures, ((TextureThreadArgs*)arg)->name);
 
 void* loadTextureThread(void *arg)
 {
@@ -101,11 +101,6 @@ void* loadTextureThread(void *arg)
 	char *name = threadArgs->name;
 
 	UUID nameID = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingTexturesMutex);
-	hashMapInsert(loadingTextures, &nameID, &loading);
-	pthread_mutex_unlock(&loadingTexturesMutex);
 
 	const char *textureName = strrchr(filename, '/');
 	if (!textureName)

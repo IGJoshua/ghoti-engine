@@ -80,7 +80,7 @@ void loadImage(const char *name, bool textureFiltering)
 	}
 }
 
-ACQUISITION_THREAD(Image);
+ACQUISITION_THREAD(image, Image, Images, ((ImageThreadArgs*)arg)->name);
 
 void* loadImageThread(void *arg)
 {
@@ -91,11 +91,6 @@ void* loadImageThread(void *arg)
 	bool textureFiltering = threadArgs->textureFiltering;
 
 	UUID nameID = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingImagesMutex);
-	hashMapInsert(loadingImages, &nameID, &loading);
-	pthread_mutex_unlock(&loadingImagesMutex);
 
 	char *fullFilename = getFullImageFilename(name);
 	if (!fullFilename)

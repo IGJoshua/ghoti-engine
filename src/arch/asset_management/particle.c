@@ -90,7 +90,11 @@ void loadParticle(
 	}
 }
 
-ACQUISITION_THREAD(Particle);
+ACQUISITION_THREAD(
+	particle,
+	Particle,
+	Particles,
+	((ParticleThreadArgs*)arg)->name);
 
 void* loadParticleThread(void *arg)
 {
@@ -104,11 +108,6 @@ void* loadParticleThread(void *arg)
 	bool textureFiltering = threadArgs->textureFiltering;
 
 	UUID nameID = idFromName(name);
-
-	bool loading = true;
-	pthread_mutex_lock(&loadingParticlesMutex);
-	hashMapInsert(loadingParticles, &nameID, &loading);
-	pthread_mutex_unlock(&loadingParticlesMutex);
 
 	char *fullFilename = getFullParticleFilename(name);
 	if (!fullFilename)
