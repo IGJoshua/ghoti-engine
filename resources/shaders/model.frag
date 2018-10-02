@@ -98,10 +98,15 @@ void main()
 		material[BASE_COMPONENT],
 		fragMaterialUV));
 
-	vec3 finalColor = getDirectionalLightColor(
-		directionalLight,
-		fragNormal,
-		diffuseTextureColor);
+	vec3 finalColor = vec3(0.0);
+
+	if (numDirectionalLights == 1)
+	{
+		finalColor += getDirectionalLightColor(
+			directionalLight,
+			fragNormal,
+			diffuseTextureColor);
+	}
 
 	for (uint i = 0; i < numPointLights; i++)
 	{
