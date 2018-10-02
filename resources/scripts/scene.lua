@@ -26,7 +26,7 @@ end
 
 function Scene:addComponentToEntity(component, entity, componentData)
   local componentID = C.idFromName(component)
-  C.sceneAddComponentToEntity(self.ptr, entity, componentID, componentData)
+  return C.sceneAddComponentToEntity(self.ptr, entity, componentID, componentData)
 end
 
 function Scene:removeComponentFromEntity(component, entity)
