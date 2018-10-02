@@ -42,6 +42,7 @@
 				"debug_renderer",
 				"collision_primitive_renderer",
 				"particle_renderer",
+				"post_processing",
 				"gui_renderer"
 			]
 		}
@@ -80,7 +81,7 @@
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
-		"particle_emitter": 128,
+		"particle_emitter": 32,
 		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,

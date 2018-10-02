@@ -3,7 +3,6 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/model.h"
 #include "asset_management/animation.h"
-#include "asset_management/texture.h"
 
 #include "components/component_types.h"
 #include "components/transform.h"
