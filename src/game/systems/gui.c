@@ -57,7 +57,6 @@ internal bool updateDefaultFont;
 
 internal Image widgetBackground;
 
-internal int32 previousViewportWidth = 0;
 internal int32 previousViewportHeight = 0;
 
 extern int32 viewportWidth;
@@ -226,8 +225,7 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
-	if (viewportWidth != previousViewportWidth ||
-		viewportHeight != previousViewportHeight)
+	if (viewportHeight != previousViewportHeight)
 	{
 		ComponentDataTable *fontComponents =
 			*(ComponentDataTable**)hashMapGetData(
@@ -278,7 +276,6 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		}
 	}
 
-	previousViewportWidth = viewportWidth;
 	previousViewportHeight = viewportHeight;
 
 	widgetBackground = getImage(WIDGET_BACKGROUND);
