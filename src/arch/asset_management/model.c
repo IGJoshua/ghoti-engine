@@ -67,7 +67,7 @@ void loadModel(const char *name)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Model, modelName);
+			START_ACQUISITION_THREAD(model, Model, Models, modelName, nameID);
 		}
 	}
 	else
@@ -76,7 +76,7 @@ void loadModel(const char *name)
 	}
 }
 
-ACQUISITION_THREAD(model, Model, Models, arg);
+ACQUISITION_THREAD(Model);
 
 void* loadModelThread(void *arg)
 {

@@ -81,7 +81,12 @@ void loadParticle(
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Particle, arg);
+			START_ACQUISITION_THREAD(
+				particle,
+				Particle,
+				Particles,
+				arg,
+				nameID);
 		}
 	}
 	else
@@ -90,11 +95,7 @@ void loadParticle(
 	}
 }
 
-ACQUISITION_THREAD(
-	particle,
-	Particle,
-	Particles,
-	((ParticleThreadArgs*)arg)->name);
+ACQUISITION_THREAD(Particle);
 
 void* loadParticleThread(void *arg)
 {

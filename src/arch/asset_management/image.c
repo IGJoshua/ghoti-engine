@@ -71,7 +71,7 @@ void loadImage(const char *name, bool textureFiltering)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Image, arg);
+			START_ACQUISITION_THREAD(image, Image, Images, arg, nameID);
 		}
 	}
 	else
@@ -80,7 +80,7 @@ void loadImage(const char *name, bool textureFiltering)
 	}
 }
 
-ACQUISITION_THREAD(image, Image, Images, ((ImageThreadArgs*)arg)->name);
+ACQUISITION_THREAD(Image);
 
 void* loadImageThread(void *arg)
 {

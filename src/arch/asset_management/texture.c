@@ -81,7 +81,7 @@ void loadTexture(const char *filename, const char *name)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Texture, arg);
+			START_ACQUISITION_THREAD(texture, Texture, Textures, arg, nameID);
 		}
 	}
 	else
@@ -90,7 +90,7 @@ void loadTexture(const char *filename, const char *name)
 	}
 }
 
-ACQUISITION_THREAD(texture, Texture, Textures, ((TextureThreadArgs*)arg)->name);
+ACQUISITION_THREAD(Texture);
 
 void* loadTextureThread(void *arg)
 {

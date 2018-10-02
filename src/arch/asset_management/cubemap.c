@@ -80,7 +80,12 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Cubemap, arg);
+			START_ACQUISITION_THREAD(
+				cubemap,
+				Cubemap,
+				Cubemaps,
+				arg,
+				cubemapName);
 		}
 	}
 	else
@@ -89,7 +94,7 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 	}
 }
 
-ACQUISITION_THREAD(cubemap, Cubemap, Cubemaps, ((CubemapThreadArgs*)arg)->name);
+ACQUISITION_THREAD(Cubemap);
 
 void* loadCubemapThread(void *arg)
 {

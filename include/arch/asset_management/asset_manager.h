@@ -25,7 +25,7 @@ extern pthread_mutex_t assetManagerShutdownMutex
 internal void* acquire ## Asset ## Thread(void *arg); \
 internal void* load ## Asset ## Thread(void *arg)
 
-#define START_ACQUISITION_THREAD(Asset, arg) \
+#define START_ACQUISITION_THREAD(asset, Asset, Assets, arg, name) \
 pthread_mutex_lock(&assetManagerShutdownMutex); \
 \
 if (assetManagerIsShutdown) \
@@ -36,6 +36,11 @@ if (assetManagerIsShutdown) \
 \
 pthread_mutex_unlock(&assetManagerShutdownMutex); \
 \
+bool loading = true; \
+pthread_mutex_lock(&loading ## Assets ## Mutex); \
+hashMapInsert(loading ## Assets, &name, &loading); \
+pthread_mutex_unlock(&loading ## Assets ## Mutex); \
+\
 pthread_t acquisitionThread; \
 pthread_create( \
 	&acquisitionThread, \
@@ -44,16 +49,9 @@ pthread_create( \
 	(void*)arg); \
 pthread_detach(acquisitionThread)
 
-#define ACQUISITION_THREAD(asset, Asset, Assets, name) \
+#define ACQUISITION_THREAD(Asset) \
 void* acquire ## Asset ## Thread(void *arg) \
 { \
-	UUID asset ## Name = idFromName(name); \
-\
-	bool loading = true; \
-	pthread_mutex_lock(&loading ## Assets ## Mutex); \
-	hashMapInsert(loading ## Assets, &asset ## Name, &loading); \
-	pthread_mutex_unlock(&loading ## Assets ## Mutex); \
-\
 	pthread_mutex_lock(&assetThreadsMutex); \
 \
 	while (assetThreadCount == config.assetsConfig.maxThreadCount) \

@@ -83,7 +83,7 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Font, arg);
+			START_ACQUISITION_THREAD(font, Font, Fonts, arg, fontName);
 		}
 	}
 	else
@@ -92,7 +92,7 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 	}
 }
 
-ACQUISITION_THREAD(font, Font, Fonts, ((FontThreadArgs*)arg)->name);
+ACQUISITION_THREAD(Font);
 
 void* loadFontThread(void *arg)
 {

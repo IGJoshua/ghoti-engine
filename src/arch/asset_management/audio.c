@@ -70,7 +70,7 @@ void loadAudio(const char *name)
 
 		if (!skip)
 		{
-			START_ACQUISITION_THREAD(Audio, audioName);
+			START_ACQUISITION_THREAD(audio, Audio, Audio, audioName, nameID);
 		}
 	}
 	else
@@ -79,7 +79,7 @@ void loadAudio(const char *name)
 	}
 }
 
-ACQUISITION_THREAD(audio, Audio, Audio, arg);
+ACQUISITION_THREAD(Audio);
 
 void* loadAudioThread(void *arg)
 {
