@@ -325,6 +325,7 @@ typedef struct joint_component_t
 
 typedef struct light_component_t
 {
+	bool enabled;
 	LightType type;
 	kmVec3 color;
 	kmVec3 ambient;

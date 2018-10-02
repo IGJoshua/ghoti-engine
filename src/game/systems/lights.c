@@ -115,7 +115,7 @@ void addDirectionalLight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numDirectionalLights == 1)
+	if (!light->enabled || numDirectionalLights == 1)
 	{
 		return;
 	}
@@ -135,7 +135,7 @@ void addPointLight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numPointLights == MAX_NUM_POINT_LIGHTS)
+	if (!light->enabled || numPointLights == MAX_NUM_POINT_LIGHTS)
 	{
 		return;
 	}
@@ -157,7 +157,7 @@ void addSpotlight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numSpotlights == MAX_NUM_SPOTLIGHTS)
+	if (!light->enabled || numSpotlights == MAX_NUM_SPOTLIGHTS)
 	{
 		return;
 	}
