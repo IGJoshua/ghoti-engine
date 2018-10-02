@@ -325,6 +325,7 @@ typedef struct joint_component_t
 
 typedef struct light_component_t
 {
+	bool enabled;
 	LightType type;
 	kmVec3 color;
 	kmVec3 ambient;
@@ -367,7 +368,7 @@ typedef struct particle_emitter_component_t
 	uint32 maxNumParticles;
 	bool stopAtCapacity;
 	real64 lifetime[2];
-	real32 fadeTime;
+	real32 fadeTime[2];
 	kmVec3 initialVelocity;
 	kmVec3 minRandomVelocity;
 	kmVec3 maxRandomVelocity;

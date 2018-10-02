@@ -57,7 +57,6 @@ internal bool updateDefaultFont;
 
 internal Image widgetBackground;
 
-internal int32 previousViewportWidth = 0;
 internal int32 previousViewportHeight = 0;
 
 extern int32 viewportWidth;
@@ -226,8 +225,7 @@ internal void initGUISystem(Scene *scene)
 
 internal void beginGUISystem(Scene *scene, real64 dt)
 {
-	if (viewportWidth != previousViewportWidth ||
-		viewportHeight != previousViewportHeight)
+	if (viewportHeight != previousViewportHeight)
 	{
 		ComponentDataTable *fontComponents =
 			*(ComponentDataTable**)hashMapGetData(
@@ -278,13 +276,9 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		}
 	}
 
-	previousViewportWidth = viewportWidth;
 	previousViewportHeight = viewportHeight;
 
-	if (strlen(widgetBackground.name.string) == 0)
-	{
-		widgetBackground = getImage(WIDGET_BACKGROUND);
-	}
+	widgetBackground = getImage(WIDGET_BACKGROUND);
 
 	glBindVertexArray(guiVertexArray);
 	glBindBuffer(GL_ARRAY_BUFFER, guiVertexBuffer);
@@ -758,19 +752,14 @@ void addProgressBar(
 		nk_image_id(widgetBackground.id),
 		getColor(&progressBar->backgroundColor));
 
-	GUITransformComponent progressBarTransform = *guiTransform;
-	progressBarTransform.size.x *= progressBar->value;
+	struct nk_rect rect = widgetRect;
 
-	struct nk_rect rect = getRect(
-		&progressBarTransform,
-		panelWidth,
-		panelHeight);
+	if (progressBar->reversed)
+	{
+		rect.x += (1.0f - progressBar->value) * rect.w;
+	}
 
-	int32 offsetDirection = progressBar->reversed ? 1 : -1;
-	real32 offset = (1.0f - progressBar->value) / 2.0f;
-	real32 finalOffset = offsetDirection * widgetRect.w * offset;
-
-	rect.x += finalOffset;
+	rect.w *= progressBar->value;
 
 	nk_layout_space_push(&ctx, rect);
 	nk_image_color(

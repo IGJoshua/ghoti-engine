@@ -50,7 +50,44 @@ void loadTexture(const char *filename, const char *name)
 	arg->name = calloc(1, strlen(name) + 1);
 	strcpy(arg->name, name);
 
-	START_ACQUISITION_THREAD(Texture, arg);
+	bool skip = false;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&texturesMutex);
+	if (!hashMapGetData(textures, &nameID))
+	{
+		pthread_mutex_unlock(&texturesMutex);
+		pthread_mutex_lock(&loadingTexturesMutex);
+
+		if (hashMapGetData(loadingTextures, &nameID))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingTexturesMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadTexturesMutex);
+
+			if (hashMapGetData(uploadTexturesQueue, &nameID))
+			{
+				skip = true;
+			}
+
+			pthread_mutex_unlock(&uploadTexturesMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(texture, Texture, Textures, arg, nameID);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&texturesMutex);
+	}
 }
 
 ACQUISITION_THREAD(Texture);
@@ -65,87 +102,49 @@ void* loadTextureThread(void *arg)
 
 	UUID nameID = idFromName(name);
 
-	pthread_mutex_lock(&texturesMutex);
-	if (!hashMapGetData(textures, &nameID))
+	const char *textureName = strrchr(filename, '/');
+	if (!textureName)
 	{
-		pthread_mutex_unlock(&texturesMutex);
-		pthread_mutex_lock(&loadingTexturesMutex);
-
-		if (hashMapGetData(loadingTextures, &nameID))
-		{
-			error = 1;
-		}
-
-		pthread_mutex_unlock(&loadingTexturesMutex);
-
-		if (error != 1)
-		{
-			pthread_mutex_lock(&uploadTexturesMutex);
-
-			if (hashMapGetData(uploadTexturesQueue, &nameID))
-			{
-				error = 1;
-			}
-
-			pthread_mutex_unlock(&uploadTexturesMutex);
-		}
-
-		if (error != 1)
-		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingTexturesMutex);
-			hashMapInsert(loadingTextures, &nameID, &loading);
-			pthread_mutex_unlock(&loadingTexturesMutex);
-
-			const char *textureName = strrchr(filename, '/');
-			if (!textureName)
-			{
-				textureName = filename;
-			}
-			else
-			{
-				textureName += 1;
-			}
-
-			ASSET_LOG(TEXTURE, name, "Loading texture (%s)...\n", textureName);
-
-			Texture texture = {};
-
-			texture.name = nameID;
-			texture.lifetime = config.assetsConfig.minTextureLifetime;
-
-			error = loadTextureData(
-				ASSET_LOG_TYPE_TEXTURE,
-				"texture",
-				name,
-				filename,
-				0,
-				&texture.data);
-
-			if (error != - 1)
-			{
-				pthread_mutex_lock(&uploadTexturesMutex);
-				hashMapInsert(uploadTexturesQueue, &nameID, &texture);
-				pthread_mutex_unlock(&uploadTexturesMutex);
-
-				ASSET_LOG(
-					TEXTURE,
-					name,
-					"Successfully loaded texture (%s)\n",
-					textureName);
-			}
-
-			ASSET_LOG_COMMIT(TEXTURE, name);
-
-			pthread_mutex_lock(&loadingTexturesMutex);
-			hashMapDelete(loadingTextures, &nameID);
-			pthread_mutex_unlock(&loadingTexturesMutex);
-		}
+		textureName = filename;
 	}
 	else
 	{
-		pthread_mutex_unlock(&texturesMutex);
+		textureName += 1;
 	}
+
+	ASSET_LOG(TEXTURE, name, "Loading texture (%s)...\n", textureName);
+
+	Texture texture = {};
+
+	texture.name = nameID;
+	texture.lifetime = config.assetsConfig.minTextureLifetime;
+
+	error = loadTextureData(
+		ASSET_LOG_TYPE_TEXTURE,
+		"texture",
+		name,
+		filename,
+		0,
+		&texture.data);
+
+	if (error != - 1)
+	{
+		pthread_mutex_lock(&uploadTexturesMutex);
+		hashMapInsert(uploadTexturesQueue, &nameID, &texture);
+		pthread_mutex_unlock(&uploadTexturesMutex);
+
+		ASSET_LOG(
+			TEXTURE,
+			name,
+			"Successfully loaded texture (%s)\n",
+			textureName);
+	}
+
+	ASSET_LOG_COMMIT(TEXTURE, name);
+
+	pthread_mutex_lock(&loadingTexturesMutex);
+	hashMapDelete(loadingTextures, &nameID);
+	pthread_mutex_unlock(&loadingTexturesMutex);
 
 	free(arg);
 	free(filename);

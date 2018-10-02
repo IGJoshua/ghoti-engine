@@ -40,7 +40,44 @@ void loadImage(const char *name, bool textureFiltering)
 
 	arg->textureFiltering = textureFiltering;
 
-	START_ACQUISITION_THREAD(Image, arg);
+	bool skip = false;
+
+	UUID nameID = idFromName(name);
+
+	pthread_mutex_lock(&imagesMutex);
+	if (!hashMapGetData(images, &nameID))
+	{
+		pthread_mutex_unlock(&imagesMutex);
+		pthread_mutex_lock(&loadingImagesMutex);
+
+		if (hashMapGetData(loadingImages, &nameID))
+		{
+			skip = true;
+		}
+
+		pthread_mutex_unlock(&loadingImagesMutex);
+
+		if (!skip)
+		{
+			pthread_mutex_lock(&uploadImagesMutex);
+
+			if (hashMapGetData(uploadImagesQueue, &nameID))
+			{
+				skip = true;
+			}
+
+			pthread_mutex_unlock(&uploadImagesMutex);
+		}
+
+		if (!skip)
+		{
+			START_ACQUISITION_THREAD(image, Image, Images, arg, nameID);
+		}
+	}
+	else
+	{
+		pthread_mutex_unlock(&imagesMutex);
+	}
 }
 
 ACQUISITION_THREAD(Image);
@@ -55,98 +92,60 @@ void* loadImageThread(void *arg)
 
 	UUID nameID = idFromName(name);
 
-	pthread_mutex_lock(&imagesMutex);
-	if (!hashMapGetData(images, &nameID))
+	char *fullFilename = getFullImageFilename(name);
+	if (!fullFilename)
 	{
-		pthread_mutex_unlock(&imagesMutex);
-		pthread_mutex_lock(&loadingImagesMutex);
-
-		if (hashMapGetData(loadingImages, &nameID))
-		{
-			error = 1;
-		}
-
-		pthread_mutex_unlock(&loadingImagesMutex);
-
-		if (error != 1)
-		{
-			pthread_mutex_lock(&uploadImagesMutex);
-
-			if (hashMapGetData(uploadImagesQueue, &nameID))
-			{
-				error = 1;
-			}
-
-			pthread_mutex_unlock(&uploadImagesMutex);
-		}
-
-		if (error != 1)
-		{
-			bool loading = true;
-			pthread_mutex_lock(&loadingImagesMutex);
-			hashMapInsert(loadingImages, &nameID, &loading);
-			pthread_mutex_unlock(&loadingImagesMutex);
-
-			char *fullFilename = getFullImageFilename(name);
-			if (!fullFilename)
-			{
-				error = -1;
-			}
-			else
-			{
-				const char *imageName = strrchr(fullFilename, '/');
-				if (!imageName)
-				{
-					imageName = fullFilename;
-				}
-				else
-				{
-					imageName += 1;
-				}
-
-				ASSET_LOG(IMAGE, name, "Loading image (%s)...\n", imageName);
-
-				Image image = {};
-
-				image.name = idFromName(name);
-				image.lifetime = config.assetsConfig.minImageLifetime;
-				image.textureFiltering = textureFiltering;
-
-				error = loadTextureData(
-					ASSET_LOG_TYPE_IMAGE,
-					"image",
-					name,
-					fullFilename,
-					0,
-					&image.data);
-
-				if (error != - 1)
-				{
-					pthread_mutex_lock(&uploadImagesMutex);
-					hashMapInsert(uploadImagesQueue, &nameID, &image);
-					pthread_mutex_unlock(&uploadImagesMutex);
-
-					ASSET_LOG(
-						IMAGE,
-						name,
-						"Successfully loaded image (%s)\n",
-						imageName);
-				}
-
-				ASSET_LOG_COMMIT(IMAGE, name);
-
-				pthread_mutex_lock(&loadingImagesMutex);
-				hashMapDelete(loadingImages, &nameID);
-				pthread_mutex_unlock(&loadingImagesMutex);
-			}
-
-			free(fullFilename);
-		}
+		error = -1;
 	}
 	else
 	{
-		pthread_mutex_unlock(&imagesMutex);
+		const char *imageName = strrchr(fullFilename, '/');
+		if (!imageName)
+		{
+			imageName = fullFilename;
+		}
+		else
+		{
+			imageName += 1;
+		}
+
+		ASSET_LOG(IMAGE, name, "Loading image (%s)...\n", imageName);
+
+		Image image = {};
+
+		image.name = idFromName(name);
+		image.lifetime = config.assetsConfig.minImageLifetime;
+		image.textureFiltering = textureFiltering;
+
+		error = loadTextureData(
+			ASSET_LOG_TYPE_IMAGE,
+			"image",
+			name,
+			fullFilename,
+			0,
+			&image.data);
+
+		if (error != - 1)
+		{
+			pthread_mutex_lock(&uploadImagesMutex);
+			hashMapInsert(uploadImagesQueue, &nameID, &image);
+			pthread_mutex_unlock(&uploadImagesMutex);
+
+			ASSET_LOG(
+				IMAGE,
+				name,
+				"Successfully loaded image (%s)\n",
+				imageName);
+		}
+
+		ASSET_LOG_COMMIT(IMAGE, name);
+
+		pthread_mutex_lock(&loadingImagesMutex);
+		hashMapDelete(loadingImages, &nameID);
+		pthread_mutex_unlock(&loadingImagesMutex);
 	}
+
+	free(fullFilename);
 
 	free(arg);
 	free(name);

@@ -216,6 +216,9 @@ void initializeAssetManager(real64 *dt) {
 	pthread_mutex_init(&assetThreadsMutex, NULL);
 	pthread_cond_init(&assetThreadsCondition, NULL);
 
+	assetManagerIsShutdown = false;
+	pthread_mutex_init(&assetManagerShutdownMutex, NULL);
+
 	exitAssetManagerThread = false;
 	pthread_mutex_init(&exitAssetManagerMutex, NULL);
 
@@ -371,6 +374,10 @@ void freeAssets(void)
 
 void shutdownAssetManager(void)
 {
+	pthread_mutex_lock(&assetManagerShutdownMutex);
+	assetManagerIsShutdown = true;
+	pthread_mutex_unlock(&assetManagerShutdownMutex);
+
 	pthread_mutex_lock(&exitAssetManagerMutex);
 	exitAssetManagerThread = true;
 	pthread_mutex_unlock(&exitAssetManagerMutex);
@@ -395,6 +402,8 @@ void shutdownAssetManager(void)
 
 	pthread_mutex_destroy(&assetThreadsMutex);
 	pthread_cond_destroy(&assetThreadsCondition);
+
+	pthread_mutex_destroy(&assetManagerShutdownMutex);
 
 	DESTROY_ASSET(model, models, Model, Models);
 	DESTROY_ASSET(texture, textures, Texture, Textures);

@@ -33,7 +33,7 @@ void sceneRegisterEntity(Scene *s, UUID newEntity);
 UUID sceneCreateEntity(Scene *s);
 void sceneRemoveEntity(Scene *s, UUID entity);
 
-void sceneAddComponentToEntity(
+int32 sceneAddComponentToEntity(
   Scene *s,
   UUID entity,
   UUID componentType,

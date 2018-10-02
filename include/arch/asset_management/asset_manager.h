@@ -16,13 +16,31 @@ extern pthread_mutex_t upload ## Assets ## Mutex
 #define EXTERN_ASSET_MANAGER_VARIABLES \
 extern uint32 assetThreadCount; \
 extern pthread_mutex_t assetThreadsMutex; \
-extern pthread_cond_t assetThreadsCondition
+extern pthread_cond_t assetThreadsCondition; \
+\
+extern bool assetManagerIsShutdown; \
+extern pthread_mutex_t assetManagerShutdownMutex
 
 #define INTERNAL_ASSET_THREAD_VARIABLES(Asset) \
 internal void* acquire ## Asset ## Thread(void *arg); \
 internal void* load ## Asset ## Thread(void *arg)
 
-#define START_ACQUISITION_THREAD(Asset, arg) \
+#define START_ACQUISITION_THREAD(asset, Asset, Assets, arg, name) \
+pthread_mutex_lock(&assetManagerShutdownMutex); \
+\
+if (assetManagerIsShutdown) \
+{ \
+	pthread_mutex_unlock(&assetManagerShutdownMutex); \
+	return; \
+} \
+\
+pthread_mutex_unlock(&assetManagerShutdownMutex); \
+\
+bool loading = true; \
+pthread_mutex_lock(&loading ## Assets ## Mutex); \
+hashMapInsert(loading ## Assets, &name, &loading); \
+pthread_mutex_unlock(&loading ## Assets ## Mutex); \
+\
 pthread_t acquisitionThread; \
 pthread_create( \
 	&acquisitionThread, \

@@ -126,13 +126,21 @@ internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 			}
 			else
 			{
-				if (particle->lifetime <= particle->fadeTime)
+				if (particle->lifetime <= particle->fadeTime[1])
 				{
-					particle->fadeTimer += dt;
+					particle->fadeTimer[1] += dt;
 					particle->color.w = kmLerp(
 						particle->alpha,
 						0.0f,
-						particle->fadeTimer / particle->fadeTime);
+						particle->fadeTimer[1] / particle->fadeTime[1]);
+				}
+				else if (particle->fadeTimer[0] < particle->fadeTime[0])
+				{
+					particle->fadeTimer[0] += dt;
+					particle->color.w = kmLerp(
+						0.0f,
+						particle->alpha,
+						particle->fadeTimer[0] / particle->fadeTime[0]);
 				}
 
 				listMoveIterator(&listItr);

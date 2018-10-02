@@ -12,6 +12,8 @@
 internal UUID transformComponentID = {};
 internal UUID lightComponentID = {};
 
+internal uint32 lightsSystemRefCount = 0;
+
 uint32 numDirectionalLights = 0;
 DirectionalLight directionalLight;
 
@@ -32,6 +34,11 @@ internal void addPointLight(
 internal void addSpotlight(
 	TransformComponent *transform,
 	LightComponent *light);
+
+internal void initLightsSystem(Scene *scene)
+{
+	lightsSystemRefCount++;
+}
 
 internal void beginLightsSystem(Scene *scene, real64 dt)
 {
@@ -65,6 +72,14 @@ internal void runLightsSystem(Scene *scene, UUID entity, real64 dt)
 	}
 }
 
+internal void shutdownLightsSystem(Scene *scene)
+{
+	if (--lightsSystemRefCount == 0)
+	{
+		clearLights();
+	}
+}
+
 System createLightsSystem(void)
 {
 	transformComponentID = idFromName("transform");
@@ -76,8 +91,10 @@ System createLightsSystem(void)
 	listPushFront(&system.componentTypes, &transformComponentID);
 	listPushFront(&system.componentTypes, &lightComponentID);
 
+	system.init = &initLightsSystem;
 	system.begin = &beginLightsSystem;
 	system.run = &runLightsSystem;
+	system.shutdown = &shutdownLightsSystem;
 
 	return system;
 }
@@ -98,7 +115,7 @@ void addDirectionalLight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numDirectionalLights == 1)
+	if (!light->enabled || numDirectionalLights == 1)
 	{
 		return;
 	}
@@ -118,7 +135,7 @@ void addPointLight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numPointLights == MAX_NUM_POINT_LIGHTS)
+	if (!light->enabled || numPointLights == MAX_NUM_POINT_LIGHTS)
 	{
 		return;
 	}
@@ -140,7 +157,7 @@ void addSpotlight(
 	TransformComponent *transform,
 	LightComponent *light)
 {
-	if (numSpotlights == MAX_NUM_SPOTLIGHTS)
+	if (!light->enabled || numSpotlights == MAX_NUM_SPOTLIGHTS)
 	{
 		return;
 	}
