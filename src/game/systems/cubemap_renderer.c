@@ -20,7 +20,7 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
-#define SKYBOX_MODEL_NAME "cube"
+#define SKYBOX_MODEL_NAME "cubemap"
 
 #define VERTEX_SHADER_FILE "resources/shaders/cubemap.vert"
 #define FRAGMENT_SHADER_FILE "resources/shaders/cubemap.frag"
