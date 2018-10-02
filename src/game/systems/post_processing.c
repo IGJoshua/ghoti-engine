@@ -251,7 +251,7 @@ void createFramebuffer(void)
 		screenTexture,
 		0);
 
-	glBindTexture(GL_TEXTURE_2D, 9);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFramebufferRenderbuffer(
 		GL_FRAMEBUFFER,
