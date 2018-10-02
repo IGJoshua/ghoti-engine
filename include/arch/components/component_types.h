@@ -368,7 +368,7 @@ typedef struct particle_emitter_component_t
 	uint32 maxNumParticles;
 	bool stopAtCapacity;
 	real64 lifetime[2];
-	real32 fadeTime;
+	real32 fadeTime[2];
 	kmVec3 initialVelocity;
 	kmVec3 minRandomVelocity;
 	kmVec3 maxRandomVelocity;

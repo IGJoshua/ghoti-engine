@@ -38,7 +38,18 @@ void addParticle(
 	particle.lifetime = randomRealNumber(
 		particleEmitter->lifetime[0],
 		particleEmitter->lifetime[1]);
-	particle.fadeTime = particleEmitter->fadeTime * particle.lifetime;
+
+	if (particleEmitter->fadeTime[0] + particleEmitter->fadeTime[1] > 1.0f)
+	{
+		real32 sum = particleEmitter->fadeTime[0] +
+					 particleEmitter->fadeTime[1];
+		particleEmitter->fadeTime[0] /= sum;
+		particleEmitter->fadeTime[1] /= sum;
+	}
+
+	particle.fadeTime[0] = particleEmitter->fadeTime[0] * particle.lifetime;
+	particle.fadeTime[1] = particleEmitter->fadeTime[1] * particle.lifetime;
+
 	kmVec3Assign(&particle.position, &transform->globalPosition);
 	kmVec3Assign(&particle.velocity, &particleEmitter->initialVelocity);
 

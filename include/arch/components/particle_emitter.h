@@ -6,8 +6,8 @@
 typedef struct particle_object_t
 {
 	real64 lifetime;
-	real64 fadeTimer;
-	real64 fadeTime;
+	real64 fadeTimer[2];
+	real64 fadeTime[2];
 	int32 sprite;
 	real64 animationTime;
 	int8 animationDirection;
