@@ -176,27 +176,6 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
-	TransformComponent transform =
-		*(TransformComponent*)sceneGetComponentFromEntity(
-			scene,
-			entityID,
-			transformComponentID);
-
-	kmVec3Mul(
-		&transform.lastGlobalScale,
-		&transform.lastGlobalScale,
-		&wireframeComponent->scale);
-	kmVec3Mul(
-		&transform.globalScale,
-		&transform.globalScale,
-		&wireframeComponent->scale);
-
-	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
-		&transform,
-		alpha);
-
-	setUniform(modelUniform, 1, &worldMatrix);
-
 	AnimationComponent *animationComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -226,8 +205,29 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		true : false;
 	setUniform(hasAnimationsUniform, 1, &hasAnimations);
 
+	TransformComponent transform =
+		*(TransformComponent*)sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			transformComponentID);
+
+	kmVec3Mul(
+		&transform.lastGlobalScale,
+		&transform.lastGlobalScale,
+		&wireframeComponent->scale);
+	kmVec3Mul(
+		&transform.globalScale,
+		&transform.globalScale,
+		&wireframeComponent->scale);
+
+	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
+		&transform,
+		alpha);
+
 	if (hasAnimations)
 	{
+		kmMat4Identity(&worldMatrix);
+
 		kmMat4 boneMatrices[MAX_BONE_COUNT];
 		for (uint32 i = 0; i < MAX_BONE_COUNT; i++)
 		{
@@ -267,6 +267,8 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_BONE_COUNT,
 			boneMatrices);
 	}
+
+	setUniform(modelUniform, 1, &worldMatrix);
 
 	for (uint32 i = 0; i < model.numSubsets; i++)
 	{
