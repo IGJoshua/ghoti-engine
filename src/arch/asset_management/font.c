@@ -84,12 +84,16 @@ void loadFont(const char *name, real32 size, bool autoScaling)
 		if (!skip)
 		{
 			START_ACQUISITION_THREAD(font, Font, Fonts, arg, fontName);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&fontsMutex);
 	}
+
+	free(arg->name);
+	free(arg);
 }
 
 ACQUISITION_THREAD(Font);

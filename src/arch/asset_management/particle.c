@@ -87,12 +87,16 @@ void loadParticle(
 				Particles,
 				arg,
 				nameID);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&particlesMutex);
 	}
+
+	free(arg->name);
+	free(arg);
 }
 
 ACQUISITION_THREAD(Particle);

@@ -86,12 +86,16 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 				Cubemaps,
 				arg,
 				cubemapName);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&cubemapsMutex);
 	}
+
+	free(arg->name);
+	free(arg);
 }
 
 ACQUISITION_THREAD(Cubemap);

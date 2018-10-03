@@ -68,12 +68,15 @@ void loadModel(const char *name)
 		if (!skip)
 		{
 			START_ACQUISITION_THREAD(model, Model, Models, modelName, nameID);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&modelsMutex);
 	}
+
+	free(modelName);
 }
 
 ACQUISITION_THREAD(Model);

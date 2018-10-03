@@ -82,12 +82,17 @@ void loadTexture(const char *filename, const char *name)
 		if (!skip)
 		{
 			START_ACQUISITION_THREAD(texture, Texture, Textures, arg, nameID);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&texturesMutex);
 	}
+
+	free(arg->filename);
+	free(arg->name);
+	free(arg);
 }
 
 ACQUISITION_THREAD(Texture);
