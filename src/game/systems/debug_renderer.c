@@ -107,12 +107,6 @@ internal void addTransform(
 	real32 lineWidth,
 	real32 sizeScale);
 
-internal kmVec3 transformVertex(
-	const kmVec3 *position,
-	const kmQuaternion *rotation,
-	const kmVec3 *scale,
-	const kmVec3 *vertex);
-
 internal void drawPrimitives(
 	DebugVertexBuffer *vertexBuffer,
 	GLenum primitiveType,
@@ -471,41 +465,30 @@ void addTransform(
 	real32 lineWidth,
 	real32 sizeScale)
 {
-	kmVec3 origin = KM_VEC3_ZERO;
-	kmVec3 xAxis = KM_VEC3_POS_X;
-	kmVec3 yAxis = KM_VEC3_POS_Y;
-	kmVec3 zAxis = KM_VEC3_POS_Z;
+	kmVec3 xAxis;
+	kmQuaternionGetRightVec3(&xAxis, rotation);
+
+	kmVec3 yAxis;
+	kmQuaternionGetUpVec3(&yAxis, rotation);
+
+	kmVec3 zAxis;
+	kmQuaternionGetForwardVec3LH(&zAxis, rotation);
+
+	kmVec3Mul(&xAxis, &xAxis, scale);
+	kmVec3Mul(&yAxis, &yAxis, scale);
+	kmVec3Mul(&zAxis, &zAxis, scale);
 
 	kmVec3Scale(&xAxis, &xAxis, sizeScale);
 	kmVec3Scale(&yAxis, &yAxis, sizeScale);
 	kmVec3Scale(&zAxis, &zAxis, sizeScale);
 
-	origin = transformVertex(position, rotation, scale, &origin);
-	xAxis = transformVertex(position, rotation, scale, &xAxis);
-	yAxis = transformVertex(position, rotation, scale, &yAxis);
-	zAxis = transformVertex(position, rotation, scale, &zAxis);
+	kmVec3Add(&xAxis, &xAxis, position);
+	kmVec3Add(&yAxis, &yAxis, position);
+	kmVec3Add(&zAxis, &zAxis, position);
 
-	addLine(&origin, &xAxis, xAxisColor, xAxisEndpointColor, lineWidth);
-	addLine(&origin, &yAxis, yAxisColor, yAxisEndpointColor, lineWidth);
-	addLine(&origin, &zAxis, zAxisColor, zAxisEndpointColor, lineWidth);
-}
-
-internal kmVec3 transformVertex(
-	const kmVec3 *position,
-	const kmQuaternion *rotation,
-	const kmVec3 *scale,
-	const kmVec3 *vertex)
-{
-	kmVec3 transformedVertex;
-
-	kmVec3Add(&transformedVertex, vertex, position);
-	kmQuaternionMultiplyVec3(
-		&transformedVertex,
-		rotation,
-		&transformedVertex);
-	kmVec3Mul(&transformedVertex, &transformedVertex, scale);
-
-	return transformedVertex;
+	addLine(position, &xAxis, xAxisColor, xAxisEndpointColor, lineWidth);
+	addLine(position, &yAxis, yAxisColor, yAxisEndpointColor, lineWidth);
+	addLine(position, &zAxis, zAxisColor, zAxisEndpointColor, lineWidth);
 }
 
 void drawPrimitives(
