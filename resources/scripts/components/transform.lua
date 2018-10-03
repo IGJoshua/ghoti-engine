@@ -34,7 +34,7 @@ function component:markDirty(scene)
   end
 end
 
-function component:parent(scene, child, parent)
+function component:setParent(scene, child, parent)
   local parentTransform = scene:getComponent("transform", parent)
 
   self.nextSibling = parentTransform.firstChild
