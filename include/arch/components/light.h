@@ -23,6 +23,7 @@ typedef struct point_light_t
 	kmVec3 previousPosition;
 	kmVec3 position;
 	real32 radius;
+	int32 shadowIndex;
 } PointLight;
 
 typedef struct spotlight_t
@@ -41,8 +42,8 @@ typedef struct spotlight_t
 
 typedef struct shadow_point_light_t
 {
-	uint32 index;
 	GLuint shadowMap;
+	kmVec3 previousPosition;
 	kmVec3 position;
 	real32 farPlane;
 } ShadowPointLight;

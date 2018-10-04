@@ -113,16 +113,15 @@ void activateMaterialTextures(Material *material, GLint *textureIndex)
 
 void activateTextures(
 	uint32 numTextures,
+	GLenum type,
 	GLuint *textures,
 	GLint *textureIndex)
 {
 	for (uint8 i = 0; i < numTextures; i++)
 	{
-		glActiveTexture(GL_TEXTURE0 + *textureIndex);
-		glBindTexture(GL_TEXTURE_2D, textures[i]);
+		glActiveTexture(GL_TEXTURE0 + (*textureIndex)++);
+		glBindTexture(type, textures[i]);
 	}
-
-	(*textureIndex)++;
 }
 
 void activateTexture(UUID name, GLint *textureIndex)

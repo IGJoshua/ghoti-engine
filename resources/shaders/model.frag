@@ -10,6 +10,7 @@ const uint ROUGHNESS_COMPONENT = 4;
 
 #define MAX_NUM_POINT_LIGHTS 8
 #define MAX_NUM_SPOTLIGHTS 8
+#define MAX_NUM_SHADOW_POINT_LIGHTS 2
 
 in vec4 fragColor;
 in vec3 fragPosition;
@@ -18,6 +19,8 @@ in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
 
 out vec4 color;
+
+uniform vec3 cameraPosition;
 
 uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
@@ -46,6 +49,7 @@ struct PointLight
 	vec3 ambient;
 	vec3 position;
 	float radius;
+	int shadowIndex;
 };
 
 struct Spotlight
@@ -67,6 +71,16 @@ uniform PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 uniform uint numSpotlights;
 uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
+uniform samplerCube pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
+uniform float shadowPointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+const vec3 sampleOffsetDirections[20] = vec3[](
+   vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+   vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+   vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+   vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
+
 vec3 getDirectionalLightColor(
 	DirectionalLight light,
 	vec3 normal,
@@ -81,6 +95,12 @@ vec3 getSpotlightColor(
 	vec3 normal,
 	vec3 position,
 	vec3 diffuseTextureColor);
+
+float getShadow(
+	vec3 position,
+	vec3 lightPosition,
+	float farPlane,
+	samplerCube shadowMap);
 
 void main()
 {
@@ -161,7 +181,18 @@ vec3 getPointLightColor(
 	vec3 diffuseColor =
 		light.color * diffuseValue * diffuseTextureColor * attenuation;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getShadow(
+			fragPosition,
+			light.position,
+			shadowPointLightFarPlanes[light.shadowIndex],
+			pointLightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
 }
 
 vec3 getSpotlightColor(
@@ -191,4 +222,36 @@ vec3 getSpotlightColor(
 		attenuation * intensity;
 
 	return ambientColor + diffuseColor;
+}
+
+float getShadow(
+	vec3 position,
+	vec3 lightPosition,
+	float farPlane,
+	samplerCube shadowMap)
+{
+	vec3 lightSpacePosition = position - lightPosition;
+	float currentDepth = length(lightSpacePosition);
+
+	float shadow = 0.0;
+	float bias = 0.15;
+	uint numSamples = 20;
+	float cameraDistance = length(cameraPosition - position);
+	float diskRadius = (1.0 + (cameraDistance / farPlane)) / 25.0;
+
+	for (uint i = 0; i < numSamples; i++)
+	{
+		vec3 offset = sampleOffsetDirections[i] * diskRadius;
+		float closestDepth = texture(
+			shadowMap,
+			lightSpacePosition + offset).r * farPlane;
+
+		if (currentDepth - bias > closestDepth)
+		{
+			shadow += 1.0;
+		}
+	}
+
+	shadow /= float(numSamples);
+	return shadow;
 }

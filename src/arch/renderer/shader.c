@@ -212,6 +212,9 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 			case UNIFORM_FLOAT:
 				glUniform1fv(uniform.location, count, data);
 				break;
+			case UNIFORM_INT:
+				glUniform1iv(uniform.location, count, data);
+				break;
 			case UNIFORM_UINT:
 				glUniform1uiv(uniform.location, count, data);
 				break;

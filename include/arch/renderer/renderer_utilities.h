@@ -18,6 +18,7 @@ int32 setTextureArrayUniform(
 void activateMaterialTextures(Material *material, GLint *textureIndex);
 void activateTextures(
 	uint32 numTextures,
+	GLenum type,
 	GLuint *textures,
 	GLint *textureIndex);
 void activateTexture(UUID name, GLint *textureIndex);

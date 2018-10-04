@@ -94,17 +94,7 @@
 			},
 
 			{
-				"name": "constant attenuation",
-				"float32": 0
-			},
-
-			{
-				"name": "linear attenuation",
-				"float32": 0
-			},
-
-			{
-				"name": "quadratic attenuation",
+				"name": "radius",
 				"float32": 0
 			},
 

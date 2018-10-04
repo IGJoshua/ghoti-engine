@@ -47,6 +47,8 @@ internal Uniform projectionUniform;
 internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
 
+internal Uniform cameraPositionUniform;
+
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
 internal Uniform materialMaskUniform;
@@ -61,7 +63,7 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
-#define NUM_POINT_LIGHT_ATTRIBUTES 4
+#define NUM_POINT_LIGHT_ATTRIBUTES 5
 #define NUM_SPOTLIGHT_ATTRIBUTES 6
 
 internal Uniform numDirectionalLightsUniform;
@@ -76,6 +78,9 @@ internal Uniform numSpotlightsUniform;
 internal Uniform spotlightsUniforms
 	[MAX_NUM_SPOTLIGHTS]
 	[NUM_SPOTLIGHT_ATTRIBUTES];
+
+internal Uniform pointLightShadowMapsUniform;
+internal Uniform shadowPointLightFarPlanesUniform;
 
 internal HashMap *skeletons;
 
@@ -93,6 +98,7 @@ internal TransformComponent *cameraTransform;
 extern real64 alpha;
 
 extern uint32 animationSystemRefCount;
+extern uint32 shadowsSystemRefCount;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
@@ -105,6 +111,8 @@ extern PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 
 extern uint32 numSpotlights;
 extern Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
+
+extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
 internal
 void initRendererSystem(Scene *scene)
@@ -140,6 +148,12 @@ void initRendererSystem(Scene *scene)
 			"boneTransforms",
 			UNIFORM_MAT4,
 			&boneTransformsUniform);
+
+		getUniform(
+			shaderProgram,
+			"cameraPosition",
+			UNIFORM_VEC3,
+			&cameraPositionUniform);
 
 		getUniform(
 			shaderProgram,
@@ -262,6 +276,14 @@ void initRendererSystem(Scene *scene)
 				uniformName,
 				UNIFORM_FLOAT,
 				&pointLightsUniforms[i][attribute++]);
+
+			uniformName = malloc(1024);
+			sprintf(uniformName, "pointLights[%d].shadowIndex", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_INT,
+				&pointLightsUniforms[i][attribute++]);
 		}
 
 		getUniform(
@@ -323,6 +345,17 @@ void initRendererSystem(Scene *scene)
 				&spotlightsUniforms[i][attribute++]);
 		}
 
+		getUniform(
+			shaderProgram,
+			"pointLightShadowMaps",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&pointLightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"shadowPointLightFarPlanes",
+			UNIFORM_FLOAT,
+			&shadowPointLightFarPlanesUniform);
+
 		LOG("Successfully initialized renderer\n");
 	}
 
@@ -351,7 +384,21 @@ void beginRendererSystem(Scene *scene, real64 dt)
 
 	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
+	kmVec3 cameraPosition;
+	tGetInterpolatedTransform(
+		cameraTransform,
+		&cameraPosition,
+		NULL,
+		NULL,
+		alpha);
+
+	setUniform(cameraPositionUniform, 1, &cameraPosition);
+
 	GLint textureIndex = 0;
+	setTextureArrayUniform(
+		&pointLightShadowMapsUniform,
+		MAX_NUM_SHADOW_POINT_LIGHTS,
+		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
 	setUniform(materialMaskUniform, 1, &textureIndex);
 	textureIndex++;
@@ -423,6 +470,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 			pointLightsUniforms[i][attribute++],
 			1,
 			&pointLight->radius);
+		setUniform(
+			pointLightsUniforms[i][attribute++],
+			1,
+			&pointLight->shadowIndex);
 	}
 
 	setUniform(numSpotlightsUniform, 1, &numSpotlights);
@@ -478,6 +529,17 @@ void beginRendererSystem(Scene *scene, real64 dt)
 			&spotlight->size);
 	}
 
+	real32 pointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		pointLightFarPlanes[i] = shadowPointLights[i].farPlane;
+	}
+
+	setUniform(
+		shadowPointLightFarPlanesUniform,
+		MAX_NUM_SHADOW_POINT_LIGHTS,
+		pointLightFarPlanes);
+
 	if (animationSystemRefCount > 0)
 	{
 		skeletons = hashMapGetData(skeletonsMap, &scene);
@@ -497,13 +559,13 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		modelComponentID);
 
-	Model model = getModel(modelComponent->name);
-	if (strlen(model.name.string) == 0)
+	if (!modelComponent->visible)
 	{
 		return;
 	}
 
-	if (!modelComponent->visible)
+	Model model = getModel(modelComponent->name);
+	if (strlen(model.name.string) == 0)
 	{
 		return;
 	}
@@ -608,6 +670,26 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		GLint textureIndex = 0;
+
+		if (shadowsSystemRefCount > 0)
+		{
+			GLuint pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
+			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+			{
+				pointLightShadowMaps[i] = shadowPointLights[i].shadowMap;
+			}
+
+			activateTextures(
+				MAX_NUM_SHADOW_POINT_LIGHTS,
+				GL_TEXTURE_CUBE_MAP,
+				pointLightShadowMaps,
+				&textureIndex);
+		}
+		else
+		{
+			textureIndex = MAX_NUM_SHADOW_POINT_LIGHTS;
+		}
+
 		activateMaterialTextures(material, &textureIndex);
 		activateTexture(model.materialTexture, &textureIndex);
 		activateTexture(model.opacityTexture, &textureIndex);

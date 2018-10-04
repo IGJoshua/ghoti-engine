@@ -31,6 +31,8 @@ internal TransformComponent* shadowPointLightTransforms
 extern uint32 numShadowPointLights;
 extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
+extern uint32 shadowsSystemRefCount;
+
 internal void clearLights(void);
 
 internal void addDirectionalLight(
@@ -51,6 +53,11 @@ internal void initLightsSystem(Scene *scene)
 internal void beginLightsSystem(Scene *scene, real64 dt)
 {
 	clearLights();
+
+	if (shadowsSystemRefCount == 0)
+	{
+		return;
+	}
 
 	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
 		scene,
@@ -95,14 +102,32 @@ internal void beginLightsSystem(Scene *scene, real64 dt)
 
 			real32 distance = kmVec3LengthSq(&displacement);
 
+			int32 index = -1;
 			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
 			{
-				if (distance < closestPointLightDistances[i])
+				if (!shadowPointLightTransforms[i])
 				{
-					closestPointLightDistances[i] = distance;
-					shadowPointLightTransforms[i] = transform;
+					index = i;
 					break;
 				}
+			}
+
+			if (index == -1)
+			{
+				for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+				{
+					if (distance < closestPointLightDistances[i])
+					{
+						index = i;
+						break;
+					}
+				}
+			}
+
+			if (index > -1)
+			{
+				closestPointLightDistances[index] = distance;
+				shadowPointLightTransforms[index] = transform;
 			}
 		}
 	}
@@ -170,14 +195,15 @@ void clearLights(void)
 	numPointLights = 0;
 	memset(pointLights, 0, MAX_NUM_POINT_LIGHTS * sizeof(PointLight));
 
+	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+	{
+		pointLights[i].shadowIndex = -1;
+	}
+
 	numSpotlights = 0;
 	memset(spotlights, 0, MAX_NUM_SPOTLIGHTS * sizeof(Spotlight));
 
 	numShadowPointLights = 0;
-	memset(
-		shadowPointLights,
-		0,
-		MAX_NUM_SHADOW_POINT_LIGHTS * sizeof(ShadowPointLight));
 
 	memset(
 		shadowPointLightTransforms,
@@ -214,23 +240,6 @@ void addPointLight(
 		return;
 	}
 
-	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
-	{
-		if (transform == shadowPointLightTransforms[i])
-		{
-			numShadowPointLights++;
-
-			ShadowPointLight *shadowPointLight = &shadowPointLights[i];
-			shadowPointLight->index = numPointLights;
-			kmVec3Assign(
-				&shadowPointLight->position,
-				&transform->globalPosition);
-			shadowPointLight->farPlane = light->radius;
-
-			break;
-		}
-	}
-
 	PointLight *pointLight = &pointLights[numPointLights++];
 
 	kmVec3Assign(&pointLight->color, &light->color);
@@ -240,6 +249,32 @@ void addPointLight(
 	kmVec3Assign(&pointLight->position, &transform->globalPosition);
 
 	pointLight->radius = light->radius;
+
+	if (shadowsSystemRefCount == 0)
+	{
+		return;
+	}
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		if (transform == shadowPointLightTransforms[i])
+		{
+			pointLight->shadowIndex = numShadowPointLights++;
+
+			ShadowPointLight *shadowPointLight = &shadowPointLights[i];
+
+			kmVec3Assign(
+				&shadowPointLight->previousPosition,
+				&transform->lastGlobalPosition);
+			kmVec3Assign(
+				&shadowPointLight->position,
+				&transform->globalPosition);
+
+			shadowPointLight->farPlane = light->radius;
+
+			break;
+		}
+	}
 }
 
 void addSpotlight(
