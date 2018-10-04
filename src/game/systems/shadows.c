@@ -76,7 +76,7 @@ extern int32 viewportHeight;
 extern uint32 animationSystemRefCount;
 extern uint32 postProcessingSystemRefCount;
 
-extern GLuint screenFramebuffer;
+extern GLuint screenFramebufferMSAA;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
@@ -318,7 +318,7 @@ internal void endShadowsSystem(Scene *scene, real64 dt)
 
 	if (postProcessingSystemRefCount > 0)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebufferMSAA);
 	}
 	else
 	{
