@@ -35,20 +35,40 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#define VERTEX_SHADER_FILE "resources/shaders/shadows.vert"
-#define GEOMETRY_SHADER_FILE "resources/shaders/shadows.geom"
-#define FRAGMENT_SHADER_FILE "resources/shaders/shadows.frag"
+#define SHADOW_DIRECTIONAL_LIGHT_VERTEX_SHADER_FILE \
+	"resources/shaders/directional_shadows.vert"
+#define SHADOW_DIRECTIONAL_LIGHT_FRAGMENT_SHADER_FILE \
+	"resources/shaders/directional_shadows.frag"
 
-internal GLuint shaderProgram;
+typedef struct shadow_directional_light_shader_t
+{
+	GLuint shaderProgram;
+	Uniform modelUniform;
+	Uniform hasAnimationsUniform;
+	Uniform boneTransformsUniform;
+	Uniform lightTransformUniform;
+} ShadowDirectionalLightShader;
 
-internal Uniform modelUniform;
+#define SHADOW_POINT_LIGHTS_VERTEX_SHADER_FILE \
+	"resources/shaders/point_shadows.vert"
+#define SHADOW_POINT_LIGHTS_GEOMETRY_SHADER_FILE \
+	"resources/shaders/point_shadows.geom"
+#define SHADOW_POINT_LIGHTS_FRAGMENT_SHADER_FILE \
+	"resources/shaders/point_shadows.frag"
 
-internal Uniform hasAnimationsUniform;
-internal Uniform boneTransformsUniform;
+typedef struct shadow_point_lights_shader_t
+{
+	GLuint shaderProgram;
+	Uniform modelUniform;
+	Uniform hasAnimationsUniform;
+	Uniform boneTransformsUniform;
+	Uniform lightTransformsUniform;
+	Uniform lightPositionUniform;
+	Uniform farPlaneUniform;
+} ShadowPointLightsShader;
 
-internal Uniform lightTransformsUniform;
-internal Uniform lightPositionUniform;
-internal Uniform farPlaneUniform;
+ShadowDirectionalLightShader shadowDirectionalLightShader;
+ShadowPointLightsShader shadowPointLightsShader;
 
 internal HashMap *skeletons;
 
@@ -60,11 +80,14 @@ internal UUID animationComponentID = {};
 internal UUID animatorComponentID = {};
 internal UUID lightComponentID = {};
 
+uint32 numShadowDirectionalLights = 0;
+ShadowDirectionalLight shadowDirectionalLight;
+
 uint32 numShadowPointLights = 0;
 ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
-#define SHADOW_MAP_WIDTH 1024
-#define SHADOW_MAP_HEIGHT 1024
+#define SHADOW_MAP_WIDTH 4096
+#define SHADOW_MAP_HEIGHT 4096
 
 internal GLuint shadowMapFramebuffer;
 
@@ -81,12 +104,25 @@ extern GLuint screenFramebufferMSAA;
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
 
-internal void drawAllShadows(Scene *scene);
+internal void initializeShadowDirectionalLightShader(void);
+internal void drawShadowDirectionalLight(Scene *scene);
+
+internal void initializeShadowPointLightsShader(void);
+internal void drawShadowPointLights(Scene *scene);
+
+internal void drawAllShadows(
+	Scene *scene,
+	Uniform *modelUniform,
+	Uniform *hasAnimationsUniform,
+	Uniform *boneTransformsUniform);
 internal void drawShadows(
 	ModelComponent *modelComponent,
 	TransformComponent *transform,
 	AnimationComponent *animationComponent,
-	AnimatorComponent *animator);
+	AnimatorComponent *animator,
+	Uniform *modelUniform,
+	Uniform *hasAnimationsUniform,
+	Uniform *boneTransformsUniform);
 
 internal void initShadowsSystem(Scene *scene)
 {
@@ -94,43 +130,32 @@ internal void initShadowsSystem(Scene *scene)
 	{
 		LOG("Initializing shadows system...\n");
 
-		createShaderProgram(
-			VERTEX_SHADER_FILE,
-			NULL,
-			NULL,
-			GEOMETRY_SHADER_FILE,
-			FRAGMENT_SHADER_FILE,
-			NULL,
-			&shaderProgram);
+		initializeShadowDirectionalLightShader();
+		initializeShadowPointLightsShader();
 
-		getUniform(shaderProgram, "model", UNIFORM_MAT4, &modelUniform);
+		glGenTextures(1, &shadowDirectionalLight.shadowMap);
+		glBindTexture(GL_TEXTURE_2D, shadowDirectionalLight.shadowMap);
 
-		getUniform(
-			shaderProgram,
-			"hasAnimations",
-			UNIFORM_BOOL,
-			&hasAnimationsUniform);
-		getUniform(
-			shaderProgram,
-			"boneTransforms",
-			UNIFORM_MAT4,
-			&boneTransformsUniform);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_DEPTH_COMPONENT,
+			SHADOW_MAP_WIDTH,
+			SHADOW_MAP_HEIGHT,
+			0,
+			GL_DEPTH_COMPONENT,
+			GL_FLOAT,
+			NULL);
 
-		getUniform(
-			shaderProgram,
-			"lightTransforms",
-			UNIFORM_MAT4,
-			&lightTransformsUniform);
-		getUniform(
-			shaderProgram,
-			"lightPosition",
-			UNIFORM_VEC3,
-			&lightPositionUniform);
-		getUniform(
-			shaderProgram,
-			"farPlane",
-			UNIFORM_FLOAT,
-			&farPlaneUniform);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+		real32 white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
 		{
@@ -180,6 +205,7 @@ internal void initShadowsSystem(Scene *scene)
 		glReadBuffer(GL_NONE);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 		LOG("Successfully initialized shadows system\n");
 	}
@@ -189,7 +215,7 @@ internal void initShadowsSystem(Scene *scene)
 
 internal void beginShadowsSystem(Scene *scene, real64 dt)
 {
-	if (numShadowPointLights == 0)
+	if (numShadowDirectionalLights == 0 && numShadowPointLights == 0)
 	{
 		return;
 	}
@@ -197,7 +223,245 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 	glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFramebuffer);
 
-	glUseProgram(shaderProgram);
+	drawShadowDirectionalLight(scene);
+	drawShadowPointLights(scene);
+
+	if (animationSystemRefCount > 0)
+	{
+		skeletons = hashMapGetData(skeletonsMap, &scene);
+	}
+}
+
+internal void endShadowsSystem(Scene *scene, real64 dt)
+{
+	if (numShadowDirectionalLights == 0 && numShadowPointLights == 0)
+	{
+		return;
+	}
+
+	glUseProgram(0);
+	glViewport(0, 0, viewportWidth, viewportHeight);
+
+	if (postProcessingSystemRefCount > 0)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebufferMSAA);
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+}
+
+internal void shutdownShadowsSystem(Scene *scene)
+{
+	if (--shadowsSystemRefCount == 0)
+	{
+		LOG("Shutting down shadows system...\n");
+
+		glDeleteProgram(shadowPointLightsShader.shaderProgram);
+		glDeleteProgram(shadowDirectionalLightShader.shaderProgram);
+
+		glDeleteFramebuffers(1, &shadowMapFramebuffer);
+
+		glDeleteTextures(1, &shadowDirectionalLight.shadowMap);
+
+		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+		{
+			glDeleteTextures(1, &shadowPointLights[i].shadowMap);
+		}
+
+		LOG("Successfully shut down shadows system\n");
+	}
+}
+
+System createShadowsSystem(void)
+{
+	System system = {};
+
+	transformComponentID = idFromName("transform");
+	modelComponentID = idFromName("model");
+	animationComponentID = idFromName("animation");
+	animatorComponentID = idFromName("animator");
+	lightComponentID = idFromName("light");
+
+	system.componentTypes = createList(sizeof(UUID));
+	listPushFront(&system.componentTypes, &transformComponentID);
+	listPushFront(&system.componentTypes, &modelComponentID);
+
+	system.init = &initShadowsSystem;
+	system.begin = &beginShadowsSystem;
+	system.end = &endShadowsSystem;
+	system.shutdown = &shutdownShadowsSystem;
+
+	return system;
+}
+
+void initializeShadowDirectionalLightShader(void)
+{
+	createShaderProgram(
+		SHADOW_DIRECTIONAL_LIGHT_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		NULL,
+		SHADOW_DIRECTIONAL_LIGHT_FRAGMENT_SHADER_FILE,
+		NULL,
+		&shadowDirectionalLightShader.shaderProgram);
+
+	getUniform(
+		shadowDirectionalLightShader.shaderProgram,
+		"model",
+		UNIFORM_MAT4,
+		&shadowDirectionalLightShader.modelUniform);
+
+	getUniform(
+		shadowDirectionalLightShader.shaderProgram,
+		"hasAnimations",
+		UNIFORM_BOOL,
+		&shadowDirectionalLightShader.hasAnimationsUniform);
+	getUniform(
+		shadowDirectionalLightShader.shaderProgram,
+		"boneTransforms",
+		UNIFORM_MAT4,
+		&shadowDirectionalLightShader.boneTransformsUniform);
+
+	getUniform(
+		shadowDirectionalLightShader.shaderProgram,
+		"lightTransform",
+		UNIFORM_MAT4,
+		&shadowDirectionalLightShader.lightTransformUniform);
+}
+
+void drawShadowDirectionalLight(Scene *scene)
+{
+	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!cameraTransform)
+	{
+		return;
+	}
+
+	glUseProgram(shadowDirectionalLightShader.shaderProgram);
+
+	glFramebufferTexture(
+		GL_FRAMEBUFFER,
+		GL_DEPTH_ATTACHMENT,
+		shadowDirectionalLight.shadowMap,
+		0);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// TODO: Properly build light frustum
+	kmMat4 lightProjection;
+	kmMat4OrthographicProjection(
+		&lightProjection,
+		-20.0f,
+		20.0f,
+		-20.0f,
+		20.0f,
+		0.0f,
+		20.0f);
+
+	kmQuaternion lightDirection;
+	quaternionSlerp(
+		&lightDirection,
+		&shadowDirectionalLight.previousDirection,
+		&shadowDirectionalLight.direction,
+		alpha);
+
+	kmQuaternionGetForwardVec3RH(
+		&shadowDirectionalLight.shaderDirection,
+		&lightDirection);
+
+	kmVec3 cameraPosition;
+	tGetInterpolatedTransform(
+		cameraTransform,
+		&cameraPosition,
+		NULL,
+		NULL,
+		alpha);
+
+	// TODO: Properly build light frustum
+	kmVec3 lightPosition;
+	kmVec3Scale(&lightPosition, &shadowDirectionalLight.shaderDirection, -5.0f);
+	kmVec3Add(&lightPosition, &lightPosition, &cameraPosition);
+
+	kmVec3 lightScale;
+	kmVec3Fill(&lightScale, 1.0f, 1.0f, 1.0f);
+
+	kmMat4 lightView = tComposeMat4(
+		&lightPosition,
+		&lightDirection,
+		&lightScale);
+	kmMat4Inverse(&lightView, &lightView);
+
+	kmMat4Multiply(
+		&shadowDirectionalLight.transform,
+		&lightProjection,
+		&lightView);
+
+	setUniform(
+		shadowDirectionalLightShader.lightTransformUniform,
+		1,
+		&shadowDirectionalLight.transform);
+
+	drawAllShadows(
+		scene,
+		&shadowDirectionalLightShader.modelUniform,
+		&shadowDirectionalLightShader.hasAnimationsUniform,
+		&shadowDirectionalLightShader.boneTransformsUniform);
+}
+
+void initializeShadowPointLightsShader(void)
+{
+	createShaderProgram(
+		SHADOW_POINT_LIGHTS_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		SHADOW_POINT_LIGHTS_GEOMETRY_SHADER_FILE,
+		SHADOW_POINT_LIGHTS_FRAGMENT_SHADER_FILE,
+		NULL,
+		&shadowPointLightsShader.shaderProgram);
+
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"model",
+		UNIFORM_MAT4,
+		&shadowPointLightsShader.modelUniform);
+
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"hasAnimations",
+		UNIFORM_BOOL,
+		&shadowPointLightsShader.hasAnimationsUniform);
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"boneTransforms",
+		UNIFORM_MAT4,
+		&shadowPointLightsShader.boneTransformsUniform);
+
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"lightTransforms",
+		UNIFORM_MAT4,
+		&shadowPointLightsShader.lightTransformsUniform);
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"lightPosition",
+		UNIFORM_VEC3,
+		&shadowPointLightsShader.lightPositionUniform);
+	getUniform(
+		shadowPointLightsShader.shaderProgram,
+		"farPlane",
+		UNIFORM_FLOAT,
+		&shadowPointLightsShader.farPlaneUniform);
+}
+
+void drawShadowPointLights(Scene *scene)
+{
+	glUseProgram(shadowPointLightsShader.shaderProgram);
 
 	for (uint32 i = 0; i < numShadowPointLights; i++)
 	{
@@ -219,20 +483,11 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 			0.01f,
 			shadowPointLight->farPlane);
 
-		TransformComponent lightTransform = {};
-		kmVec3Assign(
-			&lightTransform.lastGlobalPosition,
-			&shadowPointLight->previousPosition);
-		kmVec3Assign(
-			&lightTransform.globalPosition,
-			&shadowPointLight->position);
-
 		kmVec3 lightPosition;
-		tGetInterpolatedTransform(
-			&lightTransform,
+		kmVec3Lerp(
 			&lightPosition,
-			NULL,
-			NULL,
+			&shadowPointLight->previousPosition,
+			&shadowPointLight->position,
 			alpha);
 
 		kmQuaternion lightRotations[6];
@@ -293,80 +548,32 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 			kmMat4Multiply(&lightTransforms[i], &lightProjection, &lightView);
 		}
 
-		setUniform(lightTransformsUniform, 6, lightTransforms);
-		setUniform(lightPositionUniform, 1, &lightPosition);
-		setUniform(farPlaneUniform, 1, &shadowPointLight->farPlane);
+		setUniform(
+			shadowPointLightsShader.lightTransformsUniform,
+			6,
+			lightTransforms);
+		setUniform(
+			shadowPointLightsShader.lightPositionUniform,
+			1,
+			&lightPosition);
+		setUniform(
+			shadowPointLightsShader.farPlaneUniform,
+			1,
+			&shadowPointLight->farPlane);
 
-		drawAllShadows(scene);
-	}
-
-	if (animationSystemRefCount > 0)
-	{
-		skeletons = hashMapGetData(skeletonsMap, &scene);
-	}
-}
-
-internal void endShadowsSystem(Scene *scene, real64 dt)
-{
-	if (numShadowPointLights == 0)
-	{
-		return;
-	}
-
-	glUseProgram(0);
-	glViewport(0, 0, viewportWidth, viewportHeight);
-
-	if (postProcessingSystemRefCount > 0)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebufferMSAA);
-	}
-	else
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		drawAllShadows(
+			scene,
+			&shadowPointLightsShader.modelUniform,
+			&shadowPointLightsShader.hasAnimationsUniform,
+			&shadowPointLightsShader.boneTransformsUniform);
 	}
 }
 
-internal void shutdownShadowsSystem(Scene *scene)
-{
-	if (--shadowsSystemRefCount == 0)
-	{
-		LOG("Shutting down shadows system...\n");
-
-		glDeleteProgram(shaderProgram);
-		glDeleteFramebuffers(1, &shadowMapFramebuffer);
-
-		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
-		{
-			glDeleteTextures(1, &shadowPointLights[i].shadowMap);
-		}
-
-		LOG("Successfully shut down shadows system\n");
-	}
-}
-
-System createShadowsSystem(void)
-{
-	System system = {};
-
-	transformComponentID = idFromName("transform");
-	modelComponentID = idFromName("model");
-	animationComponentID = idFromName("animation");
-	animatorComponentID = idFromName("animator");
-	lightComponentID = idFromName("light");
-
-	system.componentTypes = createList(sizeof(UUID));
-	listPushFront(&system.componentTypes, &transformComponentID);
-	listPushFront(&system.componentTypes, &modelComponentID);
-
-	system.init = &initShadowsSystem;
-	system.begin = &beginShadowsSystem;
-	system.end = &endShadowsSystem;
-	system.shutdown = &shutdownShadowsSystem;
-
-	return system;
-}
-
-void drawAllShadows(Scene *scene)
+void drawAllShadows(
+	Scene *scene,
+	Uniform *modelUniform,
+	Uniform *hasAnimationsUniform,
+	Uniform *boneTransformsUniform)
 {
 	ComponentDataTable *modelComponents =
 		*(ComponentDataTable**)hashMapGetData(
@@ -407,7 +614,10 @@ void drawAllShadows(Scene *scene)
 			modelComponent,
 			transformComponent,
 			animationComponent,
-			animator);
+			animator,
+			modelUniform,
+			hasAnimationsUniform,
+			boneTransformsUniform);
 	}
 }
 
@@ -415,7 +625,10 @@ void drawShadows(
 	ModelComponent *modelComponent,
 	TransformComponent *transform,
 	AnimationComponent *animationComponent,
-	AnimatorComponent *animator)
+	AnimatorComponent *animator,
+	Uniform *modelUniform,
+	Uniform *hasAnimationsUniform,
+	Uniform *boneTransformsUniform)
 {
 	if (!modelComponent->visible)
 	{
@@ -445,7 +658,7 @@ void drawShadows(
 
 	bool hasAnimations = animationReference && skeletonTransforms ?
 		true : false;
-	setUniform(hasAnimationsUniform, 1, &hasAnimations);
+	setUniform(*hasAnimationsUniform, 1, &hasAnimations);
 
 	kmMat4 worldMatrix = tGetInterpolatedTransformMatrix(
 		transform,
@@ -490,12 +703,12 @@ void drawShadows(
 		}
 
 		setUniform(
-			boneTransformsUniform,
+			*boneTransformsUniform,
 			MAX_BONE_COUNT,
 			boneMatrices);
 	}
 
-	setUniform(modelUniform, 1, &worldMatrix);
+	setUniform(*modelUniform, 1, &worldMatrix);
 
 	for (uint32 i = 0; i < model.numSubsets; i++)
 	{

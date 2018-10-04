@@ -79,6 +79,12 @@ internal Uniform spotlightsUniforms
 	[MAX_NUM_SPOTLIGHTS]
 	[NUM_SPOTLIGHT_ATTRIBUTES];
 
+internal Uniform shadowDirectionalLightTransformUniform;
+
+internal Uniform numDirectionalLightShadowMapsUniform;
+internal Uniform directionalLightShadowMapUniform;
+internal Uniform shadowDirectionalLightDirectionUniform;
+
 internal Uniform pointLightShadowMapsUniform;
 internal Uniform shadowPointLightFarPlanesUniform;
 
@@ -98,7 +104,6 @@ internal TransformComponent *cameraTransform;
 extern real64 alpha;
 
 extern uint32 animationSystemRefCount;
-extern uint32 shadowsSystemRefCount;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
@@ -112,6 +117,10 @@ extern PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 extern uint32 numSpotlights;
 extern Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
+extern uint32 numShadowDirectionalLights;
+extern ShadowDirectionalLight shadowDirectionalLight;
+
+extern uint32 numShadowPointLights;
 extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
 internal
@@ -347,6 +356,28 @@ void initRendererSystem(Scene *scene)
 
 		getUniform(
 			shaderProgram,
+			"shadowDirectionalLightTransform",
+			UNIFORM_MAT4,
+			&shadowDirectionalLightTransformUniform);
+
+		getUniform(
+			shaderProgram,
+			"numDirectionalLightShadowMaps",
+			UNIFORM_UINT,
+			&numDirectionalLightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"directionalLightShadowMap",
+			UNIFORM_TEXTURE_2D,
+			&directionalLightShadowMapUniform);
+		getUniform(
+			shaderProgram,
+			"shadowDirectionalLightDirection",
+			UNIFORM_VEC3,
+			&shadowDirectionalLightDirectionUniform);
+
+		getUniform(
+			shaderProgram,
 			"pointLightShadowMaps",
 			UNIFORM_TEXTURE_CUBE_MAP,
 			&pointLightShadowMapsUniform);
@@ -395,6 +426,8 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	setUniform(cameraPositionUniform, 1, &cameraPosition);
 
 	GLint textureIndex = 0;
+	setUniform(directionalLightShadowMapUniform, 1, &textureIndex);
+	textureIndex++;
 	setTextureArrayUniform(
 		&pointLightShadowMapsUniform,
 		MAX_NUM_SHADOW_POINT_LIGHTS,
@@ -528,6 +561,19 @@ void beginRendererSystem(Scene *scene, real64 dt)
 			1,
 			&spotlight->size);
 	}
+
+	setUniform(
+		shadowDirectionalLightTransformUniform,
+		1,
+		&shadowDirectionalLight.transform);
+	setUniform(
+		numDirectionalLightShadowMapsUniform,
+		1,
+		&numShadowDirectionalLights);
+	setUniform(
+		shadowDirectionalLightDirectionUniform,
+		1,
+		&shadowDirectionalLight.shaderDirection);
 
 	real32 pointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
 	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
@@ -671,7 +717,13 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		GLint textureIndex = 0;
 
-		if (shadowsSystemRefCount > 0)
+		if (numShadowDirectionalLights > 0)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, shadowDirectionalLight.shadowMap);
+		}
+
+		if (numShadowPointLights > 0)
 		{
 			GLuint pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
 			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
@@ -685,10 +737,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 				pointLightShadowMaps,
 				&textureIndex);
 		}
-		else
-		{
-			textureIndex = MAX_NUM_SHADOW_POINT_LIGHTS;
-		}
+
+		textureIndex = 1 + MAX_NUM_SHADOW_POINT_LIGHTS;
 
 		activateMaterialTextures(material, &textureIndex);
 		activateTexture(model.materialTexture, &textureIndex);

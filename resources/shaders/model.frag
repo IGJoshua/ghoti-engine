@@ -14,6 +14,7 @@ const uint ROUGHNESS_COMPONENT = 4;
 
 in vec4 fragColor;
 in vec3 fragPosition;
+in vec4 fragDirectionalLightSpacePosition;
 in vec3 fragNormal;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
@@ -71,6 +72,10 @@ uniform PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 uniform uint numSpotlights;
 uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
+uniform uint numDirectionalLightShadowMaps;
+uniform sampler2D directionalLightShadowMap;
+uniform vec3 shadowDirectionalLightDirection;
+
 uniform samplerCube pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
 uniform float shadowPointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
 
@@ -96,7 +101,12 @@ vec3 getSpotlightColor(
 	vec3 position,
 	vec3 diffuseTextureColor);
 
-float getShadow(
+float getDirectionalShadow(
+	vec4 lightSpacePosition,
+	vec3 normal,
+	vec3 lightDirection,
+	sampler2D shadowMap);
+float getPointShadow(
 	vec3 position,
 	vec3 lightPosition,
 	float farPlane,
@@ -157,7 +167,18 @@ vec3 getDirectionalLightColor(
 	vec3 ambientColor = light.ambient * diffuseTextureColor;
 	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (numDirectionalLightShadowMaps > 0)
+	{
+		shadow = getDirectionalShadow(
+			fragDirectionalLightSpacePosition,
+			fragNormal,
+			shadowDirectionalLightDirection,
+			directionalLightShadowMap);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
 }
 
 vec3 getPointLightColor(
@@ -184,7 +205,7 @@ vec3 getPointLightColor(
 	float shadow = 0.0;
 	if (light.shadowIndex > -1)
 	{
-		shadow = getShadow(
+		shadow = getPointShadow(
 			fragPosition,
 			light.position,
 			shadowPointLightFarPlanes[light.shadowIndex],
@@ -224,7 +245,45 @@ vec3 getSpotlightColor(
 	return ambientColor + diffuseColor;
 }
 
-float getShadow(
+float getDirectionalShadow(
+	vec4 lightSpacePosition,
+	vec3 normal,
+	vec3 lightDirection,
+	sampler2D shadowMap)
+{
+	vec3 projectedCoordinates = lightSpacePosition.xyz / lightSpacePosition.w;
+	projectedCoordinates = projectedCoordinates * 0.5 + 0.5;
+
+	float currentDepth = projectedCoordinates.z;
+	if (currentDepth > 1.0)
+	{
+		return 0.0;
+	}
+
+	float closestDepth = texture(shadowMap, projectedCoordinates.xy).r;
+
+	float bias = max(0.05 * (1.0 - dot(normal, -lightDirection)), 0.005);
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+	for (int x = -1; x <= 1; x++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			vec2 offset = vec2(x, y) * texelSize;
+			float pcfDepth = texture(
+				shadowMap,
+				projectedCoordinates.xy + offset).r;
+
+			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+		}
+	}
+
+	shadow /= 9.0;
+	return shadow;
+}
+
+float getPointShadow(
 	vec3 position,
 	vec3 lightPosition,
 	float farPlane,

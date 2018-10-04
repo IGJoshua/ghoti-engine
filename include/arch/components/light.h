@@ -5,6 +5,9 @@
 
 #include <GL/glew.h>
 
+#include <kazmath/quaternion.h>
+#include <kazmath/mat4.h>
+
 #define MAX_NUM_POINT_LIGHTS 8
 #define MAX_NUM_SPOTLIGHTS 8
 
@@ -37,6 +40,15 @@ typedef struct spotlight_t
 	real32 radius;
 	kmVec2 size;
 } Spotlight;
+
+typedef struct shadow_directional_light_t
+{
+	GLuint shadowMap;
+	kmQuaternion previousDirection;
+	kmQuaternion direction;
+	kmVec3 shaderDirection;
+	kmMat4 transform;
+} ShadowDirectionalLight;
 
 #define MAX_NUM_SHADOW_POINT_LIGHTS 2
 

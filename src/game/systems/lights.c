@@ -28,6 +28,9 @@ Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 internal TransformComponent* shadowPointLightTransforms
 	[MAX_NUM_SHADOW_POINT_LIGHTS];
 
+extern uint32 numShadowDirectionalLights;
+extern ShadowDirectionalLight shadowDirectionalLight;
+
 extern uint32 numShadowPointLights;
 extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
@@ -203,6 +206,7 @@ void clearLights(void)
 	numSpotlights = 0;
 	memset(spotlights, 0, MAX_NUM_SPOTLIGHTS * sizeof(Spotlight));
 
+	numShadowDirectionalLights = 0;
 	numShadowPointLights = 0;
 
 	memset(
@@ -229,6 +233,18 @@ void addDirectionalLight(
 		&directionalLight.previousDirection,
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&directionalLight.direction, &transform->globalRotation);
+
+	if (shadowsSystemRefCount > 0 && numShadowDirectionalLights == 0)
+	{
+		numShadowDirectionalLights++;
+
+		kmQuaternionAssign(
+			&shadowDirectionalLight.previousDirection,
+			&transform->lastGlobalRotation);
+		kmQuaternionAssign(
+			&shadowDirectionalLight.direction,
+			&transform->globalRotation);
+	}
 }
 
 void addPointLight(
