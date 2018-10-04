@@ -84,7 +84,7 @@ uint32 numShadowDirectionalLights = 0;
 ShadowDirectionalLight shadowDirectionalLight;
 
 uint32 numShadowPointLights = 0;
-ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
 
 #define SHADOW_MAP_WIDTH 4096
 #define SHADOW_MAP_HEIGHT 4096
@@ -147,8 +147,8 @@ internal void initShadowsSystem(Scene *scene)
 			GL_FLOAT,
 			NULL);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
@@ -157,7 +157,7 @@ internal void initShadowsSystem(Scene *scene)
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 		{
 			glGenTextures(1, &shadowPointLights[i].shadowMap);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, shadowPointLights[i].shadowMap);
@@ -179,11 +179,11 @@ internal void initShadowsSystem(Scene *scene)
 			glTexParameteri(
 				GL_TEXTURE_CUBE_MAP,
 				GL_TEXTURE_MAG_FILTER,
-				GL_NEAREST);
+				GL_LINEAR);
 			glTexParameteri(
 				GL_TEXTURE_CUBE_MAP,
 				GL_TEXTURE_MIN_FILTER,
-				GL_NEAREST);
+				GL_LINEAR);
 			glTexParameteri(
 				GL_TEXTURE_2D,
 				GL_TEXTURE_WRAP_S,
@@ -265,7 +265,7 @@ internal void shutdownShadowsSystem(Scene *scene)
 
 		glDeleteTextures(1, &shadowDirectionalLight.shadowMap);
 
-		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 		{
 			glDeleteTextures(1, &shadowPointLights[i].shadowMap);
 		}

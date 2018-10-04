@@ -121,7 +121,7 @@ extern uint32 numShadowDirectionalLights;
 extern ShadowDirectionalLight shadowDirectionalLight;
 
 extern uint32 numShadowPointLights;
-extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+extern ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
 
 internal
 void initRendererSystem(Scene *scene)
@@ -430,7 +430,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	textureIndex++;
 	setTextureArrayUniform(
 		&pointLightShadowMapsUniform,
-		MAX_NUM_SHADOW_POINT_LIGHTS,
+		MAX_NUM_POINT_LIGHTS,
 		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
 	setUniform(materialMaskUniform, 1, &textureIndex);
@@ -575,15 +575,15 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		1,
 		&shadowDirectionalLight.shaderDirection);
 
-	real32 pointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
-	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	real32 pointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
+	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 	{
 		pointLightFarPlanes[i] = shadowPointLights[i].farPlane;
 	}
 
 	setUniform(
 		shadowPointLightFarPlanesUniform,
-		MAX_NUM_SHADOW_POINT_LIGHTS,
+		MAX_NUM_POINT_LIGHTS,
 		pointLightFarPlanes);
 
 	if (animationSystemRefCount > 0)
@@ -725,20 +725,20 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		if (numShadowPointLights > 0)
 		{
-			GLuint pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
-			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+			GLuint pointLightShadowMaps[MAX_NUM_POINT_LIGHTS];
+			for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 			{
 				pointLightShadowMaps[i] = shadowPointLights[i].shadowMap;
 			}
 
 			activateTextures(
-				MAX_NUM_SHADOW_POINT_LIGHTS,
+				MAX_NUM_POINT_LIGHTS,
 				GL_TEXTURE_CUBE_MAP,
 				pointLightShadowMaps,
 				&textureIndex);
 		}
 
-		textureIndex = 1 + MAX_NUM_SHADOW_POINT_LIGHTS;
+		textureIndex = 1 + MAX_NUM_POINT_LIGHTS;
 
 		activateMaterialTextures(material, &textureIndex);
 		activateTexture(model.materialTexture, &textureIndex);

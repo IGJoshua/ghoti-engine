@@ -10,7 +10,6 @@ const uint ROUGHNESS_COMPONENT = 4;
 
 #define MAX_NUM_POINT_LIGHTS 8
 #define MAX_NUM_SPOTLIGHTS 8
-#define MAX_NUM_SHADOW_POINT_LIGHTS 2
 
 in vec4 fragColor;
 in vec3 fragPosition;
@@ -76,8 +75,8 @@ uniform uint numDirectionalLightShadowMaps;
 uniform sampler2D directionalLightShadowMap;
 uniform vec3 shadowDirectionalLightDirection;
 
-uniform samplerCube pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
-uniform float shadowPointLightFarPlanes[MAX_NUM_SHADOW_POINT_LIGHTS];
+uniform samplerCube pointLightShadowMaps[MAX_NUM_POINT_LIGHTS];
+uniform float shadowPointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
 
 const vec3 sampleOffsetDirections[20] = vec3[](
    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),

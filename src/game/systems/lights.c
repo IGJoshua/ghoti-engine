@@ -26,13 +26,13 @@ uint32 numSpotlights = 0;
 Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
 internal TransformComponent* shadowPointLightTransforms
-	[MAX_NUM_SHADOW_POINT_LIGHTS];
+	[MAX_NUM_POINT_LIGHTS];
 
 extern uint32 numShadowDirectionalLights;
 extern ShadowDirectionalLight shadowDirectionalLight;
 
 extern uint32 numShadowPointLights;
-extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+extern ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
 
 extern uint32 shadowsSystemRefCount;
 
@@ -72,9 +72,9 @@ internal void beginLightsSystem(Scene *scene, real64 dt)
 		return;
 	}
 
-	real32 closestPointLightDistances[MAX_NUM_SHADOW_POINT_LIGHTS];
+	real32 closestPointLightDistances[MAX_NUM_POINT_LIGHTS];
 
-	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 	{
 		closestPointLightDistances[i] = FLT_MAX;
 	}
@@ -106,7 +106,7 @@ internal void beginLightsSystem(Scene *scene, real64 dt)
 			real32 distance = kmVec3LengthSq(&displacement);
 
 			int32 index = -1;
-			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+			for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 			{
 				if (!shadowPointLightTransforms[i])
 				{
@@ -117,7 +117,7 @@ internal void beginLightsSystem(Scene *scene, real64 dt)
 
 			if (index == -1)
 			{
-				for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+				for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 				{
 					if (distance < closestPointLightDistances[i])
 					{
@@ -212,7 +212,7 @@ void clearLights(void)
 	memset(
 		shadowPointLightTransforms,
 		0,
-		MAX_NUM_SHADOW_POINT_LIGHTS * sizeof(TransformComponent*));
+		MAX_NUM_POINT_LIGHTS * sizeof(TransformComponent*));
 }
 
 void addDirectionalLight(
@@ -271,7 +271,7 @@ void addPointLight(
 		return;
 	}
 
-	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 	{
 		if (transform == shadowPointLightTransforms[i])
 		{

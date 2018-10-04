@@ -50,8 +50,6 @@ typedef struct shadow_directional_light_t
 	kmMat4 transform;
 } ShadowDirectionalLight;
 
-#define MAX_NUM_SHADOW_POINT_LIGHTS 2
-
 typedef struct shadow_point_light_t
 {
 	GLuint shadowMap;
