@@ -28,9 +28,12 @@ internal GLuint shaderProgram;
 
 internal Uniform screenTextureUniform;
 
+GLuint screenFramebufferMSAA;
 GLuint screenFramebuffer;
 
+internal GLuint screenTextureMSAA;
 internal GLuint screenTexture;
+
 internal GLuint screenRenderbuffer;
 
 internal PostProcessVertex vertices[6];
@@ -46,8 +49,8 @@ internal int32 previousViewportHeight = 0;
 extern int32 viewportWidth;
 extern int32 viewportHeight;
 
-internal void freeFramebuffer(void);
-internal void createFramebuffer(void);
+internal void freeFramebuffers(void);
+internal void createFramebuffers(void);
 
 internal void initPostProcessingSystem(Scene *scene)
 {
@@ -70,7 +73,7 @@ internal void initPostProcessingSystem(Scene *scene)
 			UNIFORM_TEXTURE_2D,
 			&screenTextureUniform);
 
-		createFramebuffer();
+		createFramebuffers();
 
 		kmVec2Fill(&vertices[0].position, -1.0f, 1.0f);
 		kmVec2Fill(&vertices[0].uv, 0.0f, 1.0f);
@@ -125,14 +128,29 @@ internal void initPostProcessingSystem(Scene *scene)
 
 internal void beginPostProcessingSystem(Scene *scene, real64 dt)
 {
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, screenFramebufferMSAA);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screenFramebuffer);
+
+	glBlitFramebuffer(
+		0,
+		0,
+		viewportWidth,
+		viewportHeight,
+		0,
+		0,
+		viewportWidth,
+		viewportHeight,
+		GL_COLOR_BUFFER_BIT,
+		GL_NEAREST);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
 	if (viewportWidth != previousViewportWidth ||
 		viewportHeight != previousViewportHeight)
 	{
-		freeFramebuffer();
-		createFramebuffer();
+		freeFramebuffers();
+		createFramebuffers();
 	}
 
 	previousViewportWidth = viewportWidth;
@@ -181,7 +199,7 @@ internal void shutdownPostProcessingSystem(Scene *scene)
 
 		glDeleteProgram(shaderProgram);
 
-		freeFramebuffer();
+		freeFramebuffers();
 
 		glBindVertexArray(vertexArray);
 		glDeleteBuffers(1, &vertexBuffer);
@@ -207,15 +225,61 @@ System createPostProcessingSystem(void)
 	return system;
 }
 
-void freeFramebuffer(void)
+void freeFramebuffers(void)
 {
+	glDeleteFramebuffers(1, &screenFramebufferMSAA);
 	glDeleteFramebuffers(1, &screenFramebuffer);
-	glDeleteRenderbuffers(1, &screenRenderbuffer);
+
+	glDeleteTextures(1, &screenTextureMSAA);
 	glDeleteTextures(1, &screenTexture);
+
+	glDeleteRenderbuffers(1, &screenRenderbuffer);
 }
 
-void createFramebuffer(void)
+void createFramebuffers(void)
 {
+	glGenTextures(1, &screenTextureMSAA);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, screenTextureMSAA);
+
+	glTexImage2DMultisample(
+		GL_TEXTURE_2D_MULTISAMPLE,
+		4,
+		GL_RGB,
+		viewportWidth,
+		viewportHeight,
+		GL_TRUE);
+
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	glGenFramebuffers(1, &screenFramebufferMSAA);
+	glBindFramebuffer(GL_FRAMEBUFFER, screenFramebufferMSAA);
+
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D_MULTISAMPLE,
+		screenTextureMSAA,
+		0);
+
+	glGenRenderbuffers(1, &screenRenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, screenRenderbuffer);
+
+	glRenderbufferStorageMultisample(
+		GL_RENDERBUFFER,
+		4,
+		GL_DEPTH24_STENCIL8,
+		viewportWidth,
+		viewportHeight);
+
+	glFramebufferRenderbuffer(
+		GL_FRAMEBUFFER,
+		GL_DEPTH_STENCIL_ATTACHMENT,
+		GL_RENDERBUFFER,
+		screenRenderbuffer);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	glGenTextures(1, &screenTexture);
 	glBindTexture(GL_TEXTURE_2D, screenTexture);
 
@@ -233,14 +297,6 @@ void createFramebuffer(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glGenRenderbuffers(1, &screenRenderbuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, screenRenderbuffer);
-	glRenderbufferStorage(
-		GL_RENDERBUFFER,
-		GL_DEPTH24_STENCIL8,
-		viewportWidth,
-		viewportHeight);
-
 	glGenFramebuffers(1, &screenFramebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, screenFramebuffer);
 
@@ -252,13 +308,5 @@ void createFramebuffer(void)
 		0);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glFramebufferRenderbuffer(
-		GL_FRAMEBUFFER,
-		GL_DEPTH_STENCIL_ATTACHMENT,
-		GL_RENDERBUFFER,
-		screenRenderbuffer);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

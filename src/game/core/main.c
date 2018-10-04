@@ -51,7 +51,7 @@ extern List unloadedScenes;
 extern bool loadingSave;
 extern List savedScenes;
 extern uint32 postProcessingSystemRefCount;
-extern GLuint screenFramebuffer;
+extern GLuint screenFramebufferMSAA;
 
 internal void update(real64 dt, bool skipLoadedThisFrame);
 internal void draw(GLFWwindow *window, real64 frameTime);
@@ -399,7 +399,7 @@ void draw(GLFWwindow *window, real64 frameTime)
 
 	if (postProcessingSystemRefCount > 0)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, screenFramebufferMSAA);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
