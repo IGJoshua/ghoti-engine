@@ -2,9 +2,11 @@
 
 #include "data/data_types.h"
 #include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
+#include "ECS/component.h"
 
 #include "components/component_types.h"
 #include "components/light.h"
@@ -22,6 +24,12 @@ PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 
 uint32 numSpotlights = 0;
 Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
+
+internal TransformComponent* shadowPointLightTransforms
+	[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+extern uint32 numShadowPointLights;
+extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 
 internal void clearLights(void);
 
@@ -43,6 +51,61 @@ internal void initLightsSystem(Scene *scene)
 internal void beginLightsSystem(Scene *scene, real64 dt)
 {
 	clearLights();
+
+	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!cameraTransform)
+	{
+		return;
+	}
+
+	real32 closestPointLightDistances[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		closestPointLightDistances[i] = FLT_MAX;
+	}
+
+	ComponentDataTable *lightComponents =
+		*(ComponentDataTable**)hashMapGetData(
+			scene->componentTypes,
+			&lightComponentID);
+
+	for (ComponentDataTableIterator itr = cdtGetIterator(lightComponents);
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+	{
+		LightComponent *lightComponent = cdtIteratorGetData(itr);
+		if (lightComponent->enabled &&
+			lightComponent->type == LIGHT_TYPE_POINT)
+		{
+			TransformComponent *transform = sceneGetComponentFromEntity(
+				scene,
+				cdtIteratorGetUUID(itr),
+				transformComponentID);
+
+			kmVec3 displacement;
+			kmVec3Subtract(
+				&displacement,
+				&transform->globalPosition,
+				&cameraTransform->globalPosition);
+
+			real32 distance = kmVec3LengthSq(&displacement);
+
+			for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+			{
+				if (distance < closestPointLightDistances[i])
+				{
+					closestPointLightDistances[i] = distance;
+					shadowPointLightTransforms[i] = transform;
+					break;
+				}
+			}
+		}
+	}
 }
 
 internal void runLightsSystem(Scene *scene, UUID entity, real64 dt)
@@ -109,6 +172,17 @@ void clearLights(void)
 
 	numSpotlights = 0;
 	memset(spotlights, 0, MAX_NUM_SPOTLIGHTS * sizeof(Spotlight));
+
+	numShadowPointLights = 0;
+	memset(
+		shadowPointLights,
+		0,
+		MAX_NUM_SHADOW_POINT_LIGHTS * sizeof(ShadowPointLight));
+
+	memset(
+		shadowPointLightTransforms,
+		0,
+		MAX_NUM_SHADOW_POINT_LIGHTS * sizeof(TransformComponent*));
 }
 
 void addDirectionalLight(
@@ -140,6 +214,23 @@ void addPointLight(
 		return;
 	}
 
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		if (transform == shadowPointLightTransforms[i])
+		{
+			numShadowPointLights++;
+
+			ShadowPointLight *shadowPointLight = &shadowPointLights[i];
+			shadowPointLight->index = numPointLights;
+			kmVec3Assign(
+				&shadowPointLight->position,
+				&transform->globalPosition);
+			shadowPointLight->farPlane = light->radius;
+
+			break;
+		}
+	}
+
 	PointLight *pointLight = &pointLights[numPointLights++];
 
 	kmVec3Assign(&pointLight->color, &light->color);
@@ -148,9 +239,7 @@ void addPointLight(
 	kmVec3Assign(&pointLight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&pointLight->position, &transform->globalPosition);
 
-	pointLight->constantAttenuation = light->constantAttenuation;
-	pointLight->linearAttenuation = light->linearAttenuation;
-	pointLight->quadraticAttenuation = light->quadraticAttenuation;
+	pointLight->radius = light->radius;
 }
 
 void addSpotlight(
@@ -175,9 +264,6 @@ void addSpotlight(
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&spotlight->direction, &transform->globalRotation);
 
-	spotlight->constantAttenuation = light->constantAttenuation;
-	spotlight->linearAttenuation = light->linearAttenuation;
-	spotlight->quadraticAttenuation = light->quadraticAttenuation;
-
+	spotlight->radius = light->radius;
 	kmVec2Assign(&spotlight->size, &light->size);
 }

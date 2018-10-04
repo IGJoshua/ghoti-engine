@@ -229,8 +229,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 	{
 		ComponentDataTable *fontComponents =
 			*(ComponentDataTable**)hashMapGetData(
-					scene->componentTypes,
-					&fontComponentID);
+				scene->componentTypes,
+				&fontComponentID);
 
 		for (ComponentDataTableIterator itr = cdtGetIterator(fontComponents);
 			 !cdtIteratorAtEnd(itr);

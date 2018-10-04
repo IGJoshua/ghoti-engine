@@ -35,6 +35,9 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#define VERTEX_SHADER_FILE "resources/shaders/model.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform modelUniform;
@@ -58,8 +61,8 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
-#define NUM_POINT_LIGHT_ATTRIBUTES 6
-#define NUM_SPOTLIGHT_ATTRIBUTES 8
+#define NUM_POINT_LIGHT_ATTRIBUTES 4
+#define NUM_SPOTLIGHT_ATTRIBUTES 6
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -111,11 +114,11 @@ void initRendererSystem(Scene *scene)
 		LOG("Initializing renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/model.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/model.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 
@@ -226,9 +229,9 @@ void initRendererSystem(Scene *scene)
 
 		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 		{
-			char uniformName[1024];
 			attribute = 0;
 
+			char *uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].color", i);
 			getUniform(
 				shaderProgram,
@@ -236,6 +239,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].ambient", i);
 			getUniform(
 				shaderProgram,
@@ -243,6 +247,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].position", i);
 			getUniform(
 				shaderProgram,
@@ -250,21 +255,8 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "pointLights[%d].constantAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&pointLightsUniforms[i][attribute++]);
-
-			sprintf(uniformName, "pointLights[%d].linearAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&pointLightsUniforms[i][attribute++]);
-
-			sprintf(uniformName, "pointLights[%d].quadraticAttenuation", i);
+			uniformName = malloc(1024);
+			sprintf(uniformName, "pointLights[%d].radius", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
@@ -280,9 +272,9 @@ void initRendererSystem(Scene *scene)
 
 		for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
 		{
-			char uniformName[1024];
 			attribute = 0;
 
+			char *uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].color", i);
 			getUniform(
 				shaderProgram,
@@ -290,6 +282,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].ambient", i);
 			getUniform(
 				shaderProgram,
@@ -297,6 +290,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].position", i);
 			getUniform(
 				shaderProgram,
@@ -304,6 +298,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].direction", i);
 			getUniform(
 				shaderProgram,
@@ -311,27 +306,15 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "spotlights[%d].constantAttenuation", i);
+			uniformName = malloc(1024);
+			sprintf(uniformName, "spotlights[%d].radius", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
 				UNIFORM_FLOAT,
 				&spotlightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "spotlights[%d].linearAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&spotlightsUniforms[i][attribute++]);
-
-			sprintf(uniformName, "spotlights[%d].quadraticAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&spotlightsUniforms[i][attribute++]);
-
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].size", i);
 			getUniform(
 				shaderProgram,
@@ -439,15 +422,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			pointLightsUniforms[i][attribute++],
 			1,
-			&pointLight->constantAttenuation);
-		setUniform(
-			pointLightsUniforms[i][attribute++],
-			1,
-			&pointLight->linearAttenuation);
-		setUniform(
-			pointLightsUniforms[i][attribute++],
-			1,
-			&pointLight->quadraticAttenuation);
+			&pointLight->radius);
 	}
 
 	setUniform(numSpotlightsUniform, 1, &numSpotlights);
@@ -496,15 +471,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
-			&spotlight->constantAttenuation);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->linearAttenuation);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->quadraticAttenuation);
+			&spotlight->radius);
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
@@ -513,7 +480,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 
 	if (animationSystemRefCount > 0)
 	{
-		skeletons = (HashMap*)hashMapGetData(skeletonsMap, &scene);
+		skeletons = hashMapGetData(skeletonsMap, &scene);
 	}
 }
 
@@ -716,6 +683,22 @@ void shutdownRendererSystem(Scene *scene)
 		LOG("Shutting down renderer...\n");
 
 		glDeleteProgram(shaderProgram);
+
+		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+		{
+			for (uint8 j = 0; j < NUM_POINT_LIGHT_ATTRIBUTES; j++)
+			{
+				free(pointLightsUniforms[i][j].name);
+			}
+		}
+
+		for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
+		{
+			for (uint8 j = 0; j < NUM_SPOTLIGHT_ATTRIBUTES; j++)
+			{
+				free(spotlightsUniforms[i][j].name);
+			}
+		}
 
 		LOG("Successfully shut down renderer\n");
 	}

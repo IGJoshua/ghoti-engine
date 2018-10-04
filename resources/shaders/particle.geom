@@ -15,7 +15,7 @@ flat out int fragTexture;
 
 uniform mat4 projection;
 
-void main (void)
+void main()
 {
 	vec4 position = gl_in[0].gl_Position;
 	vec2 halfSize = geomSize[0] / 2;

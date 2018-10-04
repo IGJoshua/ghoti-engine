@@ -45,9 +45,7 @@ struct PointLight
 	vec3 color;
 	vec3 ambient;
 	vec3 position;
-	float constantAttenuation;
-	float linearAttenuation;
-	float quadraticAttenuation;
+	float radius;
 };
 
 struct Spotlight
@@ -56,9 +54,7 @@ struct Spotlight
 	vec3 ambient;
 	vec3 position;
 	vec3 direction;
-	float constantAttenuation;
-	float linearAttenuation;
-	float quadraticAttenuation;
+	float radius;
 	vec2 size;
 };
 
@@ -155,12 +151,11 @@ vec3 getPointLightColor(
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
 	float distance = length(light.position - position);
 
-	float linearAttenuation = light.linearAttenuation * distance;
-	float quadraticAttenuation =
-		light.quadraticAttenuation * distance * distance;
-	float totalAttenuation =
-		light.constantAttenuation + linearAttenuation + quadraticAttenuation;
-	float attenuation = 1.0 / totalAttenuation;
+	float attenuation = clamp(
+		1.0 - (distance * distance) / (light.radius * light.radius),
+		0.0,
+		1.0);
+	attenuation *= attenuation;
 
 	vec3 ambientColor = light.ambient * diffuseTextureColor * attenuation;
 	vec3 diffuseColor =
@@ -180,12 +175,11 @@ vec3 getSpotlightColor(
 
 	float distance = length(light.position - position);
 
-	float linearAttenuation = light.linearAttenuation * distance;
-	float quadraticAttenuation =
-		light.quadraticAttenuation * distance * distance;
-	float totalAttenuation =
-		light.constantAttenuation + linearAttenuation + quadraticAttenuation;
-	float attenuation = 1.0 / totalAttenuation;
+	float attenuation = clamp(
+		1.0 - (distance * distance) / (light.radius * light.radius),
+		0.0,
+		1.0);
+	attenuation *= attenuation;
 
 	float theta = dot(lightDirection, normalize(-light.direction));
 	float epsilon = light.size.x - light.size.y;
