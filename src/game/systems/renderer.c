@@ -13,6 +13,7 @@
 #include "components/light.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -84,9 +85,12 @@ internal Uniform shadowDirectionalLightTransformUniform;
 internal Uniform numDirectionalLightShadowMapsUniform;
 internal Uniform directionalLightShadowMapUniform;
 internal Uniform shadowDirectionalLightDirectionUniform;
+internal Uniform shadowDirectionalLightBiasRangeUniform;
 
 internal Uniform pointLightShadowMapsUniform;
 internal Uniform shadowPointLightFarPlanesUniform;
+internal Uniform shadowPointLightBiasUniform;
+internal Uniform shadowPointLightDiskRadiusUniform;
 
 internal HashMap *skeletons;
 
@@ -101,6 +105,7 @@ internal UUID cameraComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
+extern Config config;
 extern real64 alpha;
 
 extern uint32 animationSystemRefCount;
@@ -375,6 +380,11 @@ void initRendererSystem(Scene *scene)
 			"shadowDirectionalLightDirection",
 			UNIFORM_VEC3,
 			&shadowDirectionalLightDirectionUniform);
+		getUniform(
+			shaderProgram,
+			"shadowDirectionalLightBiasRange",
+			UNIFORM_VEC2,
+			&shadowDirectionalLightBiasRangeUniform);
 
 		getUniform(
 			shaderProgram,
@@ -386,6 +396,16 @@ void initRendererSystem(Scene *scene)
 			"shadowPointLightFarPlanes",
 			UNIFORM_FLOAT,
 			&shadowPointLightFarPlanesUniform);
+		getUniform(
+			shaderProgram,
+			"shadowPointLightBias",
+			UNIFORM_FLOAT,
+			&shadowPointLightBiasUniform);
+		getUniform(
+			shaderProgram,
+			"shadowPointLightDiskRadius",
+			UNIFORM_FLOAT,
+			&shadowPointLightDiskRadiusUniform);
 
 		LOG("Successfully initialized renderer\n");
 	}
@@ -574,6 +594,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		shadowDirectionalLightDirectionUniform,
 		1,
 		&shadowDirectionalLight.shaderDirection);
+	setUniform(
+		shadowDirectionalLightBiasRangeUniform,
+		1,
+		&config.graphicsConfig.directionalLightShadowBias);
 
 	real32 pointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
 	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
@@ -585,6 +609,14 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		shadowPointLightFarPlanesUniform,
 		MAX_NUM_POINT_LIGHTS,
 		pointLightFarPlanes);
+	setUniform(
+		shadowPointLightBiasUniform,
+		1,
+		&config.graphicsConfig.pointLightShadowBias);
+	setUniform(
+		shadowPointLightDiskRadiusUniform,
+		1,
+		&config.graphicsConfig.pointLightPCFDiskRadius);
 
 	if (animationSystemRefCount > 0)
 	{

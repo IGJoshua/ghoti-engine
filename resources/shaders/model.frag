@@ -74,9 +74,12 @@ uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 uniform uint numDirectionalLightShadowMaps;
 uniform sampler2D directionalLightShadowMap;
 uniform vec3 shadowDirectionalLightDirection;
+uniform vec2 shadowDirectionalLightBiasRange;
 
 uniform samplerCube pointLightShadowMaps[MAX_NUM_POINT_LIGHTS];
 uniform float shadowPointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
+uniform float shadowPointLightBias;
+uniform float shadowPointLightDiskRadius;
 
 const vec3 sampleOffsetDirections[20] = vec3[](
    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
@@ -104,6 +107,8 @@ float getDirectionalShadow(
 	vec4 lightSpacePosition,
 	vec3 normal,
 	vec3 lightDirection,
+	float minBias,
+	float maxBias,
 	sampler2D shadowMap);
 float getPointShadow(
 	vec3 position,
@@ -173,6 +178,8 @@ vec3 getDirectionalLightColor(
 			fragDirectionalLightSpacePosition,
 			fragNormal,
 			shadowDirectionalLightDirection,
+			shadowDirectionalLightBiasRange.x,
+			shadowDirectionalLightBiasRange.y,
 			directionalLightShadowMap);
 	}
 
@@ -248,6 +255,8 @@ float getDirectionalShadow(
 	vec4 lightSpacePosition,
 	vec3 normal,
 	vec3 lightDirection,
+	float minBias,
+	float maxBias,
 	sampler2D shadowMap)
 {
 	vec3 projectedCoordinates = lightSpacePosition.xyz / lightSpacePosition.w;
@@ -261,7 +270,7 @@ float getDirectionalShadow(
 
 	float closestDepth = texture(shadowMap, projectedCoordinates.xy).r;
 
-	float bias = max(0.05 * (1.0 - dot(normal, -lightDirection)), 0.005);
+	float bias = max(maxBias * (1.0 - dot(normal, -lightDirection)), minBias);
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 
@@ -292,10 +301,11 @@ float getPointShadow(
 	float currentDepth = length(lightSpacePosition);
 
 	float shadow = 0.0;
-	float bias = 0.15;
+	float bias = shadowPointLightBias;
 	uint numSamples = 20;
 	float cameraDistance = length(cameraPosition - position);
-	float diskRadius = (1.0 + (cameraDistance / farPlane)) / 25.0;
+	float diskRadius = 1.0 + (cameraDistance / farPlane);
+	diskRadius /= shadowPointLightDiskRadius;
 
 	for (uint i = 0; i < numSamples; i++)
 	{

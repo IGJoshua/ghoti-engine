@@ -1,5 +1,7 @@
 #include "defines.h"
 
+#include "core/config.h"
+
 #include "data/data_types.h"
 #include "data/list.h"
 #include "data/hash_map.h"
@@ -15,6 +17,8 @@ internal UUID transformComponentID = {};
 internal UUID lightComponentID = {};
 
 internal uint32 lightsSystemRefCount = 0;
+
+extern Config config;
 
 uint32 numDirectionalLights = 0;
 DirectionalLight directionalLight;
@@ -234,7 +238,9 @@ void addDirectionalLight(
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&directionalLight.direction, &transform->globalRotation);
 
-	if (shadowsSystemRefCount > 0 && numShadowDirectionalLights == 0)
+	if (config.graphicsConfig.directionalLightShadows &&
+		shadowsSystemRefCount > 0 &&
+		numShadowDirectionalLights == 0)
 	{
 		numShadowDirectionalLights++;
 
@@ -266,7 +272,9 @@ void addPointLight(
 
 	pointLight->radius = light->radius;
 
-	if (shadowsSystemRefCount == 0)
+	if (shadowsSystemRefCount == 0 ||
+		numShadowPointLights + 1 >
+			config.graphicsConfig.maxNumShadowPointLights)
 	{
 		return;
 	}

@@ -12,6 +12,7 @@
 #include "components/light.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -86,11 +87,9 @@ ShadowDirectionalLight shadowDirectionalLight;
 uint32 numShadowPointLights = 0;
 ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
 
-#define SHADOW_MAP_WIDTH 4096
-#define SHADOW_MAP_HEIGHT 4096
-
 internal GLuint shadowMapFramebuffer;
 
+extern Config config;
 extern real64 alpha;
 
 extern int32 viewportWidth;
@@ -140,8 +139,8 @@ internal void initShadowsSystem(Scene *scene)
 			GL_TEXTURE_2D,
 			0,
 			GL_DEPTH_COMPONENT,
-			SHADOW_MAP_WIDTH,
-			SHADOW_MAP_HEIGHT,
+			config.graphicsConfig.shadowMapResolution,
+			config.graphicsConfig.shadowMapResolution,
 			0,
 			GL_DEPTH_COMPONENT,
 			GL_FLOAT,
@@ -168,8 +167,8 @@ internal void initShadowsSystem(Scene *scene)
 					GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 					0,
 					GL_DEPTH_COMPONENT,
-					SHADOW_MAP_WIDTH,
-					SHADOW_MAP_HEIGHT,
+					config.graphicsConfig.shadowMapResolution,
+					config.graphicsConfig.shadowMapResolution,
 					0,
 					GL_DEPTH_COMPONENT,
 					GL_FLOAT,
@@ -220,7 +219,12 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 		return;
 	}
 
-	glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+	glViewport(
+		0,
+		0,
+		config.graphicsConfig.shadowMapResolution,
+		config.graphicsConfig.shadowMapResolution);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFramebuffer);
 
 	drawShadowDirectionalLight(scene);
@@ -361,7 +365,7 @@ void drawShadowDirectionalLight(Scene *scene)
 		20.0f,
 		-20.0f,
 		20.0f,
-		0.0f,
+		-20.0f,
 		20.0f);
 
 	kmQuaternion lightDirection;
@@ -479,7 +483,7 @@ void drawShadowPointLights(Scene *scene)
 		kmMat4PerspectiveProjection(
 			&lightProjection,
 			90.0f,
-			(real32)SHADOW_MAP_WIDTH / (real32)SHADOW_MAP_HEIGHT,
+			1.0f,
 			0.01f,
 			shadowPointLight->farPlane);
 

@@ -1,6 +1,7 @@
 #include "defines.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -22,7 +23,10 @@ typedef struct post_process_vertex_t
 } PostProcessVertex;
 
 #define VERTEX_SHADER_FILE "resources/shaders/post_processing.vert"
-#define FRAGMENT_SHADER_FILE "resources/shaders/post_processing.frag"
+#define DEFAULT_FRAGMENT_SHADER_FILE \
+	"resources/shaders/default_post_process.frag"
+#define GRAYSCALE_FRAGMENT_SHADER_FILE \
+	"resources/shaders/grayscale_post_process.frag"
 
 internal GLuint shaderProgram;
 
@@ -40,6 +44,8 @@ internal PostProcessVertex vertices[6];
 
 internal GLuint vertexBuffer;
 internal GLuint vertexArray;
+
+extern Config config;
 
 uint32 postProcessingSystemRefCount = 0;
 
@@ -63,7 +69,8 @@ internal void initPostProcessingSystem(Scene *scene)
 			NULL,
 			NULL,
 			NULL,
-			FRAGMENT_SHADER_FILE,
+			config.graphicsConfig.grayscalePostProcess ?
+				GRAYSCALE_FRAGMENT_SHADER_FILE : DEFAULT_FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 

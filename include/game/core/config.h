@@ -22,6 +22,15 @@ typedef struct physics_config_t
 typedef struct graphics_config_t
 {
 	kmVec3 backgroundColor;
+	uint32 shadowMapResolution;
+	bool directionalLightShadows;
+	real32 directionalLightShadowBias[2];
+	uint32 maxNumShadowPointLights;
+	real32 pointLightShadowBias;
+	real32 pointLightPCFDiskRadius;
+	uint32 maxNumShadowSpotlights;
+	real32 spotlightShadowBias[2];
+	bool grayscalePostProcess;
 } GraphicsConfig;
 
 typedef struct assets_config_t
