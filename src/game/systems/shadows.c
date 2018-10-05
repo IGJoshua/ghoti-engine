@@ -36,28 +36,28 @@
 #include <malloc.h>
 #include <stdio.h>
 
-#define SHADOW_DIRECTIONAL_LIGHT_VERTEX_SHADER_FILE \
+#define DIRECTIONAL_SHADOWS_VERTEX_SHADER_FILE \
 	"resources/shaders/directional_shadows.vert"
-#define SHADOW_DIRECTIONAL_LIGHT_FRAGMENT_SHADER_FILE \
+#define DIRECTIONAL_SHADOWS_FRAGMENT_SHADER_FILE \
 	"resources/shaders/directional_shadows.frag"
 
-typedef struct shadow_directional_light_shader_t
+typedef struct directional_shadows_shader_t
 {
 	GLuint shaderProgram;
 	Uniform modelUniform;
 	Uniform hasAnimationsUniform;
 	Uniform boneTransformsUniform;
 	Uniform lightTransformUniform;
-} ShadowDirectionalLightShader;
+} DirectionalShadowsShader;
 
-#define SHADOW_POINT_LIGHTS_VERTEX_SHADER_FILE \
+#define POINT_SHADOWS_VERTEX_SHADER_FILE \
 	"resources/shaders/point_shadows.vert"
-#define SHADOW_POINT_LIGHTS_GEOMETRY_SHADER_FILE \
+#define POINT_SHADOWS_GEOMETRY_SHADER_FILE \
 	"resources/shaders/point_shadows.geom"
-#define SHADOW_POINT_LIGHTS_FRAGMENT_SHADER_FILE \
+#define POINT_SHADOWS_FRAGMENT_SHADER_FILE \
 	"resources/shaders/point_shadows.frag"
 
-typedef struct shadow_point_lights_shader_t
+typedef struct point_shadows_shader_t
 {
 	GLuint shaderProgram;
 	Uniform modelUniform;
@@ -66,10 +66,11 @@ typedef struct shadow_point_lights_shader_t
 	Uniform lightTransformsUniform;
 	Uniform lightPositionUniform;
 	Uniform farPlaneUniform;
-} ShadowPointLightsShader;
+} PointShadowsShader;
 
-ShadowDirectionalLightShader shadowDirectionalLightShader;
-ShadowPointLightsShader shadowPointLightsShader;
+DirectionalShadowsShader shadowDirectionalLightShader;
+DirectionalShadowsShader shadowSpotlightsShader;
+PointShadowsShader shadowPointLightsShader;
 
 internal HashMap *skeletons;
 
@@ -85,7 +86,10 @@ uint32 numShadowDirectionalLights = 0;
 ShadowDirectionalLight shadowDirectionalLight;
 
 uint32 numShadowPointLights = 0;
-ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
+ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+uint32 numShadowSpotlights = 0;
+ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
 
 internal GLuint shadowMapFramebuffer;
 
@@ -109,6 +113,9 @@ internal void drawShadowDirectionalLight(Scene *scene);
 internal void initializeShadowPointLightsShader(void);
 internal void drawShadowPointLights(Scene *scene);
 
+internal void initializeShadowSpotlightsShader(void);
+internal void drawShadowSpotlights(Scene *scene);
+
 internal void drawAllShadows(
 	Scene *scene,
 	Uniform *modelUniform,
@@ -131,6 +138,9 @@ internal void initShadowsSystem(Scene *scene)
 
 		initializeShadowDirectionalLightShader();
 		initializeShadowPointLightsShader();
+		initializeShadowSpotlightsShader();
+
+		real32 white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		glGenTextures(1, &shadowDirectionalLight.shadowMap);
 		glBindTexture(GL_TEXTURE_2D, shadowDirectionalLight.shadowMap);
@@ -150,13 +160,9 @@ internal void initShadowsSystem(Scene *scene)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-		real32 white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
 
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
 		{
 			glGenTextures(1, &shadowPointLights[i].shadowMap);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, shadowPointLights[i].shadowMap);
@@ -197,6 +203,39 @@ internal void initShadowsSystem(Scene *scene)
 				GL_CLAMP_TO_EDGE);
 		}
 
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+		for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+		{
+			glGenTextures(1, &shadowSpotlights[i].shadowMap);
+			glBindTexture(GL_TEXTURE_2D, shadowSpotlights[i].shadowMap);
+
+			glTexImage2D(
+				GL_TEXTURE_2D,
+				0,
+				GL_DEPTH_COMPONENT,
+				config.graphicsConfig.shadowMapResolution,
+				config.graphicsConfig.shadowMapResolution,
+				0,
+				GL_DEPTH_COMPONENT,
+				GL_FLOAT,
+				NULL);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(
+				GL_TEXTURE_2D,
+				GL_TEXTURE_WRAP_S,
+				GL_CLAMP_TO_BORDER);
+			glTexParameteri(
+				GL_TEXTURE_2D,
+				GL_TEXTURE_WRAP_T,
+				GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, white);
+		}
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 		glGenFramebuffers(1, &shadowMapFramebuffer);
 		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFramebuffer);
 
@@ -204,7 +243,6 @@ internal void initShadowsSystem(Scene *scene)
 		glReadBuffer(GL_NONE);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 		LOG("Successfully initialized shadows system\n");
 	}
@@ -214,7 +252,9 @@ internal void initShadowsSystem(Scene *scene)
 
 internal void beginShadowsSystem(Scene *scene, real64 dt)
 {
-	if (numShadowDirectionalLights == 0 && numShadowPointLights == 0)
+	if (numShadowDirectionalLights == 0 &&
+		numShadowPointLights == 0 &&
+		numShadowSpotlights == 0)
 	{
 		return;
 	}
@@ -229,6 +269,7 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 
 	drawShadowDirectionalLight(scene);
 	drawShadowPointLights(scene);
+	drawShadowSpotlights(scene);
 
 	if (animationSystemRefCount > 0)
 	{
@@ -238,7 +279,9 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 
 internal void endShadowsSystem(Scene *scene, real64 dt)
 {
-	if (numShadowDirectionalLights == 0 && numShadowPointLights == 0)
+	if (numShadowDirectionalLights == 0 &&
+		numShadowPointLights == 0 &&
+		numShadowSpotlights == 0)
 	{
 		return;
 	}
@@ -264,15 +307,21 @@ internal void shutdownShadowsSystem(Scene *scene)
 
 		glDeleteProgram(shadowPointLightsShader.shaderProgram);
 		glDeleteProgram(shadowDirectionalLightShader.shaderProgram);
-
-		glDeleteFramebuffers(1, &shadowMapFramebuffer);
+		glDeleteProgram(shadowSpotlightsShader.shaderProgram);
 
 		glDeleteTextures(1, &shadowDirectionalLight.shadowMap);
 
-		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+		for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
 		{
 			glDeleteTextures(1, &shadowPointLights[i].shadowMap);
 		}
+
+		for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+		{
+			glDeleteTextures(1, &shadowSpotlights[i].shadowMap);
+		}
+
+		glDeleteFramebuffers(1, &shadowMapFramebuffer);
 
 		LOG("Successfully shut down shadows system\n");
 	}
@@ -303,11 +352,11 @@ System createShadowsSystem(void)
 void initializeShadowDirectionalLightShader(void)
 {
 	createShaderProgram(
-		SHADOW_DIRECTIONAL_LIGHT_VERTEX_SHADER_FILE,
+		DIRECTIONAL_SHADOWS_VERTEX_SHADER_FILE,
 		NULL,
 		NULL,
 		NULL,
-		SHADOW_DIRECTIONAL_LIGHT_FRAGMENT_SHADER_FILE,
+		DIRECTIONAL_SHADOWS_FRAGMENT_SHADER_FILE,
 		NULL,
 		&shadowDirectionalLightShader.shaderProgram);
 
@@ -337,6 +386,11 @@ void initializeShadowDirectionalLightShader(void)
 
 void drawShadowDirectionalLight(Scene *scene)
 {
+	if (numShadowDirectionalLights == 0)
+	{
+		return;
+	}
+
 	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
@@ -375,8 +429,9 @@ void drawShadowDirectionalLight(Scene *scene)
 		&shadowDirectionalLight.direction,
 		alpha);
 
+	kmVec3 directionVector;
 	kmQuaternionGetForwardVec3RH(
-		&shadowDirectionalLight.shaderDirection,
+		&directionVector,
 		&lightDirection);
 
 	kmVec3 cameraPosition;
@@ -389,7 +444,7 @@ void drawShadowDirectionalLight(Scene *scene)
 
 	// TODO: Properly build light frustum
 	kmVec3 lightPosition;
-	kmVec3Scale(&lightPosition, &shadowDirectionalLight.shaderDirection, -5.0f);
+	kmVec3Scale(&lightPosition, &directionVector, -5.0f);
 	kmVec3Add(&lightPosition, &lightPosition, &cameraPosition);
 
 	kmVec3 lightScale;
@@ -421,11 +476,11 @@ void drawShadowDirectionalLight(Scene *scene)
 void initializeShadowPointLightsShader(void)
 {
 	createShaderProgram(
-		SHADOW_POINT_LIGHTS_VERTEX_SHADER_FILE,
+		POINT_SHADOWS_VERTEX_SHADER_FILE,
 		NULL,
 		NULL,
-		SHADOW_POINT_LIGHTS_GEOMETRY_SHADER_FILE,
-		SHADOW_POINT_LIGHTS_FRAGMENT_SHADER_FILE,
+		POINT_SHADOWS_GEOMETRY_SHADER_FILE,
+		POINT_SHADOWS_FRAGMENT_SHADER_FILE,
 		NULL,
 		&shadowPointLightsShader.shaderProgram);
 
@@ -570,6 +625,106 @@ void drawShadowPointLights(Scene *scene)
 			&shadowPointLightsShader.modelUniform,
 			&shadowPointLightsShader.hasAnimationsUniform,
 			&shadowPointLightsShader.boneTransformsUniform);
+	}
+}
+
+void initializeShadowSpotlightsShader(void)
+{
+	createShaderProgram(
+		DIRECTIONAL_SHADOWS_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		NULL,
+		DIRECTIONAL_SHADOWS_FRAGMENT_SHADER_FILE,
+		NULL,
+		&shadowSpotlightsShader.shaderProgram);
+
+	getUniform(
+		shadowSpotlightsShader.shaderProgram,
+		"model",
+		UNIFORM_MAT4,
+		&shadowSpotlightsShader.modelUniform);
+
+	getUniform(
+		shadowSpotlightsShader.shaderProgram,
+		"hasAnimations",
+		UNIFORM_BOOL,
+		&shadowSpotlightsShader.hasAnimationsUniform);
+	getUniform(
+		shadowSpotlightsShader.shaderProgram,
+		"boneTransforms",
+		UNIFORM_MAT4,
+		&shadowSpotlightsShader.boneTransformsUniform);
+
+	getUniform(
+		shadowSpotlightsShader.shaderProgram,
+		"lightTransform",
+		UNIFORM_MAT4,
+		&shadowSpotlightsShader.lightTransformUniform);
+}
+
+void drawShadowSpotlights(Scene *scene)
+{
+	glUseProgram(shadowSpotlightsShader.shaderProgram);
+
+	for (uint32 i = 0; i < numShadowSpotlights; i++)
+	{
+		ShadowSpotlight *shadowSpotlight = &shadowSpotlights[i];
+
+		glFramebufferTexture(
+			GL_FRAMEBUFFER,
+			GL_DEPTH_ATTACHMENT,
+			shadowSpotlight->shadowMap,
+			0);
+
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		kmMat4 lightProjection;
+		kmMat4PerspectiveProjection(
+			&lightProjection,
+			shadowSpotlight->fov,
+			1.0f,
+			0.01f,
+			shadowSpotlight->farPlane);
+
+		kmVec3 lightPosition;
+		kmVec3Lerp(
+			&lightPosition,
+			&shadowSpotlight->previousPosition,
+			&shadowSpotlight->position,
+			alpha);
+
+		kmQuaternion lightDirection;
+		quaternionSlerp(
+			&lightDirection,
+			&shadowSpotlight->previousDirection,
+			&shadowSpotlight->direction,
+			alpha);
+
+		kmVec3 lightScale;
+		kmVec3Fill(&lightScale, 1.0f, 1.0f, 1.0f);
+
+		kmMat4 lightView = tComposeMat4(
+			&lightPosition,
+			&lightDirection,
+			&lightScale);
+		kmMat4Inverse(&lightView, &lightView);
+
+		kmMat4Multiply(
+			&shadowSpotlight->transform,
+			&lightProjection,
+			&lightView);
+
+		setUniform(
+			shadowSpotlightsShader.lightTransformUniform,
+			1,
+			&shadowSpotlight->transform);
+
+		drawAllShadows(
+			scene,
+			&shadowSpotlightsShader.modelUniform,
+			&shadowSpotlightsShader.hasAnimationsUniform,
+			&shadowSpotlightsShader.boneTransformsUniform);
 	}
 }
 

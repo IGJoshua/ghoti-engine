@@ -121,7 +121,8 @@ int32 loadConfig(void)
 		"graphics.shadows.point_lights.limit")
 	{
 		int32 limit = maxNumShadowPointLights->valueint;
-		if (limit >= 0 && limit <= MAX_NUM_POINT_LIGHTS)
+		if (limit >= 0 &&
+			limit <= config.graphicsConfig.maxNumShadowPointLights)
 		{
 			config.graphicsConfig.maxNumShadowPointLights = limit;
 		}
@@ -147,7 +148,7 @@ int32 loadConfig(void)
 	GET_CONFIG_ITEM(maxNumShadowSpotlights, "graphics.shadows.spotlights.limit")
 	{
 		int32 limit = maxNumShadowSpotlights->valueint;
-		if (limit >= 0 && limit <= MAX_NUM_SPOTLIGHTS)
+		if (limit >= 0 && limit <= config.graphicsConfig.maxNumShadowSpotlights)
 		{
 			config.graphicsConfig.maxNumShadowSpotlights = limit;
 		}
@@ -294,10 +295,10 @@ void initializeDefaultConfig(void)
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;
 	config.graphicsConfig.directionalLightShadowBias[1] = 0.05f;
-	config.graphicsConfig.maxNumShadowPointLights = MAX_NUM_POINT_LIGHTS;
+	config.graphicsConfig.maxNumShadowPointLights = MAX_NUM_SHADOW_POINT_LIGHTS;
 	config.graphicsConfig.pointLightShadowBias = 0.15;
 	config.graphicsConfig.pointLightPCFDiskRadius = 25.0f;
-	config.graphicsConfig.maxNumShadowSpotlights = MAX_NUM_SPOTLIGHTS;
+	config.graphicsConfig.maxNumShadowSpotlights = MAX_NUM_SHADOW_SPOTLIGHTS;
 	config.graphicsConfig.spotlightShadowBias[0] = 0.005f;
 	config.graphicsConfig.spotlightShadowBias[1] = 0.05f;
 	config.graphicsConfig.grayscalePostProcess = false;

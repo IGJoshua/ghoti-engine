@@ -65,7 +65,7 @@ internal Uniform useCustomColorUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
 #define NUM_POINT_LIGHT_ATTRIBUTES 5
-#define NUM_SPOTLIGHT_ATTRIBUTES 6
+#define NUM_SPOTLIGHT_ATTRIBUTES 7
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -81,16 +81,18 @@ internal Uniform spotlightsUniforms
 	[NUM_SPOTLIGHT_ATTRIBUTES];
 
 internal Uniform shadowDirectionalLightTransformUniform;
+internal Uniform shadowSpotlightTransformsUniform;
 
 internal Uniform numDirectionalLightShadowMapsUniform;
 internal Uniform directionalLightShadowMapUniform;
-internal Uniform shadowDirectionalLightDirectionUniform;
 internal Uniform shadowDirectionalLightBiasRangeUniform;
 
 internal Uniform pointLightShadowMapsUniform;
-internal Uniform shadowPointLightFarPlanesUniform;
 internal Uniform shadowPointLightBiasUniform;
 internal Uniform shadowPointLightDiskRadiusUniform;
+
+internal Uniform spotlightShadowMapsUniform;
+internal Uniform shadowSpotlightBiasRangeUniform;
 
 internal HashMap *skeletons;
 
@@ -126,7 +128,10 @@ extern uint32 numShadowDirectionalLights;
 extern ShadowDirectionalLight shadowDirectionalLight;
 
 extern uint32 numShadowPointLights;
-extern ShadowPointLight shadowPointLights[MAX_NUM_POINT_LIGHTS];
+extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+extern uint32 numShadowSpotlights;
+extern ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
 
 internal
 void initRendererSystem(Scene *scene)
@@ -357,6 +362,14 @@ void initRendererSystem(Scene *scene)
 				uniformName,
 				UNIFORM_VEC2,
 				&spotlightsUniforms[i][attribute++]);
+
+			uniformName = malloc(1024);
+			sprintf(uniformName, "spotlights[%d].shadowIndex", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_INT,
+				&spotlightsUniforms[i][attribute++]);
 		}
 
 		getUniform(
@@ -364,6 +377,11 @@ void initRendererSystem(Scene *scene)
 			"shadowDirectionalLightTransform",
 			UNIFORM_MAT4,
 			&shadowDirectionalLightTransformUniform);
+		getUniform(
+			shaderProgram,
+			"shadowSpotlightTransforms",
+			UNIFORM_MAT4,
+			&shadowSpotlightTransformsUniform);
 
 		getUniform(
 			shaderProgram,
@@ -377,11 +395,6 @@ void initRendererSystem(Scene *scene)
 			&directionalLightShadowMapUniform);
 		getUniform(
 			shaderProgram,
-			"shadowDirectionalLightDirection",
-			UNIFORM_VEC3,
-			&shadowDirectionalLightDirectionUniform);
-		getUniform(
-			shaderProgram,
 			"shadowDirectionalLightBiasRange",
 			UNIFORM_VEC2,
 			&shadowDirectionalLightBiasRangeUniform);
@@ -393,11 +406,6 @@ void initRendererSystem(Scene *scene)
 			&pointLightShadowMapsUniform);
 		getUniform(
 			shaderProgram,
-			"shadowPointLightFarPlanes",
-			UNIFORM_FLOAT,
-			&shadowPointLightFarPlanesUniform);
-		getUniform(
-			shaderProgram,
 			"shadowPointLightBias",
 			UNIFORM_FLOAT,
 			&shadowPointLightBiasUniform);
@@ -406,6 +414,17 @@ void initRendererSystem(Scene *scene)
 			"shadowPointLightDiskRadius",
 			UNIFORM_FLOAT,
 			&shadowPointLightDiskRadiusUniform);
+
+		getUniform(
+			shaderProgram,
+			"spotlightShadowMaps",
+			UNIFORM_TEXTURE_2D,
+			&spotlightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"shadowSpotlightBiasRange",
+			UNIFORM_VEC2,
+			&shadowSpotlightBiasRangeUniform);
 
 		LOG("Successfully initialized renderer\n");
 	}
@@ -450,16 +469,20 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	textureIndex++;
 	setTextureArrayUniform(
 		&pointLightShadowMapsUniform,
-		MAX_NUM_POINT_LIGHTS,
+		MAX_NUM_SHADOW_POINT_LIGHTS,
+		&textureIndex);
+	setTextureArrayUniform(
+		&spotlightShadowMapsUniform,
+		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
 	setUniform(materialMaskUniform, 1, &textureIndex);
 	textureIndex++;
 	setUniform(opacityMaskUniform, 1, &textureIndex);
 	textureIndex++;
-	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
-	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
-	setMaterialUniform(&wearMaterialUniform, &textureIndex);
+	// setMaterialUniform(&collectionMaterialUniform, &textureIndex);
+	// setMaterialUniform(&grungeMaterialUniform, &textureIndex);
+	// setMaterialUniform(&wearMaterialUniform, &textureIndex);
 
 	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
 
@@ -591,24 +614,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		1,
 		&numShadowDirectionalLights);
 	setUniform(
-		shadowDirectionalLightDirectionUniform,
-		1,
-		&shadowDirectionalLight.shaderDirection);
-	setUniform(
 		shadowDirectionalLightBiasRangeUniform,
 		1,
 		&config.graphicsConfig.directionalLightShadowBias);
 
-	real32 pointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
-	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
-	{
-		pointLightFarPlanes[i] = shadowPointLights[i].farPlane;
-	}
-
-	setUniform(
-		shadowPointLightFarPlanesUniform,
-		MAX_NUM_POINT_LIGHTS,
-		pointLightFarPlanes);
 	setUniform(
 		shadowPointLightBiasUniform,
 		1,
@@ -617,6 +626,23 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		shadowPointLightDiskRadiusUniform,
 		1,
 		&config.graphicsConfig.pointLightPCFDiskRadius);
+
+	kmMat4 shadowSpotlightTransforms[MAX_NUM_SHADOW_SPOTLIGHTS];
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+	{
+		kmMat4Assign(
+			&shadowSpotlightTransforms[i],
+			&shadowSpotlights[i].transform);
+	}
+
+	setUniform(
+		shadowSpotlightTransformsUniform,
+		MAX_NUM_SHADOW_SPOTLIGHTS,
+		shadowSpotlightTransforms);
+	setUniform(
+		shadowSpotlightBiasRangeUniform,
+		1,
+		&config.graphicsConfig.spotlightShadowBias);
 
 	if (animationSystemRefCount > 0)
 	{
@@ -747,37 +773,57 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glEnableVertexAttribArray(j);
 		}
 
-		GLint textureIndex = 0;
-
 		if (numShadowDirectionalLights > 0)
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, shadowDirectionalLight.shadowMap);
 		}
 
+		GLint textureIndex = 1;
+
 		if (numShadowPointLights > 0)
 		{
-			GLuint pointLightShadowMaps[MAX_NUM_POINT_LIGHTS];
-			for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+			GLuint pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
+			for (uint32 i = 0; i < numShadowPointLights; i++)
 			{
 				pointLightShadowMaps[i] = shadowPointLights[i].shadowMap;
 			}
 
 			activateTextures(
-				MAX_NUM_POINT_LIGHTS,
+				numShadowPointLights,
 				GL_TEXTURE_CUBE_MAP,
 				pointLightShadowMaps,
 				&textureIndex);
 		}
 
-		textureIndex = 1 + MAX_NUM_POINT_LIGHTS;
+		textureIndex = 1 + MAX_NUM_SHADOW_POINT_LIGHTS;
+
+		if (numShadowSpotlights > 0)
+		{
+			GLuint spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
+			for (uint32 i = 0; i < numShadowSpotlights; i++)
+			{
+				spotlightShadowMaps[i] = shadowSpotlights[i].shadowMap;
+			}
+
+			activateTextures(
+				numShadowSpotlights,
+				GL_TEXTURE_2D,
+				spotlightShadowMaps,
+				&textureIndex);
+		}
+
+		textureIndex =
+			1 +
+			MAX_NUM_SHADOW_POINT_LIGHTS +
+			MAX_NUM_SHADOW_SPOTLIGHTS;
 
 		activateMaterialTextures(material, &textureIndex);
 		activateTexture(model.materialTexture, &textureIndex);
 		activateTexture(model.opacityTexture, &textureIndex);
-		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
-		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
-		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->wearMaterial, &textureIndex);
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
 		setMaterialValuesUniform(

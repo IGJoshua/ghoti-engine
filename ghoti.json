@@ -28,14 +28,14 @@
 
 			"point_lights":
 			{
-				"limit": 8,
+				"limit": 2,
 				"bias": 0.15,
 				"pcf_disk_radius": 0.04
 			},
 
 			"spotlights":
 			{
-				"limit": 8,
+				"limit": 2,
 				"bias": [0.005, 0.05]
 			}
 		},

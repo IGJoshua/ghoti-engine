@@ -11,9 +11,13 @@ const uint ROUGHNESS_COMPONENT = 4;
 #define MAX_NUM_POINT_LIGHTS 8
 #define MAX_NUM_SPOTLIGHTS 8
 
+#define MAX_NUM_SHADOW_POINT_LIGHTS 4
+#define MAX_NUM_SHADOW_SPOTLIGHTS 4
+
 in vec4 fragColor;
 in vec3 fragPosition;
 in vec4 fragDirectionalLightSpacePosition;
+in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 in vec3 fragNormal;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
@@ -60,6 +64,7 @@ struct Spotlight
 	vec3 direction;
 	float radius;
 	vec2 size;
+	int shadowIndex;
 };
 
 uniform uint numDirectionalLights;
@@ -73,13 +78,14 @@ uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
 uniform uint numDirectionalLightShadowMaps;
 uniform sampler2D directionalLightShadowMap;
-uniform vec3 shadowDirectionalLightDirection;
 uniform vec2 shadowDirectionalLightBiasRange;
 
-uniform samplerCube pointLightShadowMaps[MAX_NUM_POINT_LIGHTS];
-uniform float shadowPointLightFarPlanes[MAX_NUM_POINT_LIGHTS];
+uniform samplerCube pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
 uniform float shadowPointLightBias;
 uniform float shadowPointLightDiskRadius;
+
+uniform sampler2D spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
+uniform vec2 shadowSpotlightBiasRange;
 
 const vec3 sampleOffsetDirections[20] = vec3[](
    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
@@ -177,7 +183,7 @@ vec3 getDirectionalLightColor(
 		shadow = getDirectionalShadow(
 			fragDirectionalLightSpacePosition,
 			fragNormal,
-			shadowDirectionalLightDirection,
+			light.direction,
 			shadowDirectionalLightBiasRange.x,
 			shadowDirectionalLightBiasRange.y,
 			directionalLightShadowMap);
@@ -214,7 +220,7 @@ vec3 getPointLightColor(
 		shadow = getPointShadow(
 			fragPosition,
 			light.position,
-			shadowPointLightFarPlanes[light.shadowIndex],
+			light.radius,
 			pointLightShadowMaps[light.shadowIndex]);
 	}
 
@@ -248,7 +254,20 @@ vec3 getSpotlightColor(
 	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor *
 		attenuation * intensity;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getDirectionalShadow(
+			fragSpotlightSpacePositions[light.shadowIndex],
+			fragNormal,
+			light.direction,
+			shadowSpotlightBiasRange.x,
+			shadowSpotlightBiasRange.y,
+			spotlightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
 }
 
 float getDirectionalShadow(
@@ -268,8 +287,6 @@ float getDirectionalShadow(
 		return 0.0;
 	}
 
-	float closestDepth = texture(shadowMap, projectedCoordinates.xy).r;
-
 	float bias = max(maxBias * (1.0 - dot(normal, -lightDirection)), minBias);
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -279,11 +296,10 @@ float getDirectionalShadow(
 		for (int y = -1; y <= 1; y++)
 		{
 			vec2 offset = vec2(x, y) * texelSize;
-			float pcfDepth = texture(
+			float closestDepth = texture(
 				shadowMap,
 				projectedCoordinates.xy + offset).r;
-
-			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+			shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
 		}
 	}
 
@@ -313,11 +329,7 @@ float getPointShadow(
 		float closestDepth = texture(
 			shadowMap,
 			lightSpacePosition + offset).r * farPlane;
-
-		if (currentDepth - bias > closestDepth)
-		{
-			shadow += 1.0;
-		}
+		shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
 	}
 
 	shadow /= float(numSamples);
