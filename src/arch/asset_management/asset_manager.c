@@ -229,6 +229,15 @@ void initializeAssetManager(real64 *dt) {
 	pthread_create(&assetManagerThread, NULL, &updateAssetManager, dt);
 }
 
+uint32 getAssetThreadCount(void)
+{
+	uint32 count = 0;
+	pthread_mutex_lock(&assetThreadsMutex);
+	count = assetThreadCount;
+	pthread_mutex_unlock(&assetThreadsMutex);
+	return count;
+}
+
 void setUpdateAssetManagerFlag(void)
 {
 	pthread_mutex_lock(&updateAssetManagerMutex);
