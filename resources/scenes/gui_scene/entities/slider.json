@@ -18,6 +18,11 @@
 			{
 				"name": "pivot",
 				"enum": 4
+			},
+
+			{
+				"name": "layout mode",
+				"enum": 0
 			}
 		],
 

@@ -457,11 +457,37 @@ struct nk_rect getRect(
 {
 	struct nk_rect rect;
 
-	rect.x = ((guiTransform->position.x + 1.0f) / 2.0f) * width;
-	rect.y = ((1.0f - guiTransform->position.y) / 2.0f) * height;
+	kmVec2 position;
+	if (guiTransform->mode == LAYOUT_MODE_SCREEN)
+	{
+		kmVec2Fill(
+			&position,
+			guiTransform->position.x,
+			guiTransform->position.y);
+	}
+	else
+	{
+		kmVec2Fill(
+			&position,
+			((guiTransform->position.x + 1.0f) / 2.0f) * width,
+			((1.0f - guiTransform->position.y) / 2.0f) * height);
+	}
 
-	rect.w = guiTransform->size.x * width;
-	rect.h = guiTransform->size.y * height;
+	rect.x = position.x;
+	rect.y = position.y;
+
+	kmVec2 sizeMultiplier;
+	if (guiTransform->mode == LAYOUT_MODE_SCREEN)
+	{
+		kmVec2Fill(&sizeMultiplier, 1.0f, 1.0f);
+	}
+	else
+	{
+		kmVec2Fill(&sizeMultiplier, width, height);
+	}
+
+	rect.w = guiTransform->size.x * sizeMultiplier.x;
+	rect.h = guiTransform->size.y * sizeMultiplier.y;;
 
 	switch (guiTransform->pivot)
 	{
@@ -684,6 +710,7 @@ void addImage(
 	GUITransformComponent imageTransform;
 	imageTransform.position = imageComponent->position;
 	imageTransform.pivot = imageComponent->pivot;
+	imageTransform.mode = LAYOUT_MODE_NDC;
 
 	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
 
@@ -780,13 +807,15 @@ void addSlider(
 	struct nk_rect rect = getRect(&sliderTransform, panelWidth, panelHeight);
 	nk_layout_space_push(&ctx, rect);
 
-	real32 widgetHeight = panelHeight * guiTransform->size.y;
+	real32 widgetHeight = guiTransform->mode == LAYOUT_MODE_SCREEN ?
+		guiTransform->size.y : panelHeight * guiTransform->size.y;
 	real32 sliderHeight = widgetHeight * slider->height;
 
 	ctx.style.slider.cursor_size.x = slider->buttonSize * sliderHeight;
 	ctx.style.slider.cursor_size.y = slider->buttonSize * sliderHeight;
 
-	real32 widgetWidth = panelWidth * guiTransform->size.x;
+	real32 widgetWidth = guiTransform->mode == LAYOUT_MODE_SCREEN ?
+		guiTransform->size.x : panelWidth * guiTransform->size.x;
 	real32 padding = (widgetWidth - (widgetWidth * slider->length)) / 2;
 	ctx.style.slider.padding = nk_vec2(padding, 0.0f);
 

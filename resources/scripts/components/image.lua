@@ -6,6 +6,7 @@ typedef struct image_component_t
 	kmVec2 position;
 	kmVec2 scale;
 	int32 pivot;
+	int32 mode;
 } ImageComponent;
 ]]
 

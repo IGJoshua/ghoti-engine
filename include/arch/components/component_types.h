@@ -35,6 +35,12 @@ typedef enum joint_type_e
 	JOINT_TYPE_BALL_SOCKET2
 } JointType;
 
+typedef enum layout_mode_e
+{
+	LAYOUT_MODE_NDC,
+	LAYOUT_MODE_SCREEN
+} LayoutMode;
+
 typedef enum light_type_e
 {
 	LIGHT_TYPE_DIRECTIONAL,
@@ -239,6 +245,7 @@ typedef struct gui_transform_component_t
 	kmVec2 position;
 	kmVec2 size;
 	Pivot pivot;
+	LayoutMode mode;
 } GUITransformComponent;
 
 typedef struct heightmap_component_t
@@ -287,6 +294,7 @@ typedef struct image_component_t
 	kmVec2 position;
 	kmVec2 scale;
 	Pivot pivot;
+	LayoutMode mode;
 } ImageComponent;
 
 typedef struct joint_constraint_component_t
