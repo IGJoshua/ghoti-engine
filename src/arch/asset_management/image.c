@@ -72,12 +72,16 @@ void loadImage(const char *name, bool textureFiltering)
 		if (!skip)
 		{
 			START_ACQUISITION_THREAD(image, Image, Images, arg, nameID);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&imagesMutex);
 	}
+
+	free(arg->name);
+	free(arg);
 }
 
 ACQUISITION_THREAD(Image);

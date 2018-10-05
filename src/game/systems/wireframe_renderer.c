@@ -155,6 +155,16 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		return;
 	}
 
+	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
+		scene,
+		entityID,
+		wireframeComponentID);
+
+	if (!wireframeComponent->visible)
+	{
+		return;
+	}
+
 	ModelComponent *modelComponent = sceneGetComponentFromEntity(
 		scene,
 		entityID,
@@ -162,16 +172,6 @@ void runWireframeRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 	Model model = getModel(modelComponent->name);
 	if (strlen(model.name.string) == 0)
-	{
-		return;
-	}
-
-	WireframeComponent *wireframeComponent = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		wireframeComponentID);
-
-	if (!wireframeComponent->visible)
 	{
 		return;
 	}

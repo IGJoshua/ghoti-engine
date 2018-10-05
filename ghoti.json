@@ -14,26 +14,62 @@
 
 	"graphics":
 	{
-		"background_color": [0.0, 0.0, 0.0]
+		"background_color": [0.0, 0.0, 0.0],
+
+		"shadows":
+		{
+			"resolution": 4096,
+
+			"directional_lights":
+			{
+				"enabled": true,
+				"bias": [0.005, 0.05]
+			},
+
+			"point_lights":
+			{
+				"limit": 2,
+				"bias": 0.15,
+				"pcf_disk_radius": 0.04
+			},
+
+			"spotlights":
+			{
+				"limit": 2,
+				"bias": [0.005, 0.05]
+			}
+		},
+
+		"post_processing":
+		{
+			"grayscale": false
+		}
 	},
 
 	"assets":
 	{
-		"minimum_audio_lifetime": 60.0,
-		"minimum_font_lifetime": 60.0,
-		"minimum_image_lifetime": 60.0,
-		"minimum_texture_lifetime": 60.0,
-		"minimum_model_lifetime": 60.0,
-		"minimum_particle_lifetime": 60.0,
-		"minimum_cubemap_lifetime": 60.0,
+		"minimum_lifetimes":
+		{
+			"audio": 60.0,
+			"fonts": 60.0,
+			"images": 60.0,
+			"textures": 60.0,
+			"models": 60.0,
+			"particles": 60.0,
+			"cubemaps": 60.0
+		},
+
 		"maximum_thread_count": 16
 	},
 
 	"log":
 	{
-		"engine_file": "engine.log",
-		"asset_manager_file": "asset_manager.log",
-		"lua_file": "lua.log"
+		"files":
+		{
+			"engine": "engine.log",
+			"asset_manager": "asset_manager.log",
+			"lua": "lua.log"
+		}
 	},
 
 	"saves":

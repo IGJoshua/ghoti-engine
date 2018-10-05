@@ -13,6 +13,7 @@
 #include "components/light.h"
 
 #include "core/log.h"
+#include "core/config.h"
 
 #include "data/data_types.h"
 #include "data/hash_map.h"
@@ -35,6 +36,9 @@
 #include <malloc.h>
 #include <stdio.h>
 
+#define VERTEX_SHADER_FILE "resources/shaders/model.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+
 internal GLuint shaderProgram;
 
 internal Uniform modelUniform;
@@ -43,6 +47,8 @@ internal Uniform projectionUniform;
 
 internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
+
+internal Uniform cameraPositionUniform;
 
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
@@ -58,8 +64,8 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
-#define NUM_POINT_LIGHT_ATTRIBUTES 6
-#define NUM_SPOTLIGHT_ATTRIBUTES 8
+#define NUM_POINT_LIGHT_ATTRIBUTES 5
+#define NUM_SPOTLIGHT_ATTRIBUTES 7
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -74,6 +80,20 @@ internal Uniform spotlightsUniforms
 	[MAX_NUM_SPOTLIGHTS]
 	[NUM_SPOTLIGHT_ATTRIBUTES];
 
+internal Uniform shadowDirectionalLightTransformUniform;
+internal Uniform shadowSpotlightTransformsUniform;
+
+internal Uniform numDirectionalLightShadowMapsUniform;
+internal Uniform directionalLightShadowMapUniform;
+internal Uniform shadowDirectionalLightBiasRangeUniform;
+
+internal Uniform pointLightShadowMapsUniform;
+internal Uniform shadowPointLightBiasUniform;
+internal Uniform shadowPointLightDiskRadiusUniform;
+
+internal Uniform spotlightShadowMapsUniform;
+internal Uniform shadowSpotlightBiasRangeUniform;
+
 internal HashMap *skeletons;
 
 internal uint32 rendererRefCount = 0;
@@ -87,6 +107,7 @@ internal UUID cameraComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
+extern Config config;
 extern real64 alpha;
 
 extern uint32 animationSystemRefCount;
@@ -103,6 +124,15 @@ extern PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 extern uint32 numSpotlights;
 extern Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
 
+extern uint32 numShadowDirectionalLights;
+extern ShadowDirectionalLight shadowDirectionalLight;
+
+extern uint32 numShadowPointLights;
+extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+extern uint32 numShadowSpotlights;
+extern ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
+
 internal
 void initRendererSystem(Scene *scene)
 {
@@ -111,11 +141,11 @@ void initRendererSystem(Scene *scene)
 		LOG("Initializing renderer...\n");
 
 		createShaderProgram(
-			"resources/shaders/model.vert",
+			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			"resources/shaders/model.frag",
+			FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 
@@ -137,6 +167,12 @@ void initRendererSystem(Scene *scene)
 			"boneTransforms",
 			UNIFORM_MAT4,
 			&boneTransformsUniform);
+
+		getUniform(
+			shaderProgram,
+			"cameraPosition",
+			UNIFORM_VEC3,
+			&cameraPositionUniform);
 
 		getUniform(
 			shaderProgram,
@@ -226,9 +262,9 @@ void initRendererSystem(Scene *scene)
 
 		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
 		{
-			char uniformName[1024];
 			attribute = 0;
 
+			char *uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].color", i);
 			getUniform(
 				shaderProgram,
@@ -236,6 +272,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].ambient", i);
 			getUniform(
 				shaderProgram,
@@ -243,6 +280,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "pointLights[%d].position", i);
 			getUniform(
 				shaderProgram,
@@ -250,25 +288,20 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&pointLightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "pointLights[%d].constantAttenuation", i);
+			uniformName = malloc(1024);
+			sprintf(uniformName, "pointLights[%d].radius", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
 				UNIFORM_FLOAT,
 				&pointLightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "pointLights[%d].linearAttenuation", i);
+			uniformName = malloc(1024);
+			sprintf(uniformName, "pointLights[%d].shadowIndex", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
-				UNIFORM_FLOAT,
-				&pointLightsUniforms[i][attribute++]);
-
-			sprintf(uniformName, "pointLights[%d].quadraticAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
+				UNIFORM_INT,
 				&pointLightsUniforms[i][attribute++]);
 		}
 
@@ -280,9 +313,9 @@ void initRendererSystem(Scene *scene)
 
 		for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
 		{
-			char uniformName[1024];
 			attribute = 0;
 
+			char *uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].color", i);
 			getUniform(
 				shaderProgram,
@@ -290,6 +323,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].ambient", i);
 			getUniform(
 				shaderProgram,
@@ -297,6 +331,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].position", i);
 			getUniform(
 				shaderProgram,
@@ -304,6 +339,7 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].direction", i);
 			getUniform(
 				shaderProgram,
@@ -311,34 +347,84 @@ void initRendererSystem(Scene *scene)
 				UNIFORM_VEC3,
 				&spotlightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "spotlights[%d].constantAttenuation", i);
+			uniformName = malloc(1024);
+			sprintf(uniformName, "spotlights[%d].radius", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
 				UNIFORM_FLOAT,
 				&spotlightsUniforms[i][attribute++]);
 
-			sprintf(uniformName, "spotlights[%d].linearAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&spotlightsUniforms[i][attribute++]);
-
-			sprintf(uniformName, "spotlights[%d].quadraticAttenuation", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_FLOAT,
-				&spotlightsUniforms[i][attribute++]);
-
+			uniformName = malloc(1024);
 			sprintf(uniformName, "spotlights[%d].size", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
 				UNIFORM_VEC2,
 				&spotlightsUniforms[i][attribute++]);
+
+			uniformName = malloc(1024);
+			sprintf(uniformName, "spotlights[%d].shadowIndex", i);
+			getUniform(
+				shaderProgram,
+				uniformName,
+				UNIFORM_INT,
+				&spotlightsUniforms[i][attribute++]);
 		}
+
+		getUniform(
+			shaderProgram,
+			"shadowDirectionalLightTransform",
+			UNIFORM_MAT4,
+			&shadowDirectionalLightTransformUniform);
+		getUniform(
+			shaderProgram,
+			"shadowSpotlightTransforms",
+			UNIFORM_MAT4,
+			&shadowSpotlightTransformsUniform);
+
+		getUniform(
+			shaderProgram,
+			"numDirectionalLightShadowMaps",
+			UNIFORM_UINT,
+			&numDirectionalLightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"directionalLightShadowMap",
+			UNIFORM_TEXTURE_2D,
+			&directionalLightShadowMapUniform);
+		getUniform(
+			shaderProgram,
+			"shadowDirectionalLightBiasRange",
+			UNIFORM_VEC2,
+			&shadowDirectionalLightBiasRangeUniform);
+
+		getUniform(
+			shaderProgram,
+			"pointLightShadowMaps",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&pointLightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"shadowPointLightBias",
+			UNIFORM_FLOAT,
+			&shadowPointLightBiasUniform);
+		getUniform(
+			shaderProgram,
+			"shadowPointLightDiskRadius",
+			UNIFORM_FLOAT,
+			&shadowPointLightDiskRadiusUniform);
+
+		getUniform(
+			shaderProgram,
+			"spotlightShadowMaps",
+			UNIFORM_TEXTURE_2D,
+			&spotlightShadowMapsUniform);
+		getUniform(
+			shaderProgram,
+			"shadowSpotlightBiasRange",
+			UNIFORM_VEC2,
+			&shadowSpotlightBiasRangeUniform);
 
 		LOG("Successfully initialized renderer\n");
 	}
@@ -368,15 +454,35 @@ void beginRendererSystem(Scene *scene, real64 dt)
 
 	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
+	kmVec3 cameraPosition;
+	tGetInterpolatedTransform(
+		cameraTransform,
+		&cameraPosition,
+		NULL,
+		NULL,
+		alpha);
+
+	setUniform(cameraPositionUniform, 1, &cameraPosition);
+
 	GLint textureIndex = 0;
+	setUniform(directionalLightShadowMapUniform, 1, &textureIndex);
+	textureIndex++;
+	setTextureArrayUniform(
+		&pointLightShadowMapsUniform,
+		MAX_NUM_SHADOW_POINT_LIGHTS,
+		&textureIndex);
+	setTextureArrayUniform(
+		&spotlightShadowMapsUniform,
+		MAX_NUM_SHADOW_SPOTLIGHTS,
+		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
 	setUniform(materialMaskUniform, 1, &textureIndex);
 	textureIndex++;
 	setUniform(opacityMaskUniform, 1, &textureIndex);
 	textureIndex++;
-	setMaterialUniform(&collectionMaterialUniform, &textureIndex);
-	setMaterialUniform(&grungeMaterialUniform, &textureIndex);
-	setMaterialUniform(&wearMaterialUniform, &textureIndex);
+	// setMaterialUniform(&collectionMaterialUniform, &textureIndex);
+	// setMaterialUniform(&grungeMaterialUniform, &textureIndex);
+	// setMaterialUniform(&wearMaterialUniform, &textureIndex);
 
 	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
 
@@ -439,15 +545,11 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			pointLightsUniforms[i][attribute++],
 			1,
-			&pointLight->constantAttenuation);
+			&pointLight->radius);
 		setUniform(
 			pointLightsUniforms[i][attribute++],
 			1,
-			&pointLight->linearAttenuation);
-		setUniform(
-			pointLightsUniforms[i][attribute++],
-			1,
-			&pointLight->quadraticAttenuation);
+			&pointLight->shadowIndex);
 	}
 
 	setUniform(numSpotlightsUniform, 1, &numSpotlights);
@@ -496,24 +598,55 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
-			&spotlight->constantAttenuation);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->linearAttenuation);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->quadraticAttenuation);
+			&spotlight->radius);
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
 			&spotlight->size);
 	}
 
+	setUniform(
+		shadowDirectionalLightTransformUniform,
+		1,
+		&shadowDirectionalLight.transform);
+	setUniform(
+		numDirectionalLightShadowMapsUniform,
+		1,
+		&numShadowDirectionalLights);
+	setUniform(
+		shadowDirectionalLightBiasRangeUniform,
+		1,
+		&config.graphicsConfig.directionalLightShadowBias);
+
+	setUniform(
+		shadowPointLightBiasUniform,
+		1,
+		&config.graphicsConfig.pointLightShadowBias);
+	setUniform(
+		shadowPointLightDiskRadiusUniform,
+		1,
+		&config.graphicsConfig.pointLightPCFDiskRadius);
+
+	kmMat4 shadowSpotlightTransforms[MAX_NUM_SHADOW_SPOTLIGHTS];
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+	{
+		kmMat4Assign(
+			&shadowSpotlightTransforms[i],
+			&shadowSpotlights[i].transform);
+	}
+
+	setUniform(
+		shadowSpotlightTransformsUniform,
+		MAX_NUM_SHADOW_SPOTLIGHTS,
+		shadowSpotlightTransforms);
+	setUniform(
+		shadowSpotlightBiasRangeUniform,
+		1,
+		&config.graphicsConfig.spotlightShadowBias);
+
 	if (animationSystemRefCount > 0)
 	{
-		skeletons = (HashMap*)hashMapGetData(skeletonsMap, &scene);
+		skeletons = hashMapGetData(skeletonsMap, &scene);
 	}
 }
 
@@ -530,13 +663,13 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		modelComponentID);
 
-	Model model = getModel(modelComponent->name);
-	if (strlen(model.name.string) == 0)
+	if (!modelComponent->visible)
 	{
 		return;
 	}
 
-	if (!modelComponent->visible)
+	Model model = getModel(modelComponent->name);
+	if (strlen(model.name.string) == 0)
 	{
 		return;
 	}
@@ -640,13 +773,57 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glEnableVertexAttribArray(j);
 		}
 
-		GLint textureIndex = 0;
+		if (numShadowDirectionalLights > 0)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, shadowDirectionalLight.shadowMap);
+		}
+
+		GLint textureIndex = 1;
+
+		if (numShadowPointLights > 0)
+		{
+			GLuint pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
+			for (uint32 i = 0; i < numShadowPointLights; i++)
+			{
+				pointLightShadowMaps[i] = shadowPointLights[i].shadowMap;
+			}
+
+			activateTextures(
+				numShadowPointLights,
+				GL_TEXTURE_CUBE_MAP,
+				pointLightShadowMaps,
+				&textureIndex);
+		}
+
+		textureIndex = 1 + MAX_NUM_SHADOW_POINT_LIGHTS;
+
+		if (numShadowSpotlights > 0)
+		{
+			GLuint spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
+			for (uint32 i = 0; i < numShadowSpotlights; i++)
+			{
+				spotlightShadowMaps[i] = shadowSpotlights[i].shadowMap;
+			}
+
+			activateTextures(
+				numShadowSpotlights,
+				GL_TEXTURE_2D,
+				spotlightShadowMaps,
+				&textureIndex);
+		}
+
+		textureIndex =
+			1 +
+			MAX_NUM_SHADOW_POINT_LIGHTS +
+			MAX_NUM_SHADOW_SPOTLIGHTS;
+
 		activateMaterialTextures(material, &textureIndex);
 		activateTexture(model.materialTexture, &textureIndex);
 		activateTexture(model.opacityTexture, &textureIndex);
-		activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
-		activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
-		activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
+		// activateMaterialTextures(&mask->wearMaterial, &textureIndex);
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
 		setMaterialValuesUniform(
@@ -716,6 +893,22 @@ void shutdownRendererSystem(Scene *scene)
 		LOG("Shutting down renderer...\n");
 
 		glDeleteProgram(shaderProgram);
+
+		for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+		{
+			for (uint8 j = 0; j < NUM_POINT_LIGHT_ATTRIBUTES; j++)
+			{
+				free(pointLightsUniforms[i][j].name);
+			}
+		}
+
+		for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
+		{
+			for (uint8 j = 0; j < NUM_SPOTLIGHT_ATTRIBUTES; j++)
+			{
+				free(spotlightsUniforms[i][j].name);
+			}
+		}
 
 		LOG("Successfully shut down renderer\n");
 	}

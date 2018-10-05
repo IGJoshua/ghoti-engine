@@ -12,9 +12,7 @@ typedef struct light_component_t
 	LightType type;
 	kmVec3 color;
 	kmVec3 ambient;
-	real32 constantAttenuation;
-	real32 linearAttenuation;
-	real32 quadraticAttenuation;
+	real32 radius;
 	kmVec2 size;
 } LightComponent;
 ]]

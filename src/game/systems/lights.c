@@ -1,10 +1,14 @@
 #include "defines.h"
 
+#include "core/config.h"
+
 #include "data/data_types.h"
 #include "data/list.h"
+#include "data/hash_map.h"
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
+#include "ECS/component.h"
 
 #include "components/component_types.h"
 #include "components/light.h"
@@ -14,6 +18,8 @@ internal UUID lightComponentID = {};
 
 internal uint32 lightsSystemRefCount = 0;
 
+extern Config config;
+
 uint32 numDirectionalLights = 0;
 DirectionalLight directionalLight;
 
@@ -22,6 +28,23 @@ PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 
 uint32 numSpotlights = 0;
 Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
+
+internal TransformComponent* shadowPointLightTransforms
+	[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+internal TransformComponent* shadowSpotlightTransforms
+	[MAX_NUM_SHADOW_SPOTLIGHTS];
+
+extern uint32 numShadowDirectionalLights;
+extern ShadowDirectionalLight shadowDirectionalLight;
+
+extern uint32 numShadowPointLights;
+extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+extern uint32 numShadowSpotlights;
+extern ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
+
+extern uint32 shadowsSystemRefCount;
 
 internal void clearLights(void);
 
@@ -43,6 +66,147 @@ internal void initLightsSystem(Scene *scene)
 internal void beginLightsSystem(Scene *scene, real64 dt)
 {
 	clearLights();
+
+	if (shadowsSystemRefCount == 0)
+	{
+		return;
+	}
+
+	TransformComponent *cameraTransform = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		transformComponentID);
+
+	if (!cameraTransform)
+	{
+		return;
+	}
+
+	real32 closestPointLightDistances[MAX_NUM_SHADOW_POINT_LIGHTS];
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		closestPointLightDistances[i] = FLT_MAX;
+	}
+
+	real32 closestSpotlightDistances[MAX_NUM_SHADOW_SPOTLIGHTS];
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+	{
+		closestSpotlightDistances[i] = FLT_MAX;
+	}
+
+	ComponentDataTable *lightComponents =
+		*(ComponentDataTable**)hashMapGetData(
+			scene->componentTypes,
+			&lightComponentID);
+
+	for (ComponentDataTableIterator itr = cdtGetIterator(lightComponents);
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
+	{
+		LightComponent *lightComponent = cdtIteratorGetData(itr);
+		if (lightComponent->enabled)
+		{
+			TransformComponent *transform = sceneGetComponentFromEntity(
+				scene,
+				cdtIteratorGetUUID(itr),
+				transformComponentID);
+
+			kmVec3 displacement;
+			kmVec3Subtract(
+				&displacement,
+				&transform->globalPosition,
+				&cameraTransform->globalPosition);
+
+			real32 distance = kmVec3LengthSq(&displacement);
+			int32 index = -1;
+
+			switch (lightComponent->type)
+			{
+				case LIGHT_TYPE_POINT:
+					for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+					{
+						if (!shadowPointLightTransforms[i])
+						{
+							index = i;
+							break;
+						}
+					}
+
+					if (index == -1)
+					{
+						for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+						{
+							if (distance < closestPointLightDistances[i])
+							{
+								index = i;
+								break;
+							}
+						}
+					}
+
+					if (index > -1)
+					{
+						closestPointLightDistances[index] = distance;
+						shadowPointLightTransforms[index] = transform;
+					}
+
+					break;
+				case LIGHT_TYPE_SPOT:
+					for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+					{
+						if (!shadowSpotlightTransforms[i])
+						{
+							index = i;
+							break;
+						}
+					}
+
+					if (index == -1)
+					{
+						for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+						{
+							if (distance < closestSpotlightDistances[i])
+							{
+								index = i;
+								break;
+							}
+						}
+					}
+
+					if (index > -1)
+					{
+						closestSpotlightDistances[index] = distance;
+						shadowSpotlightTransforms[index] = transform;
+					}
+
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	uint32 numOverflowShadowPointLights =
+		MAX_NUM_SHADOW_POINT_LIGHTS -
+			config.graphicsConfig.maxNumShadowPointLights;
+
+	memset(
+		&shadowPointLightTransforms[
+			config.graphicsConfig.maxNumShadowPointLights],
+		0,
+		numOverflowShadowPointLights * sizeof(TransformComponent*));
+
+	uint32 numOverflowShadowSpotlights =
+		MAX_NUM_SHADOW_SPOTLIGHTS -
+			config.graphicsConfig.maxNumShadowSpotlights;
+
+	memset(
+		&shadowSpotlightTransforms[
+			config.graphicsConfig.maxNumShadowSpotlights],
+		0,
+		numOverflowShadowSpotlights * sizeof(TransformComponent*));
 }
 
 internal void runLightsSystem(Scene *scene, UUID entity, real64 dt)
@@ -107,8 +271,31 @@ void clearLights(void)
 	numPointLights = 0;
 	memset(pointLights, 0, MAX_NUM_POINT_LIGHTS * sizeof(PointLight));
 
+	for (uint32 i = 0; i < MAX_NUM_POINT_LIGHTS; i++)
+	{
+		pointLights[i].shadowIndex = -1;
+	}
+
 	numSpotlights = 0;
 	memset(spotlights, 0, MAX_NUM_SPOTLIGHTS * sizeof(Spotlight));
+
+	for (uint32 i = 0; i < MAX_NUM_SPOTLIGHTS; i++)
+	{
+		spotlights[i].shadowIndex = -1;
+	}
+
+	numShadowDirectionalLights = 0;
+	numShadowPointLights = 0;
+	numShadowSpotlights = 0;
+
+	memset(
+		shadowPointLightTransforms,
+		0,
+		MAX_NUM_SHADOW_POINT_LIGHTS * sizeof(TransformComponent*));
+	memset(
+		shadowSpotlightTransforms,
+		0,
+		MAX_NUM_SHADOW_SPOTLIGHTS * sizeof(TransformComponent*));
 }
 
 void addDirectionalLight(
@@ -129,6 +316,22 @@ void addDirectionalLight(
 		&directionalLight.previousDirection,
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&directionalLight.direction, &transform->globalRotation);
+
+	if (shadowsSystemRefCount == 0 ||
+		!config.graphicsConfig.directionalLightShadows ||
+		numShadowDirectionalLights == 1)
+	{
+		return;
+	}
+
+	numShadowDirectionalLights++;
+
+	kmQuaternionAssign(
+		&shadowDirectionalLight.previousDirection,
+		&transform->lastGlobalRotation);
+	kmQuaternionAssign(
+		&shadowDirectionalLight.direction,
+		&transform->globalRotation);
 }
 
 void addPointLight(
@@ -148,9 +351,34 @@ void addPointLight(
 	kmVec3Assign(&pointLight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&pointLight->position, &transform->globalPosition);
 
-	pointLight->constantAttenuation = light->constantAttenuation;
-	pointLight->linearAttenuation = light->linearAttenuation;
-	pointLight->quadraticAttenuation = light->quadraticAttenuation;
+	pointLight->radius = light->radius;
+
+	if (shadowsSystemRefCount == 0 ||
+		numShadowPointLights == config.graphicsConfig.maxNumShadowPointLights)
+	{
+		return;
+	}
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_POINT_LIGHTS; i++)
+	{
+		if (transform == shadowPointLightTransforms[i])
+		{
+			pointLight->shadowIndex = numShadowPointLights++;
+
+			ShadowPointLight *shadowPointLight = &shadowPointLights[i];
+
+			kmVec3Assign(
+				&shadowPointLight->previousPosition,
+				&transform->lastGlobalPosition);
+			kmVec3Assign(
+				&shadowPointLight->position,
+				&transform->globalPosition);
+
+			shadowPointLight->farPlane = light->radius;
+
+			break;
+		}
+	}
 }
 
 void addSpotlight(
@@ -175,9 +403,41 @@ void addSpotlight(
 		&transform->lastGlobalRotation);
 	kmQuaternionAssign(&spotlight->direction, &transform->globalRotation);
 
-	spotlight->constantAttenuation = light->constantAttenuation;
-	spotlight->linearAttenuation = light->linearAttenuation;
-	spotlight->quadraticAttenuation = light->quadraticAttenuation;
-
+	spotlight->radius = light->radius;
 	kmVec2Assign(&spotlight->size, &light->size);
+
+	if (shadowsSystemRefCount == 0 ||
+		numShadowSpotlights == config.graphicsConfig.maxNumShadowSpotlights)
+	{
+		return;
+	}
+
+	for (uint32 i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+	{
+		if (transform == shadowSpotlightTransforms[i])
+		{
+			spotlight->shadowIndex = numShadowSpotlights++;
+
+			ShadowSpotlight *shadowSpotlight = &shadowSpotlights[i];
+
+			kmVec3Assign(
+				&shadowSpotlight->previousPosition,
+				&transform->lastGlobalPosition);
+			kmVec3Assign(
+				&shadowSpotlight->position,
+				&transform->globalPosition);
+
+			kmQuaternionAssign(
+				&shadowSpotlight->previousDirection,
+				&transform->lastGlobalRotation);
+			kmQuaternionAssign(
+				&shadowSpotlight->direction,
+				&transform->globalRotation);
+
+			shadowSpotlight->fov = acosf(spotlight->size.y) * (180.0f / M_PI);
+			shadowSpotlight->farPlane = spotlight->radius;
+
+			break;
+		}
+	}
 }

@@ -27,6 +27,7 @@ SYSTEM(GUI);
 SYSTEM(Audio);
 SYSTEM(Lights);
 
+SYSTEM(Shadows);
 SYSTEM(CubemapRenderer);
 SYSTEM(RenderHeightmap);
 SYSTEM(Renderer);
@@ -61,6 +62,7 @@ void initSystems(void)
 	REGISTER_SYSTEM(Audio, "audio");
 	REGISTER_SYSTEM(Lights, "lights");
 
+	REGISTER_SYSTEM(Shadows, "shadows");
 	REGISTER_SYSTEM(CubemapRenderer, "cubemap_renderer");
 	REGISTER_SYSTEM(RenderHeightmap, "render_heightmap");
 	REGISTER_SYSTEM(Renderer, "renderer");

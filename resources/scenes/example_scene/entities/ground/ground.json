@@ -80,7 +80,7 @@
 
 			{
 				"name": "visible",
-				"bool": false
+				"bool": true
 			}
 		],
 

@@ -3,14 +3,23 @@
 
 #include "file/utilities.h"
 
+#include "components/light.h"
+
 #include <cjson/cJSON.h>
 
 #include <malloc.h>
 #include <string.h>
 
+#define GET_CONFIG_ITEM(name, key) \
+cJSON *name = getConfigObject(json, key); \
+if (name)
+
 extern Config config;
 
 internal void initializeDefaultConfig(void);
+internal cJSON* getConfigObject(cJSON *json, const char *key);
+
+internal bool cJSONToBool(cJSON *boolObject);
 
 int32 loadConfig(void)
 {
@@ -23,163 +32,239 @@ int32 loadConfig(void)
 		return -1;
 	}
 
-	cJSON *window = cJSON_GetObjectItem(json, "window");
+	// Window Config
 
-	if (window)
+	GET_CONFIG_ITEM(windowTitle, "window.title")
 	{
 		free(config.windowConfig.title);
-
-		cJSON *windowTitle = cJSON_GetObjectItem(window, "title");
 		config.windowConfig.title = malloc(
 			strlen(windowTitle->valuestring) + 1);
 		strcpy(config.windowConfig.title, windowTitle->valuestring);
-
-		cJSON *windowFullscreen = cJSON_GetObjectItem(window, "fullscreen");
-		config.windowConfig.fullscreen = cJSON_IsTrue(windowFullscreen) ?
-			true : false;
-
-		cJSON *windowSize = cJSON_GetObjectItem(window, "size");
-		kmVec2Fill(
-			&config.windowConfig.size,
-			windowSize->child->valuedouble,
-			windowSize->child->next->valuedouble);
-
-		cJSON *windowVSYNC = cJSON_GetObjectItem(window, "vsync");
-		config.windowConfig.vsync = cJSON_IsTrue(windowVSYNC) ?
-			true : false;
 	}
 
-	cJSON *physics = cJSON_GetObjectItem(json, "physics");
-
-	if (physics)
+	GET_CONFIG_ITEM(windowFullscreen, "window.fullscreen")
 	{
-		cJSON *physicsFPS = cJSON_GetObjectItem(physics, "fps");
+		config.windowConfig.fullscreen = cJSONToBool(windowFullscreen);
+	}
 
+	GET_CONFIG_ITEM(windowSize, "window.size")
+	{
+		real32 width = windowSize->child->valuedouble;
+		real32 height = windowSize->child->next->valuedouble;
+
+		if (width >= 1.0f && height >= 1.0f)
+		{
+			kmVec2Fill(&config.windowConfig.size, width, height);
+		}
+	}
+
+	GET_CONFIG_ITEM(windowVSYNC, "window.vsync")
+	{
+		config.windowConfig.vsync = cJSONToBool(windowVSYNC);
+	}
+
+	// Physics Config
+
+	GET_CONFIG_ITEM(physicsFPS, "physics.fps")
+	{
 		if (physicsFPS->valuedouble >= 5.0)
 		{
 			config.physicsConfig.fps = physicsFPS->valuedouble;
 		}
 	}
 
-	cJSON *graphics = cJSON_GetObjectItem(json, "graphics");
+	// Graphics Config
 
-	if (graphics)
+	GET_CONFIG_ITEM(graphicsBackgroundColor, "graphics.background_color")
 	{
-		cJSON *graphicsBackgroundColor = cJSON_GetObjectItem(
-			graphics,
-			"background_color");
-		kmVec3Fill(
-			&config.graphicsConfig.backgroundColor,
-			graphicsBackgroundColor->child->valuedouble,
-			graphicsBackgroundColor->child->next->valuedouble,
-			graphicsBackgroundColor->child->next->next->valuedouble);
+		real32 r = graphicsBackgroundColor->child->valuedouble;
+		real32 g = graphicsBackgroundColor->child->next->valuedouble;
+		real32 b = graphicsBackgroundColor->child->next->next->valuedouble;
+
+		if (r >= 0.0f && r <= 1.0f &&
+			g >= 0.0f && g <= 1.0f &&
+			b >= 0.0f && b <= 1.0f)
+		{
+			kmVec3Fill(&config.graphicsConfig.backgroundColor, r, g, b);
+		}
 	}
 
-	cJSON *assets = cJSON_GetObjectItem(json, "assets");
-
-	if (assets)
+	GET_CONFIG_ITEM(shadowMapResolution, "graphics.shadows.resolution")
 	{
-		cJSON *minAudioFileLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_audio_lifetime");
+		int32 resolution = shadowMapResolution->valueint;
+		if (resolution > 0)
+		{
+			config.graphicsConfig.shadowMapResolution = resolution;
+		}
+	}
+
+	GET_CONFIG_ITEM(
+		directionalLightShadows,
+		"graphics.shadows.directional_lights.enabled")
+	{
+		config.graphicsConfig.directionalLightShadows =
+			cJSONToBool(directionalLightShadows);
+	}
+
+	GET_CONFIG_ITEM(
+		directionalLightShadowBias,
+		"graphics.shadows.directional_lights.bias")
+	{
+		config.graphicsConfig.directionalLightShadowBias[0] =
+			directionalLightShadowBias->child->valuedouble;
+		config.graphicsConfig.directionalLightShadowBias[1] =
+			directionalLightShadowBias->child->next->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(
+		maxNumShadowPointLights,
+		"graphics.shadows.point_lights.limit")
+	{
+		int32 limit = maxNumShadowPointLights->valueint;
+		if (limit >= 0 &&
+			limit <= config.graphicsConfig.maxNumShadowPointLights)
+		{
+			config.graphicsConfig.maxNumShadowPointLights = limit;
+		}
+	}
+
+	GET_CONFIG_ITEM(pointLightShadowBias, "graphics.shadows.point_lights.bias")
+	{
+		config.graphicsConfig.pointLightShadowBias =
+			pointLightShadowBias->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(
+		pointLightPCFDiskRadius,
+		"graphics.shadows.point_lights.pcf_disk_radius")
+	{
+		real32 radius = pointLightPCFDiskRadius->valuedouble;
+		if (radius > 0.0f)
+		{
+			config.graphicsConfig.pointLightPCFDiskRadius = 1.0f / radius;
+		}
+	}
+
+	GET_CONFIG_ITEM(maxNumShadowSpotlights, "graphics.shadows.spotlights.limit")
+	{
+		int32 limit = maxNumShadowSpotlights->valueint;
+		if (limit >= 0 && limit <= config.graphicsConfig.maxNumShadowSpotlights)
+		{
+			config.graphicsConfig.maxNumShadowSpotlights = limit;
+		}
+	}
+
+	GET_CONFIG_ITEM(spotlightShadowBias, "graphics.shadows.spotlights.bias")
+	{
+		config.graphicsConfig.spotlightShadowBias[0] =
+			spotlightShadowBias->child->valuedouble;
+		config.graphicsConfig.spotlightShadowBias[1] =
+			spotlightShadowBias->child->next->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(grayscalePostProcess, "graphics.post_processing.grayscale")
+	{
+		config.graphicsConfig.grayscalePostProcess =
+			cJSONToBool(grayscalePostProcess);
+	}
+
+	// Assets Config
+
+	GET_CONFIG_ITEM(minAudioFileLifetime, "assets.minimum_lifetimes.audio")
+	{
 		config.assetsConfig.minAudioFileLifetime =
 			minAudioFileLifetime->valuedouble;
+	}
 
-		cJSON *minFontLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_font_lifetime");
+	GET_CONFIG_ITEM(minFontLifetime, "assets.minimum_lifetimes.fonts")
+	{
 		config.assetsConfig.minFontLifetime =
 			minFontLifetime->valuedouble;
+	}
 
-		cJSON *minImageLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_image_lifetime");
+	GET_CONFIG_ITEM(minImageLifetime, "assets.minimum_lifetimes.images")
+	{
 		config.assetsConfig.minImageLifetime =
 			minImageLifetime->valuedouble;
+	}
 
-		cJSON *minTextureLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_texture_lifetime");
+	GET_CONFIG_ITEM(minTextureLifetime, "assets.minimum_lifetimes.textures")
+	{
 		config.assetsConfig.minTextureLifetime =
 			minTextureLifetime->valuedouble;
+	}
 
-		cJSON *minModelLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_model_lifetime");
+	GET_CONFIG_ITEM(minModelLifetime, "assets.minimum_lifetimes.models")
+	{
 		config.assetsConfig.minModelLifetime =
 			minModelLifetime->valuedouble;
+	}
 
-		cJSON *minParticleLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_particle_lifetime");
+	GET_CONFIG_ITEM(minParticleLifetime, "assets.minimum_lifetimes.particles")
+	{
 		config.assetsConfig.minParticleLifetime =
 			minParticleLifetime->valuedouble;
+	}
 
-		cJSON *minCubemapLifetime = cJSON_GetObjectItem(
-			assets,
-			"minimum_cubemap_lifetime");
+	GET_CONFIG_ITEM(minCubemapLifetime, "assets.minimum_lifetimes.cubemaps")
+	{
 		config.assetsConfig.minCubemapLifetime =
 			minCubemapLifetime->valuedouble;
+	}
 
-		cJSON *maxThreadCount = cJSON_GetObjectItem(
-			assets,
-			"maximum_thread_count");
-
+	GET_CONFIG_ITEM(maxThreadCount, "assets.maximum_thread_count")
+	{
 		if (maxThreadCount->valueint >= 1)
 		{
 			config.assetsConfig.maxThreadCount = maxThreadCount->valueint;
 		}
 	}
 
-	cJSON *log = cJSON_GetObjectItem(json, "log");
+	// Log Config
 
-	if (log)
+	GET_CONFIG_ITEM(engineFile, "log.files.engine")
 	{
 		free(config.logConfig.engineFile);
-		free(config.logConfig.assetManagerFile);
-		free(config.logConfig.luaFile);
-
-		cJSON *engineFile = cJSON_GetObjectItem(log, "engine_file");
 		config.logConfig.engineFile = malloc(
 			strlen(engineFile->valuestring) + 1);
 		strcpy(config.logConfig.engineFile, engineFile->valuestring);
+	}
 
-		cJSON *assetManagerFile = cJSON_GetObjectItem(
-			log,
-			"asset_manager_file");
+	GET_CONFIG_ITEM(assetManagerFile, "log.files.asset_manager")
+	{
+		free(config.logConfig.assetManagerFile);
 		config.logConfig.assetManagerFile = malloc(
 			strlen(assetManagerFile->valuestring) + 1);
 		strcpy(
 			config.logConfig.assetManagerFile,
 			assetManagerFile->valuestring);
+	}
 
-		cJSON *luaFile = cJSON_GetObjectItem(log, "lua_file");
+	GET_CONFIG_ITEM(luaFile, "log.files.lua")
+	{
+		free(config.logConfig.luaFile);
 		config.logConfig.luaFile = malloc(
 			strlen(luaFile->valuestring) + 1);
 		strcpy(config.logConfig.luaFile, luaFile->valuestring);
 	}
 
-	cJSON *saves = cJSON_GetObjectItem(json, "saves");
+	// Saves Config
 
-	if (saves)
+	GET_CONFIG_ITEM(removeJSONScenes, "saves.remove_json_scenes")
 	{
-		cJSON *removeJSONScenes = cJSON_GetObjectItem(saves, "remove_json_scenes");
-		config.savesConfig.removeJSONScenes = cJSON_IsTrue(removeJSONScenes) ?
-			true : false;
-
-		cJSON *removeJSONEntities = cJSON_GetObjectItem(
-			saves,
-			"remove_json_entities");
-		config.savesConfig.removeJSONEntities =
-			cJSON_IsTrue(removeJSONEntities) ? true : false;
+		config.savesConfig.removeJSONScenes = cJSONToBool(removeJSONScenes);
 	}
 
-	cJSON *jsonConfig = cJSON_GetObjectItem(json, "json");
-
-	if (jsonConfig)
+	GET_CONFIG_ITEM(removeJSONEntities, "saves.remove_json_entities")
 	{
-		cJSON *formatted = cJSON_GetObjectItem(jsonConfig, "formatted");
-		config.jsonConfig.formatted = cJSON_IsTrue(formatted) ? true : false;
+		config.savesConfig.removeJSONEntities = cJSONToBool(removeJSONEntities);
+	}
+
+	// JSON Config
+
+	GET_CONFIG_ITEM(formatJSONFiles, "json.formatted")
+	{
+		config.jsonConfig.formatted = cJSONToBool(formatJSONFiles);
 	}
 
 	cJSON_Delete(json);
@@ -206,6 +291,17 @@ void initializeDefaultConfig(void)
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
+	config.graphicsConfig.shadowMapResolution = 4096;
+	config.graphicsConfig.directionalLightShadows = true;
+	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;
+	config.graphicsConfig.directionalLightShadowBias[1] = 0.05f;
+	config.graphicsConfig.maxNumShadowPointLights = MAX_NUM_SHADOW_POINT_LIGHTS;
+	config.graphicsConfig.pointLightShadowBias = 0.15;
+	config.graphicsConfig.pointLightPCFDiskRadius = 25.0f;
+	config.graphicsConfig.maxNumShadowSpotlights = MAX_NUM_SHADOW_SPOTLIGHTS;
+	config.graphicsConfig.spotlightShadowBias[0] = 0.005f;
+	config.graphicsConfig.spotlightShadowBias[1] = 0.05f;
+	config.graphicsConfig.grayscalePostProcess = false;
 
 	config.assetsConfig.minAudioFileLifetime = 60.0;
 	config.assetsConfig.minFontLifetime = 60.0;
@@ -227,4 +323,33 @@ void initializeDefaultConfig(void)
 	config.savesConfig.removeJSONEntities = true;
 
 	config.jsonConfig.formatted = true;
+}
+
+cJSON* getConfigObject(cJSON *json, const char *key)
+{
+	char *fullKey = malloc(strlen(key) + 1);
+	strcpy(fullKey, key);
+
+	const char *name = strtok(fullKey, ".");
+	cJSON* object = cJSON_GetObjectItem(json, name);
+
+	while (object)
+	{
+		name = strtok(NULL, ".");
+		if (!name)
+		{
+			break;
+		}
+
+		object = cJSON_GetObjectItem(object, name);
+	}
+
+	free(fullKey);
+
+	return object;
+}
+
+bool cJSONToBool(cJSON *boolObject)
+{
+	return cJSON_IsTrue(boolObject) ? true : false;
 }

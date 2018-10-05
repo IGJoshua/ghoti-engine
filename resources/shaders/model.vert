@@ -3,6 +3,8 @@
 #define NUM_BONES 4
 #define MAX_BONE_COUNT 128
 
+#define MAX_NUM_SHADOW_SPOTLIGHTS 4
+
 layout(location=0) in vec3 position;
 layout(location=1) in vec4 color;
 layout(location=2) in vec3 normal;
@@ -15,6 +17,8 @@ layout(location=8) in vec4 weights;
 
 out vec4 fragColor;
 out vec3 fragPosition;
+out vec4 fragDirectionalLightSpacePosition;
+out vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 out vec3 fragNormal;
 out vec2 fragMaterialUV;
 out vec2 fragMaskUV;
@@ -25,6 +29,9 @@ uniform mat4 projection;
 
 uniform bool hasAnimations;
 uniform mat4 boneTransforms[MAX_BONE_COUNT];
+
+uniform mat4 shadowDirectionalLightTransform;
+uniform mat4 shadowSpotlightTransforms[MAX_NUM_SHADOW_SPOTLIGHTS];
 
 void main()
 {
@@ -39,6 +46,15 @@ void main()
 
 	fragColor = color;
 	fragPosition = (model * (boneTransform * vec4(position, 1))).xyz;
+	fragDirectionalLightSpacePosition =
+		shadowDirectionalLightTransform * vec4(fragPosition, 1);
+
+	for (uint i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
+	{
+		fragSpotlightSpacePositions[i] =
+			shadowSpotlightTransforms[i] * vec4(fragPosition, 1);
+	}
+
 	fragNormal = normalize((model * (boneTransform * vec4(normal, 0))).xyz);
 	fragMaterialUV = materialUV;
 	fragMaskUV = maskUV;

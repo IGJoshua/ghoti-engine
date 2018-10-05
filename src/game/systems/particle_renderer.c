@@ -332,7 +332,7 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 	}
 
 	textureIndex = 0;
-	activateTextures(numTextures, textures, &textureIndex);
+	activateTextures(numTextures, GL_TEXTURE_2D, textures, &textureIndex);
 
 	glGetBooleanv(GL_BLEND, &glBlendValue);
 	glGetIntegerv(GL_BLEND_SRC_ALPHA, &glSrcBlendFuncValue);

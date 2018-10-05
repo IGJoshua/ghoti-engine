@@ -71,12 +71,15 @@ void loadAudio(const char *name)
 		if (!skip)
 		{
 			START_ACQUISITION_THREAD(audio, Audio, Audio, audioName, nameID);
+			return;
 		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&audioFilesMutex);
 	}
+
+	free(audioName);
 }
 
 ACQUISITION_THREAD(Audio);

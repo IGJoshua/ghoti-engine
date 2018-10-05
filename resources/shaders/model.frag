@@ -8,16 +8,23 @@ const uint METALLIC_COMPONENT = 2;
 const uint NORMAL_COMPONENT = 3;
 const uint ROUGHNESS_COMPONENT = 4;
 
-#define MAX_NUM_POINT_LIGHTS 64
-#define MAX_NUM_SPOTLIGHTS 64
+#define MAX_NUM_POINT_LIGHTS 8
+#define MAX_NUM_SPOTLIGHTS 8
+
+#define MAX_NUM_SHADOW_POINT_LIGHTS 4
+#define MAX_NUM_SHADOW_SPOTLIGHTS 4
 
 in vec4 fragColor;
 in vec3 fragPosition;
+in vec4 fragDirectionalLightSpacePosition;
+in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 in vec3 fragNormal;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
 
 out vec4 color;
+
+uniform vec3 cameraPosition;
 
 uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
@@ -45,9 +52,8 @@ struct PointLight
 	vec3 color;
 	vec3 ambient;
 	vec3 position;
-	float constantAttenuation;
-	float linearAttenuation;
-	float quadraticAttenuation;
+	float radius;
+	int shadowIndex;
 };
 
 struct Spotlight
@@ -56,10 +62,9 @@ struct Spotlight
 	vec3 ambient;
 	vec3 position;
 	vec3 direction;
-	float constantAttenuation;
-	float linearAttenuation;
-	float quadraticAttenuation;
+	float radius;
 	vec2 size;
+	int shadowIndex;
 };
 
 uniform uint numDirectionalLights;
@@ -70,6 +75,24 @@ uniform PointLight pointLights[MAX_NUM_POINT_LIGHTS];
 
 uniform uint numSpotlights;
 uniform Spotlight spotlights[MAX_NUM_SPOTLIGHTS];
+
+uniform uint numDirectionalLightShadowMaps;
+uniform sampler2D directionalLightShadowMap;
+uniform vec2 shadowDirectionalLightBiasRange;
+
+uniform samplerCube pointLightShadowMaps[MAX_NUM_SHADOW_POINT_LIGHTS];
+uniform float shadowPointLightBias;
+uniform float shadowPointLightDiskRadius;
+
+uniform sampler2D spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
+uniform vec2 shadowSpotlightBiasRange;
+
+const vec3 sampleOffsetDirections[20] = vec3[](
+   vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+   vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+   vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+   vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
 
 vec3 getDirectionalLightColor(
 	DirectionalLight light,
@@ -85,6 +108,19 @@ vec3 getSpotlightColor(
 	vec3 normal,
 	vec3 position,
 	vec3 diffuseTextureColor);
+
+float getDirectionalShadow(
+	vec4 lightSpacePosition,
+	vec3 normal,
+	vec3 lightDirection,
+	float minBias,
+	float maxBias,
+	sampler2D shadowMap);
+float getPointShadow(
+	vec3 position,
+	vec3 lightPosition,
+	float farPlane,
+	samplerCube shadowMap);
 
 void main()
 {
@@ -141,7 +177,20 @@ vec3 getDirectionalLightColor(
 	vec3 ambientColor = light.ambient * diffuseTextureColor;
 	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (numDirectionalLightShadowMaps > 0)
+	{
+		shadow = getDirectionalShadow(
+			fragDirectionalLightSpacePosition,
+			fragNormal,
+			light.direction,
+			shadowDirectionalLightBiasRange.x,
+			shadowDirectionalLightBiasRange.y,
+			directionalLightShadowMap);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
 }
 
 vec3 getPointLightColor(
@@ -155,18 +204,28 @@ vec3 getPointLightColor(
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
 	float distance = length(light.position - position);
 
-	float linearAttenuation = light.linearAttenuation * distance;
-	float quadraticAttenuation =
-		light.quadraticAttenuation * distance * distance;
-	float totalAttenuation =
-		light.constantAttenuation + linearAttenuation + quadraticAttenuation;
-	float attenuation = 1.0 / totalAttenuation;
+	float attenuation = clamp(
+		1.0 - (distance * distance) / (light.radius * light.radius),
+		0.0,
+		1.0);
+	attenuation *= attenuation;
 
 	vec3 ambientColor = light.ambient * diffuseTextureColor * attenuation;
 	vec3 diffuseColor =
 		light.color * diffuseValue * diffuseTextureColor * attenuation;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getPointShadow(
+			fragPosition,
+			light.position,
+			light.radius,
+			pointLightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
 }
 
 vec3 getSpotlightColor(
@@ -180,12 +239,11 @@ vec3 getSpotlightColor(
 
 	float distance = length(light.position - position);
 
-	float linearAttenuation = light.linearAttenuation * distance;
-	float quadraticAttenuation =
-		light.quadraticAttenuation * distance * distance;
-	float totalAttenuation =
-		light.constantAttenuation + linearAttenuation + quadraticAttenuation;
-	float attenuation = 1.0 / totalAttenuation;
+	float attenuation = clamp(
+		1.0 - (distance * distance) / (light.radius * light.radius),
+		0.0,
+		1.0);
+	attenuation *= attenuation;
 
 	float theta = dot(lightDirection, normalize(-light.direction));
 	float epsilon = light.size.x - light.size.y;
@@ -196,5 +254,84 @@ vec3 getSpotlightColor(
 	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor *
 		attenuation * intensity;
 
-	return ambientColor + diffuseColor;
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getDirectionalShadow(
+			fragSpotlightSpacePositions[light.shadowIndex],
+			fragNormal,
+			light.direction,
+			shadowSpotlightBiasRange.x,
+			shadowSpotlightBiasRange.y,
+			spotlightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+	return ambientColor + shadow * diffuseColor;
+}
+
+float getDirectionalShadow(
+	vec4 lightSpacePosition,
+	vec3 normal,
+	vec3 lightDirection,
+	float minBias,
+	float maxBias,
+	sampler2D shadowMap)
+{
+	vec3 projectedCoordinates = lightSpacePosition.xyz / lightSpacePosition.w;
+	projectedCoordinates = projectedCoordinates * 0.5 + 0.5;
+
+	float currentDepth = projectedCoordinates.z;
+	if (currentDepth > 1.0)
+	{
+		return 0.0;
+	}
+
+	float bias = max(maxBias * (1.0 - dot(normal, -lightDirection)), minBias);
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+	for (int x = -1; x <= 1; x++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			vec2 offset = vec2(x, y) * texelSize;
+			float closestDepth = texture(
+				shadowMap,
+				projectedCoordinates.xy + offset).r;
+			shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+		}
+	}
+
+	shadow /= 9.0;
+	return shadow;
+}
+
+float getPointShadow(
+	vec3 position,
+	vec3 lightPosition,
+	float farPlane,
+	samplerCube shadowMap)
+{
+	vec3 lightSpacePosition = position - lightPosition;
+	float currentDepth = length(lightSpacePosition);
+
+	float shadow = 0.0;
+	float bias = shadowPointLightBias;
+	uint numSamples = 20;
+	float cameraDistance = length(cameraPosition - position);
+	float diskRadius = 1.0 + (cameraDistance / farPlane);
+	diskRadius /= shadowPointLightDiskRadius;
+
+	for (uint i = 0; i < numSamples; i++)
+	{
+		vec3 offset = sampleOffsetDirections[i] * diskRadius;
+		float closestDepth = texture(
+			shadowMap,
+			lightSpacePosition + offset).r * farPlane;
+		shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	}
+
+	shadow /= float(numSamples);
+	return shadow;
 }
