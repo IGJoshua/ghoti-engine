@@ -11,18 +11,23 @@
 			},
 
 			{
+				"name": "position layout mode",
+				"enum": 0
+			},
+
+			{
 				"name": "size",
 				"float32": [0.5, 0.5]
 			},
 
 			{
-				"name": "pivot",
-				"enum": 4
+				"name": "size layout mode",
+				"enum": 0
 			},
 
 			{
-				"name": "layout mode",
-				"enum": 0
+				"name": "pivot",
+				"enum": 4
 			}
 		],
 

@@ -12,18 +12,25 @@ typedef enum pivot_e
 	PIVOT_BOTTOM_RIGHT
 } Pivot;
 
-typedef enum layout_mode_e
+typedef enum position_layout_mode_e
 {
-	LAYOUT_MODE_NDC,
-	LAYOUT_MODE_SCREEN
-} LayoutMode;
+	POSITION_LAYOUT_MODE_NDC,
+	POSITION_LAYOUT_MODE_SCREEN
+} PositionLayoutMode;
+
+typedef enum size_layout_mode_e
+{
+	SIZE_LAYOUT_MODE_RATIO,
+	SIZE_LAYOUT_MODE_PIXELS
+} SizeLayoutMode;
 
 typedef struct gui_transform_component_t
 {
 	kmVec2 position;
+	PositionLayoutMode positionMode;
 	kmVec2 size;
+	SizeLayoutMode sizeMode;
 	Pivot pivot;
-	LayoutMode mode;
 } GUITransformComponent;
 ]]
 

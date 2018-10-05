@@ -4,9 +4,9 @@ typedef struct image_component_t
 	char name[64];
 	kmVec4 color;
 	kmVec2 position;
+	int32 positionMode;
 	kmVec2 scale;
 	int32 pivot;
-	int32 mode;
 } ImageComponent;
 ]]
 
