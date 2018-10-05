@@ -20,7 +20,7 @@ extern HashMap materialFolders;
 extern pthread_mutex_t materialFoldersMutex;
 
 internal const char materialComponentCharacters[] = {
-	'b', 'e', 'm', 'n', 'r'
+	'a', 'b', 'e', 'h', 'm', 'n', 'r'
 };
 
 int32 loadMaterial(Material *material, FILE *file, const char *modelName)
@@ -54,18 +54,8 @@ int32 loadMaterial(Material *material, FILE *file, const char *modelName)
 			}
 
 			fread(&materialComponent->value.x, sizeof(uint32), 1, file);
-			switch (materialComponentType)
-			{
-				case MATERIAL_COMPONENT_TYPE_BASE:
-				case MATERIAL_COMPONENT_TYPE_EMISSIVE:
-					fread(&materialComponent->value.y, sizeof(uint32), 1, file);
-					fread(&materialComponent->value.z, sizeof(uint32), 1, file);
-					break;
-				default:
-					materialComponent->value.y = materialComponent->value.x;
-					materialComponent->value.z = materialComponent->value.y;
-					break;
-			}
+			fread(&materialComponent->value.y, sizeof(uint32), 1, file);
+			fread(&materialComponent->value.z, sizeof(uint32), 1, file);
 		}
 
 		ASSET_LOG(

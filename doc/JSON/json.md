@@ -239,11 +239,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 				"values":
 				{
+					"ambient_occlusion": [1.0, 1.0, 1.0],
 					"base_color": [1.0, 1.0, 1.0],
 					"emissive": [1.0, 1.0, 1.0],
-					"metallic": 1.0,
-					"normal": 1.0,
-					"roughness": 1.0
+					"height": [1.0, 1.0, 1.0],
+					"metallic": [1.0, 1.0, 1.0],
+					"normal": [1.0, 1.0, 1.0],
+					"roughness": [1.0, 1.0, 1.0]
 				}
 			},
 
@@ -264,11 +266,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					},
 
@@ -279,11 +283,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					},
 
@@ -294,11 +300,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					}
 				},
@@ -325,11 +333,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 				"values":
 				{
+					"ambient_occlusion": [1.0, 1.0, 1.0],
 					"base_color": [1.0, 1.0, 1.0],
 					"emissive": [1.0, 1.0, 1.0],
-					"metallic": 1.0,
-					"normal": 1.0,
-					"roughness": 1.0
+					"height": [1.0, 1.0, 1.0],
+					"metallic": [1.0, 1.0, 1.0],
+					"normal": [1.0, 1.0, 1.0],
+					"roughness": [1.0, 1.0, 1.0]
 				}
 			},
 
@@ -350,11 +360,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					},
 
@@ -365,11 +377,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					},
 
@@ -380,11 +394,13 @@ This utility exports JSON asset files to binary asset files and JSON entity file
 
 						"values":
 						{
+							"ambient_occlusion": [1.0, 1.0, 1.0],
 							"base_color": [1.0, 1.0, 1.0],
 							"emissive": [1.0, 1.0, 1.0],
-							"metallic": 1.0,
-							"normal": 1.0,
-							"roughness": 1.0
+							"height": [1.0, 1.0, 1.0],
+							"metallic": [1.0, 1.0, 1.0],
+							"normal": [1.0, 1.0, 1.0],
+							"roughness": [1.0, 1.0, 1.0]
 						}
 					}
 				},

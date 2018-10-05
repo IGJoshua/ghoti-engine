@@ -1,12 +1,14 @@
 #version 420 core
 
-#define NUM_MATERIAL_COMPONENTS 5
+#define NUM_MATERIAL_COMPONENTS 7
 
-const uint BASE_COMPONENT = 0;
-const uint EMISSIVE_COMPONENT = 1;
-const uint METALLIC_COMPONENT = 2;
-const uint NORMAL_COMPONENT = 3;
-const uint ROUGHNESS_COMPONENT = 4;
+const uint AMBIENT_OCCLUSION_COMPONENT = 0;
+const uint BASE_COMPONENT = 1;
+const uint EMISSIVE_COMPONENT = 2;
+const uint HEIGHT_COMPONENT = 3;
+const uint METALLIC_COMPONENT = 4;
+const uint NORMAL_COMPONENT = 5;
+const uint ROUGHNESS_COMPONENT = 6;
 
 #define MAX_NUM_POINT_LIGHTS 8
 #define MAX_NUM_SPOTLIGHTS 8
