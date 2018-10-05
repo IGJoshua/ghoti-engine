@@ -16,11 +16,13 @@
 
 				"values":
 				{
+					"ambient_occlusion": [1, 1, 1],
 					"base_color": [1, 1, 1],
 					"emissive": [1, 1, 1],
-					"metallic": 1,
-					"normal": 1,
-					"roughness": 1
+					"height": [1, 1, 1],
+					"metallic": [1, 1, 1],
+					"normal": [1, 1, 1],
+					"roughness": [1, 1, 1]
 				}
 			},
 
@@ -41,11 +43,13 @@
 
 						"values":
 						{
+							"ambient_occlusion": [1, 1, 1],
 							"base_color": [1, 1, 1],
 							"emissive": [1, 1, 1],
-							"metallic": 1,
-							"normal": 1,
-							"roughness": 1
+							"height": [1, 1, 1],
+							"metallic": [1, 1, 1],
+							"normal": [1, 1, 1],
+							"roughness": [1, 1, 1]
 						}
 					},
 
@@ -56,11 +60,13 @@
 
 						"values":
 						{
+							"ambient_occlusion": [1, 1, 1],
 							"base_color": [1, 1, 1],
 							"emissive": [1, 1, 1],
-							"metallic": 1,
-							"normal": 1,
-							"roughness": 1
+							"height": [1, 1, 1],
+							"metallic": [1, 1, 1],
+							"normal": [1, 1, 1],
+							"roughness": [1, 1, 1]
 						}
 					},
 
@@ -71,11 +77,13 @@
 
 						"values":
 						{
+							"ambient_occlusion": [1, 1, 1],
 							"base_color": [1, 1, 1],
 							"emissive": [1, 1, 1],
-							"metallic": 1,
-							"normal": 1,
-							"roughness": 1
+							"height": [1, 1, 1],
+							"metallic": [1, 1, 1],
+							"normal": [1, 1, 1],
+							"roughness": [1, 1, 1]
 						}
 					}
 				},
