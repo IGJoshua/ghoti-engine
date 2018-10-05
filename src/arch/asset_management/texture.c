@@ -243,12 +243,13 @@ int32 uploadTextureToGPU(
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glTexParameteri(
 			GL_TEXTURE_2D,
-			GL_TEXTURE_MAG_FILTER,
-			textureFiltering ? GL_LINEAR : GL_NEAREST);
+			GL_TEXTURE_MIN_FILTER,
+			textureFiltering ?
+				GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(
 			GL_TEXTURE_2D,
-			GL_TEXTURE_MIN_FILTER,
-			textureFiltering ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+			GL_TEXTURE_MAG_FILTER,
+			textureFiltering ? GL_LINEAR : GL_NEAREST);
 
 		GLint wrapMode = GL_REPEAT;
 
