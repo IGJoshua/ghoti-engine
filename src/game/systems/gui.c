@@ -458,7 +458,7 @@ struct nk_rect getRect(
 	struct nk_rect rect;
 
 	kmVec2 position;
-	if (guiTransform->mode == LAYOUT_MODE_SCREEN)
+	if (guiTransform->positionMode == POSITION_LAYOUT_MODE_SCREEN)
 	{
 		kmVec2Fill(
 			&position,
@@ -477,7 +477,7 @@ struct nk_rect getRect(
 	rect.y = position.y;
 
 	kmVec2 sizeMultiplier;
-	if (guiTransform->mode == LAYOUT_MODE_SCREEN)
+	if (guiTransform->sizeMode == SIZE_LAYOUT_MODE_PIXELS)
 	{
 		kmVec2Fill(&sizeMultiplier, 1.0f, 1.0f);
 	}
@@ -709,8 +709,8 @@ void addImage(
 
 	GUITransformComponent imageTransform;
 	imageTransform.position = imageComponent->position;
+	imageTransform.positionMode = imageComponent->positionMode;
 	imageTransform.pivot = imageComponent->pivot;
-	imageTransform.mode = LAYOUT_MODE_NDC;
 
 	struct nk_rect widgetRect = getRect(guiTransform, panelWidth, panelHeight);
 
@@ -731,6 +731,7 @@ void addImage(
 	}
 
 	kmVec2Fill(&imageTransform.size, width, height);
+	imageTransform.sizeMode = SIZE_LAYOUT_MODE_RATIO;
 
 	struct nk_rect rect = getRect(&imageTransform, widgetRect.w, widgetRect.h);
 	rect.x += widgetRect.x;
@@ -807,14 +808,14 @@ void addSlider(
 	struct nk_rect rect = getRect(&sliderTransform, panelWidth, panelHeight);
 	nk_layout_space_push(&ctx, rect);
 
-	real32 widgetHeight = guiTransform->mode == LAYOUT_MODE_SCREEN ?
+	real32 widgetHeight = guiTransform->sizeMode == SIZE_LAYOUT_MODE_PIXELS ?
 		guiTransform->size.y : panelHeight * guiTransform->size.y;
 	real32 sliderHeight = widgetHeight * slider->height;
 
 	ctx.style.slider.cursor_size.x = slider->buttonSize * sliderHeight;
 	ctx.style.slider.cursor_size.y = slider->buttonSize * sliderHeight;
 
-	real32 widgetWidth = guiTransform->mode == LAYOUT_MODE_SCREEN ?
+	real32 widgetWidth = guiTransform->sizeMode == SIZE_LAYOUT_MODE_PIXELS ?
 		guiTransform->size.x : panelWidth * guiTransform->size.x;
 	real32 padding = (widgetWidth - (widgetWidth * slider->length)) / 2;
 	ctx.style.slider.padding = nk_vec2(padding, 0.0f);
