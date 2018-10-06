@@ -42,6 +42,9 @@
 #include <dirent.h>
 #include <unistd.h>
 
+#define SCENE_BINARY_FILE_VERSION 1
+#define ENTITY_BINARY_FILE_VERSION 1
+
 #define MAX_CONTACTS 4096
 
 extern HashMap systemRegistry;
@@ -236,6 +239,27 @@ int32 loadSceneEntities(
 						FILE *file = fopen(folderPath, "rb");
 
 						if (file)
+						{
+							uint8 entityBinaryFileVersion;
+							fread(
+								&entityBinaryFileVersion,
+								sizeof(uint8),
+								1,
+								file);
+
+							if (entityBinaryFileVersion <
+								ENTITY_BINARY_FILE_VERSION)
+							{
+								LOG("WARNING: %s out of date\n", folderPath);
+								error = -1;
+							}
+						}
+						else
+						{
+							error = -1;
+						}
+
+						if (error != -1)
 						{
 							UUID uuid = readUUID(file);
 
@@ -456,10 +480,25 @@ int32 loadSceneFile(const char *name, Scene **scene)
 	free(sceneFilename);
 
 	sceneFilename = getFullFilePath(name, "scene", sceneFolder);
-
 	FILE *file = fopen(sceneFilename, "rb");
 
 	if (file)
+	{
+		uint8 sceneBinaryFileVersion;
+		fread(&sceneBinaryFileVersion, sizeof(uint8), 1, file);
+
+		if (sceneBinaryFileVersion < SCENE_BINARY_FILE_VERSION)
+		{
+			LOG("WARNING: %s out of date\n", sceneFilename);
+			error = -1;
+		}
+	}
+	else
+	{
+		error = -1;
+	}
+
+	if (error != -1)
 	{
 		*scene = createScene();
 

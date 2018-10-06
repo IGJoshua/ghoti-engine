@@ -18,6 +18,9 @@
 
 #include <pthread.h>
 
+#define ASSET_BINARY_FILE_VERSION 1
+#define MESH_BINARY_FILE_VERSION 1
+
 extern Config config;
 
 EXTERN_ASSET_VARIABLES(models, Models);
@@ -103,10 +106,46 @@ void* loadModelThread(void *arg)
 
 	if (assetFile)
 	{
+		uint8 assetBinaryFileVersion;
+		fread(&assetBinaryFileVersion, sizeof(uint8), 1, assetFile);
+
+		if (assetBinaryFileVersion < ASSET_BINARY_FILE_VERSION)
+		{
+			ASSET_LOG(MODEL, name, "WARNING: %s out of date\n", assetFilename);
+			error = -1;
+		}
+	}
+	else
+	{
+		error = -1;
+	}
+
+	if (error != -1)
+	{
 		char *meshFilename = getFullFilePath(name, "mesh", modelFolder);
 		FILE *meshFile = fopen(meshFilename, "rb");
 
 		if (meshFile)
+		{
+			uint8 meshBinaryFileVersion;
+			fread(&meshBinaryFileVersion, sizeof(uint8), 1, meshFile);
+
+			if (meshBinaryFileVersion < MESH_BINARY_FILE_VERSION)
+			{
+				ASSET_LOG(
+					MODEL,
+					name,
+					"WARNING: %s out of date\n",
+					meshFilename);
+				error = -1;
+			}
+		}
+		else
+		{
+			error = -1;
+		}
+
+		if (error != -1)
 		{
 			fread(&model.numSubsets, sizeof(uint32), 1, assetFile);
 			model.subsets = calloc(model.numSubsets, sizeof(Subset));
