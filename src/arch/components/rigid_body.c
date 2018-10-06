@@ -47,27 +47,6 @@ void updateCollisionGeom(
 	TransformComponent *trans,
 	CollisionTreeNodeComponent *node)
 {
-	kmVec3 pos, scal;
-	kmQuaternion rot;
-	tGetInverseGlobalTransform(bodyTrans, &pos, &rot, &scal);
-	kmVec3Add(&pos, &trans->globalPosition, &pos);
-	kmQuaternionMultiply(&rot, &rot, &trans->globalRotation);
-	kmVec3Mul(&scal, &scal, &trans->globalScale);
-
-	dGeomSetOffsetPosition(
-		node->geomID,
-		pos.x,
-		pos.y,
-		pos.z);
-
-	dReal quat[4] = {};
-	quat[0] = rot.w;
-	quat[1] = rot.x;
-	quat[2] = rot.y;
-	quat[3] = rot.z;
-
-	dGeomSetOffsetQuaternion(node->geomID, quat);
-
 	real32 maxScale = MAX(
 	MAX(trans->globalScale.x,
 		trans->globalScale.y),

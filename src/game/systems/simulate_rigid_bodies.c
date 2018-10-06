@@ -317,6 +317,13 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 		kmQuaternion invParentRot;
 		kmQuaternionInverse(&invParentRot, &parentTransform->globalRotation);
 
+		kmVec3 invParentScal;
+		kmVec3Fill(
+			&invParentScal,
+			1.0f / parentTransform->globalScale.x,
+			1.0f / parentTransform->globalScale.y,
+			1.0f / parentTransform->globalScale.z);
+
 		kmVec3Subtract(
 			&transform->position,
 			&transform->position,
@@ -325,6 +332,7 @@ void runSimulateRigidbodiesSystem(Scene *scene, UUID entityID, real64 dt)
 			&transform->position,
 			&invParentRot,
 			&transform->position);
+		kmVec3Mul(&transform->position, &transform->position, &invParentScal);
 
 		kmQuaternionMultiply(
 			&transform->rotation,
