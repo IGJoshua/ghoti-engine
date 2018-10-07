@@ -49,7 +49,9 @@ internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
 
 internal Uniform cameraPositionUniform;
+internal Uniform cameraDirectionUniform;
 
+internal Uniform materialActiveUniform;
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
 internal Uniform materialMaskUniform;
@@ -173,7 +175,17 @@ void initRendererSystem(Scene *scene)
 			"cameraPosition",
 			UNIFORM_VEC3,
 			&cameraPositionUniform);
+		getUniform(
+			shaderProgram,
+			"cameraDirection",
+			UNIFORM_VEC3,
+			&cameraDirectionUniform);
 
+		getUniform(
+			shaderProgram,
+			"materialActive",
+			UNIFORM_BOOL,
+			&materialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"material",
@@ -455,14 +467,21 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	kmVec3 cameraPosition;
+	kmQuaternion cameraRotation;
+
 	tGetInterpolatedTransform(
 		cameraTransform,
 		&cameraPosition,
-		NULL,
+		&cameraRotation,
 		NULL,
 		alpha);
 
 	setUniform(cameraPositionUniform, 1, &cameraPosition);
+
+	kmVec3 cameraDirection;
+	kmQuaternionGetForwardVec3RH(&cameraDirection, &cameraRotation);
+
+	setUniform(cameraDirectionUniform, 1, &cameraDirection);
 
 	GLint textureIndex = 0;
 	setUniform(directionalLightShadowMapUniform, 1, &textureIndex);
@@ -476,10 +495,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
-	setUniform(materialMaskUniform, 1, &textureIndex);
-	textureIndex++;
-	setUniform(opacityMaskUniform, 1, &textureIndex);
-	textureIndex++;
+	// setUniform(materialMaskUniform, 1, &textureIndex);
+	// textureIndex++;
+	// setUniform(opacityMaskUniform, 1, &textureIndex);
+	// textureIndex++;
 	// setMaterialUniform(&collectionMaterialUniform, &textureIndex);
 	// setMaterialUniform(&grungeMaterialUniform, &textureIndex);
 	// setMaterialUniform(&wearMaterialUniform, &textureIndex);
@@ -763,7 +782,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		Subset *subset = &model.subsets[i];
 		Mesh *mesh = &subset->mesh;
 		Material *material = &subset->material;
-		Mask *mask = &subset->mask;
+		// Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
@@ -772,6 +791,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			glEnableVertexAttribArray(j);
 		}
+
+		setMaterialActiveUniform(&materialActiveUniform, material);
 
 		if (numShadowDirectionalLights > 0)
 		{
@@ -819,22 +840,22 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_NUM_SHADOW_SPOTLIGHTS;
 
 		activateMaterialTextures(material, &textureIndex);
-		activateTexture(model.materialTexture, &textureIndex);
-		activateTexture(model.opacityTexture, &textureIndex);
+		// activateTexture(model.materialTexture, &textureIndex);
+		// activateTexture(model.opacityTexture, &textureIndex);
 		// activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
 		// activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
 		// activateMaterialTextures(&mask->wearMaterial, &textureIndex);
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
-		setMaterialValuesUniform(
-			&collectionMaterialValuesUniform,
-			&mask->collectionMaterial);
-		setMaterialValuesUniform(
-			&grungeMaterialValuesUniform,
-			&mask->grungeMaterial);
-		setMaterialValuesUniform(
-			&wearMaterialValuesUniform,
-			&mask->wearMaterial);
+		// setMaterialValuesUniform(
+		// 	&collectionMaterialValuesUniform,
+		// 	&mask->collectionMaterial);
+		// setMaterialValuesUniform(
+		// 	&grungeMaterialValuesUniform,
+		// 	&mask->grungeMaterial);
+		// setMaterialValuesUniform(
+		// 	&wearMaterialValuesUniform,
+		// 	&mask->wearMaterial);
 
 		if (material->doubleSided)
 		{

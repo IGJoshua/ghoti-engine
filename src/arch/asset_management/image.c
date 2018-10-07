@@ -126,7 +126,7 @@ void* loadImageThread(void *arg)
 			"image",
 			name,
 			fullFilename,
-			0,
+			4,
 			&image.data);
 
 		if (error != - 1)

@@ -129,7 +129,7 @@ void* loadTextureThread(void *arg)
 		"texture",
 		name,
 		filename,
-		0,
+		4,
 		&texture.data);
 
 	if (error != - 1)
@@ -171,7 +171,9 @@ int32 loadTextureData(
 		&data->width,
 		&data->height,
 		&data->numComponents,
-		0);
+		numComponents);
+
+	data->numComponents = numComponents;
 
 	if (!data->data)
 	{

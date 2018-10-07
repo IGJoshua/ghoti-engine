@@ -20,7 +20,15 @@ uniform mat4 boneTransforms[MAX_BONE_COUNT];
 
 uniform mat4 lightTransform;
 
+mat4 getBoneTransform(void);
+
 void main()
+{
+	mat4 boneTransform = getBoneTransform();
+	gl_Position = lightTransform * model * boneTransform * vec4(position, 1);
+}
+
+mat4 getBoneTransform(void)
 {
 	mat4 boneTransform = mat4(hasAnimations ? 0.0 : 1.0);
 	if (hasAnimations)
@@ -31,5 +39,5 @@ void main()
 		}
 	}
 
-	gl_Position = lightTransform * model * boneTransform * vec4(position, 1);
+	return boneTransform;
 }

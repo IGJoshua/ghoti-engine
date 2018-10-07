@@ -57,6 +57,25 @@ int32 logGLError(bool logNoError, const char *message, ...)
 	return error;
 }
 
+int32 setMaterialActiveUniform(Uniform *uniform, Material *material)
+{
+	bool materialActive[MATERIAL_COMPONENT_TYPE_COUNT];
+	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		materialActive[i] = strlen(material->components[i].texture.string) > 0;
+	}
+
+	if (setUniform(
+		*uniform,
+		MATERIAL_COMPONENT_TYPE_COUNT,
+		materialActive) == -1)
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
 int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)
 {
 	return setTextureArrayUniform(

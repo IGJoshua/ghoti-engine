@@ -16,32 +16,6 @@ const uint ROUGHNESS_COMPONENT = 6;
 #define MAX_NUM_SHADOW_POINT_LIGHTS 4
 #define MAX_NUM_SHADOW_SPOTLIGHTS 4
 
-in vec4 fragColor;
-in vec3 fragPosition;
-in vec4 fragDirectionalLightSpacePosition;
-in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
-in vec3 fragNormal;
-in vec2 fragMaterialUV;
-in vec2 fragMaskUV;
-
-out vec4 color;
-
-uniform vec3 cameraPosition;
-
-uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
-uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D materialMask;
-uniform sampler2D opacityMask;
-uniform sampler2D collectionMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D grungeMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D wearMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
-
-uniform bool useCustomColor;
-uniform vec3 customColor;
-
 struct DirectionalLight
 {
 	vec3 color;
@@ -69,6 +43,35 @@ struct Spotlight
 	int shadowIndex;
 };
 
+in vec4 fragColor;
+in vec3 fragPosition;
+in vec4 fragDirectionalLightSpacePosition;
+in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
+in vec3 fragNormal;
+in vec2 fragMaterialUV;
+in vec2 fragMaskUV;
+in mat3 fragTBN;
+
+out vec4 color;
+
+uniform vec3 cameraPosition;
+uniform vec3 cameraDirection;
+
+uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
+uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
+uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
+// uniform sampler2D materialMask;
+// uniform sampler2D opacityMask;
+// uniform sampler2D collectionMaterial[NUM_MATERIAL_COMPONENTS];
+// uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
+// uniform sampler2D grungeMaterial[NUM_MATERIAL_COMPONENTS];
+// uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
+// uniform sampler2D wearMaterial[NUM_MATERIAL_COMPONENTS];
+// uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
+
+uniform bool useCustomColor;
+uniform vec3 customColor;
+
 uniform uint numDirectionalLights;
 uniform DirectionalLight directionalLight;
 
@@ -90,26 +93,31 @@ uniform sampler2D spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
 uniform vec2 shadowSpotlightBiasRange;
 
 const vec3 sampleOffsetDirections[20] = vec3[](
-   vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
-   vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-   vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
-   vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
-   vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
+	vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+	vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+	vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+	vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+	vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
+
+vec2 getMaterialUV(vec3 viewDirection);
+
+vec3 getAlbedoTextureColor(vec2 uv);
+vec3 getNormalTextureColor(vec2 uv);
 
 vec3 getDirectionalLightColor(
 	DirectionalLight light,
 	vec3 normal,
-	vec3 diffuseTextureColor);
+	vec3 albedoTextureColor);
 vec3 getPointLightColor(
 	PointLight light,
 	vec3 normal,
 	vec3 position,
-	vec3 diffuseTextureColor);
+	vec3 albedoTextureColor);
 vec3 getSpotlightColor(
 	Spotlight light,
 	vec3 normal,
 	vec3 position,
-	vec3 diffuseTextureColor);
+	vec3 albedoTextureColor);
 
 float getDirectionalShadow(
 	vec4 lightSpacePosition,
@@ -132,9 +140,17 @@ void main()
 		return;
 	}
 
-	vec3 diffuseTextureColor = vec3(texture(
-		material[BASE_COMPONENT],
-		fragMaterialUV));
+	vec2 materialUV = getMaterialUV(cameraDirection);
+	if (materialUV.x < 0.0 ||
+		materialUV.x > 1.0 ||
+		materialUV.y < 0.0 ||
+		materialUV.y > 1.0)
+	{
+		discard;
+	}
+
+	vec3 albedoTextureColor = getAlbedoTextureColor(materialUV);
+	vec3 normalTextureColor = getNormalTextureColor(materialUV);
 
 	vec3 finalColor = vec3(0.0);
 
@@ -142,49 +158,83 @@ void main()
 	{
 		finalColor += getDirectionalLightColor(
 			directionalLight,
-			fragNormal,
-			diffuseTextureColor);
+			normalTextureColor,
+			albedoTextureColor);
 	}
 
 	for (uint i = 0; i < numPointLights; i++)
 	{
 		finalColor += getPointLightColor(
 			pointLights[i],
-			fragNormal,
+			normalTextureColor,
 			fragPosition,
-			diffuseTextureColor);
+			albedoTextureColor);
 	}
 
 	for (uint i = 0; i < numSpotlights; i++)
 	{
 		finalColor += getSpotlightColor(
 			spotlights[i],
-			fragNormal,
+			normalTextureColor,
 			fragPosition,
-			diffuseTextureColor);
+			albedoTextureColor);
 	}
 
 	color = vec4(finalColor, 1.0);
 }
 
+vec2 getMaterialUV(vec3 viewDirection)
+{
+	if (!materialActive[HEIGHT_COMPONENT])
+	{
+		return fragMaterialUV;
+	}
+
+	return fragMaterialUV;
+}
+
+vec3 getAlbedoTextureColor(vec2 uv)
+{
+	vec3 albedoTextureColor = fragColor.rgb;
+	if (materialActive[BASE_COMPONENT])
+	{
+		albedoTextureColor = vec3(texture(material[BASE_COMPONENT], uv));
+	}
+
+	return albedoTextureColor;
+}
+
+vec3 getNormalTextureColor(vec2 uv)
+{
+	vec3 normalTextureColor = fragNormal;
+	// if (materialActive[NORMAL_COMPONENT])
+	// {
+	// 	normalTextureColor = texture(material[NORMAL_COMPONENT], uv).rgb;
+	// 	normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
+	// 	normalTextureColor = normalize(fragTBN * normalTextureColor);
+	// }
+
+	return normalTextureColor;
+}
+
 vec3 getDirectionalLightColor(
 	DirectionalLight light,
 	vec3 normal,
-	vec3 diffuseTextureColor)
+	vec3 albedoTextureColor)
 {
 	vec3 lightDirection = normalize(-light.direction);
 
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
 
-	vec3 ambientColor = light.ambient * diffuseTextureColor;
-	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor;
+	vec3 ambientColor = light.ambient * albedoTextureColor;
+	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor;
 
 	float shadow = 0.0;
 	if (numDirectionalLightShadowMaps > 0)
 	{
 		shadow = getDirectionalShadow(
 			fragDirectionalLightSpacePosition,
-			fragNormal,
+			normal,
 			light.direction,
 			shadowDirectionalLightBiasRange.x,
 			shadowDirectionalLightBiasRange.y,
@@ -199,7 +249,7 @@ vec3 getPointLightColor(
 	PointLight light,
 	vec3 normal,
 	vec3 position,
-	vec3 diffuseTextureColor)
+	vec3 albedoTextureColor)
 {
 	vec3 lightDirection = normalize(light.position - position);
 
@@ -212,9 +262,9 @@ vec3 getPointLightColor(
 		1.0);
 	attenuation *= attenuation;
 
-	vec3 ambientColor = light.ambient * diffuseTextureColor * attenuation;
+	vec3 ambientColor = light.ambient * albedoTextureColor * attenuation;
 	vec3 diffuseColor =
-		light.color * diffuseValue * diffuseTextureColor * attenuation;
+		light.color * diffuseValue * albedoTextureColor * attenuation;
 
 	float shadow = 0.0;
 	if (light.shadowIndex > -1)
@@ -234,7 +284,7 @@ vec3 getSpotlightColor(
 	Spotlight light,
 	vec3 normal,
 	vec3 position,
-	vec3 diffuseTextureColor)
+	vec3 albedoTextureColor)
 {
 	vec3 lightDirection = normalize(light.position - position);
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
@@ -251,9 +301,9 @@ vec3 getSpotlightColor(
 	float epsilon = light.size.x - light.size.y;
 	float intensity = clamp((theta - light.size.y) / epsilon, 0.0, 1.0);
 
-	vec3 ambientColor = light.ambient * diffuseTextureColor *
+	vec3 ambientColor = light.ambient * albedoTextureColor *
 		attenuation * intensity;
-	vec3 diffuseColor = light.color * diffuseValue * diffuseTextureColor *
+	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor *
 		attenuation * intensity;
 
 	float shadow = 0.0;
@@ -261,7 +311,7 @@ vec3 getSpotlightColor(
 	{
 		shadow = getDirectionalShadow(
 			fragSpotlightSpacePositions[light.shadowIndex],
-			fragNormal,
+			normal,
 			light.direction,
 			shadowSpotlightBiasRange.x,
 			shadowSpotlightBiasRange.y,

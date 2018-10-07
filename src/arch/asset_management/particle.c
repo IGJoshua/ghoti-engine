@@ -150,7 +150,7 @@ void* loadParticleThread(void *arg)
 			"particle",
 			name,
 			fullFilename,
-			0,
+			4,
 			&particle.data);
 
 		if (error != - 1)

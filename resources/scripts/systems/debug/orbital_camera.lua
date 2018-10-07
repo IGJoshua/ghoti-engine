@@ -10,7 +10,7 @@ local pitch = 0.0
 local yaw = 0.0
 
 local mouseSensitivity = -20.0
-local distanceFromOrigin = 6
+local distanceFromOrigin = 0
 
 local cameraPosition = ffi.new("kmVec3[1]")
 local target = ffi.new("kmVec3[1]")
@@ -22,11 +22,12 @@ local cubeTransform = nil
 function system.init(scene)
   input:register("click", input.BUTTON(mouse.buttons[1]))
 
+  cameraTransform = scene:getComponent("transform", scene.ptr.mainCamera)
+  distanceFromOrigin = cameraTransform.position.z;
+
   kazmath.kmVec3Fill(cameraPosition, 0.0, 0.0, distanceFromOrigin)
   kazmath.kmVec3Zero(target)
   kazmath.kmVec3Fill(up, 0.0, 1.0, 0.0)
-
-  cameraTransform = scene:getComponent("transform", scene.ptr.mainCamera)
 end
 
 function system.begin(scene, dt)

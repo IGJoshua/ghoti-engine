@@ -193,7 +193,7 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 {
 	if (uniform.location > -1)
 	{
-		GLint boolData;
+		GLint *boolData = NULL;
 		switch (uniform.type)
 		{
 			case UNIFORM_MAT4:
@@ -206,8 +206,15 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 				glUniform3fv(uniform.location, count, data);
 				break;
 			case UNIFORM_BOOL:
-				boolData = *(bool*)data ? true : false;
-				glUniform1iv(uniform.location, count, &boolData);
+				boolData = malloc(count * sizeof(GLint));
+				for (uint32 i = 0; i < count; i++)
+				{
+					boolData[i] = ((bool*)data)[i] ? true : false;
+				}
+
+				glUniform1iv(uniform.location, count, boolData);
+				free(boolData);
+
 				break;
 			case UNIFORM_FLOAT:
 				glUniform1fv(uniform.location, count, data);
