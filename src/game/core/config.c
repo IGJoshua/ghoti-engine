@@ -89,6 +89,11 @@ int32 loadConfig(void)
 		}
 	}
 
+	GET_CONFIG_ITEM(pbr, "graphics.pbr.enabled")
+	{
+		config.graphicsConfig.pbr = cJSONToBool(pbr);
+	}
+
 	GET_CONFIG_ITEM(shadowMapResolution, "graphics.shadows.resolution")
 	{
 		int32 resolution = shadowMapResolution->valueint;
@@ -291,6 +296,7 @@ void initializeDefaultConfig(void)
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
+	config.graphicsConfig.pbr = true;
 	config.graphicsConfig.shadowMapResolution = 4096;
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;
