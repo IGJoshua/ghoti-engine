@@ -1894,6 +1894,10 @@ int32 sceneAddComponentToEntity(
 
 	List *l = hashMapGetData(s->entities, &entity);
 
+	if (!strcmp(componentType.string, "transform"))
+	{
+		((TransformComponent*)componentData)->dirty = true;
+	}
 	if (!strcmp(componentType.string, "model"))
 	{
 		loadModel(((ModelComponent*)componentData)->name);
