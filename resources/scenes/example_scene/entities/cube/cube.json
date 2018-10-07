@@ -98,17 +98,17 @@
 
 			{
 				"name": "enabled",
-				"bool": true
+				"bool": false
 			},
 
 			{
 				"name": "dynamic",
-				"bool": true
+				"bool": false
 			},
 
 			{
 				"name": "gravity",
-				"bool": true
+				"bool": false
 			},
 
 			{
