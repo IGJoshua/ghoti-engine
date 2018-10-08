@@ -141,13 +141,6 @@ void main()
 	}
 
 	vec2 materialUV = getMaterialUV(cameraDirection);
-	if (materialUV.x < 0.0 ||
-		materialUV.x > 1.0 ||
-		materialUV.y < 0.0 ||
-		materialUV.y > 1.0)
-	{
-		discard;
-	}
 
 	vec3 albedoTextureColor = getAlbedoTextureColor(materialUV);
 	vec3 normalTextureColor = getNormalTextureColor(materialUV);
