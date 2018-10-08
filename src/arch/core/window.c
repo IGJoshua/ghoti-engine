@@ -75,6 +75,11 @@ GLFWwindow *initWindow(
 	return window;
 }
 
+void setMousePosition(real64 x, real64 y)
+{
+	glfwSetCursorPos(wnd, x, y);
+}
+
 bool getVSYNCMode(void)
 {
 	return isVSYNCEnabled;

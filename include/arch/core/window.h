@@ -3,6 +3,8 @@
 
 struct GLFWwindow *initWindow(uint32 width, uint32 height, const char *title);
 
+void setMousePosition(real64 x, real64 y);
+
 bool getVSYNCMode(void);
 void switchVSYNCMode(void);
 void setVSYNCMode(bool vsync);

@@ -72,6 +72,8 @@ typedef union uuid_t
 UUID idFromName(const char *name);
 UUID stringToUUID(const char *string);
 
+void setMousePosition(real64 x, real64 y);
+
 bool getVSYNCMode(void);
 void switchVSYNCMode(void);
 void setVSYNCMode(bool vsync);
