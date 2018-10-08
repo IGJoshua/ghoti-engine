@@ -55,7 +55,6 @@ in mat3 fragTBN;
 out vec4 color;
 
 uniform vec3 cameraPosition;
-uniform vec3 cameraDirection;
 
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
 uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
@@ -140,7 +139,9 @@ void main()
 		return;
 	}
 
-	vec2 materialUV = getMaterialUV(cameraDirection);
+	vec3 viewDirection = normalize(cameraPosition - fragPosition);
+
+	vec2 materialUV = getMaterialUV(viewDirection);
 
 	vec3 albedoTextureColor = getAlbedoTextureColor(materialUV);
 	vec3 normalTextureColor = getNormalTextureColor(materialUV);
