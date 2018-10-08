@@ -38,6 +38,7 @@
 
 #define VERTEX_SHADER_FILE "resources/shaders/model.vert"
 #define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
+#define PBR_FRAGMENT_SHADER_FILE "resources/shaders/model_pbr.frag"
 
 internal GLuint shaderProgram;
 
@@ -49,7 +50,6 @@ internal Uniform hasAnimationsUniform;
 internal Uniform boneTransformsUniform;
 
 internal Uniform cameraPositionUniform;
-internal Uniform cameraDirectionUniform;
 
 internal Uniform materialActiveUniform;
 internal Uniform materialUniform;
@@ -147,7 +147,8 @@ void initRendererSystem(Scene *scene)
 			NULL,
 			NULL,
 			NULL,
-			FRAGMENT_SHADER_FILE,
+			config.graphicsConfig.pbr ?
+				PBR_FRAGMENT_SHADER_FILE : FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
 
@@ -175,11 +176,6 @@ void initRendererSystem(Scene *scene)
 			"cameraPosition",
 			UNIFORM_VEC3,
 			&cameraPositionUniform);
-		getUniform(
-			shaderProgram,
-			"cameraDirection",
-			UNIFORM_VEC3,
-			&cameraDirectionUniform);
 
 		getUniform(
 			shaderProgram,
@@ -467,21 +463,14 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
 
 	kmVec3 cameraPosition;
-	kmQuaternion cameraRotation;
-
 	tGetInterpolatedTransform(
 		cameraTransform,
 		&cameraPosition,
-		&cameraRotation,
+		NULL,
 		NULL,
 		alpha);
 
 	setUniform(cameraPositionUniform, 1, &cameraPosition);
-
-	kmVec3 cameraDirection;
-	kmQuaternionGetForwardVec3RH(&cameraDirection, &cameraRotation);
-
-	setUniform(cameraDirectionUniform, 1, &cameraDirection);
 
 	GLint textureIndex = 0;
 	setUniform(directionalLightShadowMapUniform, 1, &textureIndex);
