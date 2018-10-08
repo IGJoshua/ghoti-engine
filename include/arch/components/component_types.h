@@ -165,6 +165,7 @@ typedef struct camera_component_t
 	real32 farPlane;
 	real32 aspectRatio;
 	real32 fov;
+	real32 bounds[4];
 	CameraProjectionType projectionType;
 } CameraComponent;
 

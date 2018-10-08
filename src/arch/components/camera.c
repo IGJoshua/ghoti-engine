@@ -24,12 +24,29 @@ void cameraSetUniforms(
 
 	kmMat4 projection = {};
 
-	kmMat4PerspectiveProjection(
-		&projection,
-		camera->fov,
-		camera->aspectRatio,
-		camera->nearPlane,
-		camera->farPlane);
+	switch (camera->projectionType)
+	{
+		case CAMERA_PROJECTION_TYPE_PERSPECTIVE:
+			kmMat4PerspectiveProjection(
+				&projection,
+				camera->fov,
+				camera->aspectRatio,
+				camera->nearPlane,
+				camera->farPlane);
+			break;
+		case CAMERA_PROJECTION_TYPE_ORTHOGRAPHIC:
+			kmMat4OrthographicProjection(
+				&projection,
+				camera->bounds[0],
+				camera->bounds[1],
+				camera->bounds[2],
+				camera->bounds[3],
+				camera->nearPlane,
+				camera->farPlane);
+			break;
+		default:
+			break;
+	}
 
 	setUniform(viewUniform, 1, &view);
 	setUniform(projectionUniform, 1, &projection);

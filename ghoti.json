@@ -27,20 +27,20 @@
 
 			"directional_lights":
 			{
-				"enabled": true,
+				"enabled": false,
 				"bias": [0.005, 0.05]
 			},
 
 			"point_lights":
 			{
-				"limit": 2,
+				"limit": 0,
 				"bias": 0.15,
 				"pcf_disk_radius": 0.04
 			},
 
 			"spotlights":
 			{
-				"limit": 2,
+				"limit": 0,
 				"bias": [0.005, 0.05]
 			}
 		},
