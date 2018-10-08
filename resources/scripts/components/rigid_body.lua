@@ -42,7 +42,21 @@ function component:addAcceleration(acceleration, position)
   local centerOfMass = ffi.new("kmVec3")
   position = position or centerOfMass
 
-  C.addForce(self, force[0], position)
+  self:addForce(force[0], position)
+end
+
+function component:addAccelerationDirection(magnitude, direction, position)
+  local acceleration = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(acceleration, direction, magnitude)
+
+  self:addAcceleration(acceleration[0], position)
+end
+
+function component:addAccelerationQuaternion(magnitude, quaternion, position)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:addAccelerationDirection(magnitude, direction[0], position)
 end
 
 function component:addForce(force, position)
@@ -52,38 +66,108 @@ function component:addForce(force, position)
   C.addForce(self, force, position)
 end
 
+function component:addForceDirection(magnitude, direction, position)
+  local force = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(force, direction, magnitude)
+
+  self:addForce(force[0], position)
+end
+
+function component:addForceQuaternion(magnitude, quaternion, position)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:addForceDirection(magnitude, direction[0], position)
+end
+
 function component:addTorque(torque)
   C.addTorque(self, torque)
+end
+
+function component:addTorqueAxis(magnitude, axis)
+  local torque = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(torque, axis, magnitude)
+
+  self:addTorque(torque[0])
+end
+
+function component:addTorqueQuaternion(magnitude, quaternion)
+  local axis = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(axis, quaternion)
+
+  self:addTorqueAxis(magnitude, axis[0])
 end
 
 function component:setAcceleration(acceleration)
   local force = ffi.new("kmVec3[1]")
   kazmath.kmVec3Scale(force, acceleration, self.mass)
 
-  C.setForce(self, force[0])
+  self:setForce(force[0])
+end
+
+function component:setAccelerationDirection(magnitude, direction)
+  local acceleration = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(acceleration, direction, magnitude)
+
+  self:setAcceleration(acceleration[0])
+end
+
+function component:setAccelerationQuaternion(magnitude, quaternion)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:setAccelerationDirection(magnitude, direction[0])
 end
 
 function component:setForce(force)
   C.setForce(self, force)
 end
 
+function component:setForceDirection(magnitude, direction, position)
+  local force = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(force, direction, magnitude)
+
+  self:setForce(force[0])
+end
+
+function component:setForceQuaternion(magnitude, quaternion, position)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:setForceDirection(magnitude, direction[0])
+end
+
 function component:setTorque(torque)
   C.setTorque(self, torque)
 end
 
+function component:setTorqueAxis(magnitude, axis)
+  local torque = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(torque, axis, magnitude)
+
+  self:setTorque(torque[0])
+end
+
+function component:setTorqueQuaternion(magnitude, quaternion)
+  local axis = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(axis, quaternion)
+
+  self:setTorqueAxis(magnitude, axis[0])
+end
+
 function component:zeroForce()
   local force = ffi.new("kmVec3")
-  C.setForce(self, force)
+  self:setForce(force)
 end
 
 function component:zeroTorque()
   local torque = ffi.new("kmVec3")
-  C.setTorque(self, torque)
+  self:setTorque(torque)
 end
 
 function component:getAcceleration()
   local acceleration = ffi.new("kmVec3[1]")
-  acceleration[0] = C.getForce(self)
+  acceleration[0] = self:getForce()
   kazmath.kmVec3Scale(acceleration, acceleration[0], 1.0 / self.mass)
   return acceleration[0]
 end
