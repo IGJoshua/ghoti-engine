@@ -889,7 +889,7 @@ This utility generates a template for a scene by creating a folder containing fi
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 5]
+				"float32": [0, 0, 10]
 			},
 
 			{
@@ -973,6 +973,11 @@ This utility generates a template for a scene by creating a folder containing fi
 			{
 				"name": "field of view",
 				"float32": 80
+			},
+
+			{
+				"name": "bounds",
+				"float32": [0, 0, 0, 0]
 			},
 
 			{

@@ -94,6 +94,11 @@
 			},
 
 			{
+				"name": "bounds",
+				"float32": [0, 0, 0, 0]
+			},
+
+			{
 				"name": "projection type",
 				"enum": 0
 			}
