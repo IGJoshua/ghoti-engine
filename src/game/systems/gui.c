@@ -325,9 +325,12 @@ internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
 
 	struct nk_rect rect = getRect(guiTransform, viewportWidth, viewportHeight);
 
+	char windowTitle[1024];
+	sprintf(windowTitle, "%s_%s", scene->name, entityID.string);
+
 	if (nk_begin(
 		&ctx,
-		entityID.string,
+		windowTitle,
 		rect,
 		NK_WINDOW_NO_SCROLLBAR))
 	{
