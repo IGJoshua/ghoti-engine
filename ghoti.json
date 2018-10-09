@@ -18,7 +18,7 @@
 
 		"pbr":
 		{
-			"enabled": false
+			"enabled": true
 		},
 
 		"shadows":
@@ -27,20 +27,20 @@
 
 			"directional_lights":
 			{
-				"enabled": false,
+				"enabled": true,
 				"bias": [0.005, 0.05]
 			},
 
 			"point_lights":
 			{
-				"limit": 0,
+				"limit": 4,
 				"bias": 0.15,
 				"pcf_disk_radius": 0.04
 			},
 
 			"spotlights":
 			{
-				"limit": 0,
+				"limit": 4,
 				"bias": [0.005, 0.05]
 			}
 		},

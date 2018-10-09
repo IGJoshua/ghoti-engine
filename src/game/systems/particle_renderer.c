@@ -30,7 +30,7 @@ typedef struct particle_vertex_t
 	int32 texture;
 } ParticleVertex;
 
-#define MAX_PARTICLE_COUNT 8192
+#define MAX_PARTICLE_COUNT 16384
 
 internal ParticleVertex vertices[MAX_PARTICLE_COUNT];
 internal uint32 numVertices;
@@ -47,7 +47,7 @@ internal GLuint shaderProgram;
 internal Uniform viewUniform;
 internal Uniform projectionUniform;
 
-#define MAX_PARTICLE_EMITTER_COUNT 32
+#define MAX_PARTICLE_EMITTER_TEXTURE_COUNT 32
 
 internal Uniform particleTexturesUniform;
 internal uint32 numTextures;
@@ -205,8 +205,8 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 
 	clearVertices();
 
-	GLuint textures[MAX_PARTICLE_EMITTER_COUNT];
-	memset(textures, 0, MAX_PARTICLE_EMITTER_COUNT * sizeof(GLuint));
+	GLuint textures[MAX_PARTICLE_EMITTER_TEXTURE_COUNT];
+	memset(textures, 0, MAX_PARTICLE_EMITTER_TEXTURE_COUNT * sizeof(GLuint));
 
 	numTextures = 0;
 
