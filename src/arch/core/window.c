@@ -80,6 +80,22 @@ void setMousePosition(real64 x, real64 y)
 	glfwSetCursorPos(wnd, x, y);
 }
 
+void setMouseHidden(bool hidden)
+{
+	glfwSetInputMode(
+		wnd,
+		GLFW_CURSOR,
+		hidden ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
+}
+
+void setMouseLocked(bool locked)
+{
+	glfwSetInputMode(
+		wnd,
+		GLFW_CURSOR,
+		locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+}
+
 bool getVSYNCMode(void)
 {
 	return isVSYNCEnabled;
