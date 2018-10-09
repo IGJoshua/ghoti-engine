@@ -73,6 +73,8 @@ UUID idFromName(const char *name);
 UUID stringToUUID(const char *string);
 
 void setMousePosition(real64 x, real64 y);
+void setMouseHidden(bool hidden);
+void setMouseLocked(bool locked);
 
 bool getVSYNCMode(void);
 void switchVSYNCMode(void);

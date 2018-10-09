@@ -4,6 +4,8 @@
 struct GLFWwindow *initWindow(uint32 width, uint32 height, const char *title);
 
 void setMousePosition(real64 x, real64 y);
+void setMouseHidden(bool hidden);
+void setMouseLocked(bool locked);
 
 bool getVSYNCMode(void);
 void switchVSYNCMode(void);
