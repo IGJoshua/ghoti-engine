@@ -18,7 +18,7 @@
 
 		"pbr":
 		{
-			"enabled": true
+			"enabled": false
 		},
 
 		"shadows":
