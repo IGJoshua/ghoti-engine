@@ -215,6 +215,8 @@ void main()
 	vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
 
 	vec3 finalColor = ambient + radiance;
+
+	// Reinhard's Tone-Mapping Operator
 	finalColor /= (finalColor + vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0 / 2.2));
 

@@ -235,6 +235,7 @@ int32 uploadTextureToGPU(
 		data->data);
 
 	free(data->data);
+	data->data = NULL;
 
 	int32 error = logGLError(false, "Failed to transfer %s onto GPU", type);
 
@@ -297,6 +298,7 @@ void freeTextureData(Texture *texture)
 {
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
+	free(texture->data.data);
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

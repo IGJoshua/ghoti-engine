@@ -168,6 +168,7 @@ void freeImageData(Image *image)
 {
 	LOG("Freeing image (%s)...\n", image->name.string);
 
+	free(image->data.data);
 	glDeleteTextures(1, &image->id);
 
 	LOG("Successfully freed image (%s)\n", image->name.string);

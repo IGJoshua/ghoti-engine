@@ -227,6 +227,7 @@ void freeParticleData(Particle *particle)
 {
 	LOG("Freeing particle (%s)...\n", particle->name.string);
 
+	free(particle->data.data);
 	free(particle->spriteUVs);
 	glDeleteTextures(1, &particle->id);
 

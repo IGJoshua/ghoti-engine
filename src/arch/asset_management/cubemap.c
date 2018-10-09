@@ -193,6 +193,7 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 		data->data);
 
 	free(data->data);
+	data->data = NULL;
 
 	error = logGLError(false, "Failed to transfer cubemap onto GPU");
 
@@ -223,6 +224,7 @@ void freeCubemapData(Cubemap *cubemap)
 {
 	LOG("Freeing cubemap (%s)...\n", cubemap->name.string);
 
+	free(cubemap->data.data);
 	glDeleteTextures(1, &cubemap->id);
 
 	LOG("Successfully freed cubemap (%s)\n", cubemap->name.string);
