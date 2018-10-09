@@ -61,8 +61,8 @@ void* acquire ## Asset ## Thread(void *arg) \
 \
 	assetThreadCount++; \
 \
-	pthread_mutex_unlock(&assetThreadsMutex); \
 	pthread_cond_broadcast(&assetThreadsCondition); \
+	pthread_mutex_unlock(&assetThreadsMutex); \
 \
 	pthread_t loadingThread; \
 	pthread_create(&loadingThread, NULL, &load ## Asset ## Thread, arg); \
@@ -74,8 +74,8 @@ void* acquire ## Asset ## Thread(void *arg) \
 #define EXIT_LOADING_THREAD \
 pthread_mutex_lock(&assetThreadsMutex); \
 assetThreadCount--; \
-pthread_mutex_unlock(&assetThreadsMutex); \
 pthread_cond_broadcast(&assetThreadsCondition); \
+pthread_mutex_unlock(&assetThreadsMutex); \
 \
 EXIT_THREAD(NULL)
 
