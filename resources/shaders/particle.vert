@@ -23,5 +23,5 @@ void main()
 	geomColor = color;
 	geomTexture = texture;
 
-	gl_Position = view * vec4(position, 1);
+	gl_Position = view * vec4(position, 1.0);
 }

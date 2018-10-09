@@ -497,9 +497,11 @@ float geometryFunction(
 	vec3 lightDirection,
 	float roughness)
 {
-	// Smith's method
+	// Smith's Schlick-GGX
 	return
+		// Geometry obstruction
 		geometrySubFunction(max(dot(normal, viewDirection), 0.0), roughness) *
+		// Geometry shadowing
 		geometrySubFunction(max(dot(normal, lightDirection), 0.0), roughness);
 }
 

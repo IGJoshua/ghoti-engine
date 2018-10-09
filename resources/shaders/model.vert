@@ -43,22 +43,22 @@ void main()
 	mat4 modelTransform = model * boneTransform;
 
 	fragColor = color;
-	fragPosition = (modelTransform * vec4(position, 1)).xyz;
+	fragPosition = (modelTransform * vec4(position, 1.0)).xyz;
 	fragDirectionalLightSpacePosition =
-		shadowDirectionalLightTransform * vec4(fragPosition, 1);
+		shadowDirectionalLightTransform * vec4(fragPosition, 1.0);
 
 	for (uint i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
 	{
 		fragSpotlightSpacePositions[i] =
-			shadowSpotlightTransforms[i] * vec4(fragPosition, 1);
+			shadowSpotlightTransforms[i] * vec4(fragPosition, 1.0);
 	}
 
-	fragNormal = normalize((modelTransform * vec4(normal, 0)).xyz);
+	fragNormal = normalize((modelTransform * vec4(normal, 0.0)).xyz);
 	fragMaterialUV = materialUV;
 	fragMaskUV = maskUV;
 	fragTBN = createTBNMatrix(modelTransform);
 
-	gl_Position = projection * view * vec4(fragPosition, 1);
+	gl_Position = projection * view * vec4(fragPosition, 1.0);
 }
 
 mat4 getBoneTransform(void)

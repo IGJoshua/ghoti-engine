@@ -135,7 +135,7 @@ void main()
 {
 	if (useCustomColor)
 	{
-		color = vec4(customColor, 1);
+		color = vec4(customColor, 1.0);
 		return;
 	}
 
