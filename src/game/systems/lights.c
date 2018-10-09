@@ -309,8 +309,7 @@ void addDirectionalLight(
 
 	numDirectionalLights++;
 
-	kmVec3Assign(&directionalLight.color, &light->color);
-	kmVec3Assign(&directionalLight.ambient, &light->ambient);
+	kmVec3Assign(&directionalLight.radiantFlux, &light->radiantFlux);
 
 	kmQuaternionAssign(
 		&directionalLight.previousDirection,
@@ -345,9 +344,7 @@ void addPointLight(
 
 	PointLight *pointLight = &pointLights[numPointLights++];
 
-	kmVec3Assign(&pointLight->color, &light->color);
-	kmVec3Assign(&pointLight->ambient, &light->ambient);
-
+	kmVec3Assign(&pointLight->radiantFlux, &light->radiantFlux);
 	kmVec3Assign(&pointLight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&pointLight->position, &transform->globalPosition);
 
@@ -392,9 +389,7 @@ void addSpotlight(
 
 	Spotlight *spotlight = &spotlights[numSpotlights++];
 
-	kmVec3Assign(&spotlight->color, &light->color);
-	kmVec3Assign(&spotlight->ambient, &light->ambient);
-
+	kmVec3Assign(&spotlight->radiantFlux, &light->radiantFlux);
 	kmVec3Assign(&spotlight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&spotlight->position, &transform->globalPosition);
 

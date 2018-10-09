@@ -65,9 +65,9 @@ internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
 
-#define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
-#define NUM_POINT_LIGHT_ATTRIBUTES 5
-#define NUM_SPOTLIGHT_ATTRIBUTES 7
+#define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 2
+#define NUM_POINT_LIGHT_ATTRIBUTES 4
+#define NUM_SPOTLIGHT_ATTRIBUTES 6
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -248,12 +248,7 @@ void initRendererSystem(Scene *scene)
 		uint8 attribute = 0;
 		getUniform(
 			shaderProgram,
-			"directionalLight.color",
-			UNIFORM_VEC3,
-			&directionalLightUniforms[attribute++]);
-		getUniform(
-			shaderProgram,
-			"directionalLight.ambient",
+			"directionalLight.radiantFlux",
 			UNIFORM_VEC3,
 			&directionalLightUniforms[attribute++]);
 		getUniform(
@@ -273,15 +268,7 @@ void initRendererSystem(Scene *scene)
 			attribute = 0;
 
 			char *uniformName = malloc(1024);
-			sprintf(uniformName, "pointLights[%d].color", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_VEC3,
-				&pointLightsUniforms[i][attribute++]);
-
-			uniformName = malloc(1024);
-			sprintf(uniformName, "pointLights[%d].ambient", i);
+			sprintf(uniformName, "pointLights[%d].radiantFlux", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
@@ -324,15 +311,7 @@ void initRendererSystem(Scene *scene)
 			attribute = 0;
 
 			char *uniformName = malloc(1024);
-			sprintf(uniformName, "spotlights[%d].color", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_VEC3,
-				&spotlightsUniforms[i][attribute++]);
-
-			uniformName = malloc(1024);
-			sprintf(uniformName, "spotlights[%d].ambient", i);
+			sprintf(uniformName, "spotlights[%d].radiantFlux", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
@@ -484,6 +463,8 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
 	setMaterialUniform(&materialUniform, &textureIndex);
+
+	// TODO: Add material masking
 	// setUniform(materialMaskUniform, 1, &textureIndex);
 	// textureIndex++;
 	// setUniform(opacityMaskUniform, 1, &textureIndex);
@@ -500,11 +481,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			directionalLightUniforms[attribute++],
 			1,
-			&directionalLight.color);
-		setUniform(
-			directionalLightUniforms[attribute++],
-			1,
-			&directionalLight.ambient);
+			&directionalLight.radiantFlux);
 
 		kmQuaternion directionalLightQuaternion;
 		quaternionSlerp(
@@ -533,11 +510,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			pointLightsUniforms[i][attribute++],
 			1,
-			&pointLight->color);
-		setUniform(
-			pointLightsUniforms[i][attribute++],
-			1,
-			&pointLight->ambient);
+			&pointLight->radiantFlux);
 
 		kmVec3 pointLightPosition;
 		kmVec3Lerp(
@@ -570,11 +543,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
-			&spotlight->color);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->ambient);
+			&spotlight->radiantFlux);
 
 		kmVec3 spotlightPosition;
 		kmVec3Lerp(

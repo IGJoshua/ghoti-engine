@@ -20,15 +20,13 @@ const float PI = 3.14159265359;
 
 struct DirectionalLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 direction;
 };
 
 struct PointLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	float radius;
 	int shadowIndex;
@@ -36,8 +34,7 @@ struct PointLight
 
 struct Spotlight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	vec3 direction;
 	float radius;
@@ -307,7 +304,7 @@ vec3 getDirectionalLightRadiance(
 	vec3 lightDirection = normalize(-light.direction);
 	vec3 halfwayDirection = normalize(viewDirection + lightDirection);
 
-	vec3 radiance = light.color;
+	vec3 radiance = light.radiantFlux;
 
 	// Cook-Torrance BRDF
 	float D = normalDistribution(normal, halfwayDirection, roughness);
@@ -367,7 +364,7 @@ vec3 getPointLightRadiance(
 		1.0);
 	attenuation *= attenuation;
 
-	vec3 radiance = light.color * attenuation;
+	vec3 radiance = light.radiantFlux * attenuation;
 
 	// Cook-Torrance BRDF
 	float D = normalDistribution(normal, halfwayDirection, roughness);
@@ -429,7 +426,7 @@ vec3 getSpotlightRadiance(
 	float epsilon = light.size.x - light.size.y;
 	float intensity = clamp((theta - light.size.y) / epsilon, 0.0, 1.0);
 
-	vec3 radiance = light.color * attenuation * intensity;
+	vec3 radiance = light.radiantFlux * attenuation * intensity;
 
 	// Cook-Torrance BRDF
 	float D = normalDistribution(normal, halfwayDirection, roughness);

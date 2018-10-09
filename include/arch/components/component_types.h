@@ -342,8 +342,7 @@ typedef struct light_component_t
 {
 	bool enabled;
 	LightType type;
-	kmVec3 color;
-	kmVec3 ambient;
+	kmVec3 radiantFlux;
 	real32 radius;
 	kmVec2 size;
 } LightComponent;

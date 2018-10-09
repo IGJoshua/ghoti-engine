@@ -6,13 +6,6 @@
 			"external": ["basic_input"],
 			"internal":
 			[
-				"clean_hit_information",
-				"clean_hit_list",
-				"animation",
-				"clean_global_transforms",
-				"apply_parent_transforms",
-				"simulate_rigid_bodies",
-				"joint_information",
 				"gui"
 			]
 		},
@@ -26,12 +19,6 @@
 
 			"internal":
 			[
-				"cubemap_renderer",
-				"render_heightmap",
-				"renderer",
-				"wireframe_renderer",
-				"debug_renderer",
-				"collision_primitive_renderer",
 				"gui_renderer"
 			]
 		}

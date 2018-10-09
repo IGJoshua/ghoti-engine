@@ -18,15 +18,13 @@ const uint ROUGHNESS_COMPONENT = 6;
 
 struct DirectionalLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 direction;
 };
 
 struct PointLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	float radius;
 	int shadowIndex;
@@ -34,8 +32,7 @@ struct PointLight
 
 struct Spotlight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	vec3 direction;
 	float radius;
@@ -220,8 +217,8 @@ vec3 getDirectionalLightColor(
 
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
 
-	vec3 ambientColor = light.ambient * albedoTextureColor;
-	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor;
+	vec3 ambientColor = 0.1 * albedoTextureColor;
+	vec3 diffuseColor = light.radiantFlux * diffuseValue * albedoTextureColor;
 
 	float shadow = 0.0;
 	if (numDirectionalLightShadowMaps > 0)
@@ -256,9 +253,9 @@ vec3 getPointLightColor(
 		1.0);
 	attenuation *= attenuation;
 
-	vec3 ambientColor = light.ambient * albedoTextureColor * attenuation;
+	vec3 ambientColor = 0.1 * albedoTextureColor * attenuation;
 	vec3 diffuseColor =
-		light.color * diffuseValue * albedoTextureColor * attenuation;
+		light.radiantFlux * diffuseValue * albedoTextureColor * attenuation;
 
 	float shadow = 0.0;
 	if (light.shadowIndex > -1)
@@ -295,9 +292,8 @@ vec3 getSpotlightColor(
 	float epsilon = light.size.x - light.size.y;
 	float intensity = clamp((theta - light.size.y) / epsilon, 0.0, 1.0);
 
-	vec3 ambientColor = light.ambient * albedoTextureColor *
-		attenuation * intensity;
-	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor *
+	vec3 ambientColor = 0.1 * albedoTextureColor * attenuation * intensity;
+	vec3 diffuseColor = light.radiantFlux * diffuseValue * albedoTextureColor *
 		attenuation * intensity;
 
 	float shadow = 0.0;
