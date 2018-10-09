@@ -23,7 +23,7 @@
 
 		"shadows":
 		{
-			"resolution": 4096,
+			"resolution": 2048,
 
 			"directional_lights":
 			{
@@ -33,14 +33,14 @@
 
 			"point_lights":
 			{
-				"limit": 4,
+				"limit": 1,
 				"bias": 0.15,
 				"pcf_disk_radius": 0.04
 			},
 
 			"spotlights":
 			{
-				"limit": 4,
+				"limit": 1,
 				"bias": [0.005, 0.05]
 			}
 		},
