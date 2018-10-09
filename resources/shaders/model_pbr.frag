@@ -302,22 +302,6 @@ vec3 getDirectionalLightRadiance(
 	float roughness,
 	vec3 F0)
 {
-	if (numDirectionalLightShadowMaps > 0)
-	{
-		float shadow = getDirectionalShadow(
-			fragDirectionalLightSpacePosition,
-			normal,
-			light.direction,
-			shadowDirectionalLightBiasRange.x,
-			shadowDirectionalLightBiasRange.y,
-			directionalLightShadowMap);
-
-		if (shadow == 1.0)
-		{
-			return vec3(0.0);
-		}
-	}
-
 	vec3 lightDirection = normalize(-light.direction);
 	vec3 halfwayDirection = normalize(viewDirection + lightDirection);
 
@@ -343,7 +327,21 @@ vec3 getDirectionalLightRadiance(
 	vec3 kD = vec3(1.0) - kS;
 	kD *= 1.0 - metallic;
 
-	return (kD * (albedo / PI) + specular) * radiance *
+	float shadow = 0.0;
+	if (numDirectionalLightShadowMaps > 0)
+	{
+		shadow = getDirectionalShadow(
+			fragDirectionalLightSpacePosition,
+			normal,
+			light.direction,
+			shadowDirectionalLightBiasRange.x,
+			shadowDirectionalLightBiasRange.y,
+			directionalLightShadowMap);
+	}
+
+	shadow = 1.0 - shadow;
+
+	return (kD * (albedo / PI) + specular) * radiance * shadow *
 		max(dot(normal, lightDirection), 0.0);
 }
 
@@ -357,20 +355,6 @@ vec3 getPointLightRadiance(
 	float roughness,
 	vec3 F0)
 {
-	if (light.shadowIndex > -1)
-	{
-		float shadow = getPointShadow(
-			fragPosition,
-			light.position,
-			light.radius,
-			pointLightShadowMaps[light.shadowIndex]);
-
-		if (shadow == 1.0)
-		{
-			return vec3(0.0);
-		}
-	}
-
 	vec3 lightDirection = normalize(light.position - position);
 	vec3 halfwayDirection = normalize(viewDirection + lightDirection);
 
@@ -403,7 +387,19 @@ vec3 getPointLightRadiance(
 	vec3 kD = vec3(1.0) - kS;
 	kD *= 1.0 - metallic;
 
-	return (kD * (albedo / PI) + specular) * radiance *
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getPointShadow(
+			fragPosition,
+			light.position,
+			light.radius,
+			pointLightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+
+	return (kD * (albedo / PI) + specular) * radiance * shadow *
 		max(dot(normal, lightDirection), 0.0);
 }
 
@@ -417,22 +413,6 @@ vec3 getSpotlightRadiance(
 	float roughness,
 	vec3 F0)
 {
-	if (light.shadowIndex > -1)
-	{
-		float shadow = getDirectionalShadow(
-			fragSpotlightSpacePositions[light.shadowIndex],
-			normal,
-			light.direction,
-			shadowSpotlightBiasRange.x,
-			shadowSpotlightBiasRange.y,
-			spotlightShadowMaps[light.shadowIndex]);
-
-		if (shadow == 1.0)
-		{
-			return vec3(0.0);
-		}
-	}
-
 	vec3 lightDirection = normalize(light.position - position);
 	vec3 halfwayDirection = normalize(viewDirection + lightDirection);
 
@@ -469,7 +449,21 @@ vec3 getSpotlightRadiance(
 	vec3 kD = vec3(1.0) - kS;
 	kD *= 1.0 - metallic;
 
-	return (kD * (albedo / PI) + specular) * radiance *
+	float shadow = 0.0;
+	if (light.shadowIndex > -1)
+	{
+		shadow = getDirectionalShadow(
+			fragSpotlightSpacePositions[light.shadowIndex],
+			normal,
+			light.direction,
+			shadowSpotlightBiasRange.x,
+			shadowSpotlightBiasRange.y,
+			spotlightShadowMaps[light.shadowIndex]);
+	}
+
+	shadow = 1.0 - shadow;
+
+	return (kD * (albedo / PI) + specular) * radiance * shadow *
 		max(dot(normal, lightDirection), 0.0);
 }
 
