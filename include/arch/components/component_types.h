@@ -194,7 +194,6 @@ typedef struct collision_component_t
 typedef struct cubemap_component_t
 {
 	char name[64];
-	bool swapFrontAndBack;
 } CubemapComponent;
 
 typedef struct debug_collision_primitive_component_t

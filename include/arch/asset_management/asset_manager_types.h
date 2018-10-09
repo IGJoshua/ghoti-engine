@@ -25,6 +25,14 @@ typedef struct texture_data_t
 	uint8 *data;
 } TextureData;
 
+typedef struct hdr_texture_data_t
+{
+	int32 width;
+	int32 height;
+	int32 numComponents;
+	float *data;
+} HDRTextureData;
+
 typedef struct texture_t
 {
 	UUID name;
@@ -104,5 +112,5 @@ typedef struct cubemap_t
 	UUID name;
 	real64 lifetime;
 	GLuint id;
-	TextureData data[6];
+	HDRTextureData data;
 } Cubemap;

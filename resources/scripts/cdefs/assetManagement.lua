@@ -1,7 +1,7 @@
 ffi.cdef[[
 
 void loadAudio(const char *name);
-void loadCubemap(const char *name, bool swapFrontAndBack);
+void loadCubemap(const char *name);
 void loadFont(const char *name, uint32 size, bool autoScaling);
 void loadImage(const char *name, bool textureFiltering);
 

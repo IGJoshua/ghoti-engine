@@ -5,61 +5,50 @@
 #include "core/log.h"
 #include "core/config.h"
 
-#include "file/utilities.h"
-
 #include "data/data_types.h"
 #include "data/hash_map.h"
 
 #include "ECS/scene.h"
 
+#include "file/utilities.h"
+
 #include "renderer/renderer_utilities.h"
 
+#define STBI_NO_PIC
+#define STBI_NO_PNM
+
+#include <stb/stb_image.h>
+
 #include <pthread.h>
-
-internal const char* cubemapFaceNames[6] = {
-	"right",
-	"left",
-	"top",
-	"bottom",
-	"back",
-	"front"
-};
-
-typedef struct cubemap_thread_args_t
-{
-	char *name;
-	bool swapFrontAndBack;
-} CubemapThreadArgs;
+#include <unistd.h>
 
 extern Config config;
 
 EXTERN_ASSET_VARIABLES(cubemaps, Cubemaps);
 EXTERN_ASSET_MANAGER_VARIABLES;
 
+extern pthread_mutex_t stbImageFlipMutex;
+
 INTERNAL_ASSET_THREAD_VARIABLES(Cubemap);
 
-internal void getFullCubemapFilenames(const char *name, char **filenames);
+internal char* getFullCubemapFilename(const char *name);
 
-void loadCubemap(const char *name, bool swapFrontAndBack)
+void loadCubemap(const char *name)
 {
-	CubemapThreadArgs *arg = malloc(sizeof(CubemapThreadArgs));
-
-	arg->name = calloc(1, strlen(name) + 1);
-	strcpy(arg->name, name);
-
-	arg->swapFrontAndBack = swapFrontAndBack;
+	char *cubemapName = calloc(1, strlen(name) + 1);
+	strcpy(cubemapName, name);
 
 	bool skip = false;
 
-	UUID cubemapName = idFromName(name);
+	UUID nameID = idFromName(name);
 
 	pthread_mutex_lock(&cubemapsMutex);
-	if (!hashMapGetData(cubemaps, &cubemapName))
+	if (!hashMapGetData(cubemaps, &nameID))
 	{
 		pthread_mutex_unlock(&cubemapsMutex);
 		pthread_mutex_lock(&loadingCubemapsMutex);
 
-		if (hashMapGetData(loadingCubemaps, &cubemapName))
+		if (hashMapGetData(loadingCubemaps, &nameID))
 		{
 			skip = true;
 		}
@@ -70,7 +59,7 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 		{
 			pthread_mutex_lock(&uploadCubemapsMutex);
 
-			if (hashMapGetData(uploadCubemapsQueue, &cubemapName))
+			if (hashMapGetData(uploadCubemapsQueue, &nameID))
 			{
 				skip = true;
 			}
@@ -84,8 +73,8 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 				cubemap,
 				Cubemap,
 				Cubemaps,
-				arg,
-				cubemapName);
+				cubemapName,
+				nameID);
 			return;
 		}
 	}
@@ -94,8 +83,7 @@ void loadCubemap(const char *name, bool swapFrontAndBack)
 		pthread_mutex_unlock(&cubemapsMutex);
 	}
 
-	free(arg->name);
-	free(arg);
+	free(cubemapName);
 }
 
 ACQUISITION_THREAD(Cubemap);
@@ -104,116 +92,79 @@ void* loadCubemapThread(void *arg)
 {
 	int32 error = 0;
 
-	CubemapThreadArgs *threadArgs = arg;
-	char *name = threadArgs->name;
-	bool swapFrontAndBack = threadArgs->swapFrontAndBack;
+	char *name = arg;
 
-	UUID cubemapName = idFromName(name);
+	UUID nameID = idFromName(name);
 
-	char *fullFilenames[6];
-	getFullCubemapFilenames(name, fullFilenames);
-
-	ASSET_LOG(CUBEMAP, name, "Loading cubemap (%s)...\n", name);
-
-	Cubemap cubemap = {};
-
-	cubemap.name = idFromName(name);
-	cubemap.lifetime = config.assetsConfig.minCubemapLifetime;
-
-	for (uint8 i = 0; i < 6; i++)
+	char *fullFilename = getFullCubemapFilename(name);
+	if (!fullFilename)
 	{
-		char *faceName = concatenateStrings(
-			cubemapFaceNames[i],
-			" ",
-			"face");
-
-		char *fullFilename = fullFilenames[i];
-		if (!fullFilename)
+		error = -1;
+	}
+	else
+	{
+		const char *cubemapName = strrchr(fullFilename, '/');
+		if (!cubemapName)
 		{
-			ASSET_LOG(
-				CUBEMAP,
-				name,
-				"Failed to load %s: Texture not found\n",
-				faceName);
-			free(faceName);
-
-			continue;
-		}
-
-		const char *fullName = strrchr(fullFilename, '/');
-		if (!fullName)
-		{
-			fullName = fullFilename;
+			cubemapName = fullFilename;
 		}
 		else
 		{
-			fullName += 1;
+			cubemapName += 1;
 		}
 
-		ASSET_LOG(
-			CUBEMAP,
-			name,
-			"Loading %s (%s)...\n",
-			faceName,
-			fullName);
+		ASSET_LOG(CUBEMAP, name, "Loading cubemap (%s)...\n", cubemapName);
 
-		error = loadTextureData(
-			ASSET_LOG_TYPE_CUBEMAP,
-			faceName,
-			name,
+		Cubemap cubemap = {};
+
+		cubemap.name = idFromName(name);
+		cubemap.lifetime = config.assetsConfig.minCubemapLifetime;
+
+		HDRTextureData *data = &cubemap.data;
+
+		pthread_mutex_lock(&stbImageFlipMutex);
+		stbi_set_flip_vertically_on_load(true);
+		pthread_mutex_unlock(&stbImageFlipMutex);
+
+		data->data = stbi_loadf(
 			fullFilename,
-			3,
-			&cubemap.data[i]);
+			&data->width,
+			&data->height,
+			&data->numComponents,
+			0);
 
-		if (error != -1)
+		pthread_mutex_lock(&stbImageFlipMutex);
+		stbi_set_flip_vertically_on_load(false);
+		pthread_mutex_unlock(&stbImageFlipMutex);
+
+		if (!data->data)
 		{
+			ASSET_LOG(CUBEMAP, name, "Failed to load cubemap\n");
+			error = -1;
+		}
+
+		if (error != - 1)
+		{
+			pthread_mutex_lock(&uploadCubemapsMutex);
+			hashMapInsert(uploadCubemapsQueue, &nameID, &cubemap);
+			pthread_mutex_unlock(&uploadCubemapsMutex);
+
 			ASSET_LOG(
 				CUBEMAP,
 				name,
-				"Successfully loaded %s (%s)\n",
-				faceName,
-				fullName);
-			free(faceName);
-		}
-		else
-		{
-			free(faceName);
-			break;
-		}
-	}
-
-	for (uint8 i = 0; i < 6; i++)
-	{
-		free(fullFilenames[i]);
-	}
-
-	if (error != - 1)
-	{
-		if (swapFrontAndBack)
-		{
-			TextureData data = cubemap.data[4];
-			cubemap.data[4] = cubemap.data[5];
-			cubemap.data[5] = data;
+				"Successfully loaded cubemap (%s)\n",
+				cubemapName);
 		}
 
-		pthread_mutex_lock(&uploadCubemapsMutex);
-		hashMapInsert(uploadCubemapsQueue, &cubemapName, &cubemap);
-		pthread_mutex_unlock(&uploadCubemapsMutex);
+		ASSET_LOG_COMMIT(CUBEMAP, name);
 
-		ASSET_LOG(
-			CUBEMAP,
-			name,
-			"Successfully loaded cubemap (%s)\n",
-			name);
+		pthread_mutex_lock(&loadingCubemapsMutex);
+		hashMapDelete(loadingCubemaps, &nameID);
+		pthread_mutex_unlock(&loadingCubemapsMutex);
 	}
 
-	ASSET_LOG_COMMIT(CUBEMAP, name);
+	free(fullFilename);
 
-	pthread_mutex_lock(&loadingCubemapsMutex);
-	hashMapDelete(loadingCubemaps, &cubemapName);
-	pthread_mutex_unlock(&loadingCubemapsMutex);
-
-	free(arg);
 	free(name);
 
 	EXIT_LOADING_THREAD;
@@ -226,70 +177,37 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 	LOG("Transferring cubemap (%s) onto GPU...\n", cubemap->name.string);
 
 	glGenTextures(1, &cubemap->id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->id);
+	glBindTexture(GL_TEXTURE_2D, cubemap->id);
 
-	for (uint8 i = 0; i < 6; i++)
-	{
-		TextureData *data = &cubemap->data[i];
+	HDRTextureData *data = &cubemap->data;
 
-		if (!data)
-		{
-			continue;
-		}
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGB16F,
+		data->width,
+		data->height,
+		0,
+		GL_RGB,
+		GL_FLOAT,
+		data->data);
 
-		glTexImage2D(
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-			0,
-			GL_RGB,
-			data->width,
-			data->height,
-			0,
-			GL_RGB,
-			GL_UNSIGNED_BYTE,
-			data->data);
+	free(data->data);
 
-		error = logGLError(
-			false,
-			"Failed to transfer cubemap's %s face onto GPU",
-			cubemapFaceNames[i]);
-
-		if (error == -1)
-		{
-			break;
-		}
-	}
-
-	for (uint8 i = 0; i < 6; i++)
-	{
-		free(cubemap->data[i].data);
-	}
+	error = logGLError(false, "Failed to transfer cubemap onto GPU");
 
 	if (error != -1)
 	{
-		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_S,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_T,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_R,
-			GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		LOG("Successfully transferred cubemap (%s) onto GPU\n",
 			cubemap->name.string);
 	}
 
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return error;
 }
@@ -310,23 +228,15 @@ void freeCubemapData(Cubemap *cubemap)
 	LOG("Successfully freed cubemap (%s)\n", cubemap->name.string);
 }
 
-void getFullCubemapFilenames(const char *name, char **filenames)
+char* getFullCubemapFilename(const char *name)
 {
-	char *folder = getFullFilePath(name, NULL, "resources/cubemaps");
-	char *filenamePrefix = getFullFilePath(name, NULL, folder);
-
-	for (uint8 i = 0; i < 6; i++)
+	char *filename = getFullFilePath(name, "hdr", "resources/cubemaps");
+	if (access(filename, F_OK) != -1)
 	{
-		char *filename = concatenateStrings(
-			filenamePrefix,
-			"_",
-			cubemapFaceNames[i]);
-
-		filenames[i] = getFullTextureFilename(filename);
-
-		free(filename);
+		return filename;
 	}
 
-	free(folder);
-	free(filenamePrefix);
+	free(filename);
+
+	return NULL;
 }

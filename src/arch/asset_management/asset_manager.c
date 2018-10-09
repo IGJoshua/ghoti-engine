@@ -38,6 +38,8 @@ extern pthread_mutex_t materialFoldersMutex;
 
 EXTERN_ASSET_MANAGER_VARIABLES;
 
+extern pthread_mutex_t stbImageFlipMutex;
+
 internal pthread_t assetManagerThread;
 
 internal bool exitAssetManagerThread;
@@ -218,6 +220,8 @@ void initializeAssetManager(real64 *dt) {
 
 	assetManagerIsShutdown = false;
 	pthread_mutex_init(&assetManagerShutdownMutex, NULL);
+
+	pthread_mutex_init(&stbImageFlipMutex, NULL);
 
 	exitAssetManagerThread = false;
 	pthread_mutex_init(&exitAssetManagerMutex, NULL);
@@ -413,6 +417,8 @@ void shutdownAssetManager(void)
 	pthread_cond_destroy(&assetThreadsCondition);
 
 	pthread_mutex_destroy(&assetManagerShutdownMutex);
+
+	pthread_mutex_destroy(&stbImageFlipMutex);
 
 	DESTROY_ASSET(model, models, Model, Models);
 	DESTROY_ASSET(texture, textures, Texture, Textures);
