@@ -8,7 +8,14 @@
 
 void loadMesh(Mesh *mesh, FILE *file, const char *modelName)
 {
-	ASSET_LOG(MODEL, modelName, "Loading mesh...\n");
+	if (modelName)
+	{
+		ASSET_LOG(MODEL, modelName, "Loading mesh...\n");
+	}
+	else
+	{
+		LOG("Loading mesh...\n");
+	}
 
 	fread(&mesh->numVertices, sizeof(uint32), 1, file);
 
@@ -20,7 +27,14 @@ void loadMesh(Mesh *mesh, FILE *file, const char *modelName)
 	mesh->indices = calloc(mesh->numIndices, sizeof(uint32));
 	fread(mesh->indices, mesh->numIndices, sizeof(uint32), file);
 
-	ASSET_LOG(MODEL, modelName, "Successfully loaded mesh\n");
+	if (modelName)
+	{
+		ASSET_LOG(MODEL, modelName, "Successfully loaded mesh\n");
+	}
+	else
+	{
+		LOG("Successfully loaded mesh\n");
+	}
 }
 
 void uploadMeshToGPU(Mesh *mesh, const char *name)

@@ -35,6 +35,7 @@
 			"internal":
 			[
 				"shadows",
+				"cubemap_renderer",
 				"render_heightmap",
 				"renderer",
 				"wireframe_renderer",

@@ -94,6 +94,16 @@ int32 loadConfig(void)
 		config.graphicsConfig.pbr = cJSONToBool(pbr);
 	}
 
+	GET_CONFIG_ITEM(cubemapResolution, "graphics.pbr.ibl.cubemap_resolution")
+	{
+		int32 resolution = cubemapResolution->valueint;
+		if (resolution > 0 && resolution % 16 == 0)
+		{
+			config.graphicsConfig.cubemapResolution = resolution;
+			config.graphicsConfig.irradianceMapResolution = resolution / 16;
+		}
+	}
+
 	GET_CONFIG_ITEM(shadowMapResolution, "graphics.shadows.resolution")
 	{
 		int32 resolution = shadowMapResolution->valueint;
@@ -297,6 +307,8 @@ void initializeDefaultConfig(void)
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
 	config.graphicsConfig.pbr = true;
+	config.graphicsConfig.cubemapResolution = 1024;
+	config.graphicsConfig.irradianceMapResolution = 64;
 	config.graphicsConfig.shadowMapResolution = 4096;
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;

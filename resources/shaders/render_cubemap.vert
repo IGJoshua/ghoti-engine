@@ -12,10 +12,12 @@ layout(location=8) in vec4 weights;
 
 out vec3 fragPosition;
 
-uniform mat4 cubemapTransform;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {
 	fragPosition = position;
-	gl_Position = cubemapTransform * vec4(position, 1.0);
+	gl_Position = projection * view * model * vec4(position, 1.0);
 }

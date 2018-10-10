@@ -23,6 +23,8 @@ typedef struct graphics_config_t
 {
 	kmVec3 backgroundColor;
 	bool pbr;
+	uint32 cubemapResolution;
+	uint32 irradianceMapResolution;
 	uint32 shadowMapResolution;
 	bool directionalLightShadows;
 	real32 directionalLightShadowBias[2];

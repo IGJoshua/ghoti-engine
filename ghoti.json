@@ -18,7 +18,12 @@
 
 		"pbr":
 		{
-			"enabled": true
+			"enabled": true,
+
+			"ibl":
+			{
+				"cubemap_resolution": 1024
+			}
 		},
 
 		"shadows":

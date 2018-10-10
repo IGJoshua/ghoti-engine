@@ -111,6 +111,8 @@ typedef struct cubemap_t
 {
 	UUID name;
 	real64 lifetime;
-	GLuint id;
+	GLuint equirectangularID;
+	GLuint cubemapID;
+	GLuint irradianceID;
 	HDRTextureData data;
 } Cubemap;

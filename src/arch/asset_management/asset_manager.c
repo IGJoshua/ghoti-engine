@@ -2,6 +2,7 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/audio.h"
 #include "asset_management/cubemap.h"
+#include "asset_management/cubemap_importer.h"
 #include "asset_management/font.h"
 #include "asset_management/image.h"
 #include "asset_management/model.h"
@@ -223,6 +224,8 @@ void initializeAssetManager(real64 *dt) {
 
 	pthread_mutex_init(&stbImageFlipMutex, NULL);
 
+	initializeCubemapImporter();
+
 	exitAssetManagerThread = false;
 	pthread_mutex_init(&exitAssetManagerMutex, NULL);
 
@@ -419,6 +422,8 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&assetManagerShutdownMutex);
 
 	pthread_mutex_destroy(&stbImageFlipMutex);
+
+	shutdownCubemapImporter();
 
 	DESTROY_ASSET(model, models, Model, Models);
 	DESTROY_ASSET(texture, textures, Texture, Textures);
