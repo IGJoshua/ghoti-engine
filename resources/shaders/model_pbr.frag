@@ -62,6 +62,8 @@ uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
 uniform bool useCustomColor;
 uniform vec3 customColor;
 
+uniform samplerCube irradianceMap;
+
 uniform uint numDirectionalLights;
 uniform DirectionalLight directionalLight;
 
@@ -128,6 +130,11 @@ vec3 getSpotlightRadiance(
 
 float normalDistribution(vec3 normal, vec3 halfwayDirection, float roughness);
 vec3 fresnelEquation(vec3 halfwayDirection, vec3 viewDirection, vec3 F0);
+vec3 fresnelEquationRoughness(
+	vec3 normal,
+	vec3 viewDirection,
+	vec3 F0,
+	float roughness);
 float geometrySubFunction(float NdotV, float roughness);
 float geometryFunction(
 	vec3 normal,
@@ -209,7 +216,10 @@ void main()
 			F0);
 	}
 
-	vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
+	vec3 kS = fresnelEquationRoughness(normal, viewDirection, F0, roughness);
+	vec3 kD = 1.0 - kS;
+	vec3 irradiance = texture(irradianceMap, normal).rgb;
+	vec3 ambient = kD * irradiance * albedo * ambientOcclusion;
 
 	vec3 finalColor = ambient + radiance;
 
@@ -481,6 +491,20 @@ vec3 fresnelEquation(vec3 halfwayDirection, vec3 viewDirection, vec3 F0)
 	// Fresnel-Schlick approximation
 	float cosTheta = max(dot(halfwayDirection, viewDirection), 0.0);
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 fresnelEquationRoughness(
+	vec3 normal,
+	vec3 viewDirection,
+	vec3 F0,
+	float roughness)
+{
+	// Sébastien Lagarde's roughness-based Fresnel-Schlick approximation
+	float cosTheta = max(dot(normal, viewDirection), 0.0);
+	return
+		F0 +
+		(max(vec3(1.0 - roughness), F0) - F0) *
+		pow(1.0 - cosTheta, 5.0);
 }
 
 float geometrySubFunction(float NdotV, float roughness)

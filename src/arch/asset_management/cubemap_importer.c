@@ -28,7 +28,18 @@ typedef struct cubemap_converter_shader_t
 	Uniform equirectangularCubemapTextureUniform;
 } CubemapConverterShader;
 
+#define CUBEMAP_CONVOLUTION_FRAGMENT_SHADER_FILE \
+	"resources/shaders/convolute_cubemap.frag"
+
+typedef struct cubemap_convolution_shader_t
+{
+	GLuint shaderProgram;
+	Uniform cubemapTransformUniform;
+	Uniform cubemapTextureUniform;
+} CubemapConvolutionShader;
+
 internal CubemapConverterShader cubemapConverterShader;
+internal CubemapConvolutionShader cubemapConvolutionShader;
 
 internal GLuint cubemapFramebuffer;
 internal GLuint cubemapRenderbuffer;
@@ -43,6 +54,9 @@ internal void freeCubemapMesh(void);
 internal void initializeCubemapConverterShader(void);
 internal void convertCubemap(Cubemap *cubemap);
 
+internal void initializeCubemapConvolutionShader(void);
+internal void convoluteCubemap(Cubemap *cubemap);
+
 void initializeCubemapImporter(void)
 {
 	if (loadCubemapMesh() == -1)
@@ -55,6 +69,7 @@ void initializeCubemapImporter(void)
 	}
 
 	initializeCubemapConverterShader();
+	initializeCubemapConvolutionShader();
 
 	glGenRenderbuffers(1, &cubemapRenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
@@ -150,11 +165,13 @@ void importCubemap(Cubemap *cubemap)
 	}
 
 	convertCubemap(cubemap);
+	convoluteCubemap(cubemap);
 }
 
 void shutdownCubemapImporter(void)
 {
 	glDeleteProgram(cubemapConverterShader.shaderProgram);
+	glDeleteProgram(cubemapConvolutionShader.shaderProgram);
 
 	glDeleteFramebuffers(1, &cubemapFramebuffer);
 	glDeleteRenderbuffers(1, &cubemapRenderbuffer);
@@ -265,6 +282,13 @@ void convertCubemap(Cubemap *cubemap)
 		config.graphicsConfig.cubemapResolution,
 		config.graphicsConfig.cubemapResolution);
 
+	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
+    glRenderbufferStorage(
+		GL_RENDERBUFFER,
+		GL_DEPTH_COMPONENT24,
+		config.graphicsConfig.cubemapResolution,
+		config.graphicsConfig.cubemapResolution);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
 	glUseProgram(cubemapConverterShader.shaderProgram);
 
@@ -330,7 +354,114 @@ void convertCubemap(Cubemap *cubemap)
 	glUseProgram(0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	glDeleteTextures(1, &cubemap->equirectangularID);
 	cubemap->equirectangularID = 0;
+}
+
+void initializeCubemapConvolutionShader(void)
+{
+	createShaderProgram(
+		CUBEMAP_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		NULL,
+		CUBEMAP_CONVOLUTION_FRAGMENT_SHADER_FILE,
+		NULL,
+		&cubemapConvolutionShader.shaderProgram);
+
+	getUniform(
+		cubemapConvolutionShader.shaderProgram,
+		"cubemapTransform",
+		UNIFORM_MAT4,
+		&cubemapConvolutionShader.cubemapTransformUniform);
+	getUniform(
+		cubemapConvolutionShader.shaderProgram,
+		"cubemapTexture",
+		UNIFORM_TEXTURE_CUBE_MAP,
+		&cubemapConvolutionShader.cubemapTextureUniform);
+}
+
+void convoluteCubemap(Cubemap *cubemap)
+{
+	glViewport(
+		0,
+		0,
+		config.graphicsConfig.irradianceMapResolution,
+		config.graphicsConfig.irradianceMapResolution);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
+    glRenderbufferStorage(
+		GL_RENDERBUFFER,
+		GL_DEPTH_COMPONENT24,
+		config.graphicsConfig.irradianceMapResolution,
+		config.graphicsConfig.irradianceMapResolution);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
+	glUseProgram(cubemapConvolutionShader.shaderProgram);
+
+	uint32 textureIndex = 0;
+	setUniform(
+		cubemapConvolutionShader.cubemapTextureUniform,
+		1,
+		&textureIndex);
+
+	glBindVertexArray(cubemapMesh.vertexArray);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	{
+		glEnableVertexAttribArray(j);
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->cubemapID);
+
+	glFrontFace(GL_CW);
+
+	for (uint8 i = 0; i < 6; i++)
+	{
+		glFramebufferTexture2D(
+			GL_FRAMEBUFFER,
+			GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			cubemap->irradianceID,
+			0);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		setUniform(
+			cubemapConvolutionShader.cubemapTransformUniform,
+			1,
+			&cubemapTransforms[i]);
+
+		glDrawElements(
+			GL_TRIANGLES,
+			cubemapMesh.numIndices,
+			GL_UNSIGNED_INT,
+			NULL);
+
+		logGLError(
+			false,
+			"Failed to convolute cubemap (%s)",
+			cubemap->name.string);
+	}
+
+	glFrontFace(GL_CCW);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	{
+		glDisableVertexAttribArray(j);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glUseProgram(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }

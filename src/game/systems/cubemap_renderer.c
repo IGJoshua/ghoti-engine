@@ -43,6 +43,8 @@ internal TransformComponent *cameraTransform;
 
 internal GLboolean glDepthMaskValue;
 
+Cubemap currentCubemap = {};
+
 extern real64 alpha;
 
 extern bool cubemapMeshLoaded;
@@ -100,6 +102,8 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 		return;
 	}
 
+	memset(&currentCubemap, 0, sizeof(Cubemap));
+
 	glUseProgram(shaderProgram);
 
 	TransformComponent cubemapCameraTransform = *cameraTransform;
@@ -123,7 +127,10 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 
 internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 {
-	if (!camera || !cameraTransform || !cubemapMeshLoaded)
+	if (!camera ||
+		!cameraTransform ||
+		!cubemapMeshLoaded ||
+		strlen(currentCubemap.name.string) > 0)
 	{
 		return;
 	}
@@ -139,6 +146,8 @@ internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 	{
 		return;
 	}
+
+	currentCubemap = cubemap;
 
 	glBindVertexArray(cubemapMesh.vertexArray);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);

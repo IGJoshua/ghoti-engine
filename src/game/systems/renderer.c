@@ -65,6 +65,8 @@ internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
 
+internal Uniform irradianceMapUniform;
+
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 2
 #define NUM_POINT_LIGHT_ATTRIBUTES 4
 #define NUM_SPOTLIGHT_ATTRIBUTES 6
@@ -116,6 +118,8 @@ extern uint32 animationSystemRefCount;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
+
+extern Cubemap currentCubemap;
 
 extern uint32 numDirectionalLights;
 extern DirectionalLight directionalLight;
@@ -238,6 +242,12 @@ void initRendererSystem(Scene *scene)
 			"useCustomColor",
 			UNIFORM_BOOL,
 			&useCustomColorUniform);
+
+		getUniform(
+			shaderProgram,
+			"irradianceMap",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&irradianceMapUniform);
 
 		getUniform(
 			shaderProgram,
@@ -462,6 +472,8 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		&spotlightShadowMapsUniform,
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
+	setUniform(irradianceMapUniform, 1, &textureIndex);
+	textureIndex++;
 	setMaterialUniform(&materialUniform, &textureIndex);
 
 	// TODO: Add material masking
@@ -796,6 +808,14 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			1 +
 			MAX_NUM_SHADOW_POINT_LIGHTS +
 			MAX_NUM_SHADOW_SPOTLIGHTS;
+
+		if (strlen(currentCubemap.name.string) > 0)
+		{
+			glActiveTexture(GL_TEXTURE0 + textureIndex);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
+		}
+
+		textureIndex++;
 
 		activateMaterialTextures(material, &textureIndex);
 		// activateTexture(model.materialTexture, &textureIndex);
