@@ -5,7 +5,7 @@
 		{
 			"material":
 			{
-				"name": "cube",
+				"name": "plastic",
 				"double-sided": false,
 
 				"uv":
