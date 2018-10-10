@@ -39,8 +39,6 @@ extern pthread_mutex_t materialFoldersMutex;
 
 EXTERN_ASSET_MANAGER_VARIABLES;
 
-extern pthread_mutex_t stbImageFlipMutex;
-
 internal pthread_t assetManagerThread;
 
 internal bool exitAssetManagerThread;
@@ -225,8 +223,6 @@ void initializeAssetManager(real64 *dt) {
 
 	assetManagerIsShutdown = false;
 	pthread_mutex_init(&assetManagerShutdownMutex, NULL);
-
-	pthread_mutex_init(&stbImageFlipMutex, NULL);
 
 	initializeCubemapImporter();
 
@@ -427,8 +423,6 @@ void shutdownAssetManager(void)
 	pthread_cond_destroy(&assetThreadsCondition);
 
 	pthread_mutex_destroy(&assetManagerShutdownMutex);
-
-	pthread_mutex_destroy(&stbImageFlipMutex);
 
 	shutdownCubemapImporter();
 

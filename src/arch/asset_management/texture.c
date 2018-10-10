@@ -12,7 +12,6 @@
 
 #define STBI_NO_PIC
 #define STBI_NO_PNM
-#define STB_IMAGE_IMPLEMENTATION
 
 #include <stb/stb_image.h>
 

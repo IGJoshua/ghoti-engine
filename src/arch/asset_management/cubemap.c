@@ -17,6 +17,7 @@
 
 #define STBI_NO_PIC
 #define STBI_NO_PNM
+#define STB_IMAGE_IMPLEMENTATION
 
 #include <stb/stb_image.h>
 
@@ -27,8 +28,6 @@ extern Config config;
 
 EXTERN_ASSET_VARIABLES(cubemaps, Cubemaps);
 EXTERN_ASSET_MANAGER_VARIABLES;
-
-extern pthread_mutex_t stbImageFlipMutex;
 
 INTERNAL_ASSET_THREAD_VARIABLES(Cubemap);
 
@@ -123,25 +122,25 @@ void* loadCubemapThread(void *arg)
 
 		HDRTextureData *data = &cubemap.data;
 
-		pthread_mutex_lock(&stbImageFlipMutex);
-		stbi_set_flip_vertically_on_load(true);
-		pthread_mutex_unlock(&stbImageFlipMutex);
-
 		data->data = stbi_loadf(
 			fullFilename,
 			&data->width,
 			&data->height,
 			&data->numComponents,
-			0);
-
-		pthread_mutex_lock(&stbImageFlipMutex);
-		stbi_set_flip_vertically_on_load(false);
-		pthread_mutex_unlock(&stbImageFlipMutex);
+			3);
 
 		if (!data->data)
 		{
 			ASSET_LOG(CUBEMAP, name, "Failed to load cubemap\n");
 			error = -1;
+		}
+		else
+		{
+			stbi__vertical_flip(
+				data->data,
+				data->width,
+				data->height,
+				sizeof(real32) * 3);
 		}
 
 		if (error != - 1)

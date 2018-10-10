@@ -46,8 +46,6 @@ pthread_cond_t totalThreadsCondition;
 bool assetManagerIsShutdown;
 pthread_mutex_t assetManagerShutdownMutex;
 
-pthread_mutex_t stbImageFlipMutex;
-
 // NOTE(Joshua): Globals for ECS
 
 // Lua
