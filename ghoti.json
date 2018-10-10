@@ -24,7 +24,7 @@
 			{
 				"cubemap":
 				{
-					"resolution": 1024,
+					"resolution": 2048,
 					"debug_mode": false,
 					"debug_mip_level": -1
 				}
