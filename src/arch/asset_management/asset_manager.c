@@ -219,6 +219,10 @@ void initializeAssetManager(real64 *dt) {
 	pthread_mutex_init(&assetThreadsMutex, NULL);
 	pthread_cond_init(&assetThreadsCondition, NULL);
 
+	totalThreadCount = 0;
+	pthread_mutex_init(&totalThreadsMutex, NULL);
+	pthread_cond_init(&totalThreadsCondition, NULL);
+
 	assetManagerIsShutdown = false;
 	pthread_mutex_init(&assetManagerShutdownMutex, NULL);
 
@@ -407,14 +411,17 @@ void shutdownAssetManager(void)
 	pthread_mutex_destroy(&updateAssetManagerMutex);
 	pthread_cond_destroy(&updateAssetManagerCondition);
 
-	pthread_mutex_lock(&assetThreadsMutex);
+	pthread_mutex_lock(&totalThreadsMutex);
 
-	while (assetThreadCount > 0)
+	while (totalThreadCount > 0)
 	{
-		pthread_cond_wait(&assetThreadsCondition, &assetThreadsMutex);
+		pthread_cond_wait(&totalThreadsCondition, &totalThreadsMutex);
 	}
 
-	pthread_mutex_unlock(&assetThreadsMutex);
+	pthread_mutex_unlock(&totalThreadsMutex);
+
+	pthread_mutex_destroy(&totalThreadsMutex);
+	pthread_cond_destroy(&totalThreadsCondition);
 
 	pthread_mutex_destroy(&assetThreadsMutex);
 	pthread_cond_destroy(&assetThreadsCondition);

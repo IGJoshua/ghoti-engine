@@ -1,6 +1,7 @@
 ffi.cdef[[
 typedef struct audio_source_component_t
 {
+	char currentAudio[64];
 	uint32 id;
 	real32 pitch;
 	real32 gain;

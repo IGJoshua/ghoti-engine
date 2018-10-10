@@ -18,6 +18,10 @@ extern uint32 assetThreadCount; \
 extern pthread_mutex_t assetThreadsMutex; \
 extern pthread_cond_t assetThreadsCondition; \
 \
+extern uint32 totalThreadCount; \
+extern pthread_mutex_t totalThreadsMutex; \
+extern pthread_cond_t totalThreadsCondition; \
+\
 extern bool assetManagerIsShutdown; \
 extern pthread_mutex_t assetManagerShutdownMutex
 
@@ -41,6 +45,11 @@ pthread_mutex_lock(&loading ## Assets ## Mutex); \
 hashMapInsert(loading ## Assets, &name, &loading); \
 pthread_mutex_unlock(&loading ## Assets ## Mutex); \
 \
+pthread_mutex_lock(&totalThreadsMutex); \
+totalThreadCount++; \
+pthread_cond_broadcast(&totalThreadsCondition); \
+pthread_mutex_unlock(&totalThreadsMutex); \
+\
 pthread_t acquisitionThread; \
 pthread_create( \
 	&acquisitionThread, \
@@ -61,12 +70,38 @@ void* acquire ## Asset ## Thread(void *arg) \
 \
 	assetThreadCount++; \
 \
-	pthread_mutex_unlock(&assetThreadsMutex); \
 	pthread_cond_broadcast(&assetThreadsCondition); \
+	pthread_mutex_unlock(&assetThreadsMutex); \
+\
+	pthread_mutex_lock(&assetManagerShutdownMutex); \
+\
+	if (assetManagerIsShutdown) \
+	{ \
+		pthread_mutex_unlock(&assetManagerShutdownMutex); \
+\
+		pthread_mutex_lock(&totalThreadsMutex); \
+		totalThreadCount--; \
+		pthread_cond_broadcast(&totalThreadsCondition); \
+		pthread_mutex_unlock(&totalThreadsMutex); \
+\
+		EXIT_THREAD(NULL); \
+	} \
+\
+	pthread_mutex_unlock(&assetManagerShutdownMutex); \
+\
+	pthread_mutex_lock(&totalThreadsMutex); \
+	totalThreadCount++; \
+	pthread_cond_broadcast(&totalThreadsCondition); \
+	pthread_mutex_unlock(&totalThreadsMutex); \
 \
 	pthread_t loadingThread; \
 	pthread_create(&loadingThread, NULL, &load ## Asset ## Thread, arg); \
-	pthread_detach(loadingThread); \
+	pthread_join(loadingThread, NULL); \
+\
+	pthread_mutex_lock(&totalThreadsMutex); \
+	totalThreadCount--; \
+	pthread_cond_broadcast(&totalThreadsCondition); \
+	pthread_mutex_unlock(&totalThreadsMutex); \
 \
 	EXIT_THREAD(NULL); \
 }
@@ -74,8 +109,13 @@ void* acquire ## Asset ## Thread(void *arg) \
 #define EXIT_LOADING_THREAD \
 pthread_mutex_lock(&assetThreadsMutex); \
 assetThreadCount--; \
-pthread_mutex_unlock(&assetThreadsMutex); \
 pthread_cond_broadcast(&assetThreadsCondition); \
+pthread_mutex_unlock(&assetThreadsMutex); \
+\
+pthread_mutex_lock(&totalThreadsMutex); \
+totalThreadCount--; \
+pthread_cond_broadcast(&totalThreadsCondition); \
+pthread_mutex_unlock(&totalThreadsMutex); \
 \
 EXIT_THREAD(NULL)
 

@@ -42,6 +42,8 @@ void playSoundAtSource(
 	}
 	else
 	{
+		strcpy(audioSource->currentAudio, soundName);
+
 		alSourceRewind(g_Sources[audioSource->id]);
 
 		alSourcei(
