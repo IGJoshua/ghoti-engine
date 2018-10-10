@@ -269,6 +269,7 @@ float getAmbientOcclusion(vec2 uv)
 	if (materialActive[AMBIENT_OCCLUSION_COMPONENT])
 	{
 		ambientOcclusion = texture(material[AMBIENT_OCCLUSION_COMPONENT], uv).r;
+		ambientOcclusion *= materialValues[AMBIENT_OCCLUSION_COMPONENT].x;
 	}
 
 	return ambientOcclusion;
@@ -280,6 +281,7 @@ vec3 getAlbedo(vec2 uv)
 	if (materialActive[BASE_COMPONENT])
 	{
 		albedo = pow(texture(material[BASE_COMPONENT], uv).rgb, vec3(2.2));
+		albedo *= materialValues[BASE_COMPONENT];
 	}
 
 	return albedo;
@@ -291,6 +293,7 @@ float getMetallic(vec2 uv)
 	if (materialActive[METALLIC_COMPONENT])
 	{
 		metallic = texture(material[METALLIC_COMPONENT], uv).r;
+		metallic *= materialValues[METALLIC_COMPONENT].x;
 	}
 
 	return metallic;
@@ -315,6 +318,7 @@ float getRoughness(vec2 uv)
 	if (materialActive[ROUGHNESS_COMPONENT])
 	{
 		roughness = texture(material[ROUGHNESS_COMPONENT], uv).r;
+		roughness *= materialValues[ROUGHNESS_COMPONENT].x;
 	}
 
 	return roughness;
