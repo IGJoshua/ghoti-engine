@@ -114,5 +114,6 @@ typedef struct cubemap_t
 	GLuint equirectangularID;
 	GLuint cubemapID;
 	GLuint irradianceID;
+	GLuint prefilterID;
 	HDRTextureData data;
 } Cubemap;

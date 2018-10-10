@@ -116,6 +116,7 @@ int32 createShaderProgram(
 	};
 
 	Shader shaders[SHADER_TYPE_COUNT];
+	memset(shaders, 0, SHADER_TYPE_COUNT * sizeof(Shader));
 
 	for (uint8 i = 0; i < SHADER_TYPE_COUNT; i++)
 	{

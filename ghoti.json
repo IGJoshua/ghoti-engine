@@ -22,7 +22,12 @@
 
 			"ibl":
 			{
-				"cubemap_resolution": 1024
+				"cubemap":
+				{
+					"resolution": 1024,
+					"debug_mode": false,
+					"debug_mip_level": -1
+				}
 			}
 		},
 

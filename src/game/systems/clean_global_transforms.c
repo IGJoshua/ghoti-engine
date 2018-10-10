@@ -19,7 +19,7 @@ void initCleanGlobalTransformsSystem(Scene *scene)
 		scene->componentTypes,
 		&transformComponentID);
 
-	for(ComponentDataTableIterator itr = cdtGetIterator(*table);
+	for (ComponentDataTableIterator itr = cdtGetIterator(*table);
 		!cdtIteratorAtEnd(itr);
 		cdtMoveIterator(&itr))
 	{

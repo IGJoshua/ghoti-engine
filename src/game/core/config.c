@@ -94,13 +94,30 @@ int32 loadConfig(void)
 		config.graphicsConfig.pbr = cJSONToBool(pbr);
 	}
 
-	GET_CONFIG_ITEM(cubemapResolution, "graphics.pbr.ibl.cubemap_resolution")
+	GET_CONFIG_ITEM(cubemapResolution, "graphics.pbr.ibl.cubemap.resolution")
 	{
 		int32 resolution = cubemapResolution->valueint;
 		if (resolution > 0 && resolution % 16 == 0)
 		{
 			config.graphicsConfig.cubemapResolution = resolution;
 			config.graphicsConfig.irradianceMapResolution = resolution / 16;
+			config.graphicsConfig.prefilterMapResolution = resolution / 4;
+		}
+	}
+
+	GET_CONFIG_ITEM(cubemapDebugMode, "graphics.pbr.ibl.cubemap.debug_mode")
+	{
+		config.graphicsConfig.cubemapDebugMode = cJSONToBool(cubemapDebugMode);
+	}
+
+	GET_CONFIG_ITEM(
+		cubemapDebugMipLevel,
+		"graphics.pbr.ibl.cubemap.debug_mip_level")
+	{
+		if (config.graphicsConfig.cubemapDebugMode)
+		{
+			config.graphicsConfig.cubemapDebugMipLevel =
+				cubemapDebugMipLevel->valuedouble;
 		}
 	}
 
@@ -309,6 +326,8 @@ void initializeDefaultConfig(void)
 	config.graphicsConfig.pbr = true;
 	config.graphicsConfig.cubemapResolution = 1024;
 	config.graphicsConfig.irradianceMapResolution = 64;
+	config.graphicsConfig.cubemapDebugMode = false;
+	config.graphicsConfig.cubemapDebugMipLevel = -1;
 	config.graphicsConfig.shadowMapResolution = 4096;
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;

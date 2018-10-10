@@ -38,24 +38,57 @@ typedef struct cubemap_convolution_shader_t
 	Uniform cubemapTextureUniform;
 } CubemapConvolutionShader;
 
+#define CUBEMAP_PREFILTER_FRAGMENT_SHADER_FILE \
+	"resources/shaders/prefilter_cubemap.frag"
+
+typedef struct cubemap_prefilter_shader_t
+{
+	GLuint shaderProgram;
+	Uniform cubemapTransformUniform;
+	Uniform cubemapTextureUniform;
+	Uniform cubemapResolutionUniform;
+	Uniform roughnessUniform;
+} CubemapPrefilterShader;
+
 internal CubemapConverterShader cubemapConverterShader;
 internal CubemapConvolutionShader cubemapConvolutionShader;
+internal CubemapPrefilterShader cubemapPrefilterShader;
+
+#define BRDF_LUT_VERTEX_SHADER_FILE "resources/shaders/quad.vert"
+#define BRDF_LUT_FRAGMENT_SHADER_FILE "resources/shaders/brdf_lut.frag"
+
+internal QuadVertex quadVertices[4];
+
+GLuint quadVertexBuffer;
+GLuint quadVertexArray;
 
 internal GLuint cubemapFramebuffer;
 internal GLuint cubemapRenderbuffer;
 
 internal kmMat4 cubemapTransforms[6];
 
+GLuint brdfLUT;
+
 extern Config config;
 
 internal int32 loadCubemapMesh(void);
 internal void freeCubemapMesh(void);
+
+internal void createQuad(void);
+internal void freeQuad(void);
+
+internal void generateBRDFLUT(void);
+
+internal void createCubemapTextures(Cubemap *cubemap);
 
 internal void initializeCubemapConverterShader(void);
 internal void convertCubemap(Cubemap *cubemap);
 
 internal void initializeCubemapConvolutionShader(void);
 internal void convoluteCubemap(Cubemap *cubemap);
+
+internal void initializeCubemapPrefilterShader(void);
+internal void prefilterCubemap(Cubemap *cubemap);
 
 void initializeCubemapImporter(void)
 {
@@ -70,6 +103,7 @@ void initializeCubemapImporter(void)
 
 	initializeCubemapConverterShader();
 	initializeCubemapConvolutionShader();
+	initializeCubemapPrefilterShader();
 
 	glGenRenderbuffers(1, &cubemapRenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
@@ -91,6 +125,9 @@ void initializeCubemapImporter(void)
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	createQuad();
+	generateBRDFLUT();
 
 	kmMat4 cubemapProjection;
 	kmMat4PerspectiveProjection(
@@ -164,18 +201,24 @@ void importCubemap(Cubemap *cubemap)
 		return;
 	}
 
+	createCubemapTextures(cubemap);
 	convertCubemap(cubemap);
 	convoluteCubemap(cubemap);
+	prefilterCubemap(cubemap);
 }
 
 void shutdownCubemapImporter(void)
 {
 	glDeleteProgram(cubemapConverterShader.shaderProgram);
 	glDeleteProgram(cubemapConvolutionShader.shaderProgram);
+	glDeleteProgram(cubemapPrefilterShader.shaderProgram);
 
 	glDeleteFramebuffers(1, &cubemapFramebuffer);
 	glDeleteRenderbuffers(1, &cubemapRenderbuffer);
 
+	glDeleteTextures(1, &brdfLUT);
+
+	freeQuad();
 	freeCubemapMesh();
 }
 
@@ -251,6 +294,241 @@ void freeCubemapMesh(void)
 	LOG("Successfully freed model (%s)\n", CUBEMAP_MESH_NAME);
 }
 
+void createQuad(void)
+{
+	kmVec2Fill(&quadVertices[0].position, -1.0f, 1.0f);
+	kmVec2Fill(&quadVertices[0].uv, 0.0f, 1.0f);
+	kmVec2Fill(&quadVertices[1].position, -1.0f, -1.0f);
+	kmVec2Fill(&quadVertices[1].uv, 0.0f, 0.0f);
+	kmVec2Fill(&quadVertices[2].position, 1.0f, 1.0f);
+	kmVec2Fill(&quadVertices[2].uv, 1.0f, 1.0f);
+	kmVec2Fill(&quadVertices[3].position, 1.0f, -1.0f);
+	kmVec2Fill(&quadVertices[3].uv, 1.0f, 0.0f);
+
+	glGenBuffers(1, &quadVertexBuffer);
+	glGenVertexArrays(1, &quadVertexArray);
+
+	uint32 bufferIndex = 0;
+
+	glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+	glBufferData(
+		GL_ARRAY_BUFFER,
+		sizeof(QuadVertex) * 4,
+		quadVertices,
+		GL_STATIC_DRAW);
+
+	glBindVertexArray(quadVertexArray);
+	glVertexAttribPointer(
+		bufferIndex++,
+		2,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(QuadVertex),
+		(GLvoid*)offsetof(QuadVertex, position));
+
+	glVertexAttribPointer(
+		bufferIndex++,
+		2,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(QuadVertex),
+		(GLvoid*)offsetof(QuadVertex, uv));
+}
+
+void freeQuad(void)
+{
+	glBindVertexArray(quadVertexArray);
+	glDeleteBuffers(1, &quadVertexBuffer);
+	glBindVertexArray(0);
+
+	glDeleteVertexArrays(1, &quadVertexArray);
+}
+
+void generateBRDFLUT(void)
+{
+	glGenTextures(1, &brdfLUT);
+	glBindTexture(GL_TEXTURE_2D, brdfLUT);
+
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RG16F,
+		config.graphicsConfig.cubemapResolution,
+		config.graphicsConfig.cubemapResolution,
+		0,
+		GL_RG,
+		GL_FLOAT,
+		NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	GLuint shaderProgram;
+	createShaderProgram(
+		BRDF_LUT_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		NULL,
+		BRDF_LUT_FRAGMENT_SHADER_FILE,
+		NULL,
+		&shaderProgram);
+
+	glViewport(
+		0,
+		0,
+		config.graphicsConfig.cubemapResolution,
+		config.graphicsConfig.cubemapResolution);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
+	glRenderbufferStorage(
+		GL_RENDERBUFFER,
+		GL_DEPTH_COMPONENT24,
+		config.graphicsConfig.cubemapResolution,
+		config.graphicsConfig.cubemapResolution);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
+	glUseProgram(shaderProgram);
+
+	glBindVertexArray(quadVertexArray);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+
+	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
+	{
+		glEnableVertexAttribArray(i);
+	}
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	logGLError(false, "Failed to generate BRDF LUT");
+
+	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
+	{
+		glDisableVertexAttribArray(i);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glUseProgram(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glDeleteProgram(shaderProgram);
+}
+
+void createCubemapTextures(Cubemap *cubemap)
+{
+	glGenTextures(1, &cubemap->cubemapID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->cubemapID);
+
+	for (uint8 i = 0; i < 6; i++)
+	{
+		glTexImage2D(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			0,
+			GL_RGB16F,
+			config.graphicsConfig.cubemapResolution,
+			config.graphicsConfig.cubemapResolution,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			NULL);
+	}
+
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_MIN_FILTER,
+		GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_MAG_FILTER,
+		GL_LINEAR);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_S,
+		GL_CLAMP_TO_EDGE);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_T,
+		GL_CLAMP_TO_EDGE);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_R,
+		GL_CLAMP_TO_EDGE);
+
+	glGenTextures(1, &cubemap->irradianceID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->irradianceID);
+
+	for (uint8 i = 0; i < 6; i++)
+	{
+		glTexImage2D(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			0,
+			GL_RGB16F,
+			config.graphicsConfig.irradianceMapResolution,
+			config.graphicsConfig.irradianceMapResolution,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			NULL);
+	}
+
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_MIN_FILTER,
+		GL_LINEAR);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_MAG_FILTER,
+		GL_LINEAR);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_S,
+		GL_CLAMP_TO_EDGE);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_T,
+		GL_CLAMP_TO_EDGE);
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_WRAP_R,
+		GL_CLAMP_TO_EDGE);
+
+	glGenTextures(1, &cubemap->prefilterID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->prefilterID);
+
+	for (uint8 i = 0; i < 6; i++)
+	{
+		glTexImage2D(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			0,
+			GL_RGB16F,
+			config.graphicsConfig.prefilterMapResolution,
+			config.graphicsConfig.prefilterMapResolution,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			NULL);
+	}
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	glTexParameteri(
+		GL_TEXTURE_CUBE_MAP,
+		GL_TEXTURE_MIN_FILTER,
+		GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
 void initializeCubemapConverterShader(void)
 {
 	createShaderProgram(
@@ -283,7 +561,7 @@ void convertCubemap(Cubemap *cubemap)
 		config.graphicsConfig.cubemapResolution);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
-    glRenderbufferStorage(
+	glRenderbufferStorage(
 		GL_RENDERBUFFER,
 		GL_DEPTH_COMPONENT24,
 		config.graphicsConfig.cubemapResolution,
@@ -301,9 +579,9 @@ void convertCubemap(Cubemap *cubemap)
 	glBindVertexArray(cubemapMesh.vertexArray);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);
 
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
 	{
-		glEnableVertexAttribArray(j);
+		glEnableVertexAttribArray(i);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
@@ -343,9 +621,9 @@ void convertCubemap(Cubemap *cubemap)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
 	{
-		glDisableVertexAttribArray(j);
+		glDisableVertexAttribArray(i);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -358,6 +636,10 @@ void convertCubemap(Cubemap *cubemap)
 
 	glDeleteTextures(1, &cubemap->equirectangularID);
 	cubemap->equirectangularID = 0;
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->cubemapID);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 void initializeCubemapConvolutionShader(void)
@@ -392,7 +674,7 @@ void convoluteCubemap(Cubemap *cubemap)
 		config.graphicsConfig.irradianceMapResolution);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
-    glRenderbufferStorage(
+	glRenderbufferStorage(
 		GL_RENDERBUFFER,
 		GL_DEPTH_COMPONENT24,
 		config.graphicsConfig.irradianceMapResolution,
@@ -410,9 +692,9 @@ void convoluteCubemap(Cubemap *cubemap)
 	glBindVertexArray(cubemapMesh.vertexArray);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);
 
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
 	{
-		glEnableVertexAttribArray(j);
+		glEnableVertexAttribArray(i);
 	}
 
 	glActiveTexture(GL_TEXTURE0);
@@ -452,9 +734,135 @@ void convoluteCubemap(Cubemap *cubemap)
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
 	{
-		glDisableVertexAttribArray(j);
+		glDisableVertexAttribArray(i);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glUseProgram(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void initializeCubemapPrefilterShader(void)
+{
+	createShaderProgram(
+		CUBEMAP_VERTEX_SHADER_FILE,
+		NULL,
+		NULL,
+		NULL,
+		CUBEMAP_PREFILTER_FRAGMENT_SHADER_FILE,
+		NULL,
+		&cubemapPrefilterShader.shaderProgram);
+
+	getUniform(
+		cubemapPrefilterShader.shaderProgram,
+		"cubemapTransform",
+		UNIFORM_MAT4,
+		&cubemapPrefilterShader.cubemapTransformUniform);
+	getUniform(
+		cubemapPrefilterShader.shaderProgram,
+		"cubemapTexture",
+		UNIFORM_TEXTURE_CUBE_MAP,
+		&cubemapPrefilterShader.cubemapTextureUniform);
+	getUniform(
+		cubemapPrefilterShader.shaderProgram,
+		"cubemapResolution",
+		UNIFORM_FLOAT,
+		&cubemapPrefilterShader.cubemapResolutionUniform);
+	getUniform(
+		cubemapPrefilterShader.shaderProgram,
+		"roughness",
+		UNIFORM_FLOAT,
+		&cubemapPrefilterShader.roughnessUniform);
+}
+
+void prefilterCubemap(Cubemap *cubemap)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
+	glUseProgram(cubemapPrefilterShader.shaderProgram);
+
+	uint32 textureIndex = 0;
+	setUniform(
+		cubemapPrefilterShader.cubemapTextureUniform,
+		1,
+		&textureIndex);
+
+	setUniform(
+		cubemapPrefilterShader.cubemapResolutionUniform,
+		1,
+		&config.graphicsConfig.cubemapResolution);
+
+	glBindVertexArray(cubemapMesh.vertexArray);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);
+
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+	{
+		glEnableVertexAttribArray(i);
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->cubemapID);
+
+	glFrontFace(GL_CW);
+
+	const uint32 maxNumMipLevels = 5;
+	for (uint8 mipLevel = 0; mipLevel < maxNumMipLevels; mipLevel++)
+	{
+		uint32 mipLevelSize =
+			config.graphicsConfig.prefilterMapResolution * powf(0.5f, mipLevel);
+
+		glViewport(0, 0, mipLevelSize, mipLevelSize);
+		glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
+		glRenderbufferStorage(
+			GL_RENDERBUFFER,
+			GL_DEPTH_COMPONENT24,
+			mipLevelSize,
+			mipLevelSize);
+
+		float roughness = (real32)mipLevel / (real32)(maxNumMipLevels - 1);
+		setUniform(cubemapPrefilterShader.roughnessUniform, 1, &roughness);
+
+		for (uint8 i = 0; i < 6; i++)
+		{
+			glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
+				GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				cubemap->prefilterID,
+				mipLevel);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			setUniform(
+				cubemapPrefilterShader.cubemapTransformUniform,
+				1,
+				&cubemapTransforms[i]);
+
+			glDrawElements(
+				GL_TRIANGLES,
+				cubemapMesh.numIndices,
+				GL_UNSIGNED_INT,
+				NULL);
+
+			logGLError(
+				false,
+				"Failed to prefilter cubemap (%s)",
+				cubemap->name.string);
+		}
+	}
+
+	glFrontFace(GL_CCW);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
+	{
+		glDisableVertexAttribArray(i);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

@@ -31,6 +31,7 @@ internal Uniform viewUniform;
 internal Uniform projectionUniform;
 
 internal Uniform cubemapTextureUniform;
+internal Uniform cubemapMipLevelUniform;
 
 internal uint32 cubemapRendererRefCount = 0;
 
@@ -78,6 +79,11 @@ internal void initCubemapRendererSystem(Scene *scene)
 			"cubemapTexture",
 			UNIFORM_TEXTURE_CUBE_MAP,
 			&cubemapTextureUniform);
+		getUniform(
+			shaderProgram,
+			"cubemapMipLevel",
+			UNIFORM_FLOAT,
+			&cubemapMipLevelUniform);
 
 		LOG("Successfully initialized cubemap renderer\n");
 	}
@@ -123,6 +129,11 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 
 	GLint textureIndex = 0;
 	setUniform(cubemapTextureUniform, 1, &textureIndex);
+
+	setUniform(
+		cubemapMipLevelUniform,
+		1,
+		&config.graphicsConfig.cubemapDebugMipLevel);
 }
 
 internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
@@ -157,8 +168,21 @@ internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 		glEnableVertexAttribArray(j);
 	}
 
+	GLuint cubemapTexture = cubemap.cubemapID;
+	if (config.graphicsConfig.cubemapDebugMode)
+	{
+		if (config.graphicsConfig.cubemapDebugMipLevel >= 0.0f)
+		{
+			cubemapTexture = cubemap.prefilterID;
+		}
+		else
+		{
+			cubemapTexture = cubemap.irradianceID;
+		}
+	}
+
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemapID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &glDepthMaskValue);
 

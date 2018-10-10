@@ -205,82 +205,6 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glGenTextures(1, &cubemap->cubemapID);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->cubemapID);
-
-		for (uint8 i = 0; i < 6; i++)
-		{
-			glTexImage2D(
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0,
-				GL_RGB16F,
-				config.graphicsConfig.cubemapResolution,
-				config.graphicsConfig.cubemapResolution,
-				0,
-				GL_RGB,
-				GL_FLOAT,
-				NULL);
-		}
-
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_S,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_T,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_R,
-			GL_CLAMP_TO_EDGE);
-
-		glGenTextures(1, &cubemap->irradianceID);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->irradianceID);
-
-		for (uint8 i = 0; i < 6; i++)
-		{
-			glTexImage2D(
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0,
-				GL_RGB16F,
-				config.graphicsConfig.irradianceMapResolution,
-				config.graphicsConfig.irradianceMapResolution,
-				0,
-				GL_RGB,
-				GL_FLOAT,
-				NULL);
-		}
-
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_MIN_FILTER,
-			GL_LINEAR);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_MAG_FILTER,
-			GL_LINEAR);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_S,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_T,
-			GL_CLAMP_TO_EDGE);
-		glTexParameteri(
-			GL_TEXTURE_CUBE_MAP,
-			GL_TEXTURE_WRAP_R,
-			GL_CLAMP_TO_EDGE);
-
 		importCubemap(cubemap);
 
 		LOG("Successfully transferred cubemap (%s) onto GPU\n",
@@ -288,7 +212,6 @@ int32 uploadCubemapToGPU(Cubemap *cubemap)
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
 	return error;
 }
@@ -306,10 +229,10 @@ void freeCubemapData(Cubemap *cubemap)
 
 	free(cubemap->data.data);
 
-	// TODO: Delete any of these earlier if possible
 	glDeleteTextures(1, &cubemap->equirectangularID);
 	glDeleteTextures(1, &cubemap->cubemapID);
 	glDeleteTextures(1, &cubemap->irradianceID);
+	glDeleteTextures(1, &cubemap->prefilterID);
 
 	LOG("Successfully freed cubemap (%s)\n", cubemap->name.string);
 }
