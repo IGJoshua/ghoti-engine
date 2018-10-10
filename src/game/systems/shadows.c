@@ -267,14 +267,14 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFramebuffer);
 
-	drawShadowDirectionalLight(scene);
-	drawShadowPointLights(scene);
-	drawShadowSpotlights(scene);
-
 	if (animationSystemRefCount > 0)
 	{
 		skeletons = hashMapGetData(skeletonsMap, &scene);
 	}
+
+	drawShadowDirectionalLight(scene);
+	drawShadowPointLights(scene);
+	drawShadowSpotlights(scene);
 }
 
 internal void endShadowsSystem(Scene *scene, real64 dt)
