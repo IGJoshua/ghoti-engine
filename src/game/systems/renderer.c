@@ -66,6 +66,8 @@ internal Uniform wearMaterialValuesUniform;
 internal Uniform useCustomColorUniform;
 
 internal Uniform irradianceMapUniform;
+internal Uniform prefilterMapUniform;
+internal Uniform brdfLUTUniform;
 
 #define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 2
 #define NUM_POINT_LIGHT_ATTRIBUTES 4
@@ -120,6 +122,7 @@ extern HashMap skeletonsMap;
 extern HashMap animationReferences;
 
 extern Cubemap currentCubemap;
+extern GLuint brdfLUT;
 
 extern uint32 numDirectionalLights;
 extern DirectionalLight directionalLight;
@@ -248,6 +251,16 @@ void initRendererSystem(Scene *scene)
 			"irradianceMap",
 			UNIFORM_TEXTURE_CUBE_MAP,
 			&irradianceMapUniform);
+		getUniform(
+			shaderProgram,
+			"prefilterMap",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&prefilterMapUniform);
+		getUniform(
+			shaderProgram,
+			"brdfLUT",
+			UNIFORM_TEXTURE_2D,
+			&brdfLUTUniform);
 
 		getUniform(
 			shaderProgram,
@@ -473,6 +486,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
 	setUniform(irradianceMapUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(prefilterMapUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(brdfLUTUniform, 1, &textureIndex);
 	textureIndex++;
 	setMaterialUniform(&materialUniform, &textureIndex);
 
@@ -813,9 +830,15 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		{
 			glActiveTexture(GL_TEXTURE0 + textureIndex);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
+
+			glActiveTexture(GL_TEXTURE0 + textureIndex + 1);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
+
+			glActiveTexture(GL_TEXTURE0 + textureIndex + 2);
+			glBindTexture(GL_TEXTURE_2D, brdfLUT);
 		}
 
-		textureIndex++;
+		textureIndex += 3;
 
 		activateMaterialTextures(material, &textureIndex);
 		// activateTexture(model.materialTexture, &textureIndex);

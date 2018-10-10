@@ -63,6 +63,8 @@ uniform bool useCustomColor;
 uniform vec3 customColor;
 
 uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
 uniform uint numDirectionalLights;
 uniform DirectionalLight directionalLight;
@@ -216,11 +218,27 @@ void main()
 			F0);
 	}
 
-	vec3 kS = fresnelEquationRoughness(normal, viewDirection, F0, roughness);
-	vec3 kD = 1.0 - kS;
-	vec3 irradiance = texture(irradianceMap, normal).rgb;
-	vec3 ambient = kD * irradiance * albedo * ambientOcclusion;
+	vec3 F = fresnelEquationRoughness(normal, viewDirection, F0, roughness);
 
+	vec3 kS = F;
+	vec3 kD = (1.0 - kS) * (1.0 - metallic);
+
+	vec3 irradiance = texture(irradianceMap, normal).rgb;
+
+	vec3 reflectionDirection = reflect(-viewDirection, normal);
+	const float maxReflectionLOD = 4.0;
+	vec3 prefilteredRadiance = textureLod(
+		prefilterMap,
+		reflectionDirection,
+		roughness * maxReflectionLOD).rgb;
+
+	vec2 brdf = texture(
+		brdfLUT,
+		vec2(max(dot(normal, viewDirection), 0.0), roughness)).rg;
+
+	vec3 specular = prefilteredRadiance * (F * brdf.x + brdf.y);
+
+	vec3 ambient = (kD * irradiance * albedo + specular) * ambientOcclusion;
 	vec3 finalColor = ambient + radiance;
 
 	// Reinhard's Tone-Mapping Operator
