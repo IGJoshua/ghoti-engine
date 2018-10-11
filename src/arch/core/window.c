@@ -154,6 +154,9 @@ void setFullscreenMode(bool fullscreen)
 		glfwSetWindowMonitor(wnd, NULL, x, y, w, h, GLFW_DONT_CARE);
 	}
 
+	switchVSYNCMode();
+	switchVSYNCMode();
+
 	isFullscreen = fullscreen;
 }
 
