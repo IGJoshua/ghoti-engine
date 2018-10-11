@@ -396,6 +396,12 @@ void draw(GLFWwindow *window, real64 frameTime)
 	glViewport(0, 0, viewportWidth, viewportHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	if (viewportWidth == 0 || viewportHeight == 0)
+	{
+		glfwSwapBuffers(window);
+		return;
+	}
+
 	real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
 
 	if (postProcessingSystemRefCount > 0)

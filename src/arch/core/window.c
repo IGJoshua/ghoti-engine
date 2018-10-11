@@ -20,6 +20,8 @@ extern Config config;
 extern int32 viewportWidth;
 extern int32 viewportHeight;
 
+internal GLFWmonitor* getActiveMonitor(void);
+
 internal
 void errorCallback(
 	int error,
@@ -134,11 +136,8 @@ void setFullscreenMode(bool fullscreen)
 {
 	if (fullscreen && !isFullscreen)
 	{
-		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		GLFWmonitor *monitor = getActiveMonitor();
 		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
-		glfwGetWindowPos(wnd, &x, &y);
-		glfwGetWindowSize(wnd, &w, &h);
 
 		glfwSetWindowMonitor(
 			wnd,
@@ -181,4 +180,38 @@ int32 freeWindow(
 	wnd = 0;
 
 	return 0;
+}
+
+GLFWmonitor* getActiveMonitor(void)
+{
+	GLFWmonitor *activeMonitor = NULL;
+
+	glfwGetWindowPos(wnd, &x, &y);
+	glfwGetWindowSize(wnd, &w, &h);
+
+	int32 numMonitors;
+	GLFWmonitor **monitors = glfwGetMonitors(&numMonitors);
+
+	int32 maxOverlap = 0;
+	for (uint32 i = 0; i < numMonitors; i++)
+	{
+		GLFWmonitor *monitor = monitors[i];
+
+		int32 mX, mY;
+		glfwGetMonitorPos(monitor, &mX, &mY);
+
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+		int32 overlap =
+			MAX(0, MIN(x + w, mX + mode->width) - MAX(x, mX)) *
+			MAX(0, MIN(y + h, mY + mode->height) - MAX(y, mY));
+
+		if (overlap > maxOverlap)
+		{
+			maxOverlap = overlap;
+			activeMonitor = monitor;
+		}
+	}
+
+	return activeMonitor;
 }
