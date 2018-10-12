@@ -8,8 +8,8 @@
 #include <kazmath/quaternion.h>
 #include <kazmath/mat4.h>
 
-#define MAX_NUM_POINT_LIGHTS 8
-#define MAX_NUM_SPOTLIGHTS 8
+#define MAX_NUM_POINT_LIGHTS 64
+#define MAX_NUM_SPOTLIGHTS 64
 
 typedef struct directional_light_t
 {
