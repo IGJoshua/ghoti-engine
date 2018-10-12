@@ -86,6 +86,9 @@ void setFullscreenMode(bool fullscreen);
 
 void getViewportSize(int32 *width, int32 *height);
 
+void setWindowPosition(int32 xPosition, int32 yPosition);
+void setWindowSize(int32 width, int32 height);
+
 int32 closeWindow();
 
 typedef enum data_type_e {

@@ -151,12 +151,12 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		TextureData heightmapTextureData;
 		if (loadTextureData(
-				ASSET_LOG_TYPE_NONE,
-				"heightmap",
-				NULL,
-				fullHeightmapFilename,
-				1,
-				&heightmapTextureData) == -1)
+			ASSET_LOG_TYPE_NONE,
+			"heightmap",
+			NULL,
+			fullHeightmapFilename,
+			1,
+			&heightmapTextureData) == -1)
 		{
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);

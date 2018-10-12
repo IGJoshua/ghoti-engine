@@ -2,6 +2,8 @@
 #include "core/config.h"
 #include "core/log.h"
 
+#include "asset_management/texture.h"
+
 #include <GL/glew.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
@@ -9,6 +11,7 @@
 #include <stdio.h>
 
 internal GLFWwindow *wnd;
+internal GLFWimage icon;
 
 internal bool isVSYNCEnabled;
 
@@ -48,6 +51,9 @@ GLFWwindow *initWindow(
 
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
+	glfwWindowHint(GLFW_MAXIMIZED, config.windowConfig.maximized);
+	glfwWindowHint(GLFW_RESIZABLE, config.windowConfig.resizable);
+
 	GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
 	if (!window)
 	{
@@ -60,6 +66,25 @@ GLFWwindow *initWindow(
 	wnd = window;
 	viewportWidth = width;
 	viewportHeight = height;
+
+	TextureData iconData;
+	if (loadTextureData(
+		ASSET_LOG_TYPE_NONE,
+		"icon",
+		NULL,
+		config.windowConfig.icon,
+		4,
+		&iconData) != -1)
+	{
+		icon.width = iconData.width;
+		icon.height = iconData.height;
+		icon.pixels = iconData.data;
+		glfwSetWindowIcon(window, 1, &icon);
+	}
+	else
+	{
+		icon.pixels = NULL;
+	}
 
 	isFullscreen = false;
 
@@ -165,6 +190,18 @@ void getViewportSize(int32 *width, int32 *height)
 	*height = viewportHeight;
 }
 
+void setWindowPosition(int32 xPosition, int32 yPosition)
+{
+	glfwSetWindowPos(wnd, xPosition, yPosition);
+	glfwGetWindowPos(wnd, &x, &y);
+}
+
+void setWindowSize(int32 width, int32 height)
+{
+	glfwSetWindowSize(wnd, width, height);
+	glfwGetWindowSize(wnd, &w, &h);
+}
+
 int32 closeWindow(void)
 {
 	glfwSetWindowShouldClose(wnd, 1);
@@ -178,6 +215,8 @@ int32 freeWindow(
 	glfwTerminate();
 
 	wnd = 0;
+
+	free(icon.pixels);
 
 	return 0;
 }

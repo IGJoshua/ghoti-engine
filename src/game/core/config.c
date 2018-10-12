@@ -42,9 +42,22 @@ int32 loadConfig(void)
 		strcpy(config.windowConfig.title, windowTitle->valuestring);
 	}
 
+	GET_CONFIG_ITEM(windowIcon, "window.icon")
+	{
+		free(config.windowConfig.icon);
+		config.windowConfig.icon = malloc(
+			strlen(windowIcon->valuestring) + 1);
+		strcpy(config.windowConfig.icon, windowIcon->valuestring);
+	}
+
 	GET_CONFIG_ITEM(windowFullscreen, "window.fullscreen")
 	{
 		config.windowConfig.fullscreen = cJSONToBool(windowFullscreen);
+	}
+
+	GET_CONFIG_ITEM(windowMaximized, "window.maximized")
+	{
+		config.windowConfig.maximized = cJSONToBool(windowMaximized);
 	}
 
 	GET_CONFIG_ITEM(windowSize, "window.size")
@@ -56,6 +69,11 @@ int32 loadConfig(void)
 		{
 			kmVec2Fill(&config.windowConfig.size, width, height);
 		}
+	}
+
+	GET_CONFIG_ITEM(windowResizable, "window.resizable")
+	{
+		config.windowConfig.resizable = cJSONToBool(windowResizable);
 	}
 
 	GET_CONFIG_ITEM(windowVSYNC, "window.vsync")
@@ -307,6 +325,7 @@ int32 loadConfig(void)
 void freeConfig(void)
 {
 	free(config.windowConfig.title);
+	free(config.windowConfig.icon);
 	free(config.logConfig.engineFile);
 	free(config.logConfig.assetManagerFile);
 	free(config.logConfig.luaFile);
@@ -316,8 +335,12 @@ void initializeDefaultConfig(void)
 {
 	config.windowConfig.title = malloc(6);
 	strcpy(config.windowConfig.title, "Ghoti");
+	config.windowConfig.icon = malloc(10);
+	strcpy(config.windowConfig.icon, "ghoti.png");
 	config.windowConfig.fullscreen = false;
+	config.windowConfig.maximized = false;
 	kmVec2Fill(&config.windowConfig.size, 640, 480);
+	config.windowConfig.resizable = true;
 	config.windowConfig.vsync = true;
 
 	config.physicsConfig.fps = 60;

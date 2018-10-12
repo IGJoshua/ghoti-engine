@@ -2,8 +2,11 @@
 	"window":
 	{
 		"title": "Ghoti 0.11.5",
+		"icon": "ghoti.png",
 		"fullscreen": false,
+		"maximized": true,
 		"size": [640, 480],
+		"resizable": false,
 		"vsync": true
 	},
 

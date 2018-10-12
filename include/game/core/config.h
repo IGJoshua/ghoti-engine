@@ -9,8 +9,11 @@
 typedef struct window_config_t
 {
 	char *title;
+	char *icon;
 	bool fullscreen;
+	bool maximized;
 	kmVec2 size;
+	bool resizable;
 	bool vsync;
 } WindowConfig;
 
