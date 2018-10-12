@@ -429,7 +429,8 @@ void addSpotlight(
 				&shadowSpotlight->direction,
 				&transform->globalRotation);
 
-			shadowSpotlight->fov = acosf(spotlight->size.y) * (180.0f / M_PI);
+			shadowSpotlight->fov =
+				2.0f * acosf(spotlight->size.y) * (180.0f / M_PI);
 			shadowSpotlight->farPlane = spotlight->radius;
 
 			break;

@@ -86,7 +86,7 @@ uniform float shadowPointLightDiskRadius;
 uniform sampler2D spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
 uniform vec2 shadowSpotlightBiasRange;
 
-const vec3 sampleOffsetDirections[20] = vec3[](
+const vec3 pcfSampleOffsets[20] = vec3[](
 	vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
 	vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
 	vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
@@ -605,7 +605,7 @@ float getPointShadow(
 
 	for (uint i = 0; i < numSamples; i++)
 	{
-		vec3 offset = sampleOffsetDirections[i] * diskRadius;
+		vec3 offset = pcfSampleOffsets[i] * diskRadius;
 		float closestDepth = texture(
 			shadowMap,
 			lightSpacePosition + offset).r * farPlane;
