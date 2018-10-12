@@ -382,7 +382,11 @@ void update(real64 dt, bool skipLoadedThisFrame)
 
 	handleGUIInput(dt);
 
-	setUpdateAssetManagerFlag();
+	if (viewportWidth != 0 && viewportHeight != 0)
+	{
+		setUpdateAssetManagerFlag();
+	}
+
 	uploadAssets();
 	freeAssets();
 }
