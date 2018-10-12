@@ -192,7 +192,7 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"material",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&materialUniform);
 		getUniform(
 			shaderProgram,
@@ -202,17 +202,17 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"materialMask",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&materialMaskUniform);
 		getUniform(
 			shaderProgram,
 			"opacityMask",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&opacityMaskUniform);
 		getUniform(
 			shaderProgram,
 			"collectionMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&collectionMaterialUniform);
 		getUniform(
 			shaderProgram,
@@ -222,7 +222,7 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"grungeMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&grungeMaterialUniform);
 		getUniform(
 			shaderProgram,
@@ -232,7 +232,7 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"wearMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&wearMaterialUniform);
 		getUniform(
 			shaderProgram,
@@ -491,16 +491,6 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	textureIndex++;
 	setUniform(brdfLUTUniform, 1, &textureIndex);
 	textureIndex++;
-	setMaterialUniform(&materialUniform, &textureIndex);
-
-	// TODO: Add material masking
-	// setUniform(materialMaskUniform, 1, &textureIndex);
-	// textureIndex++;
-	// setUniform(opacityMaskUniform, 1, &textureIndex);
-	// textureIndex++;
-	// setMaterialUniform(&collectionMaterialUniform, &textureIndex);
-	// setMaterialUniform(&grungeMaterialUniform, &textureIndex);
-	// setMaterialUniform(&wearMaterialUniform, &textureIndex);
 
 	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
 
@@ -769,7 +759,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		Subset *subset = &model.subsets[i];
 		Mesh *mesh = &subset->mesh;
 		Material *material = &subset->material;
-		// Mask *mask = &subset->mask;
+		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
@@ -838,25 +828,23 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			glBindTexture(GL_TEXTURE_2D, brdfLUT);
 		}
 
-		textureIndex += 3;
-
-		activateMaterialTextures(material, &textureIndex);
-		// activateTexture(model.materialTexture, &textureIndex);
-		// activateTexture(model.opacityTexture, &textureIndex);
-		// activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
-		// activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
-		// activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+		setMaterialUniform(&materialUniform, material);
+		setMaterialUniform(
+			&collectionMaterialUniform,
+			&mask->collectionMaterial);
+		setMaterialUniform(&grungeMaterialUniform, &mask->grungeMaterial);
+		setMaterialUniform(&wearMaterialUniform, &mask->wearMaterial);
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
-		// setMaterialValuesUniform(
-		// 	&collectionMaterialValuesUniform,
-		// 	&mask->collectionMaterial);
-		// setMaterialValuesUniform(
-		// 	&grungeMaterialValuesUniform,
-		// 	&mask->grungeMaterial);
-		// setMaterialValuesUniform(
-		// 	&wearMaterialValuesUniform,
-		// 	&mask->wearMaterial);
+		setMaterialValuesUniform(
+			&collectionMaterialValuesUniform,
+			&mask->collectionMaterial);
+		setMaterialValuesUniform(
+			&grungeMaterialValuesUniform,
+			&mask->grungeMaterial);
+		setMaterialValuesUniform(
+			&wearMaterialValuesUniform,
+			&mask->wearMaterial);
 
 		if (material->doubleSided)
 		{
@@ -880,7 +868,9 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		glEnable(GL_CULL_FACE);
 
-		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
+		for (uint8 j = 0;
+			 j < 4 + MAX_NUM_SHADOW_POINT_LIGHTS + MAX_NUM_SHADOW_SPOTLIGHTS;
+			 j++)
 		{
 			glActiveTexture(GL_TEXTURE0 + j);
 			glBindTexture(GL_TEXTURE_2D, 0);

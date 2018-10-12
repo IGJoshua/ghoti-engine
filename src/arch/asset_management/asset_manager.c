@@ -320,6 +320,7 @@ void uploadAssets(void)
 			texture->name.string,
 			"texture",
 			&texture->id,
+			&texture->handle,
 			&texture->data,
 			true,
 			false));
@@ -342,6 +343,7 @@ void uploadAssets(void)
 			image->name.string,
 			"image",
 			&image->id,
+			NULL,
 			&image->data,
 			image->textureFiltering,
 			true));
@@ -364,6 +366,7 @@ void uploadAssets(void)
 			particle->name.string,
 			"particle",
 			&particle->id,
+			NULL,
 			&particle->data,
 			particle->textureFiltering,
 			true));

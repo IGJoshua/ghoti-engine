@@ -1,4 +1,6 @@
 #version 420 core
+#extension GL_ARB_bindless_texture: require
+#extension GL_ARB_gpu_shader_int64: require
 
 #define NUM_MATERIAL_COMPONENTS 7
 
@@ -54,16 +56,16 @@ out vec4 color;
 uniform vec3 cameraPosition;
 
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D materialMask;
-// uniform sampler2D opacityMask;
-// uniform sampler2D collectionMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D grungeMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D wearMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t materialMask;
+uniform uint64_t opacityMask;
+uniform uint64_t collectionMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t grungeMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t wearMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
 uniform vec3 customColor;
@@ -189,7 +191,8 @@ vec3 getAlbedoTextureColor(vec2 uv)
 	vec3 albedoTextureColor = fragColor.rgb;
 	if (materialActive[BASE_COMPONENT])
 	{
-		albedoTextureColor = vec3(texture(material[BASE_COMPONENT], uv));
+		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
+		albedoTextureColor = vec3(texture(sampler, uv));
 	}
 
 	return albedoTextureColor;
@@ -200,7 +203,8 @@ vec3 getNormalTextureColor(vec2 uv)
 	vec3 normalTextureColor = fragNormal;
 	// if (materialActive[NORMAL_COMPONENT])
 	// {
-	// 	normalTextureColor = texture(material[NORMAL_COMPONENT], uv).rgb;
+	// 	sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
+	// 	normalTextureColor = texture(sampler, uv).rgb;
 	// 	normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
 	// 	normalTextureColor = normalize(fragTBN * normalTextureColor);
 	// }

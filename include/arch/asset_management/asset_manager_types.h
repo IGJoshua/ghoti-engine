@@ -38,6 +38,7 @@ typedef struct texture_t
 	UUID name;
 	real64 lifetime;
 	GLuint id;
+	GLuint64 handle;
 	TextureData data;
 } Texture;
 

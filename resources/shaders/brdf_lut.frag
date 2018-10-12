@@ -86,7 +86,6 @@ float radicalInverse(uint bits)
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
 
-	// 2.3283064365386963e-10 = 0x100000000
 	return float(bits) * 2.3283064365386963e-10;
 }
 

@@ -197,6 +197,7 @@ int32 uploadTextureToGPU(
 	const char *name,
 	const char *type,
 	GLuint *id,
+	GLuint64 *handle,
 	TextureData *data,
 	bool textureFiltering,
 	bool transparent)
@@ -261,6 +262,12 @@ int32 uploadTextureToGPU(
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
 
+		if (handle)
+		{
+			*handle = glGetTextureHandleARB(*id);
+			glMakeTextureHandleResidentARB(*handle);
+		}
+
 		LOG("Successfully transferred %s (%s) onto GPU\n", type, name);
 	}
 
@@ -298,6 +305,7 @@ void freeTextureData(Texture *texture)
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
 	free(texture->data.data);
+	glMakeTextureHandleNonResidentARB(texture->handle);
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

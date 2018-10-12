@@ -230,6 +230,8 @@ int32 setUniform(Uniform uniform, uint32 count, void *data)
 			case UNIFORM_TEXTURE_CUBE_MAP:
 				glUniform1iv(uniform.location, count, data);
 				break;
+			case UNIFORM_TEXTURE_BINDLESS:
+				glUniformHandleui64vARB(uniform.location, count, data);
 			default:
 				break;
 		}

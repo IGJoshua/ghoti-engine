@@ -68,13 +68,13 @@
 	{
 		"minimum_lifetimes":
 		{
-			"audio": 60.0,
-			"fonts": 60.0,
-			"images": 60.0,
-			"textures": 60.0,
-			"models": 60.0,
-			"particles": 60.0,
-			"cubemaps": 60.0
+			"audio": 30.0,
+			"fonts": 30.0,
+			"images": 30.0,
+			"textures": 30.0,
+			"models": 30.0,
+			"particles": 30.0,
+			"cubemaps": 30.0
 		},
 
 		"maximum_thread_count": 16

@@ -1,4 +1,6 @@
 #version 420 core
+#extension GL_ARB_bindless_texture: require
+#extension GL_ARB_gpu_shader_int64: require
 
 #define NUM_MATERIAL_COMPONENTS 7
 
@@ -56,8 +58,16 @@ out vec4 color;
 uniform vec3 cameraPosition;
 
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t materialMask;
+uniform uint64_t opacityMask;
+uniform uint64_t collectionMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t grungeMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t wearMaterial[NUM_MATERIAL_COMPONENTS];
+uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
 uniform vec3 customColor;
@@ -268,7 +278,8 @@ float getAmbientOcclusion(vec2 uv)
 	float ambientOcclusion = 0.0;
 	if (materialActive[AMBIENT_OCCLUSION_COMPONENT])
 	{
-		ambientOcclusion = texture(material[AMBIENT_OCCLUSION_COMPONENT], uv).r;
+		sampler2D sampler = sampler2D(material[AMBIENT_OCCLUSION_COMPONENT]);
+		ambientOcclusion = texture(sampler, uv).r;
 		ambientOcclusion *= materialValues[AMBIENT_OCCLUSION_COMPONENT].x;
 	}
 
@@ -280,7 +291,8 @@ vec3 getAlbedo(vec2 uv)
 	vec3 albedo = fragColor.rgb;
 	if (materialActive[BASE_COMPONENT])
 	{
-		albedo = pow(texture(material[BASE_COMPONENT], uv).rgb, vec3(2.2));
+		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
+		albedo = pow(texture(sampler, uv).rgb, vec3(2.2));
 		albedo *= materialValues[BASE_COMPONENT];
 	}
 
@@ -292,7 +304,8 @@ float getMetallic(vec2 uv)
 	float metallic = 0.0;
 	if (materialActive[METALLIC_COMPONENT])
 	{
-		metallic = texture(material[METALLIC_COMPONENT], uv).r;
+		sampler2D sampler = sampler2D(material[METALLIC_COMPONENT]);
+		metallic = texture(sampler, uv).r;
 		metallic *= materialValues[METALLIC_COMPONENT].x;
 	}
 
@@ -304,7 +317,8 @@ vec3 getNormal(vec2 uv)
 	vec3 normal = fragNormal;
 	// if (materialActive[NORMAL_COMPONENT])
 	// {
-	// 	normal = texture(material[NORMAL_COMPONENT], uv).rgb;
+	// 	sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
+	// 	normal = texture(sampler, uv).rgb;
 	// 	normal = normalize(normal * 2.0 - 1.0);
 	// 	normal = normalize(fragTBN * normal);
 	// }
@@ -317,7 +331,8 @@ float getRoughness(vec2 uv)
 	float roughness = 0.0;
 	if (materialActive[ROUGHNESS_COMPONENT])
 	{
-		roughness = texture(material[ROUGHNESS_COMPONENT], uv).r;
+		sampler2D sampler = sampler2D(material[ROUGHNESS_COMPONENT]);
+		roughness = texture(sampler, uv).r;
 		roughness *= materialValues[ROUGHNESS_COMPONENT].x;
 	}
 

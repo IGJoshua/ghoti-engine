@@ -17,6 +17,7 @@ int32 uploadTextureToGPU(
 	const char *name,
 	const char *type,
 	GLuint *id,
+	GLuint64 *handle,
 	TextureData *data,
 	bool textureFiltering,
 	bool transparent);
