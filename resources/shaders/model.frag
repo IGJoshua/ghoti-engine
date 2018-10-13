@@ -47,9 +47,9 @@ in vec3 fragPosition;
 in vec4 fragDirectionalLightSpacePosition;
 in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 in vec3 fragNormal;
+in vec3 fragTangent;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
-in mat3 fragTBN;
 
 out vec4 color;
 
@@ -58,14 +58,6 @@ uniform vec3 cameraPosition;
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
 uniform uint64_t material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
-uniform uint64_t materialMask;
-uniform uint64_t opacityMask;
-uniform uint64_t collectionMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
-uniform uint64_t grungeMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
-uniform uint64_t wearMaterial[NUM_MATERIAL_COMPONENTS];
-uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
 uniform vec3 customColor;
@@ -98,6 +90,8 @@ const vec3 pcfSampleOffsets[20] = vec3[](
 	vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
 
 vec2 getMaterialUV(vec3 viewDirection);
+
+mat3 createTBNMatrix(vec3 normal, vec3 tangent);
 
 vec3 getAlbedoTextureColor(vec2 uv);
 vec3 getNormalTextureColor(vec2 uv);
@@ -186,6 +180,13 @@ vec2 getMaterialUV(vec3 viewDirection)
 	return fragMaterialUV;
 }
 
+mat3 createTBNMatrix(vec3 normal, vec3 tangent)
+{
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	vec3 bitangent = cross(tangent, normal);
+	return mat3(tangent, bitangent, normal);
+}
+
 vec3 getAlbedoTextureColor(vec2 uv)
 {
 	vec3 albedoTextureColor = fragColor.rgb;
@@ -193,6 +194,7 @@ vec3 getAlbedoTextureColor(vec2 uv)
 	{
 		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
 		albedoTextureColor = vec3(texture(sampler, uv));
+		albedoTextureColor *= materialValues[BASE_COMPONENT];
 	}
 
 	return albedoTextureColor;
@@ -201,13 +203,17 @@ vec3 getAlbedoTextureColor(vec2 uv)
 vec3 getNormalTextureColor(vec2 uv)
 {
 	vec3 normalTextureColor = fragNormal;
-	// if (materialActive[NORMAL_COMPONENT])
-	// {
-	// 	sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
-	// 	normalTextureColor = texture(sampler, uv).rgb;
-	// 	normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
-	// 	normalTextureColor = normalize(fragTBN * normalTextureColor);
-	// }
+	if (materialActive[NORMAL_COMPONENT])
+	{
+		sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
+		normalTextureColor = texture(sampler, uv).rgb;
+		normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
+		normalTextureColor = normalize(
+			normalTextureColor * materialValues[NORMAL_COMPONENT]);
+
+		mat3 TBN = createTBNMatrix(fragNormal, fragTangent);
+		normalTextureColor = normalize(TBN * normalTextureColor);
+	}
 
 	return normalTextureColor;
 }

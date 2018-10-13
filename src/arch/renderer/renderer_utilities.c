@@ -112,6 +112,19 @@ int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
 	return 0;
 }
 
+int32 setBindlessTextureUniform(Uniform *uniform, UUID name)
+{
+	GLuint64 textureHandle = 0;
+
+	Texture texture = getTexture(name.string);
+	if (strlen(texture.name.string) > 0)
+	{
+		textureHandle = texture.handle;
+	}
+
+	return setUniform(*uniform, 1, &textureHandle);
+}
+
 int32 setTextureArrayUniform(
 	Uniform *uniform,
 	uint32 numTextures,

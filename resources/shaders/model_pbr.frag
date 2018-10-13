@@ -49,9 +49,9 @@ in vec3 fragPosition;
 in vec4 fragDirectionalLightSpacePosition;
 in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 in vec3 fragNormal;
+in vec3 fragTangent;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
-in mat3 fragTBN;
 
 out vec4 color;
 
@@ -105,13 +105,17 @@ const vec3 pcfSampleOffsets[20] = vec3[](
 
 float squared(float n);
 
+vec4 getMask(vec2 uv);
+
 vec2 getMaterialUV(vec3 viewDirection);
 
-float getAmbientOcclusion(vec2 uv);
-vec3 getAlbedo(vec2 uv);
-float getMetallic(vec2 uv);
-vec3 getNormal(vec2 uv);
-float getRoughness(vec2 uv);
+mat3 createTBNMatrix(vec3 normal, vec3 tangent);
+
+float getAmbientOcclusion(vec2 uv, vec4 mask);
+vec3 getAlbedo(vec2 uv, vec4 mask);
+float getMetallic(vec2 uv, vec4 mask);
+vec3 getNormal(vec2 uv, vec4 mask);
+float getRoughness(vec2 uv, vec4 mask);
 
 vec3 getDirectionalLightRadiance(
 	DirectionalLight light,
@@ -175,14 +179,16 @@ void main()
 		return;
 	}
 
+	vec4 mask = getMask(fragMaskUV);
+
 	vec3 viewDirection = normalize(cameraPosition - fragPosition);
 	vec2 materialUV = getMaterialUV(viewDirection);
 
-	float ambientOcclusion = getAmbientOcclusion(materialUV);
-	vec3 albedo = getAlbedo(materialUV);
-	float metallic = getMetallic(materialUV);
-	vec3 normal = getNormal(materialUV);
-	float roughness = getRoughness(materialUV);
+	float ambientOcclusion = getAmbientOcclusion(materialUV, mask);
+	vec3 albedo = getAlbedo(materialUV, mask);
+	float metallic = getMetallic(materialUV, mask);
+	vec3 normal = getNormal(materialUV, mask);
+	float roughness = getRoughness(materialUV, mask);
 
 	// F0 - Reflectance when looking directly at the surface
 	vec3 F0 = vec3(0.04);
@@ -263,6 +269,34 @@ float squared(float n)
 	return n * n;
 }
 
+vec4 getMask(vec2 uv)
+{
+	sampler2D sampler = sampler2D(materialMask);
+	vec4 mask = texture(sampler, uv);
+
+	if (mask.r < 1.0)
+	{
+		mask.r = 0.0;
+	}
+
+	if (mask.g < 1.0)
+	{
+		mask.g = 0.0;
+	}
+
+	if (mask.b < 1.0)
+	{
+		mask.b = 0.0;
+	}
+
+	if (mask.rgb == vec3(0.0))
+	{
+		mask.a = 0.0;
+	}
+
+	return mask;
+}
+
 vec2 getMaterialUV(vec3 viewDirection)
 {
 	if (!materialActive[HEIGHT_COMPONENT])
@@ -273,68 +307,166 @@ vec2 getMaterialUV(vec3 viewDirection)
 	return fragMaterialUV;
 }
 
-float getAmbientOcclusion(vec2 uv)
+mat3 createTBNMatrix(vec3 normal, vec3 tangent)
+{
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	vec3 bitangent = cross(tangent, normal);
+	return mat3(tangent, bitangent, normal);
+}
+
+float getAmbientOcclusion(vec2 uv, vec4 mask)
 {
 	float ambientOcclusion = 0.0;
 	if (materialActive[AMBIENT_OCCLUSION_COMPONENT])
 	{
 		sampler2D sampler = sampler2D(material[AMBIENT_OCCLUSION_COMPONENT]);
 		ambientOcclusion = texture(sampler, uv).r;
-		ambientOcclusion *= materialValues[AMBIENT_OCCLUSION_COMPONENT].x;
 	}
+
+	sampler2D wearSampler = sampler2D(
+		wearMaterial[AMBIENT_OCCLUSION_COMPONENT]);
+	sampler2D grungeSampler = sampler2D(
+		grungeMaterial[AMBIENT_OCCLUSION_COMPONENT]);
+	sampler2D collectionSampler = sampler2D(
+		collectionMaterial[AMBIENT_OCCLUSION_COMPONENT]);
+
+	float maskAmbientOcclusion =
+		texture(wearSampler, uv).r * mask.r +
+		texture(grungeSampler, uv).r * mask.g +
+		texture(collectionSampler, uv).r * mask.b;
+
+	if (maskAmbientOcclusion == 0.0)
+	{
+		mask.a = 0.0;
+	}
+
+	ambientOcclusion = mix(ambientOcclusion, maskAmbientOcclusion, mask.a);
+	ambientOcclusion *= materialValues[AMBIENT_OCCLUSION_COMPONENT].x;
 
 	return ambientOcclusion;
 }
 
-vec3 getAlbedo(vec2 uv)
+vec3 getAlbedo(vec2 uv, vec4 mask)
 {
 	vec3 albedo = fragColor.rgb;
 	if (materialActive[BASE_COMPONENT])
 	{
 		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
-		albedo = pow(texture(sampler, uv).rgb, vec3(2.2));
-		albedo *= materialValues[BASE_COMPONENT];
+		albedo = texture(sampler, uv).rgb;
 	}
+
+	sampler2D wearSampler = sampler2D(wearMaterial[BASE_COMPONENT]);
+	sampler2D grungeSampler = sampler2D(grungeMaterial[BASE_COMPONENT]);
+	sampler2D collectionSampler = sampler2D(
+		collectionMaterial[BASE_COMPONENT]);
+
+	vec3 maskAlbedo =
+		texture(wearSampler, uv).rgb * mask.r +
+		texture(grungeSampler, uv).rgb * mask.g +
+		texture(collectionSampler, uv).rgb * mask.b;
+
+	if (maskAlbedo == vec3(0.0))
+	{
+		mask.a = 0.0;
+	}
+
+	albedo = mix(albedo, maskAlbedo, mask.a);
+	albedo = pow(albedo * materialValues[BASE_COMPONENT], vec3(2.2));
 
 	return albedo;
 }
 
-float getMetallic(vec2 uv)
+float getMetallic(vec2 uv, vec4 mask)
 {
 	float metallic = 0.0;
 	if (materialActive[METALLIC_COMPONENT])
 	{
 		sampler2D sampler = sampler2D(material[METALLIC_COMPONENT]);
 		metallic = texture(sampler, uv).r;
-		metallic *= materialValues[METALLIC_COMPONENT].x;
 	}
+
+	sampler2D wearSampler = sampler2D(wearMaterial[METALLIC_COMPONENT]);
+	sampler2D grungeSampler = sampler2D(grungeMaterial[METALLIC_COMPONENT]);
+	sampler2D collectionSampler = sampler2D(
+		collectionMaterial[METALLIC_COMPONENT]);
+
+	float maskMetallic =
+		texture(wearSampler, uv).r * mask.r +
+		texture(grungeSampler, uv).r * mask.g +
+		texture(collectionSampler, uv).r * mask.b;
+
+	if (maskMetallic == 0.0)
+	{
+		mask.a = 0.0;
+	}
+
+	metallic = mix(metallic, maskMetallic, mask.a);
+	metallic *= materialValues[METALLIC_COMPONENT].x;
 
 	return metallic;
 }
 
-vec3 getNormal(vec2 uv)
+vec3 getNormal(vec2 uv, vec4 mask)
 {
 	vec3 normal = fragNormal;
-	// if (materialActive[NORMAL_COMPONENT])
-	// {
-	// 	sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
-	// 	normal = texture(sampler, uv).rgb;
-	// 	normal = normalize(normal * 2.0 - 1.0);
-	// 	normal = normalize(fragTBN * normal);
-	// }
+	if (materialActive[NORMAL_COMPONENT])
+	{
+		sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
+		normal = texture(sampler, uv).rgb;
+	}
+
+	sampler2D wearSampler = sampler2D(wearMaterial[NORMAL_COMPONENT]);
+	sampler2D grungeSampler = sampler2D(grungeMaterial[NORMAL_COMPONENT]);
+	sampler2D collectionSampler = sampler2D(
+		collectionMaterial[NORMAL_COMPONENT]);
+
+	vec3 maskNormal =
+		texture(wearSampler, uv).rgb * mask.r +
+		texture(grungeSampler, uv).rgb * mask.g +
+		texture(collectionSampler, uv).rgb * mask.b;
+
+	if (maskNormal == vec3(0.0))
+	{
+		mask.a = 0.0;
+	}
+
+	normal = mix(normal, maskNormal, mask.a);
+	normal = normalize(normal * 2.0 - 1.0);
+	normal = normalize(normal * materialValues[NORMAL_COMPONENT]);
+
+	mat3 TBN = createTBNMatrix(fragNormal, fragTangent);
+	normal = normalize(TBN * normal);
 
 	return normal;
 }
 
-float getRoughness(vec2 uv)
+float getRoughness(vec2 uv, vec4 mask)
 {
 	float roughness = 0.0;
 	if (materialActive[ROUGHNESS_COMPONENT])
 	{
 		sampler2D sampler = sampler2D(material[ROUGHNESS_COMPONENT]);
 		roughness = texture(sampler, uv).r;
-		roughness *= materialValues[ROUGHNESS_COMPONENT].x;
 	}
+
+	sampler2D wearSampler = sampler2D(wearMaterial[ROUGHNESS_COMPONENT]);
+	sampler2D grungeSampler = sampler2D(
+		grungeMaterial[ROUGHNESS_COMPONENT]);
+	sampler2D collectionSampler = sampler2D(
+		collectionMaterial[ROUGHNESS_COMPONENT]);
+
+	float maskRoughness =
+		texture(wearSampler, uv).r * mask.r +
+		texture(grungeSampler, uv).r * mask.g +
+		texture(collectionSampler, uv).r * mask.b;
+
+	if (maskRoughness == 0.0)
+	{
+		mask.a = 0.0;
+	}
+
+	roughness = mix(roughness, maskRoughness, mask.a);
+	roughness *= materialValues[ROUGHNESS_COMPONENT].x;
 
 	return roughness;
 }

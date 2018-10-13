@@ -829,6 +829,8 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		setMaterialUniform(&materialUniform, material);
+		setBindlessTextureUniform(&materialMaskUniform, model.materialTexture);
+		setBindlessTextureUniform(&opacityMaskUniform, model.opacityTexture);
 		setMaterialUniform(
 			&collectionMaterialUniform,
 			&mask->collectionMaterial);
