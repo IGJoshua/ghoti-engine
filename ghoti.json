@@ -4,9 +4,9 @@
 		"title": "Ghoti 0.11.5",
 		"icon": "ghoti.png",
 		"fullscreen": false,
-		"maximized": true,
+		"maximized": false,
 		"size": [640, 480],
-		"resizable": false,
+		"resizable": true,
 		"vsync": true
 	},
 
