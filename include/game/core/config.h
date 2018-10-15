@@ -25,6 +25,7 @@ typedef struct physics_config_t
 typedef struct graphics_config_t
 {
 	kmVec3 backgroundColor;
+	uint32 numMSAASamples;
 	bool pbr;
 	uint32 cubemapResolution;
 	uint32 irradianceMapResolution;

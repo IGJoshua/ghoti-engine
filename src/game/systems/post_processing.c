@@ -191,7 +191,7 @@ void createFramebuffers(void)
 
 	glTexImage2DMultisample(
 		GL_TEXTURE_2D_MULTISAMPLE,
-		4,
+		config.graphicsConfig.numMSAASamples,
 		GL_RGB,
 		viewportWidth,
 		viewportHeight,
@@ -214,7 +214,7 @@ void createFramebuffers(void)
 
 	glRenderbufferStorageMultisample(
 		GL_RENDERBUFFER,
-		4,
+		config.graphicsConfig.numMSAASamples,
 		GL_DEPTH24_STENCIL8,
 		viewportWidth,
 		viewportHeight);

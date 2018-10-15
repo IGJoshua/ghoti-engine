@@ -107,6 +107,15 @@ int32 loadConfig(void)
 		}
 	}
 
+	GET_CONFIG_ITEM(numMSAASamples, "graphics.msaa")
+	{
+		int32 numSamples = numMSAASamples->valueint;
+		if (numSamples > 0 && numSamples <= 32)
+		{
+			config.graphicsConfig.numMSAASamples = numSamples;
+		}
+	}
+
 	GET_CONFIG_ITEM(pbr, "graphics.pbr.enabled")
 	{
 		config.graphicsConfig.pbr = cJSONToBool(pbr);
@@ -346,6 +355,7 @@ void initializeDefaultConfig(void)
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
+	config.graphicsConfig.numMSAASamples = 4;
 	config.graphicsConfig.pbr = true;
 	config.graphicsConfig.cubemapResolution = 1024;
 	config.graphicsConfig.irradianceMapResolution = 64;

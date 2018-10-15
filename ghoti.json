@@ -18,6 +18,7 @@
 	"graphics":
 	{
 		"background_color": [0.0, 0.0, 0.0],
+		"msaa": 4,
 
 		"pbr":
 		{
