@@ -252,5 +252,10 @@ GLFWmonitor* getActiveMonitor(void)
 		}
 	}
 
+	if (!activeMonitor)
+	{
+		activeMonitor = glfwGetPrimaryMonitor();
+	}
+
 	return activeMonitor;
 }
