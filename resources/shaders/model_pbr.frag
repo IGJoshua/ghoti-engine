@@ -105,16 +105,15 @@ const vec3 pcfSampleOffsets[20] = vec3[](
 
 float squared(float n);
 
-vec4 getMask(vec2 uv);
-
-vec2 getMaterialUV(vec3 viewDirection);
-
 mat3 createTBNMatrix(vec3 normal, vec3 tangent);
+vec2 getMaterialUV(vec3 viewDirection, mat3 TBN);
+
+vec4 getMask(vec2 uv);
 
 float getAmbientOcclusion(vec2 uv, vec4 mask);
 vec3 getAlbedo(vec2 uv, vec4 mask);
 float getMetallic(vec2 uv, vec4 mask);
-vec3 getNormal(vec2 uv, vec4 mask);
+vec3 getNormal(vec2 uv, mat3 TBN, vec4 mask);
 float getRoughness(vec2 uv, vec4 mask);
 
 vec3 getDirectionalLightRadiance(
@@ -179,15 +178,16 @@ void main()
 		return;
 	}
 
-	vec4 mask = getMask(fragMaskUV);
-
 	vec3 viewDirection = normalize(cameraPosition - fragPosition);
-	vec2 materialUV = getMaterialUV(viewDirection);
+	mat3 TBN = createTBNMatrix(fragNormal, fragTangent);
+
+	vec2 materialUV = getMaterialUV(viewDirection, TBN);
+	vec4 mask = getMask(fragMaskUV);
 
 	float ambientOcclusion = getAmbientOcclusion(materialUV, mask);
 	vec3 albedo = getAlbedo(materialUV, mask);
 	float metallic = getMetallic(materialUV, mask);
-	vec3 normal = getNormal(materialUV, mask);
+	vec3 normal = getNormal(materialUV, TBN, mask);
 	float roughness = getRoughness(materialUV, mask);
 
 	// F0 - Reflectance when looking directly at the surface
@@ -269,6 +269,70 @@ float squared(float n)
 	return n * n;
 }
 
+mat3 createTBNMatrix(vec3 normal, vec3 tangent)
+{
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	vec3 bitangent = cross(tangent, normal);
+	return mat3(tangent, bitangent, normal);
+}
+
+vec2 getMaterialUV(vec3 viewDirection, mat3 TBN)
+{
+	if (!materialActive[HEIGHT_COMPONENT])
+	{
+		return fragMaterialUV;
+	}
+
+	viewDirection = normalize(viewDirection * TBN);
+
+	const vec2 layersRange = vec2(8, 32);
+	float numLayers = mix(
+		layersRange.y,
+		layersRange.x,
+		abs(dot(vec3(0.0, 0.0, 1.0), viewDirection)));
+
+	vec2 P =
+		(viewDirection.xy / viewDirection.z) *
+		0.05 * materialValues[HEIGHT_COMPONENT].x;
+
+	float layerDepth = 1.0 / numLayers;
+	vec2 deltaUV = P / numLayers;
+
+	sampler2D s = sampler2D(material[HEIGHT_COMPONENT]);
+	float height =
+		materialValues[HEIGHT_COMPONENT].y - texture(s, fragMaterialUV).r;
+
+	vec2 uv; float l;
+	for (uv = fragMaterialUV, l = 0.0; l < height; l += layerDepth)
+	{
+		uv -= deltaUV;
+		height = materialValues[HEIGHT_COMPONENT].y - texture(s, uv).r;
+	}
+
+	vec2 lastUV = uv + deltaUV;
+
+	vec2 depth = vec2(
+		materialValues[HEIGHT_COMPONENT].y - texture(s, lastUV).r -
+			l + layerDepth,
+		height - l);
+	float weight = depth.y / (depth.y - depth.x);
+
+	vec2 materialUV = lastUV * weight + uv * (1.0 - weight);
+
+	if (materialValues[HEIGHT_COMPONENT].z == -1.0)
+	{
+		if (materialUV.x < 0.0 ||
+			materialUV.x > 1.0 ||
+			materialUV.y < 0.0 ||
+			materialUV.y > 1.0)
+		{
+			discard;
+		}
+	}
+
+	return materialUV;
+}
+
 vec4 getMask(vec2 uv)
 {
 	sampler2D sampler = sampler2D(materialMask);
@@ -295,23 +359,6 @@ vec4 getMask(vec2 uv)
 	}
 
 	return mask;
-}
-
-vec2 getMaterialUV(vec3 viewDirection)
-{
-	if (!materialActive[HEIGHT_COMPONENT])
-	{
-		return fragMaterialUV;
-	}
-
-	return fragMaterialUV;
-}
-
-mat3 createTBNMatrix(vec3 normal, vec3 tangent)
-{
-	tangent = normalize(tangent - dot(tangent, normal) * normal);
-	vec3 bitangent = cross(tangent, normal);
-	return mat3(tangent, bitangent, normal);
 }
 
 float getAmbientOcclusion(vec2 uv, vec4 mask)
@@ -406,7 +453,7 @@ float getMetallic(vec2 uv, vec4 mask)
 	return metallic;
 }
 
-vec3 getNormal(vec2 uv, vec4 mask)
+vec3 getNormal(vec2 uv, mat3 TBN, vec4 mask)
 {
 	vec3 normal = fragNormal;
 	if (materialActive[NORMAL_COMPONENT])
@@ -432,9 +479,9 @@ vec3 getNormal(vec2 uv, vec4 mask)
 
 	normal = mix(normal, maskNormal, mask.a);
 	normal = normalize(normal * 2.0 - 1.0);
-	normal = normalize(normal * materialValues[NORMAL_COMPONENT]);
-
-	mat3 TBN = createTBNMatrix(fragNormal, fragTangent);
+	normal = normalize(vec3(
+		normal.rg * materialValues[NORMAL_COMPONENT].x,
+		normal.b));
 	normal = normalize(TBN * normal);
 
 	return normal;
