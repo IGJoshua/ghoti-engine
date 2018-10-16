@@ -93,6 +93,7 @@ mat3 createTBNMatrix(vec3 normal, vec3 tangent);
 vec2 getMaterialUV(vec3 viewDirection, mat3 TBN);
 
 vec3 getAlbedoTextureColor(vec2 uv);
+float getHeightTextureColor(vec2 uv);
 vec3 getNormalTextureColor(vec2 uv, mat3 TBN);
 
 vec3 getDirectionalLightColor(
@@ -194,27 +195,24 @@ vec2 getMaterialUV(vec3 viewDirection, mat3 TBN)
 
 	vec2 P =
 		(viewDirection.xy / viewDirection.z) *
-		0.05 * materialValues[HEIGHT_COMPONENT].x;
+		0.025 * materialValues[HEIGHT_COMPONENT].x;
 
 	float layerDepth = 1.0 / numLayers;
 	vec2 deltaUV = P / numLayers;
 
-	sampler2D s = sampler2D(material[HEIGHT_COMPONENT]);
-	float height =
-		materialValues[HEIGHT_COMPONENT].y - texture(s, fragMaterialUV).r;
+	float height = getHeightTextureColor(fragMaterialUV);
 
 	vec2 uv; float l;
 	for (uv = fragMaterialUV, l = 0.0; l < height; l += layerDepth)
 	{
 		uv -= deltaUV;
-		height = materialValues[HEIGHT_COMPONENT].y - texture(s, uv).r;
+		height = getHeightTextureColor(uv);
 	}
 
 	vec2 lastUV = uv + deltaUV;
 
 	vec2 depth = vec2(
-		materialValues[HEIGHT_COMPONENT].y - texture(s, lastUV).r -
-			l + layerDepth,
+		getHeightTextureColor(lastUV) - l + layerDepth,
 		height - l);
 	float weight = depth.y / (depth.y - depth.x);
 
@@ -245,6 +243,20 @@ vec3 getAlbedoTextureColor(vec2 uv)
 	}
 
 	return albedoTextureColor;
+}
+
+float getHeightTextureColor(vec2 uv)
+{
+	float height = 0.0;
+	if (materialActive[HEIGHT_COMPONENT])
+	{
+		sampler2D sampler = sampler2D(material[HEIGHT_COMPONENT]);
+		int inverse = materialValues[HEIGHT_COMPONENT].y == 1.0 ? -1 : 1;
+		height = inverse * texture(sampler, uv).r +
+			materialValues[HEIGHT_COMPONENT].y;
+	}
+
+	return height;
 }
 
 vec3 getNormalTextureColor(vec2 uv, mat3 TBN)
