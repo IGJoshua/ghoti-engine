@@ -1919,6 +1919,13 @@ int32 sceneAddComponentToEntity(
 	{
 		loadCubemap(((CubemapComponent*)componentData)->name);
 	}
+	else if (!strcmp(componentType.string, "button"))
+	{
+		ButtonComponent *buttonComponent = (ButtonComponent*)componentData;
+		buttonComponent->pressed = false;
+		buttonComponent->held = false;
+		buttonComponent->released = false;
+	}
 
 	// Add the component to the data table
 	if(cdtInsert(

@@ -54,12 +54,19 @@ internal Uniform cameraPositionUniform;
 internal Uniform materialActiveUniform;
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
+
 internal Uniform materialMaskUniform;
 internal Uniform opacityMaskUniform;
+
+internal Uniform collectionMaterialActiveUniform;
 internal Uniform collectionMaterialUniform;
 internal Uniform collectionMaterialValuesUniform;
+
+internal Uniform grungeMaterialActiveUniform;
 internal Uniform grungeMaterialUniform;
 internal Uniform grungeMaterialValuesUniform;
+
+internal Uniform wearMaterialActiveUniform;
 internal Uniform wearMaterialUniform;
 internal Uniform wearMaterialValuesUniform;
 
@@ -199,6 +206,7 @@ void initRendererSystem(Scene *scene)
 			"materialValues",
 			UNIFORM_VEC3,
 			&materialValuesUniform);
+
 		getUniform(
 			shaderProgram,
 			"materialMask",
@@ -209,6 +217,12 @@ void initRendererSystem(Scene *scene)
 			"opacityMask",
 			UNIFORM_TEXTURE_BINDLESS,
 			&opacityMaskUniform);
+
+		getUniform(
+			shaderProgram,
+			"collectionMaterialActive",
+			UNIFORM_BOOL,
+			&collectionMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"collectionMaterial",
@@ -219,6 +233,12 @@ void initRendererSystem(Scene *scene)
 			"collectionMaterialValues",
 			UNIFORM_VEC3,
 			&collectionMaterialValuesUniform);
+
+		getUniform(
+			shaderProgram,
+			"grungeMaterialActive",
+			UNIFORM_BOOL,
+			&grungeMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"grungeMaterial",
@@ -229,6 +249,12 @@ void initRendererSystem(Scene *scene)
 			"grungeMaterialValues",
 			UNIFORM_VEC3,
 			&grungeMaterialValuesUniform);
+
+		getUniform(
+			shaderProgram,
+			"wearMaterialActive",
+			UNIFORM_BOOL,
+			&wearMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"wearMaterial",
@@ -770,6 +796,15 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		setMaterialActiveUniform(&materialActiveUniform, material);
+		setMaterialActiveUniform(
+			&collectionMaterialActiveUniform,
+			&mask->collectionMaterial);
+		setMaterialActiveUniform(
+			&grungeMaterialActiveUniform,
+			&mask->grungeMaterial);
+		setMaterialActiveUniform(
+			&wearMaterialActiveUniform,
+			&mask->wearMaterial);
 
 		if (numShadowDirectionalLights > 0)
 		{
@@ -816,17 +851,14 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_NUM_SHADOW_POINT_LIGHTS +
 			MAX_NUM_SHADOW_SPOTLIGHTS;
 
-		if (strlen(currentCubemap.name.string) > 0)
-		{
-			glActiveTexture(GL_TEXTURE0 + textureIndex);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
 
-			glActiveTexture(GL_TEXTURE0 + textureIndex + 1);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
 
-			glActiveTexture(GL_TEXTURE0 + textureIndex + 2);
-			glBindTexture(GL_TEXTURE_2D, brdfLUT);
-		}
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_2D, brdfLUT);
 
 		setMaterialUniform(&materialUniform, material);
 		setBindlessTextureUniform(&materialMaskUniform, model.materialTexture);
