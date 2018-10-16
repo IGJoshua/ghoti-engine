@@ -175,7 +175,7 @@ Asset functionSignature \
 #define UPLOAD_CUBEMAPS_BUCKET_COUNT 5
 
 void initializeAssetManager(real64 *dt);
-uint32 getAssetThreadCount(void);
+uint32 getNumLoadingAssets(void);
 void setUpdateAssetManagerFlag(void);
 void uploadAssets(void);
 void freeAssets(void);

@@ -18,6 +18,6 @@ void loadParticle(
 	uint32 columns,
 	bool textureFiltering);
 
-uint32 getAssetThreadCount(void);
+uint32 getNumLoadingAssets(void);
 
 ]]

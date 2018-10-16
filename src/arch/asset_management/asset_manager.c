@@ -75,6 +75,16 @@ pthread_mutex_init(&upload ## Assets ## Mutex, NULL); \
 free ## Assets ## Queue = createList(sizeof(Asset)); \
 pthread_mutex_init(&free ## Assets ## Mutex, NULL)
 
+#define GET_LOADING_ASSET_COUNT(counter, Assets) \
+pthread_mutex_lock(&loading ## Assets ## Mutex); \
+counter += loading ## Assets->count; \
+pthread_mutex_unlock(&loading ## Assets ## Mutex)
+
+#define GET_UPLOAD_ASSET_COUNT(counter, Assets) \
+pthread_mutex_lock(&upload ## Assets ## Mutex); \
+counter += upload ## Assets ## Queue->count; \
+pthread_mutex_unlock(&upload ## Assets ## Mutex)
+
 #define UPDATE_ASSET(asset, assets, Asset, Assets, ASSET, assetName) \
 pthread_mutex_lock(&assets ## Mutex); \
 \
@@ -236,13 +246,32 @@ void initializeAssetManager(real64 *dt) {
 	pthread_create(&assetManagerThread, NULL, &updateAssetManager, dt);
 }
 
-uint32 getAssetThreadCount(void)
+uint32 getNumLoadingAssets(void)
 {
-	uint32 count = 0;
-	pthread_mutex_lock(&assetThreadsMutex);
-	count = assetThreadCount;
-	pthread_mutex_unlock(&assetThreadsMutex);
-	return count;
+	uint32 numLoadingAssets = 0;
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Models);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Models);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Textures);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Textures);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Fonts);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Fonts);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Images);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Images);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Audio);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Audio);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Particles);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Particles);
+
+	GET_LOADING_ASSET_COUNT(numLoadingAssets, Cubemaps);
+	GET_UPLOAD_ASSET_COUNT(numLoadingAssets, Cubemaps);
+
+	return numLoadingAssets;
 }
 
 void setUpdateAssetManagerFlag(void)
