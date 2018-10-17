@@ -1928,7 +1928,7 @@ int32 sceneAddComponentToEntity(
 	}
 
 	// Add the component to the data table
-	if(cdtInsert(
+	if (cdtInsert(
 		   *dataTable,
 		   entity,
 		   componentData) == -1)

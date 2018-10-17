@@ -48,7 +48,7 @@ void main()
 			2.0 * dot(viewDirection, halfwayDirection) * halfwayDirection -
 			viewDirection);
 
-		if(max(lightDirection.z, 0.0) > 0.0)
+		if (max(lightDirection.z, 0.0) > 0.0)
 		{
 			float G = geometryFunction(
 				normal,

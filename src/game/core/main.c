@@ -175,7 +175,7 @@ int32 main(int32 argc, char *argv[])
 	update(dt, true);
 	update(dt, false);
 
-	while(!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(window))
 	{
 		// Start timestep
 		real64 newTime = glfwGetTime();

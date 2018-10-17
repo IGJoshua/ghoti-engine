@@ -27,7 +27,7 @@ function system.run(scene, uuid, dt)
 
         local collision = C.rayCast(scene.ptr, transform.position, dir[0], 2, 20)
 
-        if(collision.hasContact ~= 0) then
+        if (collision.hasContact ~= 0) then
             io.write(string.format("%d\n", tonumber(collision.hasContact)))
         end
 

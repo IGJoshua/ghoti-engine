@@ -35,34 +35,34 @@ void setJointConstraints(
 	void(*ParamFn)(dJointID, int, dReal))
 {
 	//Set any optional parameters
-	if(constraint)
+	if (constraint)
 	{
-		if(constraint->loStop_bool)
+		if (constraint->loStop_bool)
 		{
 			ParamFn(jointID, dParamLoStop, constraint->loStop_val);
 		}
 
-		if(constraint->hiStop_bool)
+		if (constraint->hiStop_bool)
 		{
 			ParamFn(jointID, dParamHiStop, constraint->hiStop_val);
 		}
 
-		if(constraint->bounce_bool)
+		if (constraint->bounce_bool)
 		{
 			ParamFn(jointID, dParamBounce, constraint->bounce_val);
 		}
 
-		if(constraint->CFM_bool)
+		if (constraint->CFM_bool)
 		{
 			ParamFn(jointID, dParamCFM, constraint->CFM_val);
 		}
 
-		if(constraint->stopERP_bool)
+		if (constraint->stopERP_bool)
 		{
 			ParamFn(jointID, dParamStopERP, constraint->stopERP_val);
 		}
 
-		if(constraint->stopCFM_bool)
+		if (constraint->stopCFM_bool)
 		{
 			ParamFn(jointID, dParamStopCFM, constraint->stopCFM_val);
 		}
@@ -104,7 +104,7 @@ void initJointInformationSystem(Scene *scene)
 			joint->object2,
 			rigidBodyComponentID);
 
-		if(!(object1 || object2))
+		if (!(object1 || object2))
 			continue;
 
 		LOG("Joint UUID: %s\n", entityID.string);
@@ -170,11 +170,11 @@ void initJointInformationSystem(Scene *scene)
 		}
 
 		// Attach all the joints to the relevant objects
-		if(object1 && object2)
+		if (object1 && object2)
 		{
 			dJointAttach(jointID, object1->bodyID, object2->bodyID);
 		}
-		else if(object1)
+		else if (object1)
 		{
 			dJointAttach(jointID, object1->bodyID, 0);
 		}
@@ -281,7 +281,7 @@ void runJointInformationSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		transformComponentID);
 
-	if(!trans)
+	if (!trans)
 		return;
 
 	LOG("Entity %s has position (%f, %f, %f)\n",
