@@ -13,6 +13,14 @@ int32 loadTextureData(
 	const char *filename,
 	int32 numComponents,
 	TextureData *data);
+int32 loadHDRTextureData(
+	AssetLogType type,
+	const char *typeName,
+	const char *name,
+	const char *filename,
+	int32 numComponents,
+	bool verticalFlip,
+	HDRTextureData *data);
 int32 uploadTextureToGPU(
 	const char *name,
 	const char *type,

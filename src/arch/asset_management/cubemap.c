@@ -15,12 +15,6 @@
 
 #include "renderer/renderer_utilities.h"
 
-#define STBI_NO_PIC
-#define STBI_NO_PNM
-#define STB_IMAGE_IMPLEMENTATION
-
-#include <stb/stb_image.h>
-
 #include <pthread.h>
 #include <unistd.h>
 
@@ -120,28 +114,14 @@ void* loadCubemapThread(void *arg)
 		cubemap.name = idFromName(name);
 		cubemap.lifetime = config.assetsConfig.minCubemapLifetime;
 
-		HDRTextureData *data = &cubemap.data;
-
-		data->data = stbi_loadf(
+		error = loadHDRTextureData(
+			ASSET_LOG_TYPE_CUBEMAP,
+			"cubemap",
+			name,
 			fullFilename,
-			&data->width,
-			&data->height,
-			&data->numComponents,
-			3);
-
-		if (!data->data)
-		{
-			ASSET_LOG(CUBEMAP, name, "Failed to load cubemap\n");
-			error = -1;
-		}
-		else
-		{
-			stbi__vertical_flip(
-				data->data,
-				data->width,
-				data->height,
-				sizeof(real32) * 3);
-		}
+			3,
+			true,
+			&cubemap.data);
 
 		if (error != - 1)
 		{

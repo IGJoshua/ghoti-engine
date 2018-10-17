@@ -12,6 +12,7 @@
 
 #define STBI_NO_PIC
 #define STBI_NO_PNM
+#define STB_IMAGE_IMPLEMENTATION
 
 #include <stb/stb_image.h>
 
@@ -188,6 +189,53 @@ int32 loadTextureData(
 		}
 
 		return -1;
+	}
+
+	return 0;
+}
+
+int32 loadHDRTextureData(
+	AssetLogType type,
+	const char *typeName,
+	const char *name,
+	const char *filename,
+	int32 numComponents,
+	bool verticalFlip,
+	HDRTextureData *data)
+{
+	data->data = stbi_loadf(
+		filename,
+		&data->width,
+		&data->height,
+		&data->numComponents,
+		numComponents);
+
+	data->numComponents = numComponents;
+
+	if (!data->data)
+	{
+		if (name)
+		{
+			ASSET_LOG_FULL_TYPE(
+				type,
+				name,
+				"Failed to load %s\n",
+				typeName);
+		}
+		else
+		{
+			LOG("Failed to load %s\n", typeName);
+		}
+
+		return -1;
+	}
+	else if (verticalFlip)
+	{
+		stbi__vertical_flip(
+			data->data,
+			data->width,
+			data->height,
+			numComponents * sizeof(real32));
 	}
 
 	return 0;
