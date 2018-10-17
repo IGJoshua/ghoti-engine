@@ -1,6 +1,7 @@
 #include "asset_management/cubemap_importer.h"
 #include "asset_management/model.h"
 #include "asset_management/mesh.h"
+#include "asset_management/texture.h"
 
 #include "components/transform.h"
 
@@ -54,18 +55,12 @@ internal CubemapConverterShader cubemapConverterShader;
 internal CubemapConvolutionShader cubemapConvolutionShader;
 internal CubemapPrefilterShader cubemapPrefilterShader;
 
-#define BRDF_LUT_VERTEX_SHADER_FILE "resources/shaders/quad.vert"
-#define BRDF_LUT_FRAGMENT_SHADER_FILE "resources/shaders/brdf_lut.frag"
-
-internal QuadVertex quadVertices[4];
-
-GLuint quadVertexBuffer;
-GLuint quadVertexArray;
-
 internal GLuint cubemapFramebuffer;
 internal GLuint cubemapRenderbuffer;
 
 internal kmMat4 cubemapTransforms[6];
+
+#define BRDF_LUT_FILE "brdf_lut"
 
 GLuint brdfLUT;
 
@@ -74,10 +69,7 @@ extern Config config;
 internal int32 loadCubemapMesh(void);
 internal void freeCubemapMesh(void);
 
-internal void createQuad(void);
-internal void freeQuad(void);
-
-internal void generateBRDFLUT(void);
+internal int32 loadBRDFLUT(void);
 
 internal void createCubemapTextures(Cubemap *cubemap);
 
@@ -126,8 +118,7 @@ void initializeCubemapImporter(void)
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	createQuad();
-	generateBRDFLUT();
+	loadBRDFLUT();
 
 	kmMat4 cubemapProjection;
 	kmMat4PerspectiveProjection(
@@ -218,7 +209,6 @@ void shutdownCubemapImporter(void)
 
 	glDeleteTextures(1, &brdfLUT);
 
-	freeQuad();
 	freeCubemapMesh();
 }
 
@@ -294,137 +284,52 @@ void freeCubemapMesh(void)
 	LOG("Successfully freed model (%s)\n", CUBEMAP_MESH_NAME);
 }
 
-void createQuad(void)
+int32 loadBRDFLUT(void)
 {
-	kmVec2Fill(&quadVertices[0].position, -1.0f, 1.0f);
-	kmVec2Fill(&quadVertices[0].uv, 0.0f, 1.0f);
-	kmVec2Fill(&quadVertices[1].position, -1.0f, -1.0f);
-	kmVec2Fill(&quadVertices[1].uv, 0.0f, 0.0f);
-	kmVec2Fill(&quadVertices[2].position, 1.0f, 1.0f);
-	kmVec2Fill(&quadVertices[2].uv, 1.0f, 1.0f);
-	kmVec2Fill(&quadVertices[3].position, 1.0f, -1.0f);
-	kmVec2Fill(&quadVertices[3].uv, 1.0f, 0.0f);
+	int32 error = 0;
 
-	glGenBuffers(1, &quadVertexBuffer);
-	glGenVertexArrays(1, &quadVertexArray);
+	char *filename = getFullFilePath(
+		BRDF_LUT_FILE,
+		"hdr",
+		"resources/cubemaps");
 
-	uint32 bufferIndex = 0;
-
-	glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
-	glBufferData(
-		GL_ARRAY_BUFFER,
-		sizeof(QuadVertex) * 4,
-		quadVertices,
-		GL_STATIC_DRAW);
-
-	glBindVertexArray(quadVertexArray);
-	glVertexAttribPointer(
-		bufferIndex++,
-		2,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(QuadVertex),
-		(GLvoid*)offsetof(QuadVertex, position));
-
-	glVertexAttribPointer(
-		bufferIndex++,
-		2,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(QuadVertex),
-		(GLvoid*)offsetof(QuadVertex, uv));
-}
-
-void freeQuad(void)
-{
-	glBindVertexArray(quadVertexArray);
-	glDeleteBuffers(1, &quadVertexBuffer);
-	glBindVertexArray(0);
-
-	glDeleteVertexArrays(1, &quadVertexArray);
-}
-
-void generateBRDFLUT(void)
-{
-	glGenTextures(1, &brdfLUT);
-	glBindTexture(GL_TEXTURE_2D, brdfLUT);
-
-	glTexImage2D(
-		GL_TEXTURE_2D,
-		0,
-		GL_RG16F,
-		config.graphicsConfig.cubemapResolution,
-		config.graphicsConfig.cubemapResolution,
-		0,
-		GL_RG,
-		GL_FLOAT,
-		NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	GLuint shaderProgram;
-	createShaderProgram(
-		BRDF_LUT_VERTEX_SHADER_FILE,
+	HDRTextureData data;
+	error = loadHDRTextureData(
+		ASSET_LOG_TYPE_NONE,
+		"BRDF LUT",
 		NULL,
-		NULL,
-		NULL,
-		BRDF_LUT_FRAGMENT_SHADER_FILE,
-		NULL,
-		&shaderProgram);
+		filename,
+		3,
+		false,
+		&data);
 
-	glViewport(
-		0,
-		0,
-		config.graphicsConfig.cubemapResolution,
-		config.graphicsConfig.cubemapResolution);
+	free(filename);
 
-	glBindRenderbuffer(GL_RENDERBUFFER, cubemapRenderbuffer);
-	glRenderbufferStorage(
-		GL_RENDERBUFFER,
-		GL_DEPTH_COMPONENT24,
-		config.graphicsConfig.cubemapResolution,
-		config.graphicsConfig.cubemapResolution);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, cubemapFramebuffer);
-	glFramebufferTexture2D(
-		GL_FRAMEBUFFER,
-		GL_COLOR_ATTACHMENT0,
-		GL_TEXTURE_2D,
-		brdfLUT,
-		0);
-
-	glUseProgram(shaderProgram);
-
-	glBindVertexArray(quadVertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
-
-	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
+	if (error != - 1)
 	{
-		glEnableVertexAttribArray(i);
+		glGenTextures(1, &brdfLUT);
+		glBindTexture(GL_TEXTURE_2D, brdfLUT);
+
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RG16F,
+			data.width,
+			data.height,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			data.data);
+
+		free(data.data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	}
 
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	logGLError(false, "Failed to generate BRDF LUT");
-
-	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
-	{
-		glDisableVertexAttribArray(i);
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glUseProgram(0);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	glDeleteProgram(shaderProgram);
+	return error;
 }
 
 void createCubemapTextures(Cubemap *cubemap)
@@ -831,7 +736,7 @@ void prefilterCubemap(Cubemap *cubemap)
 			mipLevelSize,
 			mipLevelSize);
 
-		float roughness = (real32)mipLevel / (real32)(maxNumMipLevels - 1);
+		real32 roughness = (real32)mipLevel / (real32)(maxNumMipLevels - 1);
 		setUniform(cubemapPrefilterShader.roughnessUniform, 1, &roughness);
 
 		for (uint8 i = 0; i < 6; i++)

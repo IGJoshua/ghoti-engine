@@ -30,7 +30,7 @@ typedef struct hdr_texture_data_t
 	int32 width;
 	int32 height;
 	int32 numComponents;
-	float *data;
+	real32 *data;
 } HDRTextureData;
 
 typedef struct texture_t

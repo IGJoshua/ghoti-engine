@@ -31,7 +31,7 @@ typedef struct graphics_config_t
 	uint32 irradianceMapResolution;
 	uint32 prefilterMapResolution;
 	bool cubemapDebugMode;
-	float cubemapDebugMipLevel;
+	real32 cubemapDebugMipLevel;
 	uint32 shadowMapResolution;
 	bool directionalLightShadows;
 	real32 directionalLightShadowBias[2];

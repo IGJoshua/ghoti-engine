@@ -34,8 +34,18 @@ internal GLuint screenTexture;
 
 internal GLuint screenRenderbuffer;
 
-extern GLuint quadVertexBuffer;
-extern GLuint quadVertexArray;
+#define NUM_QUAD_VERTEX_ATTRIBUTES 2
+
+typedef struct quad_vertex_t
+{
+	kmVec2 position;
+	kmVec2 uv;
+} QuadVertex;
+
+internal QuadVertex quadVertices[4];
+
+internal GLuint quadVertexBuffer;
+internal GLuint quadVertexArray;
 
 extern Config config;
 
@@ -73,6 +83,44 @@ internal void initPostProcessingSystem(Scene *scene)
 			&screenTextureUniform);
 
 		createFramebuffers();
+
+		kmVec2Fill(&quadVertices[0].position, -1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[0].uv, 0.0f, 1.0f);
+		kmVec2Fill(&quadVertices[1].position, -1.0f, -1.0f);
+		kmVec2Fill(&quadVertices[1].uv, 0.0f, 0.0f);
+		kmVec2Fill(&quadVertices[2].position, 1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[2].uv, 1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[3].position, 1.0f, -1.0f);
+		kmVec2Fill(&quadVertices[3].uv, 1.0f, 0.0f);
+
+		glGenBuffers(1, &quadVertexBuffer);
+		glGenVertexArrays(1, &quadVertexArray);
+
+		uint32 bufferIndex = 0;
+
+		glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			sizeof(QuadVertex) * 4,
+			quadVertices,
+			GL_STATIC_DRAW);
+
+		glBindVertexArray(quadVertexArray);
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(QuadVertex),
+			(GLvoid*)offsetof(QuadVertex, position));
+
+		glVertexAttribPointer(
+			bufferIndex++,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			sizeof(QuadVertex),
+			(GLvoid*)offsetof(QuadVertex, uv));
 
 		LOG("Successfully initialized post processing system\n");
 	}
@@ -154,6 +202,12 @@ internal void shutdownPostProcessingSystem(Scene *scene)
 		glDeleteProgram(shaderProgram);
 
 		freeFramebuffers();
+
+		glBindVertexArray(quadVertexArray);
+		glDeleteBuffers(1, &quadVertexBuffer);
+		glBindVertexArray(0);
+
+		glDeleteVertexArrays(1, &quadVertexArray);
 
 		LOG("Successfully shut down post processing system\n");
 	}
