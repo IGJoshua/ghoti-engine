@@ -933,7 +933,7 @@ int32 loadScene(const char *name)
 	return -1;
 }
 
-int32 reloadScene(const char *name, bool reloadAssets)
+int32 reloadScene(const char *name, bool reloadAssets, bool togglePBR)
 {
 	int32 error = unloadScene(name);
 
@@ -941,12 +941,19 @@ int32 reloadScene(const char *name, bool reloadAssets)
 	{
 		reloadingScene = true;
 		reloadingAssets = reloadAssets;
+
+		if (togglePBR)
+		{
+			config.graphicsConfig.pbr = !config.graphicsConfig.pbr;
+		}
+
+		LOG("Reloading scene %s...\n", name);
 	}
 
 	return error;
 }
 
-int32 reloadAllScenes(bool reloadAssets)
+int32 reloadAllScenes(bool reloadAssets, bool togglePBR)
 {
 	int32 error = 0;
 
@@ -956,7 +963,8 @@ int32 reloadAllScenes(bool reloadAssets)
 	{
 		error = reloadScene(
 			(*LIST_ITERATOR_GET_ELEMENT(Scene*, itr))->name,
-			reloadAssets);
+			reloadAssets,
+			false);
 
 		if (error == -1)
 		{
@@ -966,7 +974,10 @@ int32 reloadAllScenes(bool reloadAssets)
 
 	if (error != -1)
 	{
-		LOG("Reloading all scenes...\n");
+		if (togglePBR)
+		{
+			config.graphicsConfig.pbr = !config.graphicsConfig.pbr;
+		}
 	}
 
 	return error;

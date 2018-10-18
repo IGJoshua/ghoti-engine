@@ -311,6 +311,22 @@ void addDirectionalLight(
 
 	kmVec3Assign(&directionalLight.radiantFlux, &light->radiantFlux);
 
+	if (!config.graphicsConfig.pbr)
+	{
+		directionalLight.radiantFlux.x = kmClamp(
+			directionalLight.radiantFlux.x,
+			0.0f,
+			1.0f);
+		directionalLight.radiantFlux.y = kmClamp(
+			directionalLight.radiantFlux.y,
+			0.0f,
+			1.0f);
+		directionalLight.radiantFlux.z = kmClamp(
+			directionalLight.radiantFlux.z,
+			0.0f,
+			1.0f);
+	}
+
 	kmQuaternionAssign(
 		&directionalLight.previousDirection,
 		&transform->lastGlobalRotation);
@@ -345,6 +361,23 @@ void addPointLight(
 	PointLight *pointLight = &pointLights[numPointLights++];
 
 	kmVec3Assign(&pointLight->radiantFlux, &light->radiantFlux);
+
+	if (!config.graphicsConfig.pbr)
+	{
+		pointLight->radiantFlux.x = kmClamp(
+			pointLight->radiantFlux.x,
+			0.0f,
+			1.0f);
+		pointLight->radiantFlux.y = kmClamp(
+			pointLight->radiantFlux.y,
+			0.0f,
+			1.0f);
+		pointLight->radiantFlux.z = kmClamp(
+			pointLight->radiantFlux.z,
+			0.0f,
+			1.0f);
+	}
+
 	kmVec3Assign(&pointLight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&pointLight->position, &transform->globalPosition);
 
@@ -390,6 +423,23 @@ void addSpotlight(
 	Spotlight *spotlight = &spotlights[numSpotlights++];
 
 	kmVec3Assign(&spotlight->radiantFlux, &light->radiantFlux);
+
+	if (!config.graphicsConfig.pbr)
+	{
+		spotlight->radiantFlux.x = kmClamp(
+			spotlight->radiantFlux.x,
+			0.0f,
+			1.0f);
+		spotlight->radiantFlux.y = kmClamp(
+			spotlight->radiantFlux.y,
+			0.0f,
+			1.0f);
+		spotlight->radiantFlux.z = kmClamp(
+			spotlight->radiantFlux.z,
+			0.0f,
+			1.0f);
+	}
+
 	kmVec3Assign(&spotlight->previousPosition, &transform->lastGlobalPosition);
 	kmVec3Assign(&spotlight->position, &transform->globalPosition);
 

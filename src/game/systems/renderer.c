@@ -168,7 +168,9 @@ void initRendererSystem(Scene *scene)
 			NULL,
 			NULL,
 			NULL,
-			config.graphicsConfig.pbr ?
+			(config.graphicsConfig.pbr &&
+			GLEW_ARB_bindless_texture &&
+			GLEW_ARB_gpu_shader_int64) ?
 				PBR_FRAGMENT_SHADER_FILE : FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
