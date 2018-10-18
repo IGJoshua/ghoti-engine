@@ -1,5 +1,5 @@
 {
-	"uuid": "KYmtrf,%2s?:;`8#FEfk?5nfVyW(qjS:AF-926<9/XHH6^@Y)%BF76*k-Vh$F:4",
+	"uuid": "MdaLlbQO?t>12qao2xCT;oL<#P*'j-H6n/Waf/.,xI20Aq%Ho>q(3CA+p@0YBUd",
 
 	"components":
 	{
@@ -7,7 +7,7 @@
 		[
 			{
 				"name": "position",
-				"float32": [0, 0, 0]
+				"float32": [0, 2.5, 20]
 			},
 
 			{
@@ -17,7 +17,7 @@
 
 			{
 				"name": "scale",
-				"float32": [40, 1, 40]
+				"float32": [39, 6, 1]
 			},
 
 			{
@@ -27,7 +27,7 @@
 
 			{
 				"name": "first child",
-				"uuid": "/qL#lgXv7w@rR+<br^J5pA)Y8VS+UR0Lt06ae*ucGeEnn^VfB&y0<w^JS/J&^WG"
+				"uuid": "k'MOo1iXbd#k$%X@ER^Y?7a?tFXKn5X`9,5':tqVTbWN9tphQO%/AWJw(?2VtAW"
 			},
 
 			{
@@ -176,7 +176,7 @@
 		[
 			{
 				"name": "collision tree",
-				"uuid": "/qL#lgXv7w@rR+<br^J5pA)Y8VS+UR0Lt06ae*ucGeEnn^VfB&y0<w^JS/J&^WG"
+				"uuid": "k'MOo1iXbd#k$%X@ER^Y?7a?tFXKn5X`9,5':tqVTbWN9tphQO%/AWJw(?2VtAW"
 			},
 
 			{
