@@ -27,7 +27,7 @@
 
 			{
 				"name": "first child",
-				"uuid": ""
+				"uuid": "/qL#lgXv7w@rR+<br^J5pA)Y8VS+UR0Lt06ae*ucGeEnn^VfB&y0<w^JS/J&^WG"
 			},
 
 			{
@@ -81,6 +81,112 @@
 			{
 				"name": "visible",
 				"bool": true
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "body ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "space ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "dynamic",
+				"bool": false
+			},
+
+			{
+				"name": "gravity",
+				"bool": false
+			},
+
+			{
+				"name": "mass",
+				"float32": 1
+			},
+
+			{
+				"name": "center of mass",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "angular velocity",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "default damping",
+				"bool": true
+			},
+
+			{
+				"name": "linear damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "linear damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "max angular speed",
+				"float32": 0
+			},
+
+			{
+				"name": "moment of inertia type",
+				"enum": 0
+			},
+
+			{
+				"name": "moment of inertia",
+				"float32": [1, 1, 1, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collision tree",
+				"uuid": "/qL#lgXv7w@rR+<br^J5pA)Y8VS+UR0Lt06ae*ucGeEnn^VfB&y0<w^JS/J&^WG"
+			},
+
+			{
+				"name": "hit list",
+				"uuid": ""
+			},
+
+			{
+				"name": "last hit list",
+				"uuid": ""
 			}
 		]
 	}

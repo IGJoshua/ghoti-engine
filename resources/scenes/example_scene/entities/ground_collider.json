@@ -1,0 +1,110 @@
+{
+	"uuid": "/qL#lgXv7w@rR+<br^J5pA)Y8VS+UR0Lt06ae*ucGeEnn^VfB&y0<w^JS/J&^WG",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": "KYmtrf,%2s?:;`8#FEfk?5nfVyW(qjS:AF-926<9/XHH6^@Y)%BF76*k-Vh$F:4"
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"box":
+		[
+			{
+				"name": "bounds",
+				"float32": [0.5, 0.5, 0.5]
+			}
+		],
+
+		"collision_tree_node":
+		[
+			{
+				"name": "type",
+				"enum": 0
+			},
+
+			{
+				"name": "collision volume",
+				"uuid": "KYmtrf,%2s?:;`8#FEfk?5nfVyW(qjS:AF-926<9/XHH6^@Y)%BF76*k-Vh$F:4"
+			},
+
+			{
+				"name": "next collider",
+				"uuid": ""
+			},
+
+			{
+				"name": "is trigger",
+				"bool": false
+			},
+
+			{
+				"name": "geometry ID",
+				"ptr": 0
+			}
+		]
+	}
+}

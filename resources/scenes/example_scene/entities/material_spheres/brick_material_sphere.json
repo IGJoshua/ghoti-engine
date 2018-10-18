@@ -1,0 +1,193 @@
+{
+	"uuid": "r#FJ_H.ti1w@lUvx>J3Nw7dD`tclVSHWng4<r/#)$@rV<hjI#'?0h`mBX7juk_b",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [2.5, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [4, 4, 4]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": "jP/4bcu/ho:G0LSG/OG$/O/G4vsuf;ZNh__H@RM.HdRM7#q;P64TbAyl5jgp#?D"
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "name",
+				"char(64)": "brick_material_sphere"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		],
+
+		"rigid_body":
+		[
+			{
+				"name": "body ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "space ID",
+				"ptr": 0
+			},
+
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "dynamic",
+				"bool": true
+			},
+
+			{
+				"name": "gravity",
+				"bool": true
+			},
+
+			{
+				"name": "mass",
+				"float32": 1
+			},
+
+			{
+				"name": "center of mass",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0, 10, 0]
+			},
+
+			{
+				"name": "angular velocity",
+				"float32": [5, -3, 0]
+			},
+
+			{
+				"name": "default damping",
+				"bool": true
+			},
+
+			{
+				"name": "linear damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping",
+				"float32": 0.1
+			},
+
+			{
+				"name": "linear damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "angular damping threshold",
+				"float32": 0.1
+			},
+
+			{
+				"name": "max angular speed",
+				"float32": 25
+			},
+
+			{
+				"name": "moment of inertia type",
+				"enum": 0
+			},
+
+			{
+				"name": "moment of inertia",
+				"float32": [1, 1, 1, 0, 0, 0]
+			}
+		],
+
+		"collision":
+		[
+			{
+				"name": "collision tree",
+				"uuid": "jP/4bcu/ho:G0LSG/OG$/O/G4vsuf;ZNh__H@RM.HdRM7#q;P64TbAyl5jgp#?D"
+			},
+
+			{
+				"name": "hit list",
+				"uuid": ""
+			},
+
+			{
+				"name": "last hit list",
+				"uuid": ""
+			}
+		]
+	}
+}

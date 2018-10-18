@@ -1,0 +1,110 @@
+{
+	"uuid": "jP/4bcu/ho:G0LSG/OG$/O/G4vsuf;ZNh__H@RM.HdRM7#q;P64TbAyl5jgp#?D",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": "r#FJ_H.ti1w@lUvx>J3Nw7dD`tclVSHWng4<r/#)$@rV<hjI#'?0h`mBX7juk_b"
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"sphere":
+		[
+			{
+				"name": "radius",
+				"float32": 0.5
+			}
+		],
+
+		"collision_tree_node":
+		[
+			{
+				"name": "type",
+				"enum": 1
+			},
+
+			{
+				"name": "collision volume",
+				"uuid": "r#FJ_H.ti1w@lUvx>J3Nw7dD`tclVSHWng4<r/#)$@rV<hjI#'?0h`mBX7juk_b"
+			},
+
+			{
+				"name": "next collider",
+				"uuid": ""
+			},
+
+			{
+				"name": "is trigger",
+				"bool": false
+			},
+
+			{
+				"name": "geometry ID",
+				"ptr": 0
+			}
+		]
+	}
+}
