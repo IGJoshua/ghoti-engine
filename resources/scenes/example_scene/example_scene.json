@@ -6,7 +6,8 @@
 			"external":
 			[
 				"basic_input",
-				"debug/orbital_camera"
+				"debug/orbital_camera",
+				"debug/sphere_physics"
 			],
 
 			"internal":
