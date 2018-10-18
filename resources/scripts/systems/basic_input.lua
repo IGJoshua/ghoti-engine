@@ -20,7 +20,7 @@ function system.begin(scene, dt)
   end
 
   if input.reload.updated and input.reload.keydown then
-	C.reloadAllScenes(false, true)
+	C.reloadAllScenes(false, false)
   end
 
   if input.fullscreen.updated and input.fullscreen.keydown then

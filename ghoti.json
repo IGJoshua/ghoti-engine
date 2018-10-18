@@ -27,12 +27,13 @@
 
 		"shadows":
 		{
-			"resolution": 2048,
+			"resolution": 4096,
 
 			"directional_lights":
 			{
 				"enabled": true,
-				"bias": [0.005, 0.05]
+				"bias": [0.005, 0.05],
+				"frustum_bounds": [-50.0, 50.0, -50.0, 50.0, -50.0, 50.0]
 			},
 
 			"point_lights":

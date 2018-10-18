@@ -30,6 +30,7 @@ typedef struct graphics_config_t
 	uint32 shadowMapResolution;
 	bool directionalLightShadows;
 	real32 directionalLightShadowBias[2];
+	real32 directionalLightShadowFrustumBounds[6];
 	uint32 maxNumShadowPointLights;
 	real32 pointLightShadowBias;
 	real32 pointLightPCFDiskRadius;

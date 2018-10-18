@@ -149,6 +149,27 @@ int32 loadConfig(void)
 	}
 
 	GET_CONFIG_ITEM(
+		directionalLightShadowFrustumBounds,
+		"graphics.shadows.directional_lights.frustum_bounds")
+	{
+		config.graphicsConfig.directionalLightShadowFrustumBounds[0] =
+			directionalLightShadowFrustumBounds->child->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[1] =
+			directionalLightShadowFrustumBounds->child->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[2] =
+			directionalLightShadowFrustumBounds->child->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[3] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[4] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[5] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->next->next->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(
 		maxNumShadowPointLights,
 		"graphics.shadows.point_lights.limit")
 	{
@@ -334,6 +355,12 @@ void initializeDefaultConfig(void)
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;
 	config.graphicsConfig.directionalLightShadowBias[1] = 0.05f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[0] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[1] = 50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[2] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[3] = 50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[4] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[5] = 50.0f;
 	config.graphicsConfig.maxNumShadowPointLights = MAX_NUM_SHADOW_POINT_LIGHTS;
 	config.graphicsConfig.pointLightShadowBias = 0.15;
 	config.graphicsConfig.pointLightPCFDiskRadius = 25.0f;

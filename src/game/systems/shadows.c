@@ -415,16 +415,15 @@ void drawShadowDirectionalLight(Scene *scene)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	// TODO: Properly build light frustum
 	kmMat4 lightProjection;
 	kmMat4OrthographicProjection(
 		&lightProjection,
-		-20.0f,
-		20.0f,
-		-20.0f,
-		20.0f,
-		-20.0f,
-		20.0f);
+		config.graphicsConfig.directionalLightShadowFrustumBounds[0],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[1],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[2],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[3],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[4],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[5]);
 
 	kmQuaternion lightDirection;
 	quaternionSlerp(
@@ -446,9 +445,8 @@ void drawShadowDirectionalLight(Scene *scene)
 		NULL,
 		alpha);
 
-	// TODO: Properly build light frustum
 	kmVec3 lightPosition;
-	kmVec3Scale(&lightPosition, &directionVector, -5.0f);
+	kmVec3Scale(&lightPosition, &directionVector, 1.0f);
 	kmVec3Add(&lightPosition, &lightPosition, &cameraPosition);
 
 	kmVec3 lightScale;
