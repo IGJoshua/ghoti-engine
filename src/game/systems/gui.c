@@ -155,8 +155,6 @@ internal void initGUISystem(Scene *scene)
 		{
 			nk_buffer_init_default(&cmds);
 
-			updateDefaultFont = true;
-
 			loadImage(WIDGET_BACKGROUND, false);
 			widgetBackground = getImage(WIDGET_BACKGROUND);
 
@@ -220,6 +218,7 @@ internal void initGUISystem(Scene *scene)
 		}
 	}
 
+	updateDefaultFont = true;
 	guiRefCount++;
 }
 
