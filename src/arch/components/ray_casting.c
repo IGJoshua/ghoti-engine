@@ -9,7 +9,7 @@
 internal
 void nearCallback(void *data, dGeomID o1, dGeomID o2)
 {
-    if(dGeomIsSpace(o1) || dGeomIsSpace(o2))
+    if (dGeomIsSpace(o1) || dGeomIsSpace(o2))
     {
         dSpaceCollide2(o1, o2, data, &nearCallback);
     }
@@ -24,21 +24,21 @@ void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			&contact,
 			sizeof(dContactGeom));
 
-        if(!hasContact)
+        if (!hasContact)
         {
             return;
         }
 
         RayCollision* ray = (RayCollision*)data;
 
-        if(contact.depth < ray->minDist)
+        if (contact.depth < ray->minDist)
         {
             return;
         }
 
         ray->hasContact = true;
 
-        if(contact.depth < ray->distance)
+        if (contact.depth < ray->distance)
         {
             ray->contact_pos[0] = contact.pos[0];
             ray->contact_pos[1] = contact.pos[1];

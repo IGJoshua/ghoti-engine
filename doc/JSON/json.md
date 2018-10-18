@@ -777,7 +777,7 @@ Example usage for the utility is shown.
 
 ### Description
 
-This utility generates a template for a scene by creating a folder containing files to represent a default scene. The scene file contains the default *internal* systems and empty lists for the *external* systems that are called during *update* and *draw*. This file also contains default limits on the number of instances for each of the components used in the default systems, a reference to the active camera in the scene, and a value for gravity. The `entities` folder contains the referenced camera entity as well as a folder containing the default prototype entities.
+This utility generates a template for a scene by creating a folder containing files to represent a default scene. The scene file contains the default *internal* systems and empty lists for the *external* systems that are called during *update* and *draw*. This file also contains default limits on the number of instances for each of the components used in the default systems, a reference to the active camera in the scene, and a value for gravity. The `entities` folder contains the referenced camera entity, a folder containing the default prototype entities, a default directional light entity, and a default cubemap entity.
 
 ### Example
 
@@ -801,7 +801,8 @@ This utility generates a template for a scene by creating a folder containing fi
 				"joint_information",
 				"particle_simulator",
 				"gui",
-				"audio"
+				"audio",
+				"lights"
 			]
 		},
 
@@ -814,6 +815,7 @@ This utility generates a template for a scene by creating a folder containing fi
 
 			"internal":
 			[
+				"shadows",
 				"cubemap_renderer",
 				"render_heightmap",
 				"renderer",
@@ -821,6 +823,7 @@ This utility generates a template for a scene by creating a folder containing fi
 				"debug_renderer",
 				"collision_primitive_renderer",
 				"particle_renderer",
+				"post_processing",
 				"gui_renderer"
 			]
 		}
@@ -855,10 +858,11 @@ This utility generates a template for a scene by creating a folder containing fi
 		"joint_information": 256,
 		"joint_list": 512,
 		"joint": 8192,
+		"light": 128,
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
-		"particle_emitter": 128,
+		"particle_emitter": 32,
 		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,
@@ -989,6 +993,132 @@ This utility generates a template for a scene by creating a folder containing fi
 }
 ```
 
+#### new_scene/entities/cubemap.json:
+
+``` json
+{
+	"uuid": "Krjfm7rqHt(_W1f</FrO#B4m/P;.N9VG*B:6:)T4.9a<trv)>fN?/_2;6C>YYq&",
+
+	"components":
+	{
+		"cubemap":
+		[
+			{
+				"name": "name",
+				"char(64)": ""
+			}
+		]
+	}
+}
+```
+
+#### new_scene/entities/directional_light.json:
+
+``` json
+{
+	"uuid": "s>Gx%1AC4l+s-op,(Zus-N;G$VEF8?ZU5Ttl>%G7/4-09,2gWJ48C_RgmfGHyx)",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [-0.382999986410141, 0, 0, 0.92400002479553223]
+			},
+
+			{
+				"name": "scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"light":
+		[
+			{
+				"name": "enabled",
+				"bool": true
+			},
+
+			{
+				"name": "type",
+				"enum": 0
+			},
+
+			{
+				"name": "radiant flux",
+				"float32": [10, 10, 10]
+			},
+
+			{
+				"name": "radius",
+				"float32": 0
+			},
+
+			{
+				"name": "size",
+				"float32": [1, 1]
+			}
+		]
+	}
+}
+```
+
 ### Usage
 
 ``` shell
@@ -1043,7 +1173,8 @@ This utility exports JSON scene files to binary scene files that can be used in 
 				"joint_information",
 				"particle_simulator",
 				"gui",
-				"audio"
+				"audio",
+				"lights"
 			]
 		},
 
@@ -1056,6 +1187,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 
 			"internal":
 			[
+				"shadows",
 				"cubemap_renderer",
 				"render_heightmap",
 				"renderer",
@@ -1063,6 +1195,7 @@ This utility exports JSON scene files to binary scene files that can be used in 
 				"debug_renderer",
 				"collision_primitive_renderer",
 				"particle_renderer",
+				"post_processing",
 				"gui_renderer"
 			]
 		}
@@ -1097,10 +1230,11 @@ This utility exports JSON scene files to binary scene files that can be used in 
 		"joint_information": 256,
 		"joint_list": 512,
 		"joint": 8192,
+		"light": 128,
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
-		"particle_emitter": 128,
+		"particle_emitter": 32,
 		"progress_bar": 1024,
 		"rigid_body": 1024,
 		"slider_joint": 256,

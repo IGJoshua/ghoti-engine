@@ -9,8 +9,11 @@
 typedef struct window_config_t
 {
 	char *title;
+	char *icon;
 	bool fullscreen;
+	bool maximized;
 	kmVec2 size;
+	bool resizable;
 	bool vsync;
 } WindowConfig;
 
@@ -22,10 +25,12 @@ typedef struct physics_config_t
 typedef struct graphics_config_t
 {
 	kmVec3 backgroundColor;
+	uint32 numMSAASamples;
 	bool pbr;
 	uint32 shadowMapResolution;
 	bool directionalLightShadows;
 	real32 directionalLightShadowBias[2];
+	real32 directionalLightShadowFrustumBounds[6];
 	uint32 maxNumShadowPointLights;
 	real32 pointLightShadowBias;
 	real32 pointLightPCFDiskRadius;

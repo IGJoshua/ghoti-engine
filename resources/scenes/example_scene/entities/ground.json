@@ -1,0 +1,87 @@
+{
+	"uuid": "KYmtrf,%2s?:;`8#FEfk?5nfVyW(qjS:AF-926<9/XHH6^@Y)%BF76*k-Vh$F:4",
+
+	"components":
+	{
+		"transform":
+		[
+			{
+				"name": "position",
+				"float32": [0, -5, 0]
+			},
+
+			{
+				"name": "rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "scale",
+				"float32": [20, 1, 20]
+			},
+
+			{
+				"name": "parent",
+				"uuid": ""
+			},
+
+			{
+				"name": "first child",
+				"uuid": ""
+			},
+
+			{
+				"name": "next sibling",
+				"uuid": ""
+			},
+
+			{
+				"name": "dirty",
+				"bool": true
+			},
+
+			{
+				"name": "global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "global scale",
+				"float32": [1, 1, 1]
+			},
+
+			{
+				"name": "last global position",
+				"float32": [0, 0, 0]
+			},
+
+			{
+				"name": "last global rotation",
+				"float32": [0, 0, 0, 1]
+			},
+
+			{
+				"name": "last global scale",
+				"float32": [1, 1, 1]
+			}
+		],
+
+		"model":
+		[
+			{
+				"name": "name",
+				"char(64)": "cube"
+			},
+
+			{
+				"name": "visible",
+				"bool": true
+			}
+		]
+	}
+}

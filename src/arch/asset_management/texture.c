@@ -10,10 +10,8 @@
 
 #include "renderer/renderer_utilities.h"
 
-#define STBI_NO_HDR
 #define STBI_NO_PIC
 #define STBI_NO_PNM
-#define STBI_NO_LINEAR
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <stb/stb_image.h>
@@ -196,10 +194,58 @@ int32 loadTextureData(
 	return 0;
 }
 
+int32 loadHDRTextureData(
+	AssetLogType type,
+	const char *typeName,
+	const char *name,
+	const char *filename,
+	int32 numComponents,
+	bool verticalFlip,
+	HDRTextureData *data)
+{
+	data->data = stbi_loadf(
+		filename,
+		&data->width,
+		&data->height,
+		&data->numComponents,
+		numComponents);
+
+	data->numComponents = numComponents;
+
+	if (!data->data)
+	{
+		if (name)
+		{
+			ASSET_LOG_FULL_TYPE(
+				type,
+				name,
+				"Failed to load %s\n",
+				typeName);
+		}
+		else
+		{
+			LOG("Failed to load %s\n", typeName);
+		}
+
+		return -1;
+	}
+	else if (verticalFlip)
+	{
+		stbi__vertical_flip(
+			data->data,
+			data->width,
+			data->height,
+			numComponents * sizeof(real32));
+	}
+
+	return 0;
+}
+
 int32 uploadTextureToGPU(
 	const char *name,
 	const char *type,
 	GLuint *id,
+	GLuint64 *handle,
 	TextureData *data,
 	bool textureFiltering,
 	bool transparent)
@@ -237,6 +283,7 @@ int32 uploadTextureToGPU(
 		data->data);
 
 	free(data->data);
+	data->data = NULL;
 
 	int32 error = logGLError(false, "Failed to transfer %s onto GPU", type);
 
@@ -262,6 +309,12 @@ int32 uploadTextureToGPU(
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
+
+		if (handle)
+		{
+			*handle = glGetTextureHandleARB(*id);
+			glMakeTextureHandleResidentARB(*handle);
+		}
 
 		LOG("Successfully transferred %s (%s) onto GPU\n", type, name);
 	}
@@ -299,6 +352,8 @@ void freeTextureData(Texture *texture)
 {
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
+	free(texture->data.data);
+	glMakeTextureHandleNonResidentARB(texture->handle);
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

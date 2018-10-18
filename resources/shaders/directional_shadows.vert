@@ -25,7 +25,7 @@ mat4 getBoneTransform(void);
 void main()
 {
 	mat4 boneTransform = getBoneTransform();
-	gl_Position = lightTransform * model * boneTransform * vec4(position, 1);
+	gl_Position = lightTransform * model * boneTransform * vec4(position, 1.0);
 }
 
 mat4 getBoneTransform(void)

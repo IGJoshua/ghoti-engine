@@ -20,9 +20,9 @@ out vec3 fragPosition;
 out vec4 fragDirectionalLightSpacePosition;
 out vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 out vec3 fragNormal;
+out vec3 fragTangent;
 out vec2 fragMaterialUV;
 out vec2 fragMaskUV;
-out mat3 fragTBN;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -35,7 +35,6 @@ uniform mat4 shadowDirectionalLightTransform;
 uniform mat4 shadowSpotlightTransforms[MAX_NUM_SHADOW_SPOTLIGHTS];
 
 mat4 getBoneTransform(void);
-mat3 createTBNMatrix(mat4 modelTransform);
 
 void main()
 {
@@ -43,22 +42,22 @@ void main()
 	mat4 modelTransform = model * boneTransform;
 
 	fragColor = color;
-	fragPosition = (modelTransform * vec4(position, 1)).xyz;
+	fragPosition = (modelTransform * vec4(position, 1.0)).xyz;
 	fragDirectionalLightSpacePosition =
-		shadowDirectionalLightTransform * vec4(fragPosition, 1);
+		shadowDirectionalLightTransform * vec4(fragPosition, 1.0);
 
 	for (uint i = 0; i < MAX_NUM_SHADOW_SPOTLIGHTS; i++)
 	{
 		fragSpotlightSpacePositions[i] =
-			shadowSpotlightTransforms[i] * vec4(fragPosition, 1);
+			shadowSpotlightTransforms[i] * vec4(fragPosition, 1.0);
 	}
 
-	fragNormal = normalize((modelTransform * vec4(normal, 0)).xyz);
+	fragNormal = normalize((modelTransform * vec4(normal, 0.0)).xyz);
+	fragTangent = normalize((modelTransform * vec4(tangent, 0.0)).xyz);
 	fragMaterialUV = materialUV;
 	fragMaskUV = maskUV;
-	fragTBN = createTBNMatrix(modelTransform);
 
-	gl_Position = projection * view * vec4(fragPosition, 1);
+	gl_Position = projection * view * vec4(fragPosition, 1.0);
 }
 
 mat4 getBoneTransform(void)
@@ -73,15 +72,4 @@ mat4 getBoneTransform(void)
 	}
 
 	return boneTransform;
-}
-
-mat3 createTBNMatrix(mat4 modelTransform)
-{
-	mat3 normalTransform = transpose(inverse(mat3(modelTransform)));
-	vec3 T = normalize(normalTransform * tangent);
-	vec3 N = normalize(normalTransform * normal);
-	T = normalize(T - dot(T, N) * N);
-	vec3 B = cross(N, T);
-
-	return transpose(mat3(T, B, N));
 }

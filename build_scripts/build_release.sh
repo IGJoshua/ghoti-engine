@@ -12,6 +12,7 @@ cp -r resources/ release/
 cp build_scripts/default_init.lua release/resources/scripts/init.lua
 
 mkdir release/resources/temp/
+mv release/resources/cubemaps/brdf_lut.hdr release/resources/temp/
 mv release/resources/fonts/default_font.ttf release/resources/temp/
 mv release/resources/images/widget_background.png release/resources/temp/
 mv release/resources/models/box/ release/resources/temp/
@@ -35,6 +36,7 @@ rm -rf release/resources/scenes/*
 rm -rf release/resources/scripts/components/debug/
 rm -rf release/resources/scripts/systems/debug/
 
+mv release/resources/temp/brdf_lut.hdr release/resources/cubemaps/
 mv release/resources/temp/default_font.ttf release/resources/fonts/
 mv release/resources/temp/widget_background.png release/resources/images/
 mv release/resources/temp/box/ release/resources/models/

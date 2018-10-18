@@ -7,12 +7,7 @@
 		[
 			{
 				"name": "name",
-				"char(64)": "skybox"
-			},
-
-			{
-				"name": "swap front and back",
-				"bool": true
+				"char(64)": "forest"
 			}
 		]
 	}

@@ -84,13 +84,8 @@
 			},
 
 			{
-				"name": "color",
-				"float32": [1, 1, 1]
-			},
-
-			{
-				"name": "ambient",
-				"float32": [0.5, 0.5, 0.5]
+				"name": "radiant flux",
+				"float32": [10, 10, 10]
 			},
 
 			{

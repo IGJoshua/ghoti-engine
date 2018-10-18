@@ -76,12 +76,21 @@ int32 setMaterialActiveUniform(Uniform *uniform, Material *material)
 	return 0;
 }
 
-int32 setMaterialUniform(Uniform *uniform, GLint *textureIndex)
+int32 setMaterialUniform(Uniform *uniform, Material *material)
 {
-	return setTextureArrayUniform(
-		uniform,
-		MATERIAL_COMPONENT_TYPE_COUNT,
-		textureIndex);
+	GLuint64 textureHandles[MATERIAL_COMPONENT_TYPE_COUNT];
+	memset(textureHandles, 0, MATERIAL_COMPONENT_TYPE_COUNT * sizeof(GLuint64));
+
+	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		Texture texture = getTexture(material->components[i].texture.string);
+		if (strlen(texture.name.string) > 0)
+		{
+			textureHandles[i] = texture.handle;
+		}
+	}
+
+	return setUniform(*uniform, MATERIAL_COMPONENT_TYPE_COUNT, textureHandles);
 }
 
 int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
@@ -103,6 +112,19 @@ int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
 	return 0;
 }
 
+int32 setBindlessTextureUniform(Uniform *uniform, UUID name)
+{
+	GLuint64 textureHandle = 0;
+
+	Texture texture = getTexture(name.string);
+	if (strlen(texture.name.string) > 0)
+	{
+		textureHandle = texture.handle;
+	}
+
+	return setUniform(*uniform, 1, &textureHandle);
+}
+
 int32 setTextureArrayUniform(
 	Uniform *uniform,
 	uint32 numTextures,
@@ -120,14 +142,6 @@ int32 setTextureArrayUniform(
 	}
 
 	return 0;
-}
-
-void activateMaterialTextures(Material *material, GLint *textureIndex)
-{
-	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		activateTexture(material->components[i].texture, textureIndex);
-	}
 }
 
 void activateTextures(

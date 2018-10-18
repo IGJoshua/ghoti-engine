@@ -8,21 +8,19 @@
 #include <kazmath/quaternion.h>
 #include <kazmath/mat4.h>
 
-#define MAX_NUM_POINT_LIGHTS 8
-#define MAX_NUM_SPOTLIGHTS 8
+#define MAX_NUM_POINT_LIGHTS 64
+#define MAX_NUM_SPOTLIGHTS 64
 
 typedef struct directional_light_t
 {
-	kmVec3 color;
-	kmVec3 ambient;
+	kmVec3 radiantFlux;
 	kmQuaternion previousDirection;
 	kmQuaternion direction;
 } DirectionalLight;
 
 typedef struct point_light_t
 {
-	kmVec3 color;
-	kmVec3 ambient;
+	kmVec3 radiantFlux;
 	kmVec3 previousPosition;
 	kmVec3 position;
 	real32 radius;
@@ -31,8 +29,7 @@ typedef struct point_light_t
 
 typedef struct spotlight_t
 {
-	kmVec3 color;
-	kmVec3 ambient;
+	kmVec3 radiantFlux;
 	kmVec3 previousPosition;
 	kmVec3 position;
 	kmQuaternion previousDirection;

@@ -80,7 +80,7 @@ internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};
 internal UUID animatorComponentID = {};
-internal UUID lightComponentID = {};
+internal UUID cameraComponentID = {};
 
 uint32 numShadowDirectionalLights = 0;
 ShadowDirectionalLight shadowDirectionalLight;
@@ -267,14 +267,14 @@ internal void beginShadowsSystem(Scene *scene, real64 dt)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFramebuffer);
 
-	drawShadowDirectionalLight(scene);
-	drawShadowPointLights(scene);
-	drawShadowSpotlights(scene);
-
 	if (animationSystemRefCount > 0)
 	{
 		skeletons = hashMapGetData(skeletonsMap, &scene);
 	}
+
+	drawShadowDirectionalLight(scene);
+	drawShadowPointLights(scene);
+	drawShadowSpotlights(scene);
 }
 
 internal void endShadowsSystem(Scene *scene, real64 dt)
@@ -335,7 +335,7 @@ System createShadowsSystem(void)
 	modelComponentID = idFromName("model");
 	animationComponentID = idFromName("animation");
 	animatorComponentID = idFromName("animator");
-	lightComponentID = idFromName("light");
+	cameraComponentID = idFromName("camera");
 
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &transformComponentID);
@@ -395,8 +395,12 @@ void drawShadowDirectionalLight(Scene *scene)
 		scene,
 		scene->mainCamera,
 		transformComponentID);
+	CameraComponent *camera = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID);
 
-	if (!cameraTransform)
+	if (!cameraTransform || !camera)
 	{
 		return;
 	}
@@ -411,16 +415,15 @@ void drawShadowDirectionalLight(Scene *scene)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	// TODO: Properly build light frustum
 	kmMat4 lightProjection;
 	kmMat4OrthographicProjection(
 		&lightProjection,
-		-20.0f,
-		20.0f,
-		-20.0f,
-		20.0f,
-		-20.0f,
-		20.0f);
+		config.graphicsConfig.directionalLightShadowFrustumBounds[0],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[1],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[2],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[3],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[4],
+		config.graphicsConfig.directionalLightShadowFrustumBounds[5]);
 
 	kmQuaternion lightDirection;
 	quaternionSlerp(
@@ -442,9 +445,8 @@ void drawShadowDirectionalLight(Scene *scene)
 		NULL,
 		alpha);
 
-	// TODO: Properly build light frustum
 	kmVec3 lightPosition;
-	kmVec3Scale(&lightPosition, &directionVector, -5.0f);
+	kmVec3Scale(&lightPosition, &directionVector, 1.0f);
 	kmVec3Add(&lightPosition, &lightPosition, &cameraPosition);
 
 	kmVec3 lightScale;

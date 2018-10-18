@@ -125,6 +125,8 @@ void beginAudioSystem(Scene *scene, real64 dt)
 		AudioFile audioData = getAudio(audio->name.string);
 		if (strlen(audioData.name.string) > 0)
 		{
+			strcpy(audioSource->currentAudio, audio->name.string);
+
 			alSourceRewind(g_Sources[audioSource->id]);
 
 			alSourcei(
@@ -310,6 +312,15 @@ void runAudioSystem(Scene *scene, UUID entityID, real64 dt)
 		alListenerfv(AL_POSITION,sourcePos);
 		alListenerfv(AL_ORIENTATION,listenerOri);
 		alListenerfv(AL_VELOCITY,sourceVel);
+	}
+
+	if (isSourceActive(sourceComp))
+	{
+		getAudio(sourceComp->currentAudio);
+	}
+	else
+	{
+		strcpy(sourceComp->currentAudio, "");
 	}
 }
 

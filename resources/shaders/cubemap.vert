@@ -10,7 +10,7 @@ layout(location=6) in vec2 maskUV;
 layout(location=7) in ivec4 bones;
 layout(location=8) in vec4 weights;
 
-out vec3 fragUV;
+out vec3 fragPosition;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -18,6 +18,6 @@ uniform mat4 projection;
 
 void main()
 {
-	fragUV = position;
-	gl_Position = projection * view * model * vec4(position, 1);
+	fragPosition = position;
+	gl_Position = projection * view * model * vec4(position, 1.0);
 }

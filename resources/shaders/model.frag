@@ -1,4 +1,6 @@
 #version 420 core
+#extension GL_ARB_bindless_texture: require
+#extension GL_ARB_gpu_shader_int64: require
 
 #define NUM_MATERIAL_COMPONENTS 7
 
@@ -18,15 +20,13 @@ const uint ROUGHNESS_COMPONENT = 6;
 
 struct DirectionalLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 direction;
 };
 
 struct PointLight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	float radius;
 	int shadowIndex;
@@ -34,8 +34,7 @@ struct PointLight
 
 struct Spotlight
 {
-	vec3 color;
-	vec3 ambient;
+	vec3 radiantFlux;
 	vec3 position;
 	vec3 direction;
 	float radius;
@@ -48,25 +47,17 @@ in vec3 fragPosition;
 in vec4 fragDirectionalLightSpacePosition;
 in vec4 fragSpotlightSpacePositions[MAX_NUM_SHADOW_SPOTLIGHTS];
 in vec3 fragNormal;
+in vec3 fragTangent;
 in vec2 fragMaterialUV;
 in vec2 fragMaskUV;
-in mat3 fragTBN;
 
 out vec4 color;
 
 uniform vec3 cameraPosition;
 
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
-uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
+uniform uint64_t material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D materialMask;
-// uniform sampler2D opacityMask;
-// uniform sampler2D collectionMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 collectionMaterialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D grungeMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 grungeMaterialValues[NUM_MATERIAL_COMPONENTS];
-// uniform sampler2D wearMaterial[NUM_MATERIAL_COMPONENTS];
-// uniform vec3 wearMaterialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
 uniform vec3 customColor;
@@ -91,17 +82,19 @@ uniform float shadowPointLightDiskRadius;
 uniform sampler2D spotlightShadowMaps[MAX_NUM_SHADOW_SPOTLIGHTS];
 uniform vec2 shadowSpotlightBiasRange;
 
-const vec3 sampleOffsetDirections[20] = vec3[](
+const vec3 pcfSampleOffsets[20] = vec3[](
 	vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
 	vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
 	vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
 	vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
 	vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
 
-vec2 getMaterialUV(vec3 viewDirection);
+mat3 createTBNMatrix(vec3 normal, vec3 tangent);
+vec2 getMaterialUV(vec3 viewDirection, mat3 TBN);
 
 vec3 getAlbedoTextureColor(vec2 uv);
-vec3 getNormalTextureColor(vec2 uv);
+float getHeightTextureColor(vec2 uv);
+vec3 getNormalTextureColor(vec2 uv, mat3 TBN);
 
 vec3 getDirectionalLightColor(
 	DirectionalLight light,
@@ -135,16 +128,17 @@ void main()
 {
 	if (useCustomColor)
 	{
-		color = vec4(customColor, 1);
+		color = vec4(customColor, 1.0);
 		return;
 	}
 
 	vec3 viewDirection = normalize(cameraPosition - fragPosition);
+	mat3 TBN = createTBNMatrix(fragNormal, fragTangent);
 
-	vec2 materialUV = getMaterialUV(viewDirection);
+	vec2 materialUV = getMaterialUV(viewDirection, TBN);
 
 	vec3 albedoTextureColor = getAlbedoTextureColor(materialUV);
-	vec3 normalTextureColor = getNormalTextureColor(materialUV);
+	vec3 normalTextureColor = getNormalTextureColor(materialUV, TBN);
 
 	vec3 finalColor = vec3(0.0);
 
@@ -177,14 +171,65 @@ void main()
 	color = vec4(finalColor, 1.0);
 }
 
-vec2 getMaterialUV(vec3 viewDirection)
+mat3 createTBNMatrix(vec3 normal, vec3 tangent)
+{
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	vec3 bitangent = cross(tangent, normal);
+	return mat3(tangent, bitangent, normal);
+}
+
+vec2 getMaterialUV(vec3 viewDirection, mat3 TBN)
 {
 	if (!materialActive[HEIGHT_COMPONENT])
 	{
 		return fragMaterialUV;
 	}
 
-	return fragMaterialUV;
+	viewDirection = normalize(viewDirection * TBN);
+
+	const vec2 layersRange = vec2(8, 32);
+	float numLayers = mix(
+		layersRange.y,
+		layersRange.x,
+		abs(dot(vec3(0.0, 0.0, 1.0), viewDirection)));
+
+	vec2 P =
+		(viewDirection.xy / viewDirection.z) *
+		0.025 * materialValues[HEIGHT_COMPONENT].x;
+
+	float layerDepth = 1.0 / numLayers;
+	vec2 deltaUV = P / numLayers;
+
+	float height = getHeightTextureColor(fragMaterialUV);
+
+	vec2 uv; float l;
+	for (uv = fragMaterialUV, l = 0.0; l < height; l += layerDepth)
+	{
+		uv -= deltaUV;
+		height = getHeightTextureColor(uv);
+	}
+
+	vec2 lastUV = uv + deltaUV;
+
+	vec2 depth = vec2(
+		getHeightTextureColor(lastUV) - l + layerDepth,
+		height - l);
+	float weight = depth.y / (depth.y - depth.x);
+
+	vec2 materialUV = lastUV * weight + uv * (1.0 - weight);
+
+	if (materialValues[HEIGHT_COMPONENT].z == -1.0)
+	{
+		if (materialUV.x < 0.0 ||
+			materialUV.x > 1.0 ||
+			materialUV.y < 0.0 ||
+			materialUV.y > 1.0)
+		{
+			discard;
+		}
+	}
+
+	return materialUV;
 }
 
 vec3 getAlbedoTextureColor(vec2 uv)
@@ -192,21 +237,41 @@ vec3 getAlbedoTextureColor(vec2 uv)
 	vec3 albedoTextureColor = fragColor.rgb;
 	if (materialActive[BASE_COMPONENT])
 	{
-		albedoTextureColor = vec3(texture(material[BASE_COMPONENT], uv));
+		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
+		albedoTextureColor = vec3(texture(sampler, uv));
+		albedoTextureColor *= materialValues[BASE_COMPONENT];
 	}
 
 	return albedoTextureColor;
 }
 
-vec3 getNormalTextureColor(vec2 uv)
+float getHeightTextureColor(vec2 uv)
+{
+	float height = 0.0;
+	if (materialActive[HEIGHT_COMPONENT])
+	{
+		sampler2D sampler = sampler2D(material[HEIGHT_COMPONENT]);
+		int inverse = materialValues[HEIGHT_COMPONENT].y == 1.0 ? -1 : 1;
+		height = inverse * texture(sampler, uv).r +
+			materialValues[HEIGHT_COMPONENT].y;
+	}
+
+	return height;
+}
+
+vec3 getNormalTextureColor(vec2 uv, mat3 TBN)
 {
 	vec3 normalTextureColor = fragNormal;
-	// if (materialActive[NORMAL_COMPONENT])
-	// {
-	// 	normalTextureColor = texture(material[NORMAL_COMPONENT], uv).rgb;
-	// 	normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
-	// 	normalTextureColor = normalize(fragTBN * normalTextureColor);
-	// }
+	if (materialActive[NORMAL_COMPONENT])
+	{
+		sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
+		normalTextureColor = texture(sampler, uv).rgb;
+		normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
+		normalTextureColor = normalize(vec3(
+			normalTextureColor.rg * materialValues[NORMAL_COMPONENT].x,
+			normalTextureColor.b));
+		normalTextureColor = normalize(TBN * normalTextureColor);
+	}
 
 	return normalTextureColor;
 }
@@ -220,8 +285,8 @@ vec3 getDirectionalLightColor(
 
 	float diffuseValue = max(dot(normal, lightDirection), 0.0);
 
-	vec3 ambientColor = light.ambient * albedoTextureColor;
-	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor;
+	vec3 ambientColor = 0.1 * albedoTextureColor;
+	vec3 diffuseColor = light.radiantFlux * diffuseValue * albedoTextureColor;
 
 	float shadow = 0.0;
 	if (numDirectionalLightShadowMaps > 0)
@@ -256,9 +321,9 @@ vec3 getPointLightColor(
 		1.0);
 	attenuation *= attenuation;
 
-	vec3 ambientColor = light.ambient * albedoTextureColor * attenuation;
+	vec3 ambientColor = 0.1 * albedoTextureColor * attenuation;
 	vec3 diffuseColor =
-		light.color * diffuseValue * albedoTextureColor * attenuation;
+		light.radiantFlux * diffuseValue * albedoTextureColor * attenuation;
 
 	float shadow = 0.0;
 	if (light.shadowIndex > -1)
@@ -295,9 +360,8 @@ vec3 getSpotlightColor(
 	float epsilon = light.size.x - light.size.y;
 	float intensity = clamp((theta - light.size.y) / epsilon, 0.0, 1.0);
 
-	vec3 ambientColor = light.ambient * albedoTextureColor *
-		attenuation * intensity;
-	vec3 diffuseColor = light.color * diffuseValue * albedoTextureColor *
+	vec3 ambientColor = 0.1 * albedoTextureColor * attenuation * intensity;
+	vec3 diffuseColor = light.radiantFlux * diffuseValue * albedoTextureColor *
 		attenuation * intensity;
 
 	float shadow = 0.0;
@@ -371,7 +435,7 @@ float getPointShadow(
 
 	for (uint i = 0; i < numSamples; i++)
 	{
-		vec3 offset = sampleOffsetDirections[i] * diskRadius;
+		vec3 offset = pcfSampleOffsets[i] * diskRadius;
 		float closestDepth = texture(
 			shadowMap,
 			lightSpacePosition + offset).r * farPlane;

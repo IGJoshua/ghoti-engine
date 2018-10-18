@@ -126,6 +126,7 @@ typedef struct animator_component_t
 
 typedef struct audio_source_component_t
 {
+	char currentAudio[64];
 	uint32 id;
 	real32 pitch;
 	real32 gain;
@@ -194,7 +195,6 @@ typedef struct collision_component_t
 typedef struct cubemap_component_t
 {
 	char name[64];
-	bool swapFrontAndBack;
 } CubemapComponent;
 
 typedef struct debug_collision_primitive_component_t
@@ -343,8 +343,7 @@ typedef struct light_component_t
 {
 	bool enabled;
 	LightType type;
-	kmVec3 color;
-	kmVec3 ambient;
+	kmVec3 radiantFlux;
 	real32 radius;
 	kmVec2 size;
 } LightComponent;

@@ -14,15 +14,7 @@
 #include "renderer/renderer_utilities.h"
 #include "renderer/shader.h"
 
-#define NUM_POST_PROCESS_VERTEX_ATTRIBUTES 2
-
-typedef struct post_process_vertex_t
-{
-	kmVec2 position;
-	kmVec2 uv;
-} PostProcessVertex;
-
-#define VERTEX_SHADER_FILE "resources/shaders/post_processing.vert"
+#define VERTEX_SHADER_FILE "resources/shaders/quad.vert"
 #define DEFAULT_FRAGMENT_SHADER_FILE \
 	"resources/shaders/default_post_process.frag"
 #define GRAYSCALE_FRAGMENT_SHADER_FILE \
@@ -40,10 +32,18 @@ internal GLuint screenTexture;
 
 internal GLuint screenRenderbuffer;
 
-internal PostProcessVertex vertices[6];
+#define NUM_QUAD_VERTEX_ATTRIBUTES 2
 
-internal GLuint vertexBuffer;
-internal GLuint vertexArray;
+typedef struct quad_vertex_t
+{
+	kmVec2 position;
+	kmVec2 uv;
+} QuadVertex;
+
+internal QuadVertex quadVertices[4];
+
+internal GLuint quadVertexBuffer;
+internal GLuint quadVertexArray;
 
 extern Config config;
 
@@ -82,50 +82,43 @@ internal void initPostProcessingSystem(Scene *scene)
 
 		createFramebuffers();
 
-		kmVec2Fill(&vertices[0].position, -1.0f, 1.0f);
-		kmVec2Fill(&vertices[0].uv, 0.0f, 1.0f);
-		kmVec2Fill(&vertices[1].position, -1.0f, -1.0f);
-		kmVec2Fill(&vertices[1].uv, 0.0f, 0.0f);
-		kmVec2Fill(&vertices[2].position, 1.0f, -1.0f);
-		kmVec2Fill(&vertices[2].uv, 1.0f, 0.0f);
-		kmVec2Fill(&vertices[3].position, -1.0f, 1.0f);
-		kmVec2Fill(&vertices[3].uv, 0.0f, 1.0f);
-		kmVec2Fill(&vertices[4].position, 1.0f, -1.0f);
-		kmVec2Fill(&vertices[4].uv, 1.0f, 0.0f);
-		kmVec2Fill(&vertices[5].position, 1.0f, 1.0f);
-		kmVec2Fill(&vertices[5].uv, 1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[0].position, -1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[0].uv, 0.0f, 1.0f);
+		kmVec2Fill(&quadVertices[1].position, -1.0f, -1.0f);
+		kmVec2Fill(&quadVertices[1].uv, 0.0f, 0.0f);
+		kmVec2Fill(&quadVertices[2].position, 1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[2].uv, 1.0f, 1.0f);
+		kmVec2Fill(&quadVertices[3].position, 1.0f, -1.0f);
+		kmVec2Fill(&quadVertices[3].uv, 1.0f, 0.0f);
 
-		glGenBuffers(1, &vertexBuffer);
-		glGenVertexArrays(1, &vertexArray);
+		glGenBuffers(1, &quadVertexBuffer);
+		glGenVertexArrays(1, &quadVertexArray);
 
 		uint32 bufferIndex = 0;
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
 		glBufferData(
 			GL_ARRAY_BUFFER,
-			sizeof(PostProcessVertex) * 6,
-			vertices,
+			sizeof(QuadVertex) * 4,
+			quadVertices,
 			GL_STATIC_DRAW);
 
-		glBindVertexArray(vertexArray);
+		glBindVertexArray(quadVertexArray);
 		glVertexAttribPointer(
 			bufferIndex++,
 			2,
 			GL_FLOAT,
 			GL_FALSE,
-			sizeof(PostProcessVertex),
-			(GLvoid*)offsetof(PostProcessVertex, position));
+			sizeof(QuadVertex),
+			(GLvoid*)offsetof(QuadVertex, position));
 
 		glVertexAttribPointer(
 			bufferIndex++,
 			2,
 			GL_FLOAT,
 			GL_FALSE,
-			sizeof(PostProcessVertex),
-			(GLvoid*)offsetof(PostProcessVertex, uv));
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+			sizeof(QuadVertex),
+			(GLvoid*)offsetof(QuadVertex, uv));
 
 		LOG("Successfully initialized post processing system\n");
 	}
@@ -171,21 +164,21 @@ internal void beginPostProcessingSystem(Scene *scene, real64 dt)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, screenTexture);
 
-	glBindVertexArray(vertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glBindVertexArray(quadVertexArray);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
 
-	for (uint8 i = 0; i < NUM_POST_PROCESS_VERTEX_ATTRIBUTES; i++)
+	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
 	{
 		glEnableVertexAttribArray(i);
 	}
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	logGLError(false, "Failed to draw post processing quad");
 }
 
 internal void endPostProcessingSystem(Scene *scene, real64 dt)
 {
-	for (uint8 i = 0; i < NUM_POST_PROCESS_VERTEX_ATTRIBUTES; i++)
+	for (uint8 i = 0; i < NUM_QUAD_VERTEX_ATTRIBUTES; i++)
 	{
 		glDisableVertexAttribArray(i);
 	}
@@ -208,11 +201,11 @@ internal void shutdownPostProcessingSystem(Scene *scene)
 
 		freeFramebuffers();
 
-		glBindVertexArray(vertexArray);
-		glDeleteBuffers(1, &vertexBuffer);
+		glBindVertexArray(quadVertexArray);
+		glDeleteBuffers(1, &quadVertexBuffer);
 		glBindVertexArray(0);
 
-		glDeleteVertexArrays(1, &vertexArray);
+		glDeleteVertexArrays(1, &quadVertexArray);
 
 		LOG("Successfully shut down post processing system\n");
 	}
@@ -250,7 +243,7 @@ void createFramebuffers(void)
 
 	glTexImage2DMultisample(
 		GL_TEXTURE_2D_MULTISAMPLE,
-		4,
+		config.graphicsConfig.numMSAASamples,
 		GL_RGB,
 		viewportWidth,
 		viewportHeight,
@@ -273,7 +266,7 @@ void createFramebuffers(void)
 
 	glRenderbufferStorageMultisample(
 		GL_RENDERBUFFER,
-		4,
+		config.graphicsConfig.numMSAASamples,
 		GL_DEPTH24_STENCIL8,
 		viewportWidth,
 		viewportHeight);

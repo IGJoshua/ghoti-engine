@@ -39,6 +39,10 @@ uint32 assetThreadCount;
 pthread_mutex_t assetThreadsMutex;
 pthread_cond_t assetThreadsCondition;
 
+uint32 totalThreadCount;
+pthread_mutex_t totalThreadsMutex;
+pthread_cond_t totalThreadsCondition;
+
 bool assetManagerIsShutdown;
 pthread_mutex_t assetManagerShutdownMutex;
 

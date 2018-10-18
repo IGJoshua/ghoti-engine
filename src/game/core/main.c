@@ -175,7 +175,7 @@ int32 main(int32 argc, char *argv[])
 	update(dt, true);
 	update(dt, false);
 
-	while(!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(window))
 	{
 		// Start timestep
 		real64 newTime = glfwGetTime();
@@ -382,7 +382,11 @@ void update(real64 dt, bool skipLoadedThisFrame)
 
 	handleGUIInput(dt);
 
-	setUpdateAssetManagerFlag();
+	if (viewportWidth != 0 && viewportHeight != 0)
+	{
+		setUpdateAssetManagerFlag();
+	}
+
 	uploadAssets();
 	freeAssets();
 }
@@ -395,6 +399,12 @@ void draw(GLFWwindow *window, real64 frameTime)
 
 	glViewport(0, 0, viewportWidth, viewportHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (viewportWidth == 0 || viewportHeight == 0)
+	{
+		glfwSwapBuffers(window);
+		return;
+	}
 
 	real32 aspectRatio = (real32)viewportWidth / (real32)viewportHeight;
 

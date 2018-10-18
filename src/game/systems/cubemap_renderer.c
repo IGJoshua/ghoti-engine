@@ -5,6 +5,7 @@
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/cubemap.h"
 #include "asset_management/model.h"
+#include "asset_management/mesh.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/renderer_utilities.h"
@@ -19,8 +20,6 @@
 
 #include "data/data_types.h"
 #include "data/list.h"
-
-#define SKYBOX_MODEL_NAME "cubemap"
 
 #define VERTEX_SHADER_FILE "resources/shaders/cubemap.vert"
 #define FRAGMENT_SHADER_FILE "resources/shaders/cubemap.frag"
@@ -42,11 +41,19 @@ internal UUID cubemapComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
-internal Model skybox;
-
 internal GLboolean glDepthMaskValue;
 
+Cubemap currentCubemap = {};
+
 extern real64 alpha;
+
+#define CUBEMAP_MESH_NAME "cubemap"
+
+internal bool cubemapMeshLoaded;
+internal Mesh cubemapMesh;
+
+internal int32 loadCubemapMesh(void);
+internal void freeCubemapMesh(void);
 
 internal void initCubemapRendererSystem(Scene *scene)
 {
@@ -54,7 +61,7 @@ internal void initCubemapRendererSystem(Scene *scene)
 	{
 		LOG("Initializing cubemap renderer...\n");
 
-		loadModel(SKYBOX_MODEL_NAME);
+		cubemapMeshLoaded = loadCubemapMesh() != -1;
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,
@@ -97,12 +104,12 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 		scene->mainCamera,
 		transformComponentID);
 
-	skybox = getModel(SKYBOX_MODEL_NAME);
-
-	if (!camera || !cameraTransform || strlen(skybox.name.string) == 0)
+	if (!camera || !cameraTransform || !cubemapMeshLoaded)
 	{
 		return;
 	}
+
+	memset(&currentCubemap, 0, sizeof(Cubemap));
 
 	glUseProgram(shaderProgram);
 
@@ -127,7 +134,10 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 
 internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 {
-	if (!camera || !cameraTransform || strlen(skybox.name.string) == 0)
+	if (!camera ||
+		!cameraTransform ||
+		!cubemapMeshLoaded ||
+		strlen(currentCubemap.name.string) > 0)
 	{
 		return;
 	}
@@ -144,53 +154,49 @@ internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 		return;
 	}
 
-	for (uint32 i = 0; i < skybox.numSubsets; i++)
+	currentCubemap = cubemap;
+
+	glBindVertexArray(cubemapMesh.vertexArray);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemapMesh.indexBuffer);
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
 	{
-		Subset *subset = &skybox.subsets[i];
-		Mesh *mesh = &subset->mesh;
-
-		glBindVertexArray(mesh->vertexArray);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
-
-		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-		{
-			glEnableVertexAttribArray(j);
-		}
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id);
-
-		glGetBooleanv(GL_DEPTH_WRITEMASK, &glDepthMaskValue);
-
-		glDepthMask(GL_FALSE);
-		glFrontFace(GL_CW);
-
-		glDrawElements(
-			GL_TRIANGLES,
-			mesh->numIndices,
-			GL_UNSIGNED_INT,
-			NULL);
-
-		logGLError(false, "Failed to draw cubemap (%s)", cubemap.name.string);
-
-		glDepthMask(glDepthMaskValue);
-		glFrontFace(GL_CCW);
-
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-		for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
-		{
-			glDisableVertexAttribArray(j);
-		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+		glEnableVertexAttribArray(j);
 	}
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemapID);
+
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &glDepthMaskValue);
+
+	glDepthMask(GL_FALSE);
+	glFrontFace(GL_CW);
+
+	glDrawElements(
+		GL_TRIANGLES,
+		cubemapMesh.numIndices,
+		GL_UNSIGNED_INT,
+		NULL);
+
+	logGLError(false, "Failed to draw cubemap (%s)", cubemap.name.string);
+
+	glDepthMask(glDepthMaskValue);
+	glFrontFace(GL_CCW);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	for (uint8 j = 0; j < NUM_VERTEX_ATTRIBUTES; j++)
+	{
+		glDisableVertexAttribArray(j);
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 internal void endCubemapRendererSystem(Scene *scene, real64 dt)
 {
-	if (!camera || !cameraTransform || strlen(skybox.name.string) == 0)
+	if (!camera || !cameraTransform || !cubemapMeshLoaded)
 	{
 		return;
 	}
@@ -205,6 +211,8 @@ internal void shutdownCubemapRendererSystem(Scene *scene)
 		LOG("Shutting down cubemap renderer...\n");
 
 		glDeleteProgram(shaderProgram);
+
+		freeCubemapMesh();
 
 		LOG("Successfully shut down cubemap renderer\n");
 	}
@@ -228,4 +236,76 @@ System createCubemapRendererSystem(void)
 	system.shutdown = &shutdownCubemapRendererSystem;
 
 	return system;
+}
+
+int32 loadCubemapMesh(void)
+{
+	int32 error = 0;
+
+	LOG("Loading model (%s)...\n", CUBEMAP_MESH_NAME);
+
+	char *cubemapMeshFolder = getFullFilePath(
+		CUBEMAP_MESH_NAME,
+		NULL,
+		"resources/models");
+
+	char *filename = getFullFilePath(
+		CUBEMAP_MESH_NAME,
+		"mesh",
+		cubemapMeshFolder);
+
+	free(cubemapMeshFolder);
+
+	FILE *file = fopen(filename, "rb");
+
+	if (file)
+	{
+		uint8 meshBinaryFileVersion;
+		fread(&meshBinaryFileVersion, sizeof(uint8), 1, file);
+
+		if (meshBinaryFileVersion < MESH_BINARY_FILE_VERSION)
+		{
+			LOG("WARNING: %s out of date\n", filename);
+			error = -1;
+		}
+	}
+	else
+	{
+		error = -1;
+	}
+
+	if (error != -1)
+	{
+		loadMesh(&cubemapMesh, file, NULL);
+		uploadMeshToGPU(&cubemapMesh, CUBEMAP_MESH_NAME);
+
+		fclose(file);
+	}
+	else
+	{
+		LOG("Failed to open %s\n", filename);
+		error = -1;
+	}
+
+	free(filename);
+
+	if (error != -1)
+	{
+		LOG("Successfully loaded model (%s)\n", CUBEMAP_MESH_NAME);
+	}
+	else
+	{
+		LOG("Failed to load model (%s)\n", CUBEMAP_MESH_NAME);
+	}
+
+	return error;
+}
+
+void freeCubemapMesh(void)
+{
+	LOG("Freeing model (%s)...\n", CUBEMAP_MESH_NAME);
+
+	freeMesh(&cubemapMesh);
+
+	LOG("Successfully freed model (%s)\n", CUBEMAP_MESH_NAME);
 }

@@ -123,7 +123,7 @@ void* loadAudioThread(void *arg)
 
 		free(filename);
 
-		if(audio.size == -1)
+		if (audio.size == -1)
 		{
 			ASSET_LOG(
 				AUDIO,
@@ -133,7 +133,7 @@ void* loadAudioThread(void *arg)
 			error = -1;
 		}
 
-		if(audio.channels == 1)
+		if (audio.channels == 1)
 		{
 			audio.format = AL_FORMAT_MONO16;
 		}

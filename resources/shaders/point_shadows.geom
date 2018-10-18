@@ -9,7 +9,7 @@ uniform mat4 lightTransforms[6];
 
 void main()
 {
-	for(int i = 0; i < 6; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		gl_Layer = i;
 		for (uint j = 0; j < 3; j++)

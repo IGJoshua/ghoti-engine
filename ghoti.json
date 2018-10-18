@@ -1,9 +1,12 @@
 {
 	"window":
 	{
-		"title": "Ghoti 0.11.5",
+		"title": "Ghoti 0.12.0",
+		"icon": "ghoti.png",
 		"fullscreen": false,
+		"maximized": false,
 		"size": [640, 480],
+		"resizable": true,
 		"vsync": true
 	},
 
@@ -15,6 +18,7 @@
 	"graphics":
 	{
 		"background_color": [0.0, 0.0, 0.0],
+		"msaa": 4,
 
 		"pbr":
 		{
@@ -23,12 +27,13 @@
 
 		"shadows":
 		{
-			"resolution": 2048,
+			"resolution": 4096,
 
 			"directional_lights":
 			{
 				"enabled": true,
-				"bias": [0.005, 0.05]
+				"bias": [0.005, 0.05],
+				"frustum_bounds": [-50.0, 50.0, -50.0, 50.0, -50.0, 50.0]
 			},
 
 			"point_lights":
@@ -41,7 +46,7 @@
 			"spotlights":
 			{
 				"limit": 1,
-				"bias": [0.005, 0.05]
+				"bias": [0.0005, 0.05]
 			}
 		},
 
@@ -55,13 +60,13 @@
 	{
 		"minimum_lifetimes":
 		{
-			"audio": 60.0,
-			"fonts": 60.0,
-			"images": 60.0,
-			"textures": 60.0,
-			"models": 60.0,
-			"particles": 60.0,
-			"cubemaps": 60.0
+			"audio": 30.0,
+			"fonts": 30.0,
+			"images": 30.0,
+			"textures": 30.0,
+			"models": 30.0,
+			"particles": 30.0,
+			"cubemaps": 30.0
 		},
 
 		"maximum_thread_count": 16

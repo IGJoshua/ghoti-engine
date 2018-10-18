@@ -107,7 +107,7 @@ void initRenderHeightmapSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"material",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&materialUniform);
 		getUniform(
 			shaderProgram,
@@ -151,12 +151,12 @@ void initRenderHeightmapSystem(Scene *scene)
 
 		TextureData heightmapTextureData;
 		if (loadTextureData(
-				ASSET_LOG_TYPE_NONE,
-				"heightmap",
-				NULL,
-				fullHeightmapFilename,
-				1,
-				&heightmapTextureData) == -1)
+			ASSET_LOG_TYPE_NONE,
+			"heightmap",
+			NULL,
+			fullHeightmapFilename,
+			1,
+			&heightmapTextureData) == -1)
 		{
 			LOG("Unable to load texture %s, heightmap is broken\n",
 				heightmap->heightmapName);
@@ -468,9 +468,6 @@ void beginRenderHeightmapSystem(Scene *scene, real64 dt)
 	glUseProgram(shaderProgram);
 
 	cameraSetUniforms(camera, cameraTransform, viewUniform, projectionUniform);
-
-	GLint textureIndex = 0;
-	setMaterialUniform(&materialUniform, &textureIndex);
 }
 
 internal
@@ -521,8 +518,7 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		glEnableVertexAttribArray(i);
 	}
 
-	GLint textureIndex = 0;
-	activateMaterialTextures(material, &textureIndex);
+	setMaterialUniform(&materialUniform, material);
 	setMaterialValuesUniform(&materialValuesUniform, material);
 
 	// Make this use a triangle list
@@ -532,12 +528,6 @@ void runRenderHeightmapSystem(Scene *scene, UUID entityID, real64 dt)
 		GL_UNSIGNED_INT,
 		NULL);
 	logGLError(false, "Failed to draw heightmap");
-
-	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
-	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
 
 	for (uint8 i = 0; i < NUM_VERTEX_ATTRIBUTES; i++)
 	{

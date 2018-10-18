@@ -19,7 +19,6 @@
 #include <pthread.h>
 
 #define ASSET_BINARY_FILE_VERSION 1
-#define MESH_BINARY_FILE_VERSION 1
 
 extern Config config;
 

@@ -42,9 +42,22 @@ int32 loadConfig(void)
 		strcpy(config.windowConfig.title, windowTitle->valuestring);
 	}
 
+	GET_CONFIG_ITEM(windowIcon, "window.icon")
+	{
+		free(config.windowConfig.icon);
+		config.windowConfig.icon = malloc(
+			strlen(windowIcon->valuestring) + 1);
+		strcpy(config.windowConfig.icon, windowIcon->valuestring);
+	}
+
 	GET_CONFIG_ITEM(windowFullscreen, "window.fullscreen")
 	{
 		config.windowConfig.fullscreen = cJSONToBool(windowFullscreen);
+	}
+
+	GET_CONFIG_ITEM(windowMaximized, "window.maximized")
+	{
+		config.windowConfig.maximized = cJSONToBool(windowMaximized);
 	}
 
 	GET_CONFIG_ITEM(windowSize, "window.size")
@@ -56,6 +69,11 @@ int32 loadConfig(void)
 		{
 			kmVec2Fill(&config.windowConfig.size, width, height);
 		}
+	}
+
+	GET_CONFIG_ITEM(windowResizable, "window.resizable")
+	{
+		config.windowConfig.resizable = cJSONToBool(windowResizable);
 	}
 
 	GET_CONFIG_ITEM(windowVSYNC, "window.vsync")
@@ -89,6 +107,15 @@ int32 loadConfig(void)
 		}
 	}
 
+	GET_CONFIG_ITEM(numMSAASamples, "graphics.msaa")
+	{
+		int32 numSamples = numMSAASamples->valueint;
+		if (numSamples > 0 && numSamples <= 32)
+		{
+			config.graphicsConfig.numMSAASamples = numSamples;
+		}
+	}
+
 	GET_CONFIG_ITEM(pbr, "graphics.pbr.enabled")
 	{
 		config.graphicsConfig.pbr = cJSONToBool(pbr);
@@ -119,6 +146,27 @@ int32 loadConfig(void)
 			directionalLightShadowBias->child->valuedouble;
 		config.graphicsConfig.directionalLightShadowBias[1] =
 			directionalLightShadowBias->child->next->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(
+		directionalLightShadowFrustumBounds,
+		"graphics.shadows.directional_lights.frustum_bounds")
+	{
+		config.graphicsConfig.directionalLightShadowFrustumBounds[0] =
+			directionalLightShadowFrustumBounds->child->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[1] =
+			directionalLightShadowFrustumBounds->child->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[2] =
+			directionalLightShadowFrustumBounds->child->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[3] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[4] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->next->valuedouble;
+		config.graphicsConfig.directionalLightShadowFrustumBounds[5] =
+			directionalLightShadowFrustumBounds->child->
+				next->next->next->next->next->valuedouble;
 	}
 
 	GET_CONFIG_ITEM(
@@ -280,6 +328,7 @@ int32 loadConfig(void)
 void freeConfig(void)
 {
 	free(config.windowConfig.title);
+	free(config.windowConfig.icon);
 	free(config.logConfig.engineFile);
 	free(config.logConfig.assetManagerFile);
 	free(config.logConfig.luaFile);
@@ -289,18 +338,29 @@ void initializeDefaultConfig(void)
 {
 	config.windowConfig.title = malloc(6);
 	strcpy(config.windowConfig.title, "Ghoti");
+	config.windowConfig.icon = malloc(10);
+	strcpy(config.windowConfig.icon, "ghoti.png");
 	config.windowConfig.fullscreen = false;
+	config.windowConfig.maximized = false;
 	kmVec2Fill(&config.windowConfig.size, 640, 480);
+	config.windowConfig.resizable = true;
 	config.windowConfig.vsync = true;
 
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
+	config.graphicsConfig.numMSAASamples = 4;
 	config.graphicsConfig.pbr = true;
 	config.graphicsConfig.shadowMapResolution = 4096;
 	config.graphicsConfig.directionalLightShadows = true;
 	config.graphicsConfig.directionalLightShadowBias[0] = 0.005f;
 	config.graphicsConfig.directionalLightShadowBias[1] = 0.05f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[0] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[1] = 50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[2] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[3] = 50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[4] = -50.0f;
+	config.graphicsConfig.directionalLightShadowFrustumBounds[5] = 50.0f;
 	config.graphicsConfig.maxNumShadowPointLights = MAX_NUM_SHADOW_POINT_LIGHTS;
 	config.graphicsConfig.pointLightShadowBias = 0.15;
 	config.graphicsConfig.pointLightPCFDiskRadius = 25.0f;

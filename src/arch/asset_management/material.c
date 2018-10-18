@@ -25,6 +25,12 @@ internal const char materialComponentCharacters[] = {
 
 int32 loadMaterial(Material *material, FILE *file, const char *modelName)
 {
+	for (uint32 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		MaterialComponent *materialComponent = &material->components[i];
+		kmVec3Fill(&materialComponent->value, 1.0f, 1.0f, 1.0f);
+	}
+
 	material->name = readStringAsUUID(file);
 
 	if (strlen(material->name.string) > 0)

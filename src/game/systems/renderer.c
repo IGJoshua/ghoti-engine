@@ -54,20 +54,31 @@ internal Uniform cameraPositionUniform;
 internal Uniform materialActiveUniform;
 internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
+
 internal Uniform materialMaskUniform;
 internal Uniform opacityMaskUniform;
+
+internal Uniform collectionMaterialActiveUniform;
 internal Uniform collectionMaterialUniform;
 internal Uniform collectionMaterialValuesUniform;
+
+internal Uniform grungeMaterialActiveUniform;
 internal Uniform grungeMaterialUniform;
 internal Uniform grungeMaterialValuesUniform;
+
+internal Uniform wearMaterialActiveUniform;
 internal Uniform wearMaterialUniform;
 internal Uniform wearMaterialValuesUniform;
 
 internal Uniform useCustomColorUniform;
 
-#define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 3
-#define NUM_POINT_LIGHT_ATTRIBUTES 5
-#define NUM_SPOTLIGHT_ATTRIBUTES 7
+internal Uniform irradianceMapUniform;
+internal Uniform prefilterMapUniform;
+internal Uniform brdfLUTUniform;
+
+#define NUM_DIRECTIONAL_LIGHT_ATTRIBUTES 2
+#define NUM_POINT_LIGHT_ATTRIBUTES 4
+#define NUM_SPOTLIGHT_ATTRIBUTES 6
 
 internal Uniform numDirectionalLightsUniform;
 internal Uniform directionalLightUniforms[NUM_DIRECTIONAL_LIGHT_ATTRIBUTES];
@@ -109,6 +120,10 @@ internal UUID cameraComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
+#define BRDF_LUT_FILE "brdf_lut"
+
+internal GLuint brdfLUT;
+
 extern Config config;
 extern real64 alpha;
 
@@ -116,6 +131,8 @@ extern uint32 animationSystemRefCount;
 
 extern HashMap skeletonsMap;
 extern HashMap animationReferences;
+
+extern Cubemap currentCubemap;
 
 extern uint32 numDirectionalLights;
 extern DirectionalLight directionalLight;
@@ -135,12 +152,24 @@ extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 extern uint32 numShadowSpotlights;
 extern ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
 
+internal int32 loadBRDFLUT(void);
+
 internal
 void initRendererSystem(Scene *scene)
 {
 	if (rendererRefCount == 0)
 	{
 		LOG("Initializing renderer...\n");
+
+		if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+		{
+			LOG("Failed to initialize renderer: Required OpenGL extensions "
+				"not supported (GL_ARB_bindless_texture and "
+				"GL_ARB_gpu_shader_int64)\n");
+			return;
+		}
+
+		loadBRDFLUT();
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,
@@ -185,47 +214,66 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"material",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&materialUniform);
 		getUniform(
 			shaderProgram,
 			"materialValues",
 			UNIFORM_VEC3,
 			&materialValuesUniform);
+
 		getUniform(
 			shaderProgram,
 			"materialMask",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&materialMaskUniform);
 		getUniform(
 			shaderProgram,
 			"opacityMask",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&opacityMaskUniform);
+
+		getUniform(
+			shaderProgram,
+			"collectionMaterialActive",
+			UNIFORM_BOOL,
+			&collectionMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"collectionMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&collectionMaterialUniform);
 		getUniform(
 			shaderProgram,
 			"collectionMaterialValues",
 			UNIFORM_VEC3,
 			&collectionMaterialValuesUniform);
+
+		getUniform(
+			shaderProgram,
+			"grungeMaterialActive",
+			UNIFORM_BOOL,
+			&grungeMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"grungeMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&grungeMaterialUniform);
 		getUniform(
 			shaderProgram,
 			"grungeMaterialValues",
 			UNIFORM_VEC3,
 			&grungeMaterialValuesUniform);
+
+		getUniform(
+			shaderProgram,
+			"wearMaterialActive",
+			UNIFORM_BOOL,
+			&wearMaterialActiveUniform);
 		getUniform(
 			shaderProgram,
 			"wearMaterial",
-			UNIFORM_TEXTURE_2D,
+			UNIFORM_TEXTURE_BINDLESS,
 			&wearMaterialUniform);
 		getUniform(
 			shaderProgram,
@@ -241,6 +289,22 @@ void initRendererSystem(Scene *scene)
 
 		getUniform(
 			shaderProgram,
+			"irradianceMap",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&irradianceMapUniform);
+		getUniform(
+			shaderProgram,
+			"prefilterMap",
+			UNIFORM_TEXTURE_CUBE_MAP,
+			&prefilterMapUniform);
+		getUniform(
+			shaderProgram,
+			"brdfLUT",
+			UNIFORM_TEXTURE_2D,
+			&brdfLUTUniform);
+
+		getUniform(
+			shaderProgram,
 			"numDirectionalLights",
 			UNIFORM_UINT,
 			&numDirectionalLightsUniform);
@@ -248,12 +312,7 @@ void initRendererSystem(Scene *scene)
 		uint8 attribute = 0;
 		getUniform(
 			shaderProgram,
-			"directionalLight.color",
-			UNIFORM_VEC3,
-			&directionalLightUniforms[attribute++]);
-		getUniform(
-			shaderProgram,
-			"directionalLight.ambient",
+			"directionalLight.radiantFlux",
 			UNIFORM_VEC3,
 			&directionalLightUniforms[attribute++]);
 		getUniform(
@@ -273,15 +332,7 @@ void initRendererSystem(Scene *scene)
 			attribute = 0;
 
 			char *uniformName = malloc(1024);
-			sprintf(uniformName, "pointLights[%d].color", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_VEC3,
-				&pointLightsUniforms[i][attribute++]);
-
-			uniformName = malloc(1024);
-			sprintf(uniformName, "pointLights[%d].ambient", i);
+			sprintf(uniformName, "pointLights[%d].radiantFlux", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
@@ -324,15 +375,7 @@ void initRendererSystem(Scene *scene)
 			attribute = 0;
 
 			char *uniformName = malloc(1024);
-			sprintf(uniformName, "spotlights[%d].color", i);
-			getUniform(
-				shaderProgram,
-				uniformName,
-				UNIFORM_VEC3,
-				&spotlightsUniforms[i][attribute++]);
-
-			uniformName = malloc(1024);
-			sprintf(uniformName, "spotlights[%d].ambient", i);
+			sprintf(uniformName, "spotlights[%d].radiantFlux", i);
 			getUniform(
 				shaderProgram,
 				uniformName,
@@ -443,6 +486,11 @@ void initRendererSystem(Scene *scene)
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
+	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+	{
+		return;
+	}
+
 	camera = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
@@ -483,14 +531,12 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		&spotlightShadowMapsUniform,
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
-	setMaterialUniform(&materialUniform, &textureIndex);
-	// setUniform(materialMaskUniform, 1, &textureIndex);
-	// textureIndex++;
-	// setUniform(opacityMaskUniform, 1, &textureIndex);
-	// textureIndex++;
-	// setMaterialUniform(&collectionMaterialUniform, &textureIndex);
-	// setMaterialUniform(&grungeMaterialUniform, &textureIndex);
-	// setMaterialUniform(&wearMaterialUniform, &textureIndex);
+	setUniform(irradianceMapUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(prefilterMapUniform, 1, &textureIndex);
+	textureIndex++;
+	setUniform(brdfLUTUniform, 1, &textureIndex);
+	textureIndex++;
 
 	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
 
@@ -500,11 +546,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			directionalLightUniforms[attribute++],
 			1,
-			&directionalLight.color);
-		setUniform(
-			directionalLightUniforms[attribute++],
-			1,
-			&directionalLight.ambient);
+			&directionalLight.radiantFlux);
 
 		kmQuaternion directionalLightQuaternion;
 		quaternionSlerp(
@@ -533,11 +575,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			pointLightsUniforms[i][attribute++],
 			1,
-			&pointLight->color);
-		setUniform(
-			pointLightsUniforms[i][attribute++],
-			1,
-			&pointLight->ambient);
+			&pointLight->radiantFlux);
 
 		kmVec3 pointLightPosition;
 		kmVec3Lerp(
@@ -570,11 +608,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		setUniform(
 			spotlightsUniforms[i][attribute++],
 			1,
-			&spotlight->color);
-		setUniform(
-			spotlightsUniforms[i][attribute++],
-			1,
-			&spotlight->ambient);
+			&spotlight->radiantFlux);
 
 		kmVec3 spotlightPosition;
 		kmVec3Lerp(
@@ -661,7 +695,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	if (!camera || !cameraTransform)
+	if (!GLEW_ARB_bindless_texture ||
+		!GLEW_ARB_gpu_shader_int64 ||
+		!camera ||
+		!cameraTransform)
 	{
 		return;
 	}
@@ -771,7 +808,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		Subset *subset = &model.subsets[i];
 		Mesh *mesh = &subset->mesh;
 		Material *material = &subset->material;
-		// Mask *mask = &subset->mask;
+		Mask *mask = &subset->mask;
 
 		glBindVertexArray(mesh->vertexArray);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->indexBuffer);
@@ -782,6 +819,15 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		setMaterialActiveUniform(&materialActiveUniform, material);
+		setMaterialActiveUniform(
+			&collectionMaterialActiveUniform,
+			&mask->collectionMaterial);
+		setMaterialActiveUniform(
+			&grungeMaterialActiveUniform,
+			&mask->grungeMaterial);
+		setMaterialActiveUniform(
+			&wearMaterialActiveUniform,
+			&mask->wearMaterial);
 
 		if (numShadowDirectionalLights > 0)
 		{
@@ -828,23 +874,34 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_NUM_SHADOW_POINT_LIGHTS +
 			MAX_NUM_SHADOW_SPOTLIGHTS;
 
-		activateMaterialTextures(material, &textureIndex);
-		// activateTexture(model.materialTexture, &textureIndex);
-		// activateTexture(model.opacityTexture, &textureIndex);
-		// activateMaterialTextures(&mask->collectionMaterial, &textureIndex);
-		// activateMaterialTextures(&mask->grungeMaterial, &textureIndex);
-		// activateMaterialTextures(&mask->wearMaterial, &textureIndex);
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
+
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
+
+		glActiveTexture(GL_TEXTURE0 + textureIndex++);
+		glBindTexture(GL_TEXTURE_2D, brdfLUT);
+
+		setMaterialUniform(&materialUniform, material);
+		setBindlessTextureUniform(&materialMaskUniform, model.materialTexture);
+		setBindlessTextureUniform(&opacityMaskUniform, model.opacityTexture);
+		setMaterialUniform(
+			&collectionMaterialUniform,
+			&mask->collectionMaterial);
+		setMaterialUniform(&grungeMaterialUniform, &mask->grungeMaterial);
+		setMaterialUniform(&wearMaterialUniform, &mask->wearMaterial);
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
-		// setMaterialValuesUniform(
-		// 	&collectionMaterialValuesUniform,
-		// 	&mask->collectionMaterial);
-		// setMaterialValuesUniform(
-		// 	&grungeMaterialValuesUniform,
-		// 	&mask->grungeMaterial);
-		// setMaterialValuesUniform(
-		// 	&wearMaterialValuesUniform,
-		// 	&mask->wearMaterial);
+		setMaterialValuesUniform(
+			&collectionMaterialValuesUniform,
+			&mask->collectionMaterial);
+		setMaterialValuesUniform(
+			&grungeMaterialValuesUniform,
+			&mask->grungeMaterial);
+		setMaterialValuesUniform(
+			&wearMaterialValuesUniform,
+			&mask->wearMaterial);
 
 		if (material->doubleSided)
 		{
@@ -868,7 +925,9 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		glEnable(GL_CULL_FACE);
 
-		for (uint8 j = 0; j < MATERIAL_COMPONENT_TYPE_COUNT * 3 + 2; j++)
+		for (uint8 j = 0;
+			 j < 4 + MAX_NUM_SHADOW_POINT_LIGHTS + MAX_NUM_SHADOW_SPOTLIGHTS;
+			 j++)
 		{
 			glActiveTexture(GL_TEXTURE0 + j);
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -887,7 +946,10 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
-	if (!camera || !cameraTransform)
+	if (!GLEW_ARB_bindless_texture ||
+		!GLEW_ARB_gpu_shader_int64 ||
+		!camera ||
+		!cameraTransform)
 	{
 		return;
 	}
@@ -898,6 +960,11 @@ void endRendererSystem(Scene *scene, real64 dt)
 internal
 void shutdownRendererSystem(Scene *scene)
 {
+	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+	{
+		return;
+	}
+
 	if (--rendererRefCount == 0)
 	{
 		LOG("Shutting down renderer...\n");
@@ -919,6 +986,8 @@ void shutdownRendererSystem(Scene *scene)
 				free(spotlightsUniforms[i][j].name);
 			}
 		}
+
+		glDeleteTextures(1, &brdfLUT);
 
 		LOG("Successfully shut down renderer\n");
 	}
@@ -945,4 +1014,52 @@ System createRendererSystem(void)
 	system.shutdown = &shutdownRendererSystem;
 
 	return system;
+}
+
+int32 loadBRDFLUT(void)
+{
+	int32 error = 0;
+
+	char *filename = getFullFilePath(
+		BRDF_LUT_FILE,
+		"hdr",
+		"resources/cubemaps");
+
+	HDRTextureData data;
+	error = loadHDRTextureData(
+		ASSET_LOG_TYPE_NONE,
+		"BRDF LUT",
+		NULL,
+		filename,
+		3,
+		false,
+		&data);
+
+	free(filename);
+
+	if (error != - 1)
+	{
+		glGenTextures(1, &brdfLUT);
+		glBindTexture(GL_TEXTURE_2D, brdfLUT);
+
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RG16F,
+			data.width,
+			data.height,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			data.data);
+
+		free(data.data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	return error;
 }
