@@ -453,10 +453,8 @@ float getHeight(vec2 uv, vec4 mask)
 		(grungeMaterialActive[HEIGHT_COMPONENT] && mask.g > 0.0) ||
 		(collectionMaterialActive[HEIGHT_COMPONENT] && mask.b > 0.0))
 	{
-		sampler2D wearSampler = sampler2D(
-			wearMaterial[HEIGHT_COMPONENT]);
-		sampler2D grungeSampler = sampler2D(
-			grungeMaterial[HEIGHT_COMPONENT]);
+		sampler2D wearSampler = sampler2D(wearMaterial[HEIGHT_COMPONENT]);
+		sampler2D grungeSampler = sampler2D(grungeMaterial[HEIGHT_COMPONENT]);
 		sampler2D collectionSampler = sampler2D(
 			collectionMaterial[HEIGHT_COMPONENT]);
 

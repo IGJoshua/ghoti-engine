@@ -4,8 +4,8 @@
 
 #include "asset_management/asset_manager_types.h"
 #include "asset_management/cubemap.h"
-#include "asset_management/cubemap_importer.h"
 #include "asset_management/model.h"
+#include "asset_management/mesh.h"
 
 #include "renderer/renderer_types.h"
 #include "renderer/renderer_utilities.h"
@@ -21,8 +21,8 @@
 #include "data/data_types.h"
 #include "data/list.h"
 
-#define VERTEX_SHADER_FILE "resources/shaders/render_cubemap.vert"
-#define FRAGMENT_SHADER_FILE "resources/shaders/render_cubemap.frag"
+#define VERTEX_SHADER_FILE "resources/shaders/cubemap.vert"
+#define FRAGMENT_SHADER_FILE "resources/shaders/cubemap.frag"
 
 internal GLuint shaderProgram;
 
@@ -31,7 +31,6 @@ internal Uniform viewUniform;
 internal Uniform projectionUniform;
 
 internal Uniform cubemapTextureUniform;
-internal Uniform cubemapMipLevelUniform;
 
 internal uint32 cubemapRendererRefCount = 0;
 
@@ -48,14 +47,21 @@ Cubemap currentCubemap = {};
 
 extern real64 alpha;
 
-extern bool cubemapMeshLoaded;
-extern Mesh cubemapMesh;
+#define CUBEMAP_MESH_NAME "cubemap"
+
+internal bool cubemapMeshLoaded;
+internal Mesh cubemapMesh;
+
+internal int32 loadCubemapMesh(void);
+internal void freeCubemapMesh(void);
 
 internal void initCubemapRendererSystem(Scene *scene)
 {
 	if (cubemapRendererRefCount == 0)
 	{
 		LOG("Initializing cubemap renderer...\n");
+
+		cubemapMeshLoaded = loadCubemapMesh() != -1;
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,
@@ -79,11 +85,6 @@ internal void initCubemapRendererSystem(Scene *scene)
 			"cubemapTexture",
 			UNIFORM_TEXTURE_CUBE_MAP,
 			&cubemapTextureUniform);
-		getUniform(
-			shaderProgram,
-			"cubemapMipLevel",
-			UNIFORM_FLOAT,
-			&cubemapMipLevelUniform);
 
 		LOG("Successfully initialized cubemap renderer\n");
 	}
@@ -129,11 +130,6 @@ internal void beginCubemapRendererSystem(Scene *scene, real64 dt)
 
 	GLint textureIndex = 0;
 	setUniform(cubemapTextureUniform, 1, &textureIndex);
-
-	setUniform(
-		cubemapMipLevelUniform,
-		1,
-		&config.graphicsConfig.cubemapDebugMipLevel);
 }
 
 internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
@@ -168,21 +164,8 @@ internal void runCubemapRendererSystem(Scene *scene, UUID entity, real64 dt)
 		glEnableVertexAttribArray(j);
 	}
 
-	GLuint cubemapTexture = cubemap.cubemapID;
-	if (config.graphicsConfig.cubemapDebugMode)
-	{
-		if (config.graphicsConfig.cubemapDebugMipLevel >= 0.0f)
-		{
-			cubemapTexture = cubemap.prefilterID;
-		}
-		else
-		{
-			cubemapTexture = cubemap.irradianceID;
-		}
-	}
-
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemapID);
 
 	glGetBooleanv(GL_DEPTH_WRITEMASK, &glDepthMaskValue);
 
@@ -229,6 +212,8 @@ internal void shutdownCubemapRendererSystem(Scene *scene)
 
 		glDeleteProgram(shaderProgram);
 
+		freeCubemapMesh();
+
 		LOG("Successfully shut down cubemap renderer\n");
 	}
 }
@@ -251,4 +236,76 @@ System createCubemapRendererSystem(void)
 	system.shutdown = &shutdownCubemapRendererSystem;
 
 	return system;
+}
+
+int32 loadCubemapMesh(void)
+{
+	int32 error = 0;
+
+	LOG("Loading model (%s)...\n", CUBEMAP_MESH_NAME);
+
+	char *cubemapMeshFolder = getFullFilePath(
+		CUBEMAP_MESH_NAME,
+		NULL,
+		"resources/models");
+
+	char *filename = getFullFilePath(
+		CUBEMAP_MESH_NAME,
+		"mesh",
+		cubemapMeshFolder);
+
+	free(cubemapMeshFolder);
+
+	FILE *file = fopen(filename, "rb");
+
+	if (file)
+	{
+		uint8 meshBinaryFileVersion;
+		fread(&meshBinaryFileVersion, sizeof(uint8), 1, file);
+
+		if (meshBinaryFileVersion < MESH_BINARY_FILE_VERSION)
+		{
+			LOG("WARNING: %s out of date\n", filename);
+			error = -1;
+		}
+	}
+	else
+	{
+		error = -1;
+	}
+
+	if (error != -1)
+	{
+		loadMesh(&cubemapMesh, file, NULL);
+		uploadMeshToGPU(&cubemapMesh, CUBEMAP_MESH_NAME);
+
+		fclose(file);
+	}
+	else
+	{
+		LOG("Failed to open %s\n", filename);
+		error = -1;
+	}
+
+	free(filename);
+
+	if (error != -1)
+	{
+		LOG("Successfully loaded model (%s)\n", CUBEMAP_MESH_NAME);
+	}
+	else
+	{
+		LOG("Failed to load model (%s)\n", CUBEMAP_MESH_NAME);
+	}
+
+	return error;
+}
+
+void freeCubemapMesh(void)
+{
+	LOG("Freeing model (%s)...\n", CUBEMAP_MESH_NAME);
+
+	freeMesh(&cubemapMesh);
+
+	LOG("Successfully freed model (%s)\n", CUBEMAP_MESH_NAME);
 }

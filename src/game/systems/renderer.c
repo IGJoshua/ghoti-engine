@@ -120,6 +120,10 @@ internal UUID cameraComponentID = {};
 internal CameraComponent *camera;
 internal TransformComponent *cameraTransform;
 
+#define BRDF_LUT_FILE "brdf_lut"
+
+internal GLuint brdfLUT;
+
 extern Config config;
 extern real64 alpha;
 
@@ -129,7 +133,6 @@ extern HashMap skeletonsMap;
 extern HashMap animationReferences;
 
 extern Cubemap currentCubemap;
-extern GLuint brdfLUT;
 
 extern uint32 numDirectionalLights;
 extern DirectionalLight directionalLight;
@@ -149,12 +152,16 @@ extern ShadowPointLight shadowPointLights[MAX_NUM_SHADOW_POINT_LIGHTS];
 extern uint32 numShadowSpotlights;
 extern ShadowSpotlight shadowSpotlights[MAX_NUM_SHADOW_SPOTLIGHTS];
 
+internal int32 loadBRDFLUT(void);
+
 internal
 void initRendererSystem(Scene *scene)
 {
 	if (rendererRefCount == 0)
 	{
 		LOG("Initializing renderer...\n");
+
+		loadBRDFLUT();
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,
@@ -956,6 +963,8 @@ void shutdownRendererSystem(Scene *scene)
 			}
 		}
 
+		glDeleteTextures(1, &brdfLUT);
+
 		LOG("Successfully shut down renderer\n");
 	}
 }
@@ -981,4 +990,52 @@ System createRendererSystem(void)
 	system.shutdown = &shutdownRendererSystem;
 
 	return system;
+}
+
+int32 loadBRDFLUT(void)
+{
+	int32 error = 0;
+
+	char *filename = getFullFilePath(
+		BRDF_LUT_FILE,
+		"hdr",
+		"resources/cubemaps");
+
+	HDRTextureData data;
+	error = loadHDRTextureData(
+		ASSET_LOG_TYPE_NONE,
+		"BRDF LUT",
+		NULL,
+		filename,
+		3,
+		false,
+		&data);
+
+	free(filename);
+
+	if (error != - 1)
+	{
+		glGenTextures(1, &brdfLUT);
+		glBindTexture(GL_TEXTURE_2D, brdfLUT);
+
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RG16F,
+			data.width,
+			data.height,
+			0,
+			GL_RGB,
+			GL_FLOAT,
+			data.data);
+
+		free(data.data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+
+	return error;
 }

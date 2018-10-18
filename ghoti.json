@@ -22,17 +22,7 @@
 
 		"pbr":
 		{
-			"enabled": true,
-
-			"ibl":
-			{
-				"cubemap":
-				{
-					"resolution": 2048,
-					"debug_mode": false,
-					"debug_mip_level": -1
-				}
-			}
+			"enabled": true
 		},
 
 		"shadows":

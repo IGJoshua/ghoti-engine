@@ -80,7 +80,7 @@ internal UUID transformComponentID = {};
 internal UUID modelComponentID = {};
 internal UUID animationComponentID = {};
 internal UUID animatorComponentID = {};
-internal UUID lightComponentID = {};
+internal UUID cameraComponentID = {};
 
 uint32 numShadowDirectionalLights = 0;
 ShadowDirectionalLight shadowDirectionalLight;
@@ -335,7 +335,7 @@ System createShadowsSystem(void)
 	modelComponentID = idFromName("model");
 	animationComponentID = idFromName("animation");
 	animatorComponentID = idFromName("animator");
-	lightComponentID = idFromName("light");
+	cameraComponentID = idFromName("camera");
 
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &transformComponentID);
@@ -395,8 +395,12 @@ void drawShadowDirectionalLight(Scene *scene)
 		scene,
 		scene->mainCamera,
 		transformComponentID);
+	CameraComponent *camera = sceneGetComponentFromEntity(
+		scene,
+		scene->mainCamera,
+		cameraComponentID);
 
-	if (!cameraTransform)
+	if (!cameraTransform || !camera)
 	{
 		return;
 	}

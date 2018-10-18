@@ -1,7 +1,5 @@
 #include "defines.h"
 
-#include "asset_management/cubemap_importer.h"
-
 #include "core/log.h"
 #include "core/config.h"
 
