@@ -161,6 +161,14 @@ void initRendererSystem(Scene *scene)
 	{
 		LOG("Initializing renderer...\n");
 
+		if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+		{
+			LOG("Failed to initialize renderer: Required OpenGL extensions "
+				"not supported (GL_ARB_bindless_texture and "
+				"GL_ARB_gpu_shader_int64)\n");
+			return;
+		}
+
 		loadBRDFLUT();
 
 		createShaderProgram(
@@ -168,9 +176,7 @@ void initRendererSystem(Scene *scene)
 			NULL,
 			NULL,
 			NULL,
-			(config.graphicsConfig.pbr &&
-			GLEW_ARB_bindless_texture &&
-			GLEW_ARB_gpu_shader_int64) ?
+			config.graphicsConfig.pbr ?
 				PBR_FRAGMENT_SHADER_FILE : FRAGMENT_SHADER_FILE,
 			NULL,
 			&shaderProgram);
@@ -480,6 +486,11 @@ void initRendererSystem(Scene *scene)
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
+	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+	{
+		return;
+	}
+
 	camera = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
@@ -684,7 +695,10 @@ void beginRendererSystem(Scene *scene, real64 dt)
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	if (!camera || !cameraTransform)
+	if (!GLEW_ARB_bindless_texture ||
+		!GLEW_ARB_gpu_shader_int64 ||
+		!camera ||
+		!cameraTransform)
 	{
 		return;
 	}
@@ -932,7 +946,10 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
-	if (!camera || !cameraTransform)
+	if (!GLEW_ARB_bindless_texture ||
+		!GLEW_ARB_gpu_shader_int64 ||
+		!camera ||
+		!cameraTransform)
 	{
 		return;
 	}
@@ -943,6 +960,11 @@ void endRendererSystem(Scene *scene, real64 dt)
 internal
 void shutdownRendererSystem(Scene *scene)
 {
+	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+	{
+		return;
+	}
+
 	if (--rendererRefCount == 0)
 	{
 		LOG("Shutting down renderer...\n");
