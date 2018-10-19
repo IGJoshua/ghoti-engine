@@ -39,6 +39,10 @@
 #define VERTEX_SHADER_FILE "resources/shaders/model.vert"
 #define FRAGMENT_SHADER_FILE "resources/shaders/model.frag"
 #define PBR_FRAGMENT_SHADER_FILE "resources/shaders/model_pbr.frag"
+#define PBR_FALLBACK_FRAGMENT_SHADER_FILE \
+	"resources/shaders/model_pbr_fallback.frag"
+
+internal bool fallbackShaders;
 
 internal GLuint shaderProgram;
 
@@ -161,23 +165,37 @@ void initRendererSystem(Scene *scene)
 	{
 		LOG("Initializing renderer...\n");
 
-		if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
+		fallbackShaders =
+			!GLEW_ARB_bindless_texture ||
+			!GLEW_ARB_gpu_shader_int64;
+
+		if (fallbackShaders)
 		{
-			LOG("Failed to initialize renderer: Required OpenGL extensions "
-				"not supported (GL_ARB_bindless_texture and "
-				"GL_ARB_gpu_shader_int64)\n");
-			return;
+			LOG("WARNING: Required OpenGL extensions "
+				"(GL_ARB_bindless_texture and GL_ARB_gpu_shader_int64) "
+				"are not supported\n");
+			LOG("Using fallback shaders\n");
 		}
 
 		loadBRDFLUT();
+
+		const char *fragmentShader = PBR_FRAGMENT_SHADER_FILE;
+		if (!config.graphicsConfig.pbr)
+		{
+			fragmentShader = FRAGMENT_SHADER_FILE;
+			fallbackShaders = true;
+		}
+		else if (fallbackShaders)
+		{
+			fragmentShader = PBR_FALLBACK_FRAGMENT_SHADER_FILE;
+		}
 
 		createShaderProgram(
 			VERTEX_SHADER_FILE,
 			NULL,
 			NULL,
 			NULL,
-			config.graphicsConfig.pbr ?
-				PBR_FRAGMENT_SHADER_FILE : FRAGMENT_SHADER_FILE,
+			fragmentShader,
 			NULL,
 			&shaderProgram);
 
@@ -214,7 +232,7 @@ void initRendererSystem(Scene *scene)
 		getUniform(
 			shaderProgram,
 			"material",
-			UNIFORM_TEXTURE_BINDLESS,
+			fallbackShaders ? UNIFORM_TEXTURE_2D : UNIFORM_TEXTURE_BINDLESS,
 			&materialUniform);
 		getUniform(
 			shaderProgram,
@@ -486,11 +504,6 @@ void initRendererSystem(Scene *scene)
 internal
 void beginRendererSystem(Scene *scene, real64 dt)
 {
-	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
-	{
-		return;
-	}
-
 	camera = sceneGetComponentFromEntity(
 		scene,
 		scene->mainCamera,
@@ -531,12 +544,21 @@ void beginRendererSystem(Scene *scene, real64 dt)
 		&spotlightShadowMapsUniform,
 		MAX_NUM_SHADOW_SPOTLIGHTS,
 		&textureIndex);
-	setUniform(irradianceMapUniform, 1, &textureIndex);
-	textureIndex++;
-	setUniform(prefilterMapUniform, 1, &textureIndex);
-	textureIndex++;
-	setUniform(brdfLUTUniform, 1, &textureIndex);
-	textureIndex++;
+
+	if (fallbackShaders)
+	{
+		setFallbackMaterialUniform(&materialUniform, &textureIndex);
+	}
+
+	if (config.graphicsConfig.pbr)
+	{
+		setUniform(irradianceMapUniform, 1, &textureIndex);
+		textureIndex++;
+		setUniform(prefilterMapUniform, 1, &textureIndex);
+		textureIndex++;
+		setUniform(brdfLUTUniform, 1, &textureIndex);
+		textureIndex++;
+	}
 
 	setUniform(numDirectionalLightsUniform, 1, &numDirectionalLights);
 
@@ -695,10 +717,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 internal
 void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 {
-	if (!GLEW_ARB_bindless_texture ||
-		!GLEW_ARB_gpu_shader_int64 ||
-		!camera ||
-		!cameraTransform)
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -819,15 +838,19 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		}
 
 		setMaterialActiveUniform(&materialActiveUniform, material);
-		setMaterialActiveUniform(
-			&collectionMaterialActiveUniform,
-			&mask->collectionMaterial);
-		setMaterialActiveUniform(
-			&grungeMaterialActiveUniform,
-			&mask->grungeMaterial);
-		setMaterialActiveUniform(
-			&wearMaterialActiveUniform,
-			&mask->wearMaterial);
+
+		if (!fallbackShaders)
+		{
+			setMaterialActiveUniform(
+				&collectionMaterialActiveUniform,
+				&mask->collectionMaterial);
+			setMaterialActiveUniform(
+				&grungeMaterialActiveUniform,
+				&mask->grungeMaterial);
+			setMaterialActiveUniform(
+				&wearMaterialActiveUniform,
+				&mask->wearMaterial);
+		}
 
 		if (numShadowDirectionalLights > 0)
 		{
@@ -874,34 +897,53 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 			MAX_NUM_SHADOW_POINT_LIGHTS +
 			MAX_NUM_SHADOW_SPOTLIGHTS;
 
-		glActiveTexture(GL_TEXTURE0 + textureIndex++);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
+		if (fallbackShaders)
+		{
+			activateFallbackMaterialTextures(material, &textureIndex);
+		}
 
-		glActiveTexture(GL_TEXTURE0 + textureIndex++);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
+		if (config.graphicsConfig.pbr)
+		{
+			glActiveTexture(GL_TEXTURE0 + textureIndex++);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.irradianceID);
 
-		glActiveTexture(GL_TEXTURE0 + textureIndex++);
-		glBindTexture(GL_TEXTURE_2D, brdfLUT);
+			glActiveTexture(GL_TEXTURE0 + textureIndex++);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, currentCubemap.prefilterID);
 
-		setMaterialUniform(&materialUniform, material);
-		setBindlessTextureUniform(&materialMaskUniform, model.materialTexture);
-		setBindlessTextureUniform(&opacityMaskUniform, model.opacityTexture);
-		setMaterialUniform(
-			&collectionMaterialUniform,
-			&mask->collectionMaterial);
-		setMaterialUniform(&grungeMaterialUniform, &mask->grungeMaterial);
-		setMaterialUniform(&wearMaterialUniform, &mask->wearMaterial);
+			glActiveTexture(GL_TEXTURE0 + textureIndex++);
+			glBindTexture(GL_TEXTURE_2D, brdfLUT);
+		}
+
+		if (!fallbackShaders)
+		{
+			setMaterialUniform(&materialUniform, material);
+			setBindlessTextureUniform(
+				&materialMaskUniform,
+				model.materialTexture);
+			setBindlessTextureUniform(
+				&opacityMaskUniform,
+				model.opacityTexture);
+			setMaterialUniform(
+				&collectionMaterialUniform,
+				&mask->collectionMaterial);
+			setMaterialUniform(&grungeMaterialUniform, &mask->grungeMaterial);
+			setMaterialUniform(&wearMaterialUniform, &mask->wearMaterial);
+		}
 
 		setMaterialValuesUniform(&materialValuesUniform, material);
-		setMaterialValuesUniform(
-			&collectionMaterialValuesUniform,
-			&mask->collectionMaterial);
-		setMaterialValuesUniform(
-			&grungeMaterialValuesUniform,
-			&mask->grungeMaterial);
-		setMaterialValuesUniform(
-			&wearMaterialValuesUniform,
-			&mask->wearMaterial);
+
+		if (!fallbackShaders)
+		{
+			setMaterialValuesUniform(
+				&collectionMaterialValuesUniform,
+				&mask->collectionMaterial);
+			setMaterialValuesUniform(
+				&grungeMaterialValuesUniform,
+				&mask->grungeMaterial);
+			setMaterialValuesUniform(
+				&wearMaterialValuesUniform,
+				&mask->wearMaterial);
+		}
 
 		if (material->doubleSided)
 		{
@@ -925,9 +967,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		glEnable(GL_CULL_FACE);
 
-		for (uint8 j = 0;
-			 j < 4 + MAX_NUM_SHADOW_POINT_LIGHTS + MAX_NUM_SHADOW_SPOTLIGHTS;
-			 j++)
+		for (uint8 j = 0; j < 32; j++)
 		{
 			glActiveTexture(GL_TEXTURE0 + j);
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -946,10 +986,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 internal
 void endRendererSystem(Scene *scene, real64 dt)
 {
-	if (!GLEW_ARB_bindless_texture ||
-		!GLEW_ARB_gpu_shader_int64 ||
-		!camera ||
-		!cameraTransform)
+	if (!camera || !cameraTransform)
 	{
 		return;
 	}
@@ -960,11 +997,6 @@ void endRendererSystem(Scene *scene, real64 dt)
 internal
 void shutdownRendererSystem(Scene *scene)
 {
-	if (!GLEW_ARB_bindless_texture || !GLEW_ARB_gpu_shader_int64)
-	{
-		return;
-	}
-
 	if (--rendererRefCount == 0)
 	{
 		LOG("Shutting down renderer...\n");

@@ -1,6 +1,4 @@
 #version 420 core
-#extension GL_ARB_bindless_texture: require
-#extension GL_ARB_gpu_shader_int64: require
 
 #define NUM_MATERIAL_COMPONENTS 7
 
@@ -56,7 +54,7 @@ out vec4 color;
 uniform vec3 cameraPosition;
 
 uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
-uniform uint64_t material[NUM_MATERIAL_COMPONENTS];
+uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
 
 uniform bool useCustomColor;
@@ -237,8 +235,7 @@ vec3 getAlbedoTextureColor(vec2 uv)
 	vec3 albedoTextureColor = fragColor.rgb;
 	if (materialActive[BASE_COMPONENT])
 	{
-		sampler2D sampler = sampler2D(material[BASE_COMPONENT]);
-		albedoTextureColor = vec3(texture(sampler, uv));
+		albedoTextureColor = vec3(texture(material[BASE_COMPONENT], uv));
 		albedoTextureColor *= materialValues[BASE_COMPONENT];
 	}
 
@@ -250,9 +247,8 @@ float getHeightTextureColor(vec2 uv)
 	float height = 0.0;
 	if (materialActive[HEIGHT_COMPONENT])
 	{
-		sampler2D sampler = sampler2D(material[HEIGHT_COMPONENT]);
 		int inverse = materialValues[HEIGHT_COMPONENT].y == 1.0 ? -1 : 1;
-		height = inverse * texture(sampler, uv).r +
+		height = inverse * texture(material[HEIGHT_COMPONENT], uv).r +
 			materialValues[HEIGHT_COMPONENT].y;
 	}
 
@@ -264,8 +260,7 @@ vec3 getNormalTextureColor(vec2 uv, mat3 TBN)
 	vec3 normalTextureColor = fragNormal;
 	if (materialActive[NORMAL_COMPONENT])
 	{
-		sampler2D sampler = sampler2D(material[NORMAL_COMPONENT]);
-		normalTextureColor = texture(sampler, uv).rgb;
+		normalTextureColor = texture(material[NORMAL_COMPONENT], uv).rgb;
 		normalTextureColor = normalize(normalTextureColor * 2.0 - 1.0);
 		normalTextureColor = normalize(vec3(
 			normalTextureColor.rg * materialValues[NORMAL_COMPONENT].x,

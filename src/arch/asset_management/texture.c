@@ -310,7 +310,7 @@ int32 uploadTextureToGPU(
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
 
-		if (handle)
+		if (handle && GLEW_ARB_bindless_texture && GLEW_ARB_gpu_shader_int64)
 		{
 			*handle = glGetTextureHandleARB(*id);
 			glMakeTextureHandleResidentARB(*handle);
@@ -353,7 +353,12 @@ void freeTextureData(Texture *texture)
 	LOG("Freeing texture (%s)...\n", texture->name.string);
 
 	free(texture->data.data);
-	glMakeTextureHandleNonResidentARB(texture->handle);
+
+	if (GLEW_ARB_bindless_texture && GLEW_ARB_gpu_shader_int64)
+	{
+		glMakeTextureHandleNonResidentARB(texture->handle);
+	}
+
 	glDeleteTextures(1, &texture->id);
 
 	LOG("Successfully freed texture (%s)\n", texture->name.string);

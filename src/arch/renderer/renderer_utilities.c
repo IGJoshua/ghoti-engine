@@ -93,6 +93,14 @@ int32 setMaterialUniform(Uniform *uniform, Material *material)
 	return setUniform(*uniform, MATERIAL_COMPONENT_TYPE_COUNT, textureHandles);
 }
 
+int32 setFallbackMaterialUniform(Uniform *uniform, GLint *textureIndex)
+{
+	return setTextureArrayUniform(
+		uniform,
+		MATERIAL_COMPONENT_TYPE_COUNT,
+		textureIndex);
+}
+
 int32 setMaterialValuesUniform(Uniform *uniform, Material *material)
 {
 	kmVec3 materialValues[MATERIAL_COMPONENT_TYPE_COUNT];
@@ -142,6 +150,14 @@ int32 setTextureArrayUniform(
 	}
 
 	return 0;
+}
+
+void activateFallbackMaterialTextures(Material *material, GLint *textureIndex)
+{
+	for (uint8 i = 0; i < MATERIAL_COMPONENT_TYPE_COUNT; i++)
+	{
+		activateTexture(material->components[i].texture, textureIndex);
+	}
 }
 
 void activateTextures(
