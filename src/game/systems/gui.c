@@ -102,6 +102,12 @@ GLuint guiVertexBuffer;
 GLuint guiVertexArray;
 GLuint guiIndexBuffer;
 
+typedef struct panel_layer_t
+{
+	UUID entity;
+	PanelComponent *panel;
+} PanelLayer;
+
 internal Font getEntityFont(
 	Scene *scene,
 	UUID entity,
@@ -295,50 +301,93 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		sizeof(uint16) * MAX_GUI_INDEX_COUNT,
 		NULL,
 		GL_STREAM_DRAW);
-}
 
-internal void runGUISystem(Scene *scene, UUID entityID, real64 dt)
-{
-	if (updateDefaultFont)
+	List panelLayers = createList(sizeof(PanelLayer));
+
+	ComponentDataTable *panelComponents =
+		*(ComponentDataTable**)hashMapGetData(
+			scene->componentTypes,
+			&panelComponentID);
+
+	for (ComponentDataTableIterator itr = cdtGetIterator(panelComponents);
+		 !cdtIteratorAtEnd(itr);
+		 cdtMoveIterator(&itr))
 	{
-		return;
+		PanelComponent *panelComponent = cdtIteratorGetData(itr);
+		if (!panelComponent->enabled)
+		{
+			continue;
+		}
+
+		PanelLayer layer;
+		layer.panel = panelComponent;
+		layer.entity = cdtIteratorGetUUID(itr);
+
+		bool inserted = false;
+		for (ListIterator listItr = listGetIterator(&panelLayers);
+			 !listIteratorAtEnd(listItr);
+			 listMoveIterator(&listItr))
+		{
+			PanelLayer *panelLayer = LIST_ITERATOR_GET_ELEMENT(
+				PanelLayer,
+				listItr);
+
+			if (panelComponent->layer > panelLayer->panel->layer)
+			{
+				listInsert(&panelLayers, &listItr, &layer);
+				inserted = true;
+				break;
+			}
+		}
+
+		if (!inserted)
+		{
+			listPushBack(&panelLayers, &layer);
+		}
 	}
 
-	PanelComponent *panel = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		panelComponentID);
-
-	if (!panel->enabled)
+	for (ListIterator itr = listGetIterator(&panelLayers);
+		 !listIteratorAtEnd(itr);
+		 listMoveIterator(&itr))
 	{
-		return;
-	}
+		PanelLayer *panelLayer = LIST_ITERATOR_GET_ELEMENT(
+			PanelLayer,
+			itr);
 
-	ctx.style.window.fixed_background = nk_style_item_color(
+		PanelComponent *panel = panelLayer->panel;
+		UUID entityID = panelLayer->entity;
+
+		ctx.style.window.fixed_background = nk_style_item_color(
 		getColor(&panel->color));
 
-	GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
-		scene,
-		entityID,
-		guiTransformComponentID);
+		GUITransformComponent *guiTransform = sceneGetComponentFromEntity(
+			scene,
+			entityID,
+			guiTransformComponentID);
 
-	struct nk_rect rect = getRect(guiTransform, viewportWidth, viewportHeight);
+		struct nk_rect rect = getRect(
+			guiTransform,
+			viewportWidth,
+			viewportHeight);
 
-	char windowTitle[1024];
-	sprintf(windowTitle, "%s_%s", scene->name, entityID.string);
+		char windowTitle[1024];
+		sprintf(windowTitle, "%s_%s", scene->name, entityID.string);
 
-	if (nk_begin(
-		&ctx,
-		windowTitle,
-		rect,
-		NK_WINDOW_NO_SCROLLBAR))
-	{
-		nk_layout_space_begin(&ctx, NK_STATIC, 0, INT_MAX);
-		addWidgets(scene, panel->firstWidget, entityID, rect.w, rect.h);
-		nk_layout_space_end(&ctx);
+		if (nk_begin(
+			&ctx,
+			windowTitle,
+			rect,
+			NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_space_begin(&ctx, NK_STATIC, 0, INT_MAX);
+			addWidgets(scene, panel->firstWidget, entityID, rect.w, rect.h);
+			nk_layout_space_end(&ctx);
+		}
+
+		nk_end(&ctx);
 	}
 
-	nk_end(&ctx);
+	listClear(&panelLayers);
 }
 
 internal void endGUISystem(Scene *scene, real64 dt)
@@ -396,7 +445,6 @@ System createGUISystem(void)
 
 	system.init = &initGUISystem;
 	system.begin = &beginGUISystem;
-	system.run = &runGUISystem;
 	system.end = &endGUISystem;
 	system.shutdown = &shutdownGUISystem;
 

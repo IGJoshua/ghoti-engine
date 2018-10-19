@@ -367,6 +367,7 @@ typedef struct panel_component_t
 	bool enabled;
 	kmVec4 color;
 	UUID firstWidget;
+	uint32 layer;
 } PanelComponent;
 
 typedef struct particle_emitter_component_t

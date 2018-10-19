@@ -46,6 +46,11 @@
 			{
 				"name": "first widget",
 				"uuid": "qrK_gnns^xAB@1V'g>oPcCXN<ua$i#WXjw>Xl*QH)h_Fv;JN7*/XWiRBb::@o*="
+			},
+
+			{
+				"name": "layer",
+				"uint32": 0
 			}
 		]
 	}
