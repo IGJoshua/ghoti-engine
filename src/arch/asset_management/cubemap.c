@@ -145,7 +145,7 @@ void* loadCubemapThread(void *arg)
 				free(cubemap.irradianceData[i].data);
 			}
 
-			for (uint8 i = 0; i < 6; i++)
+			for (uint8 i = 0; i < 5; i++)
 			{
 				for (uint8 j = 0; j < 6; j++)
 				{
