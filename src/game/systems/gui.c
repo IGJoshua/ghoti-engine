@@ -108,6 +108,11 @@ typedef struct panel_layer_t
 	PanelComponent *panel;
 } PanelLayer;
 
+internal void quickSortPanelLayers(
+	PanelLayer *panelLayers,
+	int32 left,
+	int32 right);
+
 internal Font getEntityFont(
 	Scene *scene,
 	UUID entity,
@@ -302,7 +307,8 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		NULL,
 		GL_STREAM_DRAW);
 
-	List panelLayers = createList(sizeof(PanelLayer));
+	uint32 numPanelLayers = 0, maxPanelLayers = 0;
+	PanelLayer *panelLayers = NULL;
 
 	ComponentDataTable *panelComponents =
 		*(ComponentDataTable**)hashMapGetData(
@@ -319,40 +325,24 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 			continue;
 		}
 
-		PanelLayer layer;
-		layer.panel = panelComponent;
-		layer.entity = cdtIteratorGetUUID(itr);
-
-		bool inserted = false;
-		for (ListIterator listItr = listGetIterator(&panelLayers);
-			 !listIteratorAtEnd(listItr);
-			 listMoveIterator(&listItr))
+		if (numPanelLayers == maxPanelLayers)
 		{
-			PanelLayer *panelLayer = LIST_ITERATOR_GET_ELEMENT(
-				PanelLayer,
-				listItr);
-
-			if (panelComponent->layer > panelLayer->panel->layer)
-			{
-				listInsert(&panelLayers, &listItr, &layer);
-				inserted = true;
-				break;
-			}
+			maxPanelLayers += 512;
+			panelLayers = realloc(
+				panelLayers,
+				maxPanelLayers * sizeof(PanelLayer));
 		}
 
-		if (!inserted)
-		{
-			listPushBack(&panelLayers, &layer);
-		}
+		PanelLayer *panelLayer = &panelLayers[numPanelLayers++];
+		panelLayer->panel = panelComponent;
+		panelLayer->entity = cdtIteratorGetUUID(itr);
 	}
 
-	for (ListIterator itr = listGetIterator(&panelLayers);
-		 !listIteratorAtEnd(itr);
-		 listMoveIterator(&itr))
+	quickSortPanelLayers(panelLayers, 0, numPanelLayers - 1);
+
+	for (uint32 i = 0; i < numPanelLayers; i++)
 	{
-		PanelLayer *panelLayer = LIST_ITERATOR_GET_ELEMENT(
-			PanelLayer,
-			itr);
+		PanelLayer *panelLayer = &panelLayers[i];
 
 		PanelComponent *panel = panelLayer->panel;
 		UUID entityID = panelLayer->entity;
@@ -387,7 +377,7 @@ internal void beginGUISystem(Scene *scene, real64 dt)
 		nk_end(&ctx);
 	}
 
-	listClear(&panelLayers);
+	free(panelLayers);
 }
 
 internal void endGUISystem(Scene *scene, real64 dt)
@@ -449,6 +439,32 @@ System createGUISystem(void)
 	system.shutdown = &shutdownGUISystem;
 
 	return system;
+}
+
+void quickSortPanelLayers(PanelLayer *panelLayers, int32 left, int32 right)
+{
+	if (left >= right)
+	{
+		return;
+	}
+
+	PanelLayer pivot = panelLayers[right];
+	int32 count = left;
+
+	for (int32 i = left; i <= right; i++)
+	{
+		if (panelLayers[i].panel->layer >= pivot.panel->layer)
+		{
+			PanelLayer panelLayer = panelLayers[count];
+			panelLayers[count] = panelLayers[i];
+			panelLayers[i] = panelLayer;
+
+			count++;
+		}
+	}
+
+	quickSortPanelLayers(panelLayers, left, count - 2);
+	quickSortPanelLayers(panelLayers, count, right);
 }
 
 Font getEntityFont(
