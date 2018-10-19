@@ -10,6 +10,7 @@ cp $PROJECT_NAME.json release/
 
 cp -r resources/ release/
 cp build_scripts/default_init.lua release/resources/scripts/init.lua
+cp $PROJECT_NAME.png release/
 
 mkdir release/resources/temp/
 mv release/resources/cubemaps/brdf_lut.hdr release/resources/temp/
