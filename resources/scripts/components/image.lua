@@ -2,6 +2,7 @@ ffi.cdef[[
 typedef struct image_component_t
 {
 	char name[64];
+	bool textureFiltering;
 	kmVec4 color;
 	kmVec2 position;
 	int32 positionMode;
