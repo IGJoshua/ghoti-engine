@@ -81,6 +81,15 @@ int32 loadConfig(void)
 		config.windowConfig.vsync = cJSONToBool(windowVSYNC);
 	}
 
+	GET_CONFIG_ITEM(numWindowMSAASamples, "window.msaa")
+	{
+		int32 numSamples = numWindowMSAASamples->valueint;
+		if (numSamples > 0 && numSamples <= 32)
+		{
+			config.windowConfig.numMSAASamples = numSamples;
+		}
+	}
+
 	// Physics Config
 
 	GET_CONFIG_ITEM(physicsFPS, "physics.fps")
@@ -104,15 +113,6 @@ int32 loadConfig(void)
 			b >= 0.0f && b <= 1.0f)
 		{
 			kmVec3Fill(&config.graphicsConfig.backgroundColor, r, g, b);
-		}
-	}
-
-	GET_CONFIG_ITEM(numMSAASamples, "graphics.msaa")
-	{
-		int32 numSamples = numMSAASamples->valueint;
-		if (numSamples > 0 && numSamples <= 32)
-		{
-			config.graphicsConfig.numMSAASamples = numSamples;
 		}
 	}
 
@@ -213,6 +213,15 @@ int32 loadConfig(void)
 			spotlightShadowBias->child->valuedouble;
 		config.graphicsConfig.spotlightShadowBias[1] =
 			spotlightShadowBias->child->next->valuedouble;
+	}
+
+	GET_CONFIG_ITEM(numGraphicsMSAASamples, "graphics.post_processing.msaa")
+	{
+		int32 numSamples = numGraphicsMSAASamples->valueint;
+		if (numSamples > 0 && numSamples <= 32)
+		{
+			config.graphicsConfig.numMSAASamples = numSamples;
+		}
 	}
 
 	GET_CONFIG_ITEM(grayscalePostProcess, "graphics.post_processing.grayscale")
@@ -345,11 +354,11 @@ void initializeDefaultConfig(void)
 	kmVec2Fill(&config.windowConfig.size, 640, 480);
 	config.windowConfig.resizable = true;
 	config.windowConfig.vsync = true;
+	config.windowConfig.numMSAASamples = 4;
 
 	config.physicsConfig.fps = 60;
 
 	kmVec3Fill(&config.graphicsConfig.backgroundColor, 0.0f, 0.0f, 0.0f);
-	config.graphicsConfig.numMSAASamples = 4;
 	config.graphicsConfig.pbr = true;
 	config.graphicsConfig.shadowMapResolution = 4096;
 	config.graphicsConfig.directionalLightShadows = true;
@@ -367,6 +376,7 @@ void initializeDefaultConfig(void)
 	config.graphicsConfig.maxNumShadowSpotlights = MAX_NUM_SHADOW_SPOTLIGHTS;
 	config.graphicsConfig.spotlightShadowBias[0] = 0.005f;
 	config.graphicsConfig.spotlightShadowBias[1] = 0.05f;
+	config.graphicsConfig.numMSAASamples = 4;
 	config.graphicsConfig.grayscalePostProcess = false;
 
 	config.assetsConfig.minAudioFileLifetime = 60.0;

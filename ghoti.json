@@ -7,7 +7,8 @@
 		"maximized": false,
 		"size": [640, 480],
 		"resizable": true,
-		"vsync": true
+		"vsync": true,
+		"msaa": 4
 	},
 
 	"physics":
@@ -18,7 +19,6 @@
 	"graphics":
 	{
 		"background_color": [0.0, 0.0, 0.0],
-		"msaa": 4,
 
 		"pbr":
 		{
@@ -52,6 +52,7 @@
 
 		"post_processing":
 		{
+			"msaa": 4,
 			"grayscale": false
 		}
 	},

@@ -15,6 +15,7 @@ typedef struct window_config_t
 	kmVec2 size;
 	bool resizable;
 	bool vsync;
+	uint32 numMSAASamples;
 } WindowConfig;
 
 typedef struct physics_config_t
@@ -25,7 +26,6 @@ typedef struct physics_config_t
 typedef struct graphics_config_t
 {
 	kmVec3 backgroundColor;
-	uint32 numMSAASamples;
 	bool pbr;
 	uint32 shadowMapResolution;
 	bool directionalLightShadows;
@@ -36,6 +36,7 @@ typedef struct graphics_config_t
 	real32 pointLightPCFDiskRadius;
 	uint32 maxNumShadowSpotlights;
 	real32 spotlightShadowBias[2];
+	uint32 numMSAASamples;
 	bool grayscalePostProcess;
 } GraphicsConfig;
 

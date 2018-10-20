@@ -49,7 +49,7 @@ GLFWwindow *initWindow(
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GLFW_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	glfwWindowHint(GLFW_SAMPLES, config.graphicsConfig.numMSAASamples);
+	glfwWindowHint(GLFW_SAMPLES, config.windowConfig.numMSAASamples);
 
 	glfwWindowHint(GLFW_MAXIMIZED, config.windowConfig.maximized);
 	glfwWindowHint(GLFW_RESIZABLE, config.windowConfig.resizable);
