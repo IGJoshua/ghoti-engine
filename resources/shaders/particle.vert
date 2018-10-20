@@ -5,13 +5,13 @@ layout(location=1) in vec2 size;
 layout(location=2) in vec2 uv;
 layout(location=3) in vec2 spriteSize;
 layout(location=4) in vec4 color;
-layout(location=5) in int texture;
+layout(location=5) in float texture;
 
 out vec2 geomSize;
 out vec2 geomUV;
 out vec2 geomSpriteSize;
 out vec4 geomColor;
-flat out int geomTexture;
+out int geomTexture;
 
 uniform mat4 view;
 
@@ -21,7 +21,7 @@ void main()
 	geomUV = uv;
 	geomSpriteSize = spriteSize;
 	geomColor = color;
-	geomTexture = texture;
+	geomTexture = int(texture);
 
 	gl_Position = view * vec4(position, 1.0);
 }

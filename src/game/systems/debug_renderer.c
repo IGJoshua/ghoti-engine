@@ -357,7 +357,7 @@ void clearVertices(DebugVertexData *vertexData)
 
 void addVertex(DebugVertexBuffer *vertexBuffer, DebugVertex vertex, real32 size)
 {
-	if (vertexBuffer->numVertices + 1 < MAX_DEBUG_VERTEX_COUNT)
+	if (vertexBuffer->numVertices < MAX_DEBUG_VERTEX_COUNT)
 	{
 		DebugVertexData *vertexData = hashMapGetData(
 			vertexBuffer->vertexData,

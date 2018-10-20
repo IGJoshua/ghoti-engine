@@ -7,7 +7,7 @@ in vec2 geomSize[];
 in vec2 geomUV[];
 in vec2 geomSpriteSize[];
 in vec4 geomColor[];
-flat in int geomTexture[];
+in int geomTexture[];
 
 out vec2 fragUV;
 out vec4 fragColor;

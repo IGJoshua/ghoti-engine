@@ -27,7 +27,7 @@ typedef struct particle_vertex_t
 	kmVec2 uv;
 	kmVec2 spriteSize;
 	kmVec4 color;
-	int32 texture;
+	real32 texture;
 } ParticleVertex;
 
 #define MAX_PARTICLE_COUNT 16384
@@ -152,7 +152,7 @@ internal void initParticleRendererSystem(Scene *scene)
 		glVertexAttribPointer(
 			bufferIndex++,
 			1,
-			GL_INT,
+			GL_FLOAT,
 			GL_FALSE,
 			sizeof(ParticleVertex),
 			(GLvoid*)offsetof(ParticleVertex, texture));
@@ -316,7 +316,7 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 	GLint textureIndex = 0;
 	setTextureArrayUniform(
 		&particleTexturesUniform,
-		numTextures,
+		MAX_PARTICLE_EMITTER_TEXTURE_COUNT,
 		&textureIndex);
 
 	glBindVertexArray(vertexArray);
@@ -423,7 +423,7 @@ void addVertex(
 	kmVec4 *color,
 	int32 texture)
 {
-	if (numVertices + 1 < MAX_PARTICLE_COUNT)
+	if (numVertices < MAX_PARTICLE_COUNT)
 	{
 		ParticleVertex *vertex = &vertices[numVertices];
 		kmVec3Assign(&vertex->position, position);
