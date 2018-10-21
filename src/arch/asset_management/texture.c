@@ -40,6 +40,11 @@ INTERNAL_ASSET_THREAD_VARIABLES(Texture);
 
 void loadTexture(const char *filename, const char *name)
 {
+	if (strlen(filename) == 0 || strlen(name) == 0)
+	{
+		return;
+	}
+
 	TextureThreadArgs *arg = malloc(sizeof(TextureThreadArgs));
 
 	arg->filename = calloc(1, strlen(filename) + 1);

@@ -1,0 +1,79 @@
+{
+	"uuid": "particle",
+
+	"components":
+	{
+		"particle":
+		[
+			{
+				"name": "particle emitter",
+				"uuid": ""
+			},
+
+			{
+				"name": "lifetime",
+				"float64": 0.0
+			},
+
+			{
+				"name": "fade timer",
+				"float64": [0.0, 0.0]
+			},
+
+			{
+				"name": "fade time",
+				"float64": [0.0, 0.0]
+			},
+
+			{
+				"name": "sprite",
+				"int32": 0
+			},
+
+			{
+				"name": "animation time",
+				"float64": 0.0
+			},
+
+			{
+				"name": "animation direction",
+				"int8": 0
+			},
+
+			{
+				"name": "position",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "previous position",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "velocity",
+				"float32": [0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "size",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "uv",
+				"float32": [0.0, 0.0]
+			},
+
+			{
+				"name": "color",
+				"float32": [0.0, 0.0, 0.0, 0.0]
+			},
+
+			{
+				"name": "alpha",
+				"float32": 0.0
+			}
+		]
+	}
+}

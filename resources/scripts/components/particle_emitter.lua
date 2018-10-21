@@ -44,7 +44,7 @@ local component = engine.components:register("particle_emitter", "ParticleEmitte
 
 local C = engine.C
 
-function component:emit(stopAtCapacity, particle, numSprites, rows, columns, textureFiltering, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
+function component:emit(entity, stopAtCapacity, particle, numSprites, rows, columns, textureFiltering, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
   particle = particle or ""
   numSprites = numSprites or 1
   rows = rows or 1
@@ -55,7 +55,7 @@ function component:emit(stopAtCapacity, particle, numSprites, rows, columns, tex
   animationMode = animationMode or self.animationMode
   finalSprite = finalSprite or self.finalSprite
 
-  C.emitParticles(self, stopAtCapacity, particle, numSprites, rows, columns, textureFiltering, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
+  C.emitParticles(entity, self, stopAtCapacity, particle, numSprites, rows, columns, textureFiltering, initialSprite, randomSprite, animationFPS, animationMode, finalSprite)
 end
 
 function component:pause()
@@ -66,10 +66,10 @@ function component:resume()
   self.paused = false
 end
 
-function component:stop(gradual)
+function component:stop(gradual, entity)
   if gradual then
     self.stopping = true
   else
-	C.stopParticleEmitter(self, true)
+	C.stopParticleEmitter(entity, self, true)
   end
 end

@@ -2024,6 +2024,7 @@ void sceneRemoveComponentFromEntity(
 	else if (!strcmp(componentType.string, "particle_emitter"))
 	{
 		removeParticleEmitter(
+			entity,
 			(ParticleEmitterComponent*)cdtGet(*table, entity));
 	}
 	cdtRemove(*table, entity);
@@ -2036,6 +2037,19 @@ void sceneRemoveComponentFromEntity(
 	}
 
 	listRemoveData(componentTypeList, &componentType);
+}
+
+void sceneRemoveComponentFromAllEntities(Scene *scene, UUID componentID)
+{
+	for (HashMapIterator itr = hashMapGetIterator(scene->entities);
+		 !hashMapIteratorAtEnd(itr);
+		 hashMapMoveIterator(&itr))
+	{
+		sceneRemoveComponentFromEntity(
+			scene,
+			*(UUID*)hashMapIteratorGetKey(itr),
+			componentID);
+	}
 }
 
 void *sceneGetComponentFromEntity(

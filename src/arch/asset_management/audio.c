@@ -34,6 +34,11 @@ INTERNAL_ASSET_THREAD_VARIABLES(Audio);
 
 void loadAudio(const char *name)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	char *audioName = calloc(1, strlen(name) + 1);
 	strcpy(audioName, name);
 

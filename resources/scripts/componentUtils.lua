@@ -55,6 +55,7 @@ void stopSoundAtSource(AudioSourceComponent *audioSource);
 bool isSourceActive(AudioSourceComponent *audioSource);
 
 void emitParticles(
+	UUID entity,
 	ParticleEmitterComponent *particleEmitter,
 	bool stopAtCapacity,
 	const char *particleName,
@@ -67,6 +68,9 @@ void emitParticles(
 	real32 animationFPS,
 	ParticleAnimation animationMode,
 	uint32 finalSprite);
-void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset);
+void stopParticleEmitter(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter,
+	bool reset);
 
 ]]

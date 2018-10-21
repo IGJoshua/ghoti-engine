@@ -44,6 +44,11 @@ internal UUID getFontName(const char *name, real32 size, bool autoScaling);
 
 void loadFont(const char *name, real32 size, bool autoScaling)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	FontThreadArgs *arg = malloc(sizeof(FontThreadArgs));
 
 	arg->name = calloc(1, strlen(name) + 1);

@@ -35,6 +35,11 @@ internal int32 loadSubset(
 
 void loadModel(const char *name)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	char *modelName = calloc(1, strlen(name) + 1);
 	strcpy(modelName, name);
 

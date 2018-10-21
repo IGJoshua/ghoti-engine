@@ -44,6 +44,8 @@ void sceneRemoveComponentFromEntity(
   UUID entity,
   UUID componentType);
 
+void sceneRemoveComponentFromAllEntities(Scene *scene, UUID componentID);
+
 void *sceneGetComponentFromEntity(
   Scene *s,
   UUID entity,

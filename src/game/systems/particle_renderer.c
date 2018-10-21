@@ -214,8 +214,10 @@ internal void beginParticleRendererSystem(Scene *scene, real64 dt)
 		 !hashMapIteratorAtEnd(itr);
 		 hashMapMoveIterator(&itr))
 	{
+		ParticleEmitterReference *particleEmitterReference =
+			hashMapIteratorGetKey(itr);
 		ParticleEmitterComponent *particleEmitter =
-			*(ParticleEmitterComponent**)hashMapIteratorGetKey(itr);
+			particleEmitterReference->particleEmitter;
 
 		if (!particleEmitter->active)
 		{

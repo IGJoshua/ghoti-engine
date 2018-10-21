@@ -26,16 +26,24 @@ typedef struct emitted_particles_t
 	List particles;
 } ParticleList;
 
+typedef struct particle_emitter_reference_t
+{
+	UUID entity;
+	ParticleEmitterComponent *particleEmitter;
+} ParticleEmitterReference;
+
 void addParticle(
 	ParticleList *particleList,
 	ParticleEmitterComponent *particleEmitter,
 	TransformComponent *transform);
 int32 removeParticle(
+	UUID entity,
 	ParticleEmitterComponent *particleEmitter,
 	ParticleList *particleList,
 	ListIterator *itr);
 
 void emitParticles(
+	UUID entity,
 	ParticleEmitterComponent *particleEmitter,
 	bool stopAtCapacity,
 	const char *particleName,
@@ -48,6 +56,11 @@ void emitParticles(
 	real32 animationFPS,
 	ParticleAnimation animationMode,
 	uint32 finalSprite);
-void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset);
+void stopParticleEmitter(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter,
+	bool reset);
 
-void removeParticleEmitter(ParticleEmitterComponent *particleEmitter);
+void removeParticleEmitter(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter);

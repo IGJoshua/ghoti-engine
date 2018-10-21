@@ -33,6 +33,11 @@ internal char* getFullImageFilename(const char *name);
 
 void loadImage(const char *name, bool textureFiltering)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	ImageThreadArgs *arg = malloc(sizeof(ImageThreadArgs));
 
 	arg->name = calloc(1, strlen(name) + 1);

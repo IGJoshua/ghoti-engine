@@ -38,6 +38,11 @@ internal int32 uploadPrefilterMap(Cubemap *cubemap);
 
 void loadCubemap(const char *name)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	char *cubemapName = calloc(1, strlen(name) + 1);
 	strcpy(cubemapName, name);
 

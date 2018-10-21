@@ -12,6 +12,7 @@
 
 #include "ECS/ecs_types.h"
 #include "ECS/scene.h"
+#include "ECS/component.h"
 
 #include "math/math.h"
 
@@ -21,11 +22,15 @@ internal uint32 particleSimulatorSystemRefCount = 0;
 
 internal UUID transformComponentID = {};
 internal UUID particleEmitterComponentID = {};
-internal UUID rigidBodyComponentID = {};
+internal UUID particleComponentID = {};
 
 #define PARTICLE_EMITTERS_BUCKET_COUNT 127
 
 extern HashMap particleEmitters;
+
+internal ParticleList* getParticleList(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter);
 
 internal int32 ptrcmp(void *a, void *b)
 {
@@ -37,10 +42,60 @@ internal void initParticleSimulatorSystem(Scene *scene)
 	if (particleSimulatorSystemRefCount == 0)
 	{
 		particleEmitters = createHashMap(
-			sizeof(ParticleEmitterComponent*),
+			sizeof(ParticleEmitterReference),
 			sizeof(ParticleList),
 			PARTICLE_EMITTERS_BUCKET_COUNT,
 			(ComparisonOp)&ptrcmp);
+	}
+
+	ComponentDataTable **particleComponents =
+		(ComponentDataTable**)hashMapGetData(
+			scene->componentTypes,
+			&particleComponentID);
+
+	if (particleComponents && *particleComponents)
+	{
+		for (ComponentDataTableIterator itr =
+				 cdtGetIterator(*particleComponents);
+			 !cdtIteratorAtEnd(itr);)
+		{
+			ParticleComponent *particleComponent = cdtIteratorGetData(itr);
+
+			ParticleEmitterComponent *particleEmitter =
+				sceneGetComponentFromEntity(
+					scene,
+					particleComponent->particleEmitter,
+					particleEmitterComponentID);
+
+			if (particleEmitter)
+			{
+				ParticleObject particle;
+				memcpy(
+					&particle,
+					&particleComponent->lifetime,
+					sizeof(ParticleObject));
+
+				ParticleList *particleList = getParticleList(
+					particleComponent->particleEmitter,
+					particleEmitter);
+
+				listPushBack(&particleList->particles, &particle);
+				particleList->numParticles++;
+			}
+
+			UUID entity = cdtIteratorGetUUID(itr);
+			cdtMoveIterator(&itr);
+			sceneRemoveEntity(scene, entity);
+		}
+
+		sceneRegisterEntity(scene, particleComponentID);
+
+		ParticleComponent particlePrototype = {};
+		sceneAddComponentToEntity(
+			scene,
+			particleComponentID,
+			particleComponentID,
+			&particlePrototype);
 	}
 
 	particleSimulatorSystemRefCount++;
@@ -63,24 +118,7 @@ internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 		entityID,
 		transformComponentID);
 
-	ParticleList *particleList = hashMapGetData(
-		particleEmitters,
-		&particleEmitter);
-
-	if (!particleList)
-	{
-		ParticleList newParticleList = {};
-		newParticleList.particles = createList(sizeof(ParticleObject));
-
-		hashMapInsert(particleEmitters, &particleEmitter, &newParticleList);
-		particleList = hashMapGetData(particleEmitters, &particleEmitter);
-
-		particleEmitter->currentSpawnRate = randomRealNumber(
-			particleEmitter->spawnRate[0],
-			particleEmitter->spawnRate[1]);
-
-		addParticle(particleList, particleEmitter, transform);
-	}
+	ParticleList *particleList = getParticleList(entityID, particleEmitter);
 
 	if (!particleEmitter->paused)
 	{
@@ -117,6 +155,7 @@ internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 			if (particle->lifetime <= 0.0)
 			{
 				if (removeParticle(
+					entityID,
 					particleEmitter,
 					particleList,
 					&listItr) == -1)
@@ -324,16 +363,74 @@ internal void runParticleSimulatorSystem(Scene *scene, UUID entityID, real64 dt)
 
 internal void shutdownParticleSimulatorSystem(Scene *scene)
 {
-	if (--particleSimulatorSystemRefCount == 0)
+	ComponentDataTable **particleEmitterComponents =
+		(ComponentDataTable**)hashMapGetData(
+			scene->componentTypes,
+			&particleEmitterComponentID);
+
+	for (HashMapIterator itr = hashMapGetIterator(particleEmitters);
+		 !hashMapIteratorAtEnd(itr);)
 	{
-		for (HashMapIterator itr = hashMapGetIterator(particleEmitters);
-			 !hashMapIteratorAtEnd(itr);
-			 hashMapMoveIterator(&itr))
+		ParticleEmitterReference *particleEmitterReference =
+			hashMapIteratorGetKey(itr);
+
+		bool inScene = false;
+		for (ComponentDataTableIterator itr =
+				 cdtGetIterator(*particleEmitterComponents);
+			 !cdtIteratorAtEnd(itr);)
 		{
-			ParticleList *particleList = hashMapIteratorGetValue(itr);
-			listClear(&particleList->particles);
+			ParticleEmitterComponent *particleEmitterComponent =
+				cdtIteratorGetData(itr);
+			if (particleEmitterComponent ==
+				particleEmitterReference->particleEmitter)
+			{
+				inScene = true;
+				break;
+			}
 		}
 
+		if (!inScene)
+		{
+			hashMapMoveIterator(&itr);
+			continue;
+		}
+
+		ParticleList *particleList = hashMapIteratorGetValue(itr);
+
+		for (ListIterator listItr =
+				 listGetIterator(&particleList->particles);
+			 !listIteratorAtEnd(listItr);
+			 listMoveIterator(&listItr))
+		{
+			ParticleObject *particleObject = LIST_ITERATOR_GET_ELEMENT(
+				ParticleObject,
+				listItr);
+
+			ParticleComponent particleComponent;
+			particleComponent.particleEmitter =
+				particleEmitterReference->entity;
+			memcpy(
+				&particleComponent.lifetime,
+				particleObject,
+				sizeof(ParticleObject));
+
+			UUID particleEntity = sceneCreateEntity(scene);
+			sceneAddComponentToEntity(
+				scene,
+				particleEntity,
+				particleComponentID,
+				&particleComponent);
+		}
+
+		listClear(&particleList->particles);
+
+		ParticleEmitterReference reference = *particleEmitterReference;
+		hashMapMoveIterator(&itr);
+		hashMapDelete(particleEmitters, &reference);
+	}
+
+	if (--particleSimulatorSystemRefCount == 0)
+	{
 		freeHashMap(&particleEmitters);
 	}
 }
@@ -344,7 +441,7 @@ System createParticleSimulatorSystem(void)
 
 	transformComponentID = idFromName("transform");
 	particleEmitterComponentID = idFromName("particle_emitter");
-	rigidBodyComponentID = idFromName("rigid_body");
+	particleComponentID = idFromName("particle");
 
 	system.componentTypes = createList(sizeof(UUID));
 	listPushFront(&system.componentTypes, &transformComponentID);
@@ -355,4 +452,36 @@ System createParticleSimulatorSystem(void)
 	system.shutdown = &shutdownParticleSimulatorSystem;
 
 	return system;
+}
+
+
+ParticleList* getParticleList(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter)
+{
+	ParticleEmitterReference particleEmitterReference;
+	particleEmitterReference.entity = entity;
+	particleEmitterReference.particleEmitter = particleEmitter;
+
+	ParticleList *particleList = hashMapGetData(
+		particleEmitters,
+		&particleEmitterReference);
+
+	if (!particleList)
+	{
+		ParticleList newParticleList = {};
+		newParticleList.particles = createList(sizeof(ParticleObject));
+
+		hashMapInsert(
+			particleEmitters,
+			&particleEmitterReference,
+			&newParticleList);
+		particleList = hashMapGetData(
+			particleEmitters,
+			&particleEmitterReference);
+
+		particleEmitter->particleCounter = 1.0;
+	}
+
+	return particleList;
 }

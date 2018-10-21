@@ -40,6 +40,11 @@ void loadParticle(
 	uint32 columns,
 	bool textureFiltering)
 {
+	if (strlen(name) == 0)
+	{
+		return;
+	}
+
 	ParticleThreadArgs *arg = malloc(sizeof(ParticleThreadArgs));
 
 	arg->name = calloc(1, strlen(name) + 1);

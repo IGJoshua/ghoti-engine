@@ -18,7 +18,7 @@ void addParticle(
 	ParticleEmitterComponent *particleEmitter,
 	TransformComponent *transform)
 {
-	if (particleList->numParticles + 1 > particleEmitter->maxNumParticles)
+	if (particleList->numParticles == particleEmitter->maxNumParticles)
 	{
 		if (particleEmitter->stopAtCapacity)
 		{
@@ -124,6 +124,7 @@ void addParticle(
 }
 
 int32 removeParticle(
+	UUID entity,
 	ParticleEmitterComponent *particleEmitter,
 	ParticleList *particleList,
 	ListIterator *itr)
@@ -133,7 +134,7 @@ int32 removeParticle(
 
 	if (particleEmitter->stopping && particleList->numParticles == 0)
 	{
-		stopParticleEmitter(particleEmitter, true);
+		stopParticleEmitter(entity, particleEmitter, true);
 		return -1;
 	}
 
@@ -141,6 +142,7 @@ int32 removeParticle(
 }
 
 void emitParticles(
+	UUID entity,
 	ParticleEmitterComponent *particleEmitter,
 	bool stopAtCapacity,
 	const char *particleName,
@@ -155,6 +157,7 @@ void emitParticles(
 	uint32 finalSprite)
 {
 	stopParticleEmitter(
+		entity,
 		particleEmitter,
 		strcmp(particleName, particleEmitter->currentParticle));
 
@@ -173,11 +176,14 @@ void emitParticles(
 	particleEmitter->finalSprite = finalSprite;
 }
 
-void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset)
+void stopParticleEmitter(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter,
+	bool reset)
 {
 	if (reset)
 	{
-		removeParticleEmitter(particleEmitter);
+		removeParticleEmitter(entity, particleEmitter);
 	}
 
 	particleEmitter->active = false;
@@ -187,18 +193,24 @@ void stopParticleEmitter(ParticleEmitterComponent *particleEmitter, bool reset)
 	particleEmitter->particleCounter = 0.0;
 }
 
-void removeParticleEmitter(ParticleEmitterComponent *particleEmitter)
+void removeParticleEmitter(
+	UUID entity,
+	ParticleEmitterComponent *particleEmitter)
 {
 	if (particleEmitters)
 	{
+		ParticleEmitterReference particleEmitterReference;
+		particleEmitterReference.entity = entity;
+		particleEmitterReference.particleEmitter = particleEmitter;
+
 		ParticleList *particleList = hashMapGetData(
 			particleEmitters,
-			&particleEmitter);
+			&particleEmitterReference);
 
 		if (particleList)
 		{
 			listClear(&particleList->particles);
-			hashMapDelete(particleEmitters, &particleEmitter);
+			hashMapDelete(particleEmitters, &particleEmitterReference);
 		}
 	}
 }
