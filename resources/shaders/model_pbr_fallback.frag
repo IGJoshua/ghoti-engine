@@ -59,6 +59,9 @@ uniform bool materialActive[NUM_MATERIAL_COMPONENTS];
 uniform sampler2D material[NUM_MATERIAL_COMPONENTS];
 uniform vec3 materialValues[NUM_MATERIAL_COMPONENTS];
 
+uniform bool opacityMaskActive;
+uniform sampler2D opacityMask;
+
 uniform bool useCustomColor;
 uniform vec3 customColor;
 
@@ -94,6 +97,8 @@ const vec3 pcfSampleOffsets[20] = vec3[](
 	vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3( 0, 1, -1));
 
 float squared(float n);
+
+bool isOpaque(vec2 uv);
 
 mat3 createTBNMatrix(vec3 normal, vec3 tangent);
 vec2 getMaterialUV(vec3 viewDirection, mat3 TBN);
@@ -165,6 +170,11 @@ void main()
 	{
 		color = vec4(customColor, 1.0);
 		return;
+	}
+
+	if (!isOpaque(fragMaskUV))
+	{
+		discard;
 	}
 
 	vec3 viewDirection = normalize(cameraPosition - fragPosition);
@@ -255,6 +265,22 @@ void main()
 float squared(float n)
 {
 	return n * n;
+}
+
+bool isOpaque(vec2 uv)
+{
+	bool opaque = true;
+
+	if (opacityMaskActive)
+	{
+		vec3 opacity = texture(opacityMask, uv).rgb;
+		if (opacity == vec3(0.0))
+		{
+			opaque = false;
+		}
+	}
+
+	return opaque;
 }
 
 mat3 createTBNMatrix(vec3 normal, vec3 tangent)

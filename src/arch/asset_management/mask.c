@@ -46,6 +46,10 @@ int32 loadMaskTexture(
 		loadTexture(fullFilename, textureName->string);
 		free(fullFilename);
 	}
+	else
+	{
+		memset(textureName, 0, sizeof(UUID));
+	}
 
 	return 0;
 }

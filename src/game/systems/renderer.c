@@ -60,6 +60,8 @@ internal Uniform materialUniform;
 internal Uniform materialValuesUniform;
 
 internal Uniform materialMaskUniform;
+
+internal Uniform opacityMaskActiveUniform;
 internal Uniform opacityMaskUniform;
 
 internal Uniform collectionMaterialActiveUniform;
@@ -245,10 +247,16 @@ void initRendererSystem(Scene *scene)
 			"materialMask",
 			UNIFORM_TEXTURE_BINDLESS,
 			&materialMaskUniform);
+
+		getUniform(
+			shaderProgram,
+			"opacityMaskActive",
+			UNIFORM_BOOL,
+			&opacityMaskActiveUniform);
 		getUniform(
 			shaderProgram,
 			"opacityMask",
-			UNIFORM_TEXTURE_BINDLESS,
+			fallbackShaders ? UNIFORM_TEXTURE_2D : UNIFORM_TEXTURE_BINDLESS,
 			&opacityMaskUniform);
 
 		getUniform(
@@ -548,6 +556,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	if (fallbackShaders)
 	{
 		setFallbackMaterialUniform(&materialUniform, &textureIndex);
+		setUniform(opacityMaskUniform, 1, &textureIndex);
 	}
 
 	if (config.graphicsConfig.pbr)
@@ -839,6 +848,9 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 
 		setMaterialActiveUniform(&materialActiveUniform, material);
 
+		bool opacityMaskActive = strlen(model.opacityTexture.string) > 0;
+		setUniform(opacityMaskActiveUniform, 1, &opacityMaskActive);
+
 		if (!fallbackShaders)
 		{
 			setMaterialActiveUniform(
@@ -900,6 +912,7 @@ void runRendererSystem(Scene *scene, UUID entityID, real64 dt)
 		if (fallbackShaders)
 		{
 			activateFallbackMaterialTextures(material, &textureIndex);
+			activateTexture(model.opacityTexture, &textureIndex);
 		}
 
 		if (config.graphicsConfig.pbr)
