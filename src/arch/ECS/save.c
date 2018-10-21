@@ -325,7 +325,7 @@ int32 loadSave(uint32 slot, void **data)
 
 bool getSaveSlotAvailability(uint32 slot)
 {
-	bool available = false;
+	bool available = true;
 
 	char *saveName = malloc(128);
 	sprintf(saveName, "save_%d", slot);
@@ -337,7 +337,7 @@ bool getSaveSlotAvailability(uint32 slot)
 	stat(saveFolder, &info);
 	if (S_ISDIR(info.st_mode))
 	{
-		available = true;
+		available = false;
 	}
 
 	free(saveFolder);
