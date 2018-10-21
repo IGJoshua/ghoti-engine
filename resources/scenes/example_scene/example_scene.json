@@ -82,6 +82,7 @@
 		"model": 2048,
 		"next_animation": 2048,
 		"panel": 512,
+		"particle": 16384,
 		"particle_emitter": 32,
 		"progress_bar": 1024,
 		"rigid_body": 1024,
