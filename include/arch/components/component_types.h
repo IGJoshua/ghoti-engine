@@ -158,6 +158,7 @@ typedef struct button_component_t
 	bool pressed;
 	bool held;
 	bool released;
+	bool hovered;
 } ButtonComponent;
 
 typedef struct camera_component_t

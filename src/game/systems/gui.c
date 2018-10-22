@@ -137,7 +137,11 @@ internal void addImage(
 	GUITransformComponent *guiTransform,
 	real32 panelWidth,
 	real32 panelHeight);
-internal void addButton(ButtonComponent *button);
+internal void addButton(
+	ButtonComponent *button,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight);
 internal void addTextField(TextFieldComponent *textField);
 internal void addProgressBar(
 	ProgressBarComponent *progressBar,
@@ -681,7 +685,7 @@ void addWidgets(
 				}
 				else if (button)
 				{
-					addButton(button);
+					addButton(button, guiTransform, panelWidth, panelHeight);
 				}
 				else if (textField)
 				{
@@ -811,12 +815,21 @@ void addImage(
 		getColor(&imageComponent->color));
 }
 
-void addButton(ButtonComponent *button)
+void addButton(
+	ButtonComponent *button,
+	GUITransformComponent *guiTransform,
+	real32 panelWidth,
+	real32 panelHeight)
 {
 	bool held = button->held;
 	button->held = nk_button_label(&ctx, button->text);
 	button->pressed = !held && button->held;
 	button->released = held && !button->held;
+
+	GUITransformComponent buttonTransform = *guiTransform;
+	buttonTransform.pivot = PIVOT_TOP_LEFT;
+	struct nk_rect rect = getRect(&buttonTransform, panelWidth, panelHeight);
+	button->hovered = nk_input_is_mouse_hovering_rect(&ctx.input, rect);
 }
 
 void addTextField(TextFieldComponent *textField)

@@ -1936,6 +1936,7 @@ int32 sceneAddComponentToEntity(
 		buttonComponent->pressed = false;
 		buttonComponent->held = false;
 		buttonComponent->released = false;
+		buttonComponent->hovered = false;
 	}
 
 	// Add the component to the data table
