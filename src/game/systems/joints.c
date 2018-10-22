@@ -67,11 +67,11 @@ void setJointConstraints(
 			ParamFn(jointID, dParamStopCFM, constraint->stopCFM_val);
 		}
 
-		LOG("constraints set\n\n");
+		// LOG("constraints set\n");
 	}
 	else
 	{
-		LOG("constraints not set\n\n");
+		// LOG("constraints not set\n");
 	}
 }
 
@@ -107,9 +107,9 @@ void initJointInformationSystem(Scene *scene)
 		if (!(object1 || object2))
 			continue;
 
-		LOG("Joint UUID: %s\n", entityID.string);
-		LOG("Object1 UUID: %s\n", joint->object1.string);
-		LOG("Object2 UUID: %s\n", joint->object2.string);
+		// LOG("Joint UUID: %s\n", entityID.string);
+		// LOG("Object1 UUID: %s\n", joint->object1.string);
+		// LOG("Object2 UUID: %s\n", joint->object2.string);
 
 		dJointID jointID = 0;
 
@@ -284,11 +284,11 @@ void runJointInformationSystem(Scene *scene, UUID entityID, real64 dt)
 	if (!trans)
 		return;
 
-	LOG("Entity %s has position (%f, %f, %f)\n",
-		entityID.string,
-		trans->position.x,
-		trans->position.y,
-		trans->position.z);
+	// LOG("Entity %s has position (%f, %f, %f)\n",
+	// 	entityID.string,
+	// 	trans->position.x,
+	// 	trans->position.y,
+	// 	trans->position.z);
 
 	return;
 }
