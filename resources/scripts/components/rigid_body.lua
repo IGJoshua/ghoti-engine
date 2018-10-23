@@ -35,6 +35,42 @@ local component = engine.components:register("rigid_body", "RigidBodyComponent")
 local C = engine.C
 local kazmath = engine.kazmath
 
+function component:addVelocity(velocity)
+  kazmath.kmVec3Add(self.velocity, self.velocity, velocity)
+end
+
+function component:addVelocityDirection(magnitude, direction)
+  local velocity = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(velocity, direction, magnitude)
+
+  self:addVelocity(velocity[0])
+end
+
+function component:addVelocityQuaternion(magnitude, quaternion)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:addVelocityDirection(magnitude, direction[0])
+end
+
+function component:addAngularVelocity(angularVelocity)
+  kazmath.kmVec3Add(self.angularVel, self.angularVel, angularVelocity)
+end
+
+function component:addAngularVelocityAxis(magnitude, axis)
+  local angularVelocity = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(angularVelocity, axis, magnitude)
+
+  self:addAngularVelocity(angularVelocity[0])
+end
+
+function component:addAngularVelocityQuaternion(magnitude, quaternion)
+  local axis = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(axis, quaternion)
+
+  self:addAngularVelocityAxis(magnitude, axis[0])
+end
+
 function component:addAcceleration(acceleration, position)
   local force = ffi.new("kmVec3[1]")
   kazmath.kmVec3Scale(force, acceleration, self.mass)
@@ -98,6 +134,42 @@ function component:addTorqueQuaternion(magnitude, quaternion)
   self:addTorqueAxis(magnitude, axis[0])
 end
 
+function component:setVelocity(velocity)
+  kazmath.kmVec3Assign(self.velocity, velocity)
+end
+
+function component:setVelocityDirection(magnitude, direction)
+  local velocity = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(velocity, direction, magnitude)
+
+  self:setVelocity(velocity[0])
+end
+
+function component:setVelocityQuaternion(magnitude, quaternion)
+  local direction = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(direction, quaternion)
+
+  self:setVelocityDirection(magnitude, direction[0])
+end
+
+function component:setAngularVelocity(angularVelocity)
+  kazmath.kmVec3Assign(self.angularVel, angularVelocity)
+end
+
+function component:setAngularVelocityAxis(magnitude, axis)
+  local angularVelocity = ffi.new("kmVec3[1]")
+  kazmath.kmVec3Scale(angularVelocity, axis, magnitude)
+
+  self:setAngularVelocity(angularVelocity[0])
+end
+
+function component:setAngularVelocityQuaternion(magnitude, quaternion)
+  local axis = ffi.new("kmVec3[1]")
+  kazmath.kmQuaternionGetForwardVec3RH(axis, quaternion)
+
+  self:setAngularVelocityAxis(magnitude, axis[0])
+end
+
 function component:setAcceleration(acceleration)
   local force = ffi.new("kmVec3[1]")
   kazmath.kmVec3Scale(force, acceleration, self.mass)
@@ -155,6 +227,14 @@ function component:setTorqueQuaternion(magnitude, quaternion)
   self:setTorqueAxis(magnitude, axis[0])
 end
 
+function component:zeroVelocity()
+  kazmath.kmVec3Zero(self.velocity)
+end
+
+function component:zeroAngularVelocity()
+  kazmath.kmVec3Zero(self.angularVel)
+end
+
 function component:zeroForce()
   local force = ffi.new("kmVec3")
   self:setForce(force)
@@ -165,6 +245,14 @@ function component:zeroTorque()
   self:setTorque(torque)
 end
 
+function component:getVelocityMagnitude()
+  return kazmath.kmVec3Length(self.velocity)
+end
+
+function component:getAngularVelocityMagnitude()
+  return kazmath.kmVec3Length(self.angularVel)
+end
+
 function component:getAcceleration()
   local acceleration = ffi.new("kmVec3[1]")
   acceleration[0] = self:getForce()
@@ -172,10 +260,25 @@ function component:getAcceleration()
   return acceleration[0]
 end
 
+function component:getAccelerationMagnitude()
+  local acceleration = self:getAcceleration()
+  return kazmath.kmVec3Length(acceleration)
+end
+
 function component:getForce()
   return C.getForce(self)
 end
 
+function component:getForceMagnitude()
+  local force = self:getForce()
+  return kazmath.kmVec3Length(force)
+end
+
 function component:getTorque()
   return C.getTorque(self)
+end
+
+function component:getTorqueMagnitude()
+  local torque = self:getTorque()
+  return kazmath.kmVec3Length(torque)
 end
