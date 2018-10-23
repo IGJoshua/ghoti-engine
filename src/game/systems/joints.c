@@ -18,7 +18,6 @@
 #include <string.h>
 
 internal UUID transformComponentID = {};
-internal UUID jointListComponentID = {};
 internal UUID jointInfoComponentID = {};
 internal UUID rigidBodyComponentID = {};
 internal UUID jointConstraintComponentID = {};
@@ -296,7 +295,6 @@ void runJointInformationSystem(Scene *scene, UUID entityID, real64 dt)
 System createJointInformationSystem(void)
 {
 	transformComponentID = idFromName("transform");
-	jointListComponentID = idFromName("joint_list");
 	jointInfoComponentID = idFromName("joint_information");
 	rigidBodyComponentID = idFromName("rigid_body");
 	jointConstraintComponentID = idFromName("joint_constraint");

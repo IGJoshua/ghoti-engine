@@ -329,12 +329,6 @@ typedef struct joint_information_component_t
 	UUID object2;
 } JointInformationComponent;
 
-typedef struct joint_list_component_t
-{
-	UUID jointInfo;
-	UUID next;
-} JointListComponent;
-
 typedef struct joint_component_t
 {
 	char name[64];
