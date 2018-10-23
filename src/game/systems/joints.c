@@ -23,6 +23,7 @@ internal UUID rigidBodyComponentID = {};
 internal UUID jointConstraintComponentID = {};
 
 internal UUID jointHingeComponentID = {};
+internal UUID jointHinge2ComponentID = {};
 internal UUID jointSliderComponentID = {};
 internal UUID jointBallSocketComponentID = {};
 internal UUID jointBallSocket2ComponentID = {};
@@ -138,6 +139,18 @@ void initJointInformationSystem(Scene *scene)
 			jointID = hJoint->id;
 
 		} break;
+		case JOINT_TYPE_HINGE2:
+		{
+			Hinge2JointComponent *h2Joint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointHinge2ComponentID);
+
+			h2Joint->id = dJointCreateHinge2(scene->physicsWorld, 0);
+
+			jointID = h2Joint->id;
+
+		} break;
 		case JOINT_TYPE_BALL_SOCKET:
 		{
 			BallSocketJointComponent *bJoint = sceneGetComponentFromEntity(
@@ -222,6 +235,27 @@ void initJointInformationSystem(Scene *scene)
 			setJointConstraints(jointID, constraint, dJointSetHingeParam);
 
 		} break;
+		case JOINT_TYPE_HINGE2:
+		{
+			Hinge2JointComponent *h2Joint = sceneGetComponentFromEntity(
+				scene,
+				entityID,
+				jointHinge2ComponentID);
+
+			dJointSetHinge2Anchor(
+				h2Joint->id,
+				h2Joint->anchor.x,
+				h2Joint->anchor.y,
+				h2Joint->anchor.z);
+
+			dJointSetHinge2Axes(
+				h2Joint->id,
+				(dReal*)&h2Joint->axis1,
+				(dReal*)&h2Joint->axis2);
+
+			setJointConstraints(jointID, constraint, dJointSetHinge2Param);
+
+		} break;
 		case JOINT_TYPE_BALL_SOCKET:
 		{
 			BallSocketJointComponent *bJoint = sceneGetComponentFromEntity(
@@ -300,6 +334,7 @@ System createJointInformationSystem(void)
 	jointConstraintComponentID = idFromName("joint_constraint");
 
 	jointHingeComponentID = idFromName("hinge_joint");
+	jointHinge2ComponentID = idFromName("hinge2_joint");
 	jointSliderComponentID = idFromName("slider_joint");
 	jointBallSocketComponentID = idFromName("ball_socket_joint");
 	jointBallSocket2ComponentID = idFromName("ball_socket2_joint");

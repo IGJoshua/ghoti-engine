@@ -31,6 +31,7 @@ typedef enum joint_type_e
 {
 	JOINT_TYPE_BALL_SOCKET = 0,
 	JOINT_TYPE_HINGE,
+	JOINT_TYPE_HINGE2,
 	JOINT_TYPE_SLIDER,
 	JOINT_TYPE_BALL_SOCKET2
 } JointType;
@@ -276,6 +277,14 @@ typedef struct hinge_joint_component_t
 	kmVec3 anchor;
 	kmVec3 axis;
 } HingeJointComponent;
+
+typedef struct hinge2_joint_component_t
+{
+	dJointID id;
+	kmVec3 anchor;
+	kmVec3 axis1;
+	kmVec3 axis2;
+} Hinge2JointComponent;
 
 typedef struct hit_information_component_t
 {

@@ -47,6 +47,7 @@
 		"gui_transform": 2048,
 		"heightmap": 256,
 		"hinge_joint": 256,
+		"hinge2_joint": 256,
 		"hit_information": 4096,
 		"hit_list": 8192,
 		"image": 1024,
