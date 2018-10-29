@@ -377,7 +377,8 @@ internal void shutdownParticleSimulatorSystem(Scene *scene)
 		bool inScene = false;
 		for (ComponentDataTableIterator itr =
 				 cdtGetIterator(*particleEmitterComponents);
-			 !cdtIteratorAtEnd(itr);)
+			 !cdtIteratorAtEnd(itr);
+			 cdtMoveIterator(&itr))
 		{
 			ParticleEmitterComponent *particleEmitterComponent =
 				cdtIteratorGetData(itr);
