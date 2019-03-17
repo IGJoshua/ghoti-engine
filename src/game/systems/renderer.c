@@ -557,6 +557,7 @@ void beginRendererSystem(Scene *scene, real64 dt)
 	{
 		setFallbackMaterialUniform(&materialUniform, &textureIndex);
 		setUniform(opacityMaskUniform, 1, &textureIndex);
+		textureIndex++;
 	}
 
 	if (config.graphicsConfig.pbr)
