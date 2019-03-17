@@ -5,6 +5,32 @@
 * Ghoti Engine
 A cross-platform C game engine with a Lua JIT based ECS and a PBR OpenGL renderer.
 
+** Technologies Used
+
+#+BEGIN_SRC
+Assimp
+Bash
+C
+cJSON
+Clang
+frozen
+GLEW
+GLFW
+GLSL
+GNU Make
+kazmath
+LuaJIT
+MinGW
+nuklear
+Open Dynamics Engine
+OpenAL
+OpenGL
+pthreads
+SDL2
+stb_image
+stb_vorbis
+#+END_SRC
+
 ** Required Build Tools
 
 *** Linux
